@@ -7,7 +7,11 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperations {
     #[doc = "Collection of available operation details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationDetail>,
     #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -55,7 +59,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -109,7 +117,12 @@ impl MigrateProject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateProjectProperties {
     #[doc = "Register tools inside project."]
-    #[serde(rename = "registeredTools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "registeredTools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub registered_tools: Vec<String>,
     #[doc = "Service endpoint."]
     #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -130,7 +143,12 @@ pub struct MigrateProjectProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<migrate_project_properties::PublicNetworkAccess>,
     #[doc = "Gets the private endpoint connections."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
 impl MigrateProjectProperties {
@@ -284,7 +302,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionCollection {
     #[doc = "Gets the list of machines."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -348,7 +370,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceCollection {
     #[doc = "List of private links."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -363,10 +389,20 @@ impl PrivateLinkResourceCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
     #[doc = "Required members."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "Required zone names."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
     #[doc = "Group id."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
@@ -443,7 +479,11 @@ pub mod private_link_service_connection_state {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectResultList {
     #[doc = "List of projects."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MigrateProject>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

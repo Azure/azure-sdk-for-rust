@@ -78,7 +78,7 @@ impl ListCollectionsResponse {
             pub count: u32,
         }
 
-        let response: Response = serde_json::from_slice(&*body)?;
+        let response: Response = serde_json::from_slice(&body)?;
 
         Ok(Self {
             rid: response._rid,

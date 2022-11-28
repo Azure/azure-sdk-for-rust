@@ -97,7 +97,7 @@ impl Serialize for CentralServerVirtualMachineType {
         }
     }
 }
-#[doc = "The Central Server VM Details."]
+#[doc = "The SAP Central Services Instance VM details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CentralServerVmDetails {
     #[doc = "Defines the type of central server VM."]
@@ -253,7 +253,7 @@ impl Serialize for DatabaseScaleMethod {
         }
     }
 }
-#[doc = "The Database VM Details."]
+#[doc = "Database VM details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVmDetails {
     #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
@@ -307,7 +307,7 @@ impl DeploymentConfiguration {
         }
     }
 }
-#[doc = "The deployment Type."]
+#[doc = "The type of SAP deployment, single server or Three tier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "DeploymentType")]
 pub enum DeploymentType {
@@ -394,28 +394,28 @@ impl DiscoveryConfiguration {
         }
     }
 }
-#[doc = "Defines the SAP ERS Server properties."]
+#[doc = "Defines the SAP Enqueue Replication Server (ERS) properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnqueueReplicationServerProperties {
     #[doc = "Defines the type of Enqueue Replication Server."]
     #[serde(rename = "ersVersion", default, skip_serializing_if = "Option::is_none")]
     pub ers_version: Option<EnqueueReplicationServerType>,
-    #[doc = "The ERS server instance id."]
+    #[doc = "ERS Instance Number."]
     #[serde(rename = "instanceNo", default, skip_serializing_if = "Option::is_none")]
     pub instance_no: Option<String>,
-    #[doc = "The ERS server SAP host name."]
+    #[doc = "ERS SAP Hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
-    #[doc = "The ERS server SAP kernel version."]
+    #[doc = "ERS SAP Kernel Version."]
     #[serde(rename = "kernelVersion", default, skip_serializing_if = "Option::is_none")]
     pub kernel_version: Option<String>,
-    #[doc = "The ERS server SAP kernel patch."]
+    #[doc = "ERS SAP Kernel Patch level."]
     #[serde(rename = "kernelPatch", default, skip_serializing_if = "Option::is_none")]
     pub kernel_patch: Option<String>,
-    #[doc = "The ERS server SAP IP Address."]
+    #[doc = "ERS SAP IP Address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
@@ -461,19 +461,19 @@ impl Serialize for EnqueueReplicationServerType {
         }
     }
 }
-#[doc = "Defines the SAP enqueue server properties."]
+#[doc = "Defines the SAP Enqueue Server properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnqueueServerProperties {
-    #[doc = "The enqueue server SAP host name."]
+    #[doc = "Enqueue Server SAP Hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
-    #[doc = "The enqueue server SAP IP Address."]
+    #[doc = "Enqueue Server SAP IP Address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
-    #[doc = "The enqueue server Port."]
+    #[doc = "Enqueue Server Port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
@@ -532,7 +532,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Array of details about specific errors that led to this reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
     #[doc = "Object containing more specific information than  the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
@@ -583,7 +587,11 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Internal error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDefinition>,
 }
 impl ErrorDefinition {
@@ -604,10 +612,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -636,10 +653,10 @@ impl ErrorResponse {
 #[doc = "Defines the SAP Gateway Server properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayServerProperties {
-    #[doc = "The gateway Port."]
+    #[doc = "Gateway Port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
@@ -697,7 +714,7 @@ impl HanaDbProviderInstanceProperties {
         }
     }
 }
-#[doc = "Defines the SAP Instance health."]
+#[doc = "Defines the health of SAP Instances."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "HealthState")]
 pub enum HealthState {
@@ -835,7 +852,7 @@ impl ImageReference {
 #[doc = "Deploy SAP Infrastructure Details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InfrastructureConfiguration {
-    #[doc = "The deployment Type."]
+    #[doc = "The type of SAP deployment, single server or Three tier."]
     #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "The application resource group where SAP system resources will be deployed."]
@@ -924,28 +941,28 @@ impl Serialize for ManagedServiceIdentityType {
         }
     }
 }
-#[doc = "Defines the SAP message server properties."]
+#[doc = "Defines the SAP Message Server properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MessageServerProperties {
-    #[doc = "The message server port."]
+    #[doc = "Message Server port."]
     #[serde(rename = "msPort", default, skip_serializing_if = "Option::is_none")]
     pub ms_port: Option<i64>,
-    #[doc = "The message server internal MS port."]
+    #[doc = "Message Server internal MS port."]
     #[serde(rename = "internalMsPort", default, skip_serializing_if = "Option::is_none")]
     pub internal_ms_port: Option<i64>,
-    #[doc = "The message server http port."]
+    #[doc = "Message Server HTTP Port."]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
-    #[doc = "The message server https port."]
+    #[doc = "Message Server HTTPS Port."]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
-    #[doc = "The message server SAP host name."]
+    #[doc = "Message Server SAP Hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
-    #[doc = "The message server IP Address."]
+    #[doc = "Message server IP Address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
@@ -979,7 +996,11 @@ impl Monitor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorListResult {
     #[doc = "The list of SAP monitors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Monitor>,
     #[doc = "The URL to get the next set of SAP monitors."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1156,10 +1177,10 @@ impl MsSqlServerProviderInstanceProperties {
         }
     }
 }
-#[doc = "Defines the network configuration for SAP infrastructure"]
+#[doc = "Defines the network configuration type for SAP system infrastructure that is being deployed "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
-    #[doc = "Specifies whether a secondary IP address should be added to the network interface on all VMs"]
+    #[doc = "Specifies whether a secondary IP address should be added to the network interface on all VMs of the SAP system being deployed"]
     #[serde(rename = "isSecondaryIpEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_secondary_ip_enabled: Option<bool>,
 }
@@ -1367,7 +1388,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1405,7 +1430,11 @@ pub struct OperationStatusResult {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The operations list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<OperationStatusResult>,
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1554,7 +1583,11 @@ pub mod operations_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDefinitionArrayResponseWithContinuation {
     #[doc = "Defines the workload operation definition response properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationsDefinition>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1683,7 +1716,11 @@ impl ProviderInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderInstanceListResult {
     #[doc = "The list of provider instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProviderInstance>,
     #[doc = "The URL to get the next set of provider instances."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1859,10 +1896,18 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestrictionInfo {
     #[doc = "The restriction locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "The restriction zones."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl RestrictionInfo {
@@ -1870,12 +1915,12 @@ impl RestrictionInfo {
         Self::default()
     }
 }
-#[doc = "Define the SAP Application Server Instance."]
+#[doc = "Define the SAP Application Server Instance resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapApplicationServerInstance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "Defines the SAP Application Server properties."]
+    #[doc = "Defines the SAP Application Server instance properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SapApplicationServerProperties>,
 }
@@ -1887,11 +1932,15 @@ impl SapApplicationServerInstance {
         }
     }
 }
-#[doc = "Defines the collection of SAP Application Server Instances."]
+#[doc = "Defines the collection of SAP Application Server Instance resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapApplicationServerInstanceList {
-    #[doc = "Gets the list of SAP Application Server instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[doc = "Gets the list of SAP Application Server instance resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SapApplicationServerInstance>,
     #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1908,34 +1957,34 @@ impl SapApplicationServerInstanceList {
         Self::default()
     }
 }
-#[doc = "Defines the SAP Application Server properties."]
+#[doc = "Defines the SAP Application Server instance properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapApplicationServerProperties {
-    #[doc = "The application server instance id."]
+    #[doc = "Application server Instance Number."]
     #[serde(rename = "instanceNo", default, skip_serializing_if = "Option::is_none")]
     pub instance_no: Option<String>,
-    #[doc = "The application server subnet."]
+    #[doc = "Application server Subnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<String>,
-    #[doc = "The application server SAP host name."]
+    #[doc = "Application server instance SAP hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
-    #[doc = "The application server SAP kernel version."]
+    #[doc = " Application server instance SAP Kernel Version."]
     #[serde(rename = "kernelVersion", default, skip_serializing_if = "Option::is_none")]
     pub kernel_version: Option<String>,
-    #[doc = "The application server SAP kernel patch."]
+    #[doc = "Application server instance SAP Kernel Patch level."]
     #[serde(rename = "kernelPatch", default, skip_serializing_if = "Option::is_none")]
     pub kernel_patch: Option<String>,
-    #[doc = "The application server SAP IP Address."]
+    #[doc = " Application server instance SAP IP Address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
-    #[doc = "The application server gateway Port."]
+    #[doc = "Application server instance gateway Port."]
     #[serde(rename = "gatewayPort", default, skip_serializing_if = "Option::is_none")]
     pub gateway_port: Option<i64>,
-    #[doc = "The application server ICM HTTP Port."]
+    #[doc = "Application server instance ICM HTTP Port."]
     #[serde(rename = "icmHttpPort", default, skip_serializing_if = "Option::is_none")]
     pub icm_http_port: Option<i64>,
-    #[doc = "The application server ICM HTTPS Port."]
+    #[doc = "Application server instance ICM HTTPS Port."]
     #[serde(rename = "icmHttpsPort", default, skip_serializing_if = "Option::is_none")]
     pub icm_https_port: Option<i64>,
     #[doc = "The virtual machine."]
@@ -1944,7 +1993,7 @@ pub struct SapApplicationServerProperties {
     #[doc = "Defines the SAP Instance status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
     #[doc = "Defines the provisioning states."]
@@ -1985,7 +2034,12 @@ impl SapAvailabilityZoneDetailsRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapAvailabilityZoneDetailsResult {
     #[doc = "Gets the list of availability zone pairs."]
-    #[serde(rename = "availabilityZonePairs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availabilityZonePairs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub availability_zone_pairs: Vec<SapAvailabilityZonePair>,
 }
 impl SapAvailabilityZoneDetailsResult {
@@ -2008,11 +2062,15 @@ impl SapAvailabilityZonePair {
         Self::default()
     }
 }
-#[doc = "Defines the collection of SAP Central Instances."]
+#[doc = "Defines the collection of SAP Central Services Instance resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapCentralInstanceList {
-    #[doc = "Gets the list of SAP central instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[doc = "Gets the list of SAP central services instance resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SapCentralServerInstance>,
     #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2029,12 +2087,12 @@ impl SapCentralInstanceList {
         Self::default()
     }
 }
-#[doc = "Define the SAP Central Server Instance."]
+#[doc = "Define the SAP Central Services Instance resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapCentralServerInstance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "Defines the SAP Central Server properties."]
+    #[doc = "Defines the SAP Central Services Instance properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SapCentralServerProperties>,
 }
@@ -2046,40 +2104,45 @@ impl SapCentralServerInstance {
         }
     }
 }
-#[doc = "Defines the SAP Central Server properties."]
+#[doc = "Defines the SAP Central Services Instance properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapCentralServerProperties {
-    #[doc = "The central server instance id."]
+    #[doc = "The central services instance number."]
     #[serde(rename = "instanceNo", default, skip_serializing_if = "Option::is_none")]
     pub instance_no: Option<String>,
-    #[doc = "The central server subnet."]
+    #[doc = "The central services instance subnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<String>,
-    #[doc = "Defines the SAP message server properties."]
+    #[doc = "Defines the SAP Message Server properties."]
     #[serde(rename = "messageServerProperties", default, skip_serializing_if = "Option::is_none")]
     pub message_server_properties: Option<MessageServerProperties>,
-    #[doc = "Defines the SAP enqueue server properties."]
+    #[doc = "Defines the SAP Enqueue Server properties."]
     #[serde(rename = "enqueueServerProperties", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_server_properties: Option<EnqueueServerProperties>,
     #[doc = "Defines the SAP Gateway Server properties."]
     #[serde(rename = "gatewayServerProperties", default, skip_serializing_if = "Option::is_none")]
     pub gateway_server_properties: Option<GatewayServerProperties>,
-    #[doc = "Defines the SAP ERS Server properties."]
+    #[doc = "Defines the SAP Enqueue Replication Server (ERS) properties."]
     #[serde(rename = "enqueueReplicationServerProperties", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_replication_server_properties: Option<EnqueueReplicationServerProperties>,
-    #[doc = "The central server kernel version."]
+    #[doc = "The central services instance Kernel Version."]
     #[serde(rename = "kernelVersion", default, skip_serializing_if = "Option::is_none")]
     pub kernel_version: Option<String>,
-    #[doc = "The central server kernel patch."]
+    #[doc = "The central services instance Kernel Patch level."]
     #[serde(rename = "kernelPatch", default, skip_serializing_if = "Option::is_none")]
     pub kernel_patch: Option<String>,
-    #[doc = "The list of virtual machines."]
-    #[serde(rename = "vmDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[doc = "The list of virtual machines corresponding to the Central Services instance."]
+    #[serde(
+        rename = "vmDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_details: Vec<CentralServerVmDetails>,
     #[doc = "Defines the SAP Instance status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
     #[doc = "Defines the provisioning states."]
@@ -2106,12 +2169,12 @@ impl SapConfiguration {
         Self { configuration_type }
     }
 }
-#[doc = "Define the SAP Database Instance."]
+#[doc = "Define the Database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapDatabaseInstance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "Defines the SAP Database properties."]
+    #[doc = "Defines the Database properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SapDatabaseProperties>,
 }
@@ -2127,7 +2190,11 @@ impl SapDatabaseInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapDatabaseInstanceList {
     #[doc = "Gets the list of SAP Database instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SapDatabaseInstance>,
     #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2144,23 +2211,28 @@ impl SapDatabaseInstanceList {
         Self::default()
     }
 }
-#[doc = "Defines the SAP Database properties."]
+#[doc = "Defines the Database properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapDatabaseProperties {
-    #[doc = "The database subnet."]
+    #[doc = "Database subnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<String>,
-    #[doc = "The database SID."]
+    #[doc = "Database SID name."]
     #[serde(rename = "databaseSid", default, skip_serializing_if = "Option::is_none")]
     pub database_sid: Option<String>,
-    #[doc = "The SAP database type."]
+    #[doc = "Database type, that is if the DB is HANA, DB2, Oracle, SAP ASE, Max DB or MS SQL Server."]
     #[serde(rename = "databaseType", default, skip_serializing_if = "Option::is_none")]
     pub database_type: Option<String>,
-    #[doc = "The database IP Address."]
+    #[doc = "Database IP Address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
-    #[doc = "The list of virtual machines."]
-    #[serde(rename = "vmDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[doc = "The list of virtual machines corresponding to the Database resource."]
+    #[serde(
+        rename = "vmDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vm_details: Vec<DatabaseVmDetails>,
     #[doc = "Defines the SAP Instance status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2260,7 +2332,7 @@ pub struct SapDiskConfigurationsRequest {
     #[doc = "Defines the supported SAP Database types."]
     #[serde(rename = "databaseType")]
     pub database_type: SapDatabaseType,
-    #[doc = "The deployment Type."]
+    #[doc = "The type of SAP deployment, single server or Three tier."]
     #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "The VM SKU for database instance."]
@@ -2290,7 +2362,12 @@ impl SapDiskConfigurationsRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapDiskConfigurationsResult {
     #[doc = "Gets the list of Disk Configurations."]
-    #[serde(rename = "diskConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "diskConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disk_configurations: Vec<SapDiskConfiguration>,
 }
 impl SapDiskConfigurationsResult {
@@ -2384,7 +2461,7 @@ pub struct SapSizingRecommendationRequest {
     #[doc = "Defines the SAP Product type."]
     #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
-    #[doc = "The deployment Type."]
+    #[doc = "The type of SAP deployment, single server or Three tier."]
     #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "The SAP Application Performance Standard measurement."]
@@ -2428,7 +2505,7 @@ impl SapSizingRecommendationRequest {
 #[doc = "The SAP sizing recommendation result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapSizingRecommendationResult {
-    #[doc = "The deployment Type."]
+    #[doc = "The type of SAP deployment, single server or Three tier."]
     #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
 }
@@ -2481,7 +2558,12 @@ impl Serialize for SapSoftwareInstallationType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapSupportedResourceSkusResult {
     #[doc = "Gets the list of SAP supported SKUs."]
-    #[serde(rename = "supportedSkus", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedSkus",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_skus: Vec<SapSupportedSku>,
 }
 impl SapSupportedResourceSkusResult {
@@ -2518,7 +2600,7 @@ pub struct SapSupportedSkusRequest {
     #[doc = "Defines the SAP Product type."]
     #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
-    #[doc = "The deployment Type."]
+    #[doc = "The type of SAP deployment, single server or Three tier."]
     #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "Defines the supported SAP Database types."]
@@ -2546,7 +2628,7 @@ impl SapSupportedSkusRequest {
         }
     }
 }
-#[doc = "Define the Virtual Instance for SAP."]
+#[doc = "Define the Virtual Instance for SAP solutions resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapVirtualInstance {
     #[serde(flatten)]
@@ -2554,7 +2636,7 @@ pub struct SapVirtualInstance {
     #[doc = "Managed service identity (user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<UserAssignedServiceIdentity>,
-    #[doc = "Defines the Virtual Instance for SAP properties."]
+    #[doc = "Defines the Virtual Instance for SAP solutions resource properties."]
     pub properties: SapVirtualInstanceProperties,
 }
 impl SapVirtualInstance {
@@ -2578,11 +2660,15 @@ impl SapVirtualInstanceError {
         Self::default()
     }
 }
-#[doc = "Defines the collection of Virtual Instance for SAP."]
+#[doc = "Defines the collection of Virtual Instance for SAP solutions resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapVirtualInstanceList {
-    #[doc = "Gets the list of Virtual Instances for SAP."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[doc = "Gets the list of Virtual Instances for SAP solutions resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SapVirtualInstance>,
     #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2599,7 +2685,7 @@ impl SapVirtualInstanceList {
         Self::default()
     }
 }
-#[doc = "Defines the Virtual Instance for SAP properties."]
+#[doc = "Defines the Virtual Instance for SAP solutions resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapVirtualInstanceProperties {
     #[doc = "Defines the environment type - Production/Non Production."]
@@ -2615,7 +2701,7 @@ pub struct SapVirtualInstanceProperties {
     #[doc = "Defines the SAP Instance status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
-    #[doc = "Defines the SAP Instance health."]
+    #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
     #[doc = "Defines the Virtual Instance for SAP state."]
@@ -2768,7 +2854,12 @@ pub struct SapNetWeaverProviderInstanceProperties {
     #[serde(rename = "sapInstanceNr", default, skip_serializing_if = "Option::is_none")]
     pub sap_instance_nr: Option<String>,
     #[doc = "Gets or sets the list of HostFile Entries"]
-    #[serde(rename = "sapHostFileEntries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sapHostFileEntries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sap_host_file_entries: Vec<String>,
     #[doc = "Gets or sets the SAP user name."]
     #[serde(rename = "sapUsername", default, skip_serializing_if = "Option::is_none")]
@@ -2855,7 +2946,7 @@ impl ServiceInitiatedSoftwareConfiguration {
 pub struct SingleServerConfiguration {
     #[serde(flatten)]
     pub infrastructure_configuration: InfrastructureConfiguration,
-    #[doc = "Defines the network configuration for SAP infrastructure"]
+    #[doc = "Defines the network configuration type for SAP system infrastructure that is being deployed "]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
     #[doc = "Defines the supported SAP Database types."]
@@ -3046,22 +3137,43 @@ pub struct SkuDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
     #[doc = "List of locations where this SKU is available."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "List of locations where this SKU is available."]
-    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "locationInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub location_info: Vec<SkuLocationAndZones>,
     #[doc = "If the SKU supports scale out/in then the capacity integer should be included. If scale out/in is not possible for the resource this may be omitted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<serde_json::Value>,
     #[doc = "The SKU costs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub costs: Vec<SkuCost>,
     #[doc = "The SKU capabilities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<SkuCapability>,
     #[doc = "The SKU restrictions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restrictions: Vec<SkuRestriction>,
 }
 impl SkuDefinition {
@@ -3089,13 +3201,27 @@ pub struct SkuLocationAndZones {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The availability zones of SKU location."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "The availability zone details of the SKU location."]
-    #[serde(rename = "zoneDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "zoneDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zone_details: Vec<SkuZoneDetail>,
     #[doc = "The extended locations of SKU."]
-    #[serde(rename = "extendedLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extendedLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extended_locations: Vec<String>,
     #[doc = "Type of the extended location."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -3153,7 +3279,11 @@ pub struct SkuRestriction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_restriction::Type>,
     #[doc = "Restriction values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
     #[doc = "The restriction information."]
     #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
@@ -3260,10 +3390,18 @@ pub enum SkuTier {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuZoneDetail {
     #[doc = "The physical zones."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "The capabilities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<SkuCapability>,
 }
 impl SkuZoneDetail {
@@ -3275,7 +3413,11 @@ impl SkuZoneDetail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkusListResult {
     #[doc = "List of SKUs supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuDefinition>,
     #[doc = "URL to get the next set of SKU list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3310,7 +3452,12 @@ impl SoftwareConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SshConfiguration {
     #[doc = "The list of SSH public keys used to authenticate with linux based VMs."]
-    #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_keys: Vec<SshPublicKey>,
 }
 impl SshConfiguration {
@@ -3374,7 +3521,7 @@ impl Tags {
 pub struct ThreeTierConfiguration {
     #[serde(flatten)]
     pub infrastructure_configuration: InfrastructureConfiguration,
-    #[doc = "Defines the network configuration for SAP infrastructure"]
+    #[doc = "Defines the network configuration type for SAP system infrastructure that is being deployed "]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
     #[doc = "Gets or sets the central server configuration."]
@@ -4082,7 +4229,12 @@ pub struct NetworkProfile {
     #[serde(rename = "frontEndPublicIpResourceId", default, skip_serializing_if = "Option::is_none")]
     pub front_end_public_ip_resource_id: Option<String>,
     #[doc = "List of outbound public IP resource IDs"]
-    #[serde(rename = "outboundPublicIpResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outboundPublicIpResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outbound_public_ip_resource_ids: Vec<String>,
 }
 impl NetworkProfile {
@@ -4194,10 +4346,20 @@ pub struct NodeProfile {
     #[serde(rename = "osDisk")]
     pub os_disk: DiskInfo,
     #[doc = "Data disks details. This property is not in use right now"]
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataDisks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_disks: Vec<DiskInfo>,
     #[doc = "VM/VMSS resource ARM Ids"]
-    #[serde(rename = "nodeResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nodeResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub node_resource_ids: Vec<String>,
 }
 impl NodeProfile {
@@ -4507,7 +4669,11 @@ pub mod php_workload_resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PhpWorkloadResourceList {
     #[doc = "List of resources in current page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PhpWorkloadResource>,
     #[doc = "Link to next page of resources"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4878,7 +5044,11 @@ impl WordpressInstanceResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WordpressInstanceResourceList {
     #[doc = "List of resources in current page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WordpressInstanceResource>,
     #[doc = "Link to next page of resources"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

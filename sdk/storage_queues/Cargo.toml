@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_queues"
-version = "0.5.0"
+version = "0.7.0"
 description = "Azure Queue Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -11,17 +11,18 @@ documentation = "https://docs.rs/azure_storage_queues"
 keywords = ["sdk", "azure", "storage", "queues"]
 categories = ["api-bindings"]
 edition = "2021"
+rust-version = "1.64.0"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.4", default-features=false }
-azure_storage = { path = "../storage", version = "0.5", default-features=false }
+azure_core = { path = "../core", version = "0.6", default-features=false, features = ["xml"] }
+azure_storage = { path = "../storage", version = "0.7", default-features=false }
 time = "0.3.10"
 futures = "0.3"
 log = "0.4"
 serde = { version = "1.0" }
 serde_derive = "1.0"
 serde_json = "1.0"
-serde-xml-rs = "0.5"
+serde-xml-rs = "0.6"
 uuid = { version = "1.0", features = ["v4"] }
 url = "2.2"
 
@@ -34,3 +35,4 @@ default = ["enable_reqwest"]
 test_e2e = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
+test_integration = []

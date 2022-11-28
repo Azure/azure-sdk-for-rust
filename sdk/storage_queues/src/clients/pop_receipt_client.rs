@@ -1,17 +1,16 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{Context, Request, Response};
-use azure_storage::core::clients::StorageClient;
 
 #[derive(Debug, Clone)]
 pub struct PopReceiptClient {
-    queue_client: QueueClient,
+    client: QueueClient,
     pop_receipt: PopReceipt,
 }
 
 impl PopReceiptClient {
-    pub(crate) fn new(queue_client: QueueClient, pop_receipt: PopReceipt) -> Self {
+    pub(crate) fn new(client: QueueClient, pop_receipt: PopReceipt) -> Self {
         Self {
-            queue_client,
+            client,
             pop_receipt,
         }
     }
@@ -41,19 +40,26 @@ impl PopReceiptClient {
         context: &mut Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
-        self.queue_client.send(context, request).await
+        self.client.send(context, request).await
     }
 
-    pub(crate) fn storage_client(&self) -> &StorageClient {
-        self.queue_client.storage_client()
+    pub(crate) fn finalize_request(
+        &self,
+        url: url::Url,
+        method: azure_core::Method,
+        headers: azure_core::headers::Headers,
+        request_body: Option<azure_core::Body>,
+    ) -> azure_core::Result<Request> {
+        self.client
+            .finalize_request(url, method, headers, request_body)
     }
 
-    pub(crate) fn pop_receipt_url(&self) -> azure_core::Result<url::Url> {
-        let mut url = self.queue_client.url_with_segments(
-            ["messages", self.pop_receipt.message_id()]
-                .iter()
-                .map(std::ops::Deref::deref),
-        )?;
+    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+        let mut url = self.client.messages_url()?;
+
+        url.path_segments_mut()
+            .expect("invalid base url")
+            .push(self.pop_receipt.message_id());
 
         url.query_pairs_mut()
             .append_pair("popreceipt", self.pop_receipt.pop_receipt());

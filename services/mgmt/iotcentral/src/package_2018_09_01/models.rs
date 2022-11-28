@@ -48,7 +48,11 @@ pub struct AppListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of IoT Central Applications."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<App>,
 }
 impl azure_core::Continuable for AppListResult {
@@ -95,6 +99,18 @@ pub struct AppProperties {
     #[doc = "The ID of the application template, which is a blueprint that defines the characteristics and behaviors of an application. Optional; if not specified, defaults to a blank blueprint and allows the application to be defined from scratch."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
+    #[doc = "The current state of the application."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<AppState>,
+    #[doc = "The geography the application is in."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub geography: Option<String>,
+    #[doc = "The URI for the thumbnail image used in the application."]
+    #[serde(rename = "thumbnailUrl", default, skip_serializing_if = "Option::is_none")]
+    pub thumbnail_url: Option<String>,
+    #[doc = "The tenant ID the application belongs to."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant: Option<String>,
 }
 impl AppProperties {
     pub fn new() -> Self {
@@ -161,6 +177,45 @@ pub mod app_sku_info {
         }
     }
 }
+#[doc = "The current state of the application."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AppState")]
+pub enum AppState {
+    #[serde(rename = "created")]
+    Created,
+    #[serde(rename = "suspended")]
+    Suspended,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AppState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AppState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AppState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Created => serializer.serialize_unit_variant("AppState", 0u32, "created"),
+            Self::Suspended => serializer.serialize_unit_variant("AppState", 1u32, "suspended"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "IoT Central Application Template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppTemplate {
@@ -186,7 +241,11 @@ pub struct AppTemplate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub industry: Option<String>,
     #[doc = "A list of locations that support the template."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<AppTemplateLocations>,
 }
 impl AppTemplate {
@@ -216,7 +275,11 @@ pub struct AppTemplatesResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of IoT Central Application Templates."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AppTemplate>,
 }
 impl azure_core::Continuable for AppTemplatesResult {
@@ -261,7 +324,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -332,7 +399,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "A list of operations supported by the Microsoft.IoTCentral resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {

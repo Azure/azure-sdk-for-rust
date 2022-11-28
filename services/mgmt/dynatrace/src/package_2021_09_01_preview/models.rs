@@ -73,27 +73,28 @@ impl AppServiceInfo {
     }
 }
 #[doc = "Response of a list App Services Operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceListResponse {
     #[doc = "The items on this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AppServiceInfo>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for AppServiceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl AppServiceListResponse {
-    pub fn new(value: Vec<AppServiceInfo>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Update settings of OneAgent."]
@@ -226,7 +227,12 @@ pub struct DynatraceSingleSignOnProperties {
     #[serde(rename = "singleSignOnUrl", default, skip_serializing_if = "Option::is_none")]
     pub single_sign_on_url: Option<String>,
     #[doc = "array of Aad(azure active directory) domains"]
-    #[serde(rename = "aadDomains", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "aadDomains",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub aad_domains: Vec<String>,
     #[doc = "Provisioning state of the monitoring resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -258,27 +264,28 @@ impl DynatraceSingleSignOnResource {
     }
 }
 #[doc = "The response of a DynatraceSingleSignOnResource list operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DynatraceSingleSignOnResourceListResult {
     #[doc = "The items on this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DynatraceSingleSignOnResource>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for DynatraceSingleSignOnResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl DynatraceSingleSignOnResourceListResult {
-    pub fn new(value: Vec<DynatraceSingleSignOnResource>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Dynatrace Environment Information"]
@@ -330,10 +337,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -444,7 +460,11 @@ impl Serialize for LiftrResourceCategories {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkableEnvironmentListResponse {
     #[doc = "List of environments for which user is an admin"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LinkableEnvironmentResponse>,
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -549,7 +569,12 @@ pub struct LogRules {
     #[serde(rename = "sendActivityLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_activity_logs: Option<SendActivityLogsStatus>,
     #[doc = "List of filtering tags to be used for capturing logs. This only takes effect if SendActivityLogs flag is enabled. If empty, all resources will be captured.\nIf only Exclude action is specified, the rules will apply to the list of all available resources. If Include actions are specified, the rules will only include resources with the associated tags."]
-    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filteringTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filtering_tags: Vec<FilteringTag>,
 }
 impl LogRules {
@@ -638,7 +663,12 @@ pub type MediumString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricRules {
     #[doc = "List of filtering tags to be used for capturing metrics. If empty, all resources will be captured. If only Exclude action is specified, the rules will apply to the list of all available resources. If Include actions are specified, the rules will only include resources with the associated tags."]
-    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filteringTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filtering_tags: Vec<FilteringTag>,
 }
 impl MetricRules {
@@ -704,27 +734,28 @@ impl MonitorResource {
     }
 }
 #[doc = "The response of a MonitorResource list operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorResourceListResult {
     #[doc = "The items on this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MonitorResource>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitorResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl MonitorResourceListResult {
-    pub fn new(value: Vec<MonitorResource>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The updatable properties of the MonitorResource."]
@@ -779,27 +810,28 @@ impl MonitoredResource {
     }
 }
 #[doc = "List of all the resources being monitored by Dynatrace monitor resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoredResourceListResponse {
     #[doc = "The items on this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MonitoredResource>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for MonitoredResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl MonitoredResourceListResponse {
-    pub fn new(value: Vec<MonitoredResource>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
@@ -1025,7 +1057,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1168,10 +1204,20 @@ pub struct SsoDetailsResponse {
     #[serde(rename = "singleSignOnUrl", default, skip_serializing_if = "Option::is_none")]
     pub single_sign_on_url: Option<String>,
     #[doc = "array of Aad(azure active directory) domains"]
-    #[serde(rename = "aadDomains", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "aadDomains",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub aad_domains: Vec<String>,
     #[doc = "Array of admin user emails."]
-    #[serde(rename = "adminUsers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "adminUsers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub admin_users: Vec<String>,
 }
 impl SsoDetailsResponse {
@@ -1501,27 +1547,28 @@ impl TagRule {
     }
 }
 #[doc = "The response of a TagRule list operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagRuleListResult {
     #[doc = "The items on this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TagRule>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for TagRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl TagRuleListResult {
-    pub fn new(value: Vec<TagRule>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The updatable properties of the TagRule."]
@@ -1674,27 +1721,28 @@ impl VmExtensionPayload {
     }
 }
 #[doc = "Response of a list VM Host Operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmHostsListResponse {
     #[doc = "The items on this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VmInfo>,
     #[doc = "The link to the next page of items"]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for VmHostsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if self.next_link.is_empty() {
-            None
-        } else {
-            Some(self.next_link.clone())
-        }
+        self.next_link.clone()
     }
 }
 impl VmHostsListResponse {
-    pub fn new(value: Vec<VmInfo>, next_link: String) -> Self {
-        Self { value, next_link }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Details of VM Resource having Dynatrace OneAgent installed"]

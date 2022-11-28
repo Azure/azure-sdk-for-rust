@@ -220,7 +220,12 @@ pub struct AuthenticationMethodLdapProperties {
     #[doc = "Template to use for searching. Defaults to (cn=%s) where %s will be replaced by the username used to login."]
     #[serde(rename = "searchFilterTemplate", default, skip_serializing_if = "Option::is_none")]
     pub search_filter_template: Option<String>,
-    #[serde(rename = "serverCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serverCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub server_certificates: Vec<Certificate>,
 }
 impl AuthenticationMethodLdapProperties {
@@ -516,10 +521,20 @@ pub struct CassandraClusterPublicStatus {
     #[serde(rename = "reaperStatus", default, skip_serializing_if = "Option::is_none")]
     pub reaper_status: Option<ManagedCassandraReaperStatus>,
     #[doc = "List relevant information about any connection errors to the Datacenters."]
-    #[serde(rename = "connectionErrors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectionErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connection_errors: Vec<ConnectionError>,
     #[doc = "List of the status of each datacenter in this cluster."]
-    #[serde(rename = "dataCenters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataCenters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_centers: Vec<serde_json::Value>,
 }
 impl CassandraClusterPublicStatus {
@@ -588,7 +603,11 @@ impl CassandraKeyspaceGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CassandraKeyspaceListResult {
     #[doc = "List of Cassandra keyspaces and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CassandraKeyspaceGetResults>,
 }
 impl azure_core::Continuable for CassandraKeyspaceListResult {
@@ -629,13 +648,27 @@ impl CassandraPartitionKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CassandraSchema {
     #[doc = "List of Cassandra table columns."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<Column>,
     #[doc = "List of partition key."]
-    #[serde(rename = "partitionKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "partitionKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub partition_keys: Vec<CassandraPartitionKey>,
     #[doc = "List of cluster key."]
-    #[serde(rename = "clusterKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clusterKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cluster_keys: Vec<ClusterKey>,
 }
 impl CassandraSchema {
@@ -704,7 +737,11 @@ impl CassandraTableGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CassandraTableListResult {
     #[doc = "List of Cassandra tables and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CassandraTableGetResults>,
 }
 impl azure_core::Continuable for CassandraTableListResult {
@@ -804,7 +841,11 @@ impl CassandraViewGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CassandraViewListResult {
     #[doc = "List of Cassandra views and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CassandraViewGetResults>,
 }
 impl azure_core::Continuable for CassandraViewListResult {
@@ -915,7 +956,11 @@ impl ClientEncryptionKeyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientEncryptionKeysListResult {
     #[doc = "List of client encryption keys and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ClientEncryptionKeyGetResults>,
 }
 impl azure_core::Continuable for ClientEncryptionKeysListResult {
@@ -1008,19 +1053,44 @@ pub mod cluster_resource {
         #[serde(rename = "repairEnabled", default, skip_serializing_if = "Option::is_none")]
         pub repair_enabled: Option<bool>,
         #[doc = "List of TLS certificates used to authorize clients connecting to the cluster. All connections are TLS encrypted whether clientCertificates is set or not, but if clientCertificates is set, the managed Cassandra cluster will reject all connections not bearing a TLS client certificate that can be validated from one or more of the public certificates in this property."]
-        #[serde(rename = "clientCertificates", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "clientCertificates",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub client_certificates: Vec<Certificate>,
         #[doc = "List of TLS certificates used to authorize gossip from unmanaged data centers. The TLS certificates of all nodes in unmanaged data centers must be verifiable using one of the certificates provided in this property."]
-        #[serde(rename = "externalGossipCertificates", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "externalGossipCertificates",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub external_gossip_certificates: Vec<Certificate>,
         #[doc = "List of TLS certificates that unmanaged nodes must trust for gossip with managed nodes. All managed nodes will present TLS client certificates that are verifiable using one of the certificates provided in this property."]
-        #[serde(rename = "gossipCertificates", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "gossipCertificates",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub gossip_certificates: Vec<Certificate>,
         #[doc = "List of IP addresses of seed nodes in unmanaged data centers. These will be added to the seed node lists of all managed nodes."]
-        #[serde(rename = "externalSeedNodes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "externalSeedNodes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub external_seed_nodes: Vec<SeedNode>,
         #[doc = "List of IP addresses of seed nodes in the managed data centers. These should be added to the seed node lists of all unmanaged nodes."]
-        #[serde(rename = "seedNodes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "seedNodes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub seed_nodes: Vec<SeedNode>,
         #[doc = "Number of hours to wait between taking a backup of the cluster."]
         #[serde(rename = "hoursBetweenBackups", default, skip_serializing_if = "Option::is_none")]
@@ -1407,7 +1477,11 @@ pub mod consistency_policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerPartitionKey {
     #[doc = "List of paths using which data within the container can be partitioned"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<Path>,
     #[doc = "Indicates the kind of algorithm used for partitioning. For MultiHash, multiple partition keys (upto three maximum) are supported for container create"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1659,7 +1733,12 @@ pub mod data_center_resource {
         #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
         pub node_count: Option<i32>,
         #[doc = "IP addresses for seed nodes in this data center. This is for reference. Generally you will want to use the seedNodes property on the cluster, which aggregates the seed nodes from all data centers in the cluster."]
-        #[serde(rename = "seedNodes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "seedNodes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub seed_nodes: Vec<SeedNode>,
         #[doc = "A fragment of a cassandra.yaml configuration file to be included in the cassandra.yaml for all nodes in this data center. The fragment should be Base64 encoded, and only a subset of keys are allowed."]
         #[serde(rename = "base64EncodedCassandraYamlFragment", default, skip_serializing_if = "Option::is_none")]
@@ -1751,7 +1830,11 @@ pub mod data_transfer_data_source_sink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataTransferJobFeedResults {
     #[doc = "List of Data Transfer jobs and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataTransferJobGetResults>,
     #[doc = "URL to get the next set of Data Transfer job list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1851,7 +1934,11 @@ pub struct DataTransferServiceResourceProperties {
     #[serde(flatten)]
     pub service_resource_properties: ServiceResourceProperties,
     #[doc = "An array that contains all of the locations for the service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<DataTransferRegionalServiceResource>,
 }
 impl DataTransferServiceResourceProperties {
@@ -1971,10 +2058,19 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[serde(rename = "enableAutomaticFailover", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_failover: Option<bool>,
     #[doc = "List of Cosmos DB capabilities for the account"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<Capability>,
     #[doc = "List of Virtual Network ACL rules configured for the Cosmos DB account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "Enables the account to write in multiple locations"]
     #[serde(rename = "enableMultipleWriteLocations", default, skip_serializing_if = "Option::is_none")]
@@ -2015,13 +2111,22 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub backup_policy: Option<BackupPolicy>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cors: Vec<CorsPolicy>,
     #[doc = "Indicates what services are allowed to bypass firewall checks."]
     #[serde(rename = "networkAclBypass", default, skip_serializing_if = "Option::is_none")]
     pub network_acl_bypass: Option<NetworkAclBypass>,
     #[doc = "An array that contains the Resource Ids for Network Acl Bypass for the Cosmos DB account."]
-    #[serde(rename = "networkAclBypassResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkAclBypassResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_acl_bypass_resource_ids: Vec<String>,
     #[doc = "Indicates what diagnostic log settings are to be enabled."]
     #[serde(rename = "diagnosticLogSettings", default, skip_serializing_if = "Option::is_none")]
@@ -2095,25 +2200,58 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "consistencyPolicy", default, skip_serializing_if = "Option::is_none")]
     pub consistency_policy: Option<ConsistencyPolicy>,
     #[doc = "List of Cosmos DB capabilities for the account"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<Capability>,
     #[doc = "An array that contains the write location for the Cosmos DB account."]
-    #[serde(rename = "writeLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "writeLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub write_locations: Vec<Location>,
     #[doc = "An array that contains of the read locations enabled for the Cosmos DB account."]
-    #[serde(rename = "readLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "readLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub read_locations: Vec<Location>,
     #[doc = "An array that contains all of the locations enabled for the Cosmos DB account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<Location>,
     #[doc = "An array that contains the regions ordered by their failover priorities."]
-    #[serde(rename = "failoverPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "failoverPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub failover_policies: Vec<FailoverPolicy>,
     #[doc = "List of Virtual Network ACL rules configured for the Cosmos DB account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "List of Private Endpoint Connections configured for the Cosmos DB account."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Enables the account to write in multiple locations"]
     #[serde(rename = "enableMultipleWriteLocations", default, skip_serializing_if = "Option::is_none")]
@@ -2160,13 +2298,22 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub backup_policy: Option<BackupPolicy>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cors: Vec<CorsPolicy>,
     #[doc = "Indicates what services are allowed to bypass firewall checks."]
     #[serde(rename = "networkAclBypass", default, skip_serializing_if = "Option::is_none")]
     pub network_acl_bypass: Option<NetworkAclBypass>,
     #[doc = "An array that contains the Resource Ids for Network Acl Bypass for the Cosmos DB account."]
-    #[serde(rename = "networkAclBypassResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkAclBypassResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_acl_bypass_resource_ids: Vec<String>,
     #[doc = "Indicates what diagnostic log settings are to be enabled."]
     #[serde(rename = "diagnosticLogSettings", default, skip_serializing_if = "Option::is_none")]
@@ -2259,7 +2406,12 @@ pub mod database_account_get_results {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAccountListConnectionStringsResult {
     #[doc = "An array that contains the connection strings for the Cosmos DB account."]
-    #[serde(rename = "connectionStrings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectionStrings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connection_strings: Vec<DatabaseAccountConnectionString>,
 }
 impl DatabaseAccountListConnectionStringsResult {
@@ -2392,7 +2544,11 @@ pub struct DatabaseAccountUpdateProperties {
     #[serde(rename = "consistencyPolicy", default, skip_serializing_if = "Option::is_none")]
     pub consistency_policy: Option<ConsistencyPolicy>,
     #[doc = "An array that contains the georeplication locations enabled for the Cosmos DB account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<Location>,
     #[doc = "Array of IpAddressOrRange objects."]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Option::is_none")]
@@ -2404,10 +2560,19 @@ pub struct DatabaseAccountUpdateProperties {
     #[serde(rename = "enableAutomaticFailover", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_failover: Option<bool>,
     #[doc = "List of Cosmos DB capabilities for the account"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<Capability>,
     #[doc = "List of Virtual Network ACL rules configured for the Cosmos DB account."]
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "Enables the account to write in multiple locations"]
     #[serde(rename = "enableMultipleWriteLocations", default, skip_serializing_if = "Option::is_none")]
@@ -2445,13 +2610,22 @@ pub struct DatabaseAccountUpdateProperties {
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub backup_policy: Option<BackupPolicy>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cors: Vec<CorsPolicy>,
     #[doc = "Indicates what services are allowed to bypass firewall checks."]
     #[serde(rename = "networkAclBypass", default, skip_serializing_if = "Option::is_none")]
     pub network_acl_bypass: Option<NetworkAclBypass>,
     #[doc = "An array that contains the Resource Ids for Network Acl Bypass for the Cosmos DB account."]
-    #[serde(rename = "networkAclBypassResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkAclBypassResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_acl_bypass_resource_ids: Vec<String>,
     #[doc = "Indicates what diagnostic log settings are to be enabled."]
     #[serde(rename = "diagnosticLogSettings", default, skip_serializing_if = "Option::is_none")]
@@ -2472,7 +2646,11 @@ impl DatabaseAccountUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAccountsListResult {
     #[doc = "List of database account and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DatabaseAccountGetResults>,
 }
 impl azure_core::Continuable for DatabaseAccountsListResult {
@@ -2493,7 +2671,12 @@ pub struct DatabaseRestoreResource {
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "The names of the collections available for restore."]
-    #[serde(rename = "collectionNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "collectionNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub collection_names: Vec<CollectionName>,
 }
 impl DatabaseRestoreResource {
@@ -2638,7 +2821,11 @@ pub struct GraphApiComputeServiceResourceProperties {
     #[serde(rename = "graphApiComputeEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub graph_api_compute_endpoint: Option<String>,
     #[doc = "An array that contains all of the locations for the service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<GraphApiComputeRegionalServiceResource>,
 }
 impl GraphApiComputeServiceResourceProperties {
@@ -2722,7 +2909,11 @@ impl GraphResourceGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphResourcesListResult {
     #[doc = "List of Graph resource and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GraphResourceGetResults>,
 }
 impl azure_core::Continuable for GraphResourcesListResult {
@@ -2797,7 +2988,11 @@ impl GremlinDatabaseGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GremlinDatabaseListResult {
     #[doc = "List of Gremlin databases and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GremlinDatabaseGetResults>,
 }
 impl azure_core::Continuable for GremlinDatabaseListResult {
@@ -2883,7 +3078,11 @@ impl GremlinGraphGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GremlinGraphListResult {
     #[doc = "List of graphs and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GremlinGraphGetResults>,
 }
 impl azure_core::Continuable for GremlinGraphListResult {
@@ -2938,7 +3137,11 @@ pub struct IncludedPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "List of indexes for this path"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub indexes: Vec<Indexes>,
 }
 impl IncludedPath {
@@ -3071,16 +3274,36 @@ pub struct IndexingPolicy {
     #[serde(rename = "indexingMode", default, skip_serializing_if = "Option::is_none")]
     pub indexing_mode: Option<indexing_policy::IndexingMode>,
     #[doc = "List of paths to include in the indexing"]
-    #[serde(rename = "includedPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includedPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub included_paths: Vec<IncludedPath>,
     #[doc = "List of paths to exclude from indexing"]
-    #[serde(rename = "excludedPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_paths: Vec<ExcludedPath>,
     #[doc = "List of composite path list"]
-    #[serde(rename = "compositeIndexes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "compositeIndexes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub composite_indexes: Vec<CompositePathList>,
     #[doc = "List of spatial specifics"]
-    #[serde(rename = "spatialIndexes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "spatialIndexes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub spatial_indexes: Vec<SpatialSpec>,
 }
 impl IndexingPolicy {
@@ -3173,7 +3396,11 @@ impl KeyWrapMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListBackups {
     #[doc = "Container for array of backups."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BackupResource>,
 }
 impl azure_core::Continuable for ListBackups {
@@ -3191,7 +3418,11 @@ impl ListBackups {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListClusters {
     #[doc = "Container for the array of clusters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ClusterResource>,
 }
 impl azure_core::Continuable for ListClusters {
@@ -3209,7 +3440,11 @@ impl ListClusters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListDataCenters {
     #[doc = "Container for array of data centers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataCenterResource>,
 }
 impl azure_core::Continuable for ListDataCenters {
@@ -3268,7 +3503,11 @@ impl LocationGetResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationListResult {
     #[doc = "List of Cosmos DB locations and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LocationGetResult>,
 }
 impl azure_core::Continuable for LocationListResult {
@@ -3295,7 +3534,12 @@ pub struct LocationProperties {
     #[serde(rename = "isResidencyRestricted", default, skip_serializing_if = "Option::is_none")]
     pub is_residency_restricted: Option<bool>,
     #[doc = "The properties of available backup storage redundancies."]
-    #[serde(rename = "backupStorageRedundancies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backupStorageRedundancies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backup_storage_redundancies: Vec<BackupStorageRedundancy>,
 }
 impl LocationProperties {
@@ -3589,7 +3833,11 @@ pub struct MaterializedViewsBuilderServiceResourceProperties {
     #[serde(flatten)]
     pub service_resource_properties: ServiceResourceProperties,
     #[doc = "An array that contains all of the locations for the service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<MaterializedViewsBuilderRegionalServiceResource>,
 }
 impl MaterializedViewsBuilderServiceResourceProperties {
@@ -3619,7 +3867,12 @@ pub struct Metric {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricName>,
     #[doc = "The metric values for the specified time window and timestep."]
-    #[serde(rename = "metricValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_values: Vec<MetricValue>,
 }
 impl Metric {
@@ -3646,7 +3899,12 @@ impl MetricAvailability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDefinition {
     #[doc = "The list of metric availabilities for the account."]
-    #[serde(rename = "metricAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricAvailabilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_availabilities: Vec<MetricAvailability>,
     #[doc = "The primary aggregation type of the metric."]
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
@@ -3718,7 +3976,11 @@ pub mod metric_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDefinitionsListResult {
     #[doc = "The list of metric definitions for the account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MetricDefinition>,
 }
 impl azure_core::Continuable for MetricDefinitionsListResult {
@@ -3736,7 +3998,11 @@ impl MetricDefinitionsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricListResult {
     #[doc = "The list of metrics for the account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Metric>,
 }
 impl azure_core::Continuable for MetricListResult {
@@ -3853,7 +4119,11 @@ impl MongoDbCollectionGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MongoDbCollectionListResult {
     #[doc = "List of MongoDB collections and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MongoDbCollectionGetResults>,
 }
 impl azure_core::Continuable for MongoDbCollectionListResult {
@@ -3876,7 +4146,11 @@ pub struct MongoDbCollectionResource {
     #[serde(rename = "shardKey", default, skip_serializing_if = "Option::is_none")]
     pub shard_key: Option<ShardKeys>,
     #[doc = "List of index keys"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub indexes: Vec<MongoIndex>,
     #[doc = "Analytical TTL."]
     #[serde(rename = "analyticalStorageTtl", default, skip_serializing_if = "Option::is_none")]
@@ -3953,7 +4227,11 @@ impl MongoDbDatabaseGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MongoDbDatabaseListResult {
     #[doc = "List of MongoDB databases and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MongoDbDatabaseGetResults>,
 }
 impl azure_core::Continuable for MongoDbDatabaseListResult {
@@ -3997,7 +4275,11 @@ impl MongoIndex {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MongoIndexKeys {
     #[doc = "List of keys for each MongoDB collection in the Azure Cosmos DB service"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub keys: Vec<Key>,
 }
 impl MongoIndexKeys {
@@ -4050,7 +4332,11 @@ impl MongoRoleDefinitionGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MongoRoleDefinitionListResult {
     #[doc = "List of Mongo Role Definitions and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MongoRoleDefinitionGetResults>,
 }
 impl azure_core::Continuable for MongoRoleDefinitionListResult {
@@ -4077,10 +4363,18 @@ pub struct MongoRoleDefinitionResource {
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "A set of privileges contained by the Role Definition. This will allow application of this Role Definition on the entire database account or any underlying Database / Collection. Scopes higher than Database are not enforceable as privilege."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub privileges: Vec<Privilege>,
     #[doc = "The set of roles inherited by this Role Definition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<Role>,
 }
 impl MongoRoleDefinitionResource {
@@ -4127,7 +4421,11 @@ impl MongoUserDefinitionGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MongoUserDefinitionListResult {
     #[doc = "List of User Definition and their properties"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MongoUserDefinitionGetResults>,
 }
 impl azure_core::Continuable for MongoUserDefinitionListResult {
@@ -4157,7 +4455,11 @@ pub struct MongoUserDefinitionResource {
     #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
     pub custom_data: Option<String>,
     #[doc = "The set of roles inherited by the User Definition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<Role>,
     #[doc = "The Mongo Auth mechanism. For now, we only support auth mechanism SCRAM-SHA-256."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4218,7 +4520,11 @@ impl NotebookWorkspaceCreateUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotebookWorkspaceListResult {
     #[doc = "Array of notebook workspace resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NotebookWorkspace>,
 }
 impl azure_core::Continuable for NotebookWorkspaceListResult {
@@ -4290,7 +4596,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Resource Provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4383,7 +4693,11 @@ impl PartitionMetric {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionMetricListResult {
     #[doc = "The list of partition-level metrics for the account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PartitionMetric>,
 }
 impl azure_core::Continuable for PartitionMetricListResult {
@@ -4418,7 +4732,11 @@ impl PartitionUsage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionUsagesResult {
     #[doc = "The list of partition-level usages for the database. A usage is a point in time metric"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PartitionUsage>,
 }
 impl azure_core::Continuable for PartitionUsagesResult {
@@ -4452,7 +4770,12 @@ pub struct PercentileMetric {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricName>,
     #[doc = "The percentile metric values for the specified time window and timestep."]
-    #[serde(rename = "metricValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_values: Vec<PercentileMetricValue>,
 }
 impl PercentileMetric {
@@ -4464,7 +4787,11 @@ impl PercentileMetric {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PercentileMetricListResult {
     #[doc = "The list of percentile metrics for the account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PercentileMetric>,
 }
 impl azure_core::Continuable for PercentileMetricListResult {
@@ -4549,10 +4876,20 @@ impl PeriodicModeProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permission {
     #[doc = "An array of data actions that are allowed."]
-    #[serde(rename = "dataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_actions: Vec<String>,
     #[doc = "An array of data actions that are denied."]
-    #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notDataActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_data_actions: Vec<String>,
 }
 impl Permission {
@@ -4578,7 +4915,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "Array of private endpoint connections"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
 }
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
@@ -4643,7 +4984,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
 }
 impl azure_core::Continuable for PrivateLinkResourceListResult {
@@ -4664,10 +5009,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "The private link resource required zone names."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -4700,7 +5055,11 @@ pub struct Privilege {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<privilege::Resource>,
     #[doc = "An array of actions that are allowed."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
 }
 impl Privilege {
@@ -4862,7 +5221,12 @@ pub struct RestorableDatabaseAccountProperties {
     #[serde(rename = "apiType", default, skip_serializing_if = "Option::is_none")]
     pub api_type: Option<ApiType>,
     #[doc = "List of regions where the of the database account can be restored from."]
-    #[serde(rename = "restorableLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "restorableLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restorable_locations: Vec<RestorableLocationResource>,
 }
 impl RestorableDatabaseAccountProperties {
@@ -4874,7 +5238,11 @@ impl RestorableDatabaseAccountProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDatabaseAccountsListResult {
     #[doc = "List of restorable database accounts and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RestorableDatabaseAccountGetResult>,
 }
 impl azure_core::Continuable for RestorableDatabaseAccountsListResult {
@@ -4973,7 +5341,11 @@ pub mod restorable_mongodb_collection_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableMongodbCollectionsListResult {
     #[doc = "List of MongoDB collection events and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RestorableMongodbCollectionGetResult>,
 }
 impl azure_core::Continuable for RestorableMongodbCollectionsListResult {
@@ -5051,7 +5423,11 @@ pub mod restorable_mongodb_database_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableMongodbDatabasesListResult {
     #[doc = "List of MongoDB database events and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RestorableMongodbDatabaseGetResult>,
 }
 impl azure_core::Continuable for RestorableMongodbDatabasesListResult {
@@ -5069,7 +5445,11 @@ impl RestorableMongodbDatabasesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableMongodbResourcesListResult {
     #[doc = "List of restorable MongoDB resources, including the database and collection names."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DatabaseRestoreResource>,
 }
 impl azure_core::Continuable for RestorableMongodbResourcesListResult {
@@ -5173,7 +5553,11 @@ pub mod restorable_sql_container_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableSqlContainersListResult {
     #[doc = "List of SQL container events and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RestorableSqlContainerGetResult>,
 }
 impl azure_core::Continuable for RestorableSqlContainersListResult {
@@ -5285,7 +5669,11 @@ pub mod restorable_sql_database_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableSqlDatabasesListResult {
     #[doc = "List of SQL database events and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RestorableSqlDatabaseGetResult>,
 }
 impl azure_core::Continuable for RestorableSqlDatabasesListResult {
@@ -5303,7 +5691,11 @@ impl RestorableSqlDatabasesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableSqlResourcesListResult {
     #[doc = "List of restorable SQL resources, including the database and collection names."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DatabaseRestoreResource>,
 }
 impl azure_core::Continuable for RestorableSqlResourcesListResult {
@@ -5330,7 +5722,12 @@ pub struct RestoreParameters {
     #[serde(rename = "restoreTimestampInUtc", default, with = "azure_core::date::rfc3339::option")]
     pub restore_timestamp_in_utc: Option<time::OffsetDateTime>,
     #[doc = "List of specific databases available for restore."]
-    #[serde(rename = "databasesToRestore", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "databasesToRestore",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub databases_to_restore: Vec<DatabaseRestoreResource>,
 }
 impl RestoreParameters {
@@ -5492,7 +5889,11 @@ impl Serialize for ServiceResourceInstanceSize {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceResourceListResult {
     #[doc = "List of Service Resource and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceResource>,
 }
 impl azure_core::Continuable for ServiceResourceListResult {
@@ -5637,7 +6038,11 @@ pub struct SpatialSpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "List of path's spatial type"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub types: Vec<SpatialType>,
 }
 impl SpatialSpec {
@@ -5747,7 +6152,11 @@ impl SqlContainerGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlContainerListResult {
     #[doc = "List of containers and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlContainerGetResults>,
 }
 impl azure_core::Continuable for SqlContainerListResult {
@@ -5885,7 +6294,11 @@ impl SqlDatabaseGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlDatabaseListResult {
     #[doc = "List of SQL databases and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlDatabaseGetResults>,
 }
 impl azure_core::Continuable for SqlDatabaseListResult {
@@ -5945,7 +6358,11 @@ pub struct SqlDedicatedGatewayServiceResourceProperties {
     #[serde(rename = "sqlDedicatedGatewayEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub sql_dedicated_gateway_endpoint: Option<String>,
     #[doc = "An array that contains all of the locations for the service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<SqlDedicatedGatewayRegionalServiceResource>,
 }
 impl SqlDedicatedGatewayServiceResourceProperties {
@@ -5987,7 +6404,11 @@ impl SqlRoleAssignmentGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlRoleAssignmentListResult {
     #[doc = "List of Role Assignments and their properties"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlRoleAssignmentGetResults>,
 }
 impl azure_core::Continuable for SqlRoleAssignmentListResult {
@@ -6049,7 +6470,11 @@ impl SqlRoleDefinitionGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlRoleDefinitionListResult {
     #[doc = "List of Role Definitions and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlRoleDefinitionGetResults>,
 }
 impl azure_core::Continuable for SqlRoleDefinitionListResult {
@@ -6073,10 +6498,19 @@ pub struct SqlRoleDefinitionResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sql_role_definition_resource::Type>,
     #[doc = "A set of fully qualified Scopes at or below which Role Assignments may be created using this Role Definition. This will allow application of this Role Definition on the entire database account or any underlying Database / Collection. Must have at least one element. Scopes higher than Database account are not enforceable as assignable Scopes. Note that resources referenced in assignable Scopes need not exist."]
-    #[serde(rename = "assignableScopes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "assignableScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub assignable_scopes: Vec<String>,
     #[doc = "The set of operations allowed through this Role Definition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub permissions: Vec<Permission>,
 }
 impl SqlRoleDefinitionResource {
@@ -6152,7 +6586,11 @@ impl SqlStoredProcedureGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlStoredProcedureListResult {
     #[doc = "List of storedProcedures and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlStoredProcedureGetResults>,
 }
 impl azure_core::Continuable for SqlStoredProcedureListResult {
@@ -6239,7 +6677,11 @@ impl SqlTriggerGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlTriggerListResult {
     #[doc = "List of triggers and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlTriggerGetResults>,
 }
 impl azure_core::Continuable for SqlTriggerListResult {
@@ -6420,7 +6862,11 @@ impl SqlUserDefinedFunctionGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlUserDefinedFunctionListResult {
     #[doc = "List of userDefinedFunctions and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlUserDefinedFunctionGetResults>,
 }
 impl azure_core::Continuable for SqlUserDefinedFunctionListResult {
@@ -6509,7 +6955,11 @@ impl TableGetResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableListResult {
     #[doc = "List of Table and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TableGetResults>,
 }
 impl azure_core::Continuable for TableListResult {
@@ -6634,7 +7084,11 @@ impl ThroughputSettingsUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UniqueKey {
     #[doc = "List of paths must be unique for each document in the Azure Cosmos DB service"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<Path>,
 }
 impl UniqueKey {
@@ -6646,7 +7100,12 @@ impl UniqueKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UniqueKeyPolicy {
     #[doc = "List of unique keys on that enforces uniqueness constraint on documents in the collection in the Azure Cosmos DB service."]
-    #[serde(rename = "uniqueKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "uniqueKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub unique_keys: Vec<UniqueKey>,
 }
 impl UniqueKeyPolicy {
@@ -6729,7 +7188,11 @@ impl Usage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesResult {
     #[doc = "The list of usages for the database. A usage is a point in time metric"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsagesResult {

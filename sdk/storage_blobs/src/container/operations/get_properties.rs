@@ -43,7 +43,7 @@ pub struct GetPropertiesResponse {
 }
 
 impl TryFrom<(&str, &Headers)> for GetPropertiesResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from((body, header_map): (&str, &Headers)) -> azure_core::Result<Self> {
         GetPropertiesResponse::from_response(body, header_map)

@@ -127,13 +127,9 @@ pub mod service {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "gets the properties of a storage account's Blob service, including properties for Storage Analytics and CORS (Cross-Origin Resource Sharing) rules."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -142,40 +138,29 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `storage_service_properties`: The StorageService properties."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             storage_service_properties: impl Into<models::StorageServiceProperties>,
-            x_ms_version: impl Into<String>,
         ) -> set_properties::RequestBuilder {
             set_properties::RequestBuilder {
                 client: self.0.clone(),
                 storage_service_properties: storage_service_properties.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
         }
         #[doc = "Retrieves statistics related to replication for the Blob service. It is only available on the secondary location endpoint when read-access geo-redundant replication is enabled for the storage account."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(&self, x_ms_version: impl Into<String>) -> get_statistics::RequestBuilder {
+        pub fn get_statistics(&self) -> get_statistics::RequestBuilder {
             get_statistics::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
         }
         #[doc = "The List Containers Segment operation returns a list of the containers under the specified account"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_containers_segment(&self, x_ms_version: impl Into<String>) -> list_containers_segment::RequestBuilder {
+        pub fn list_containers_segment(&self) -> list_containers_segment::RequestBuilder {
             list_containers_segment::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 prefix: None,
                 marker: None,
                 maxresults: None,
@@ -188,29 +173,17 @@ pub mod service {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `key_info`: Key information"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_user_delegation_key(
-            &self,
-            key_info: impl Into<models::KeyInfo>,
-            x_ms_version: impl Into<String>,
-        ) -> get_user_delegation_key::RequestBuilder {
+        pub fn get_user_delegation_key(&self, key_info: impl Into<models::KeyInfo>) -> get_user_delegation_key::RequestBuilder {
             get_user_delegation_key::RequestBuilder {
                 client: self.0.clone(),
                 key_info: key_info.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
         }
         #[doc = "Returns the sku name and account kind "]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_account_info(&self, x_ms_version: impl Into<String>) -> get_account_info::RequestBuilder {
-            get_account_info::RequestBuilder {
-                client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
-            }
+        pub fn get_account_info(&self) -> get_account_info::RequestBuilder {
+            get_account_info::RequestBuilder { client: self.0.clone() }
         }
         #[doc = "The Batch operation allows multiple API calls to be embedded into a single HTTP request."]
         #[doc = ""]
@@ -218,32 +191,25 @@ pub mod service {
         #[doc = "* `body`: Initial data"]
         #[doc = "* `content_length`: The length of the request."]
         #[doc = "* `content_type`: Required. The value of this header must be multipart/mixed with a batch boundary. Example header value: multipart/mixed; boundary=batch_<GUID>"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn submit_batch(
             &self,
             body: impl Into<serde_json::Value>,
             content_length: i64,
             content_type: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> submit_batch::RequestBuilder {
             submit_batch::RequestBuilder {
                 client: self.0.clone(),
                 body: body.into(),
                 content_length,
                 content_type: content_type.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
         }
         #[doc = "The Filter Blobs operation enables callers to list blobs across all containers whose tags match a given search expression.  Filter blobs searches across all containers within a storage account but can be scoped within the expression to a single container."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn filter_blobs(&self, x_ms_version: impl Into<String>) -> filter_blobs::RequestBuilder {
+        pub fn filter_blobs(&self) -> filter_blobs::RequestBuilder {
             filter_blobs::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
                 where_: None,
@@ -254,11 +220,52 @@ pub mod service {
     }
     pub mod get_properties {
         use super::models;
-        type Response = models::StorageServiceProperties;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::StorageServiceProperties> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::StorageServiceProperties = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -273,7 +280,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -285,41 +293,32 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::StorageServiceProperties = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StorageServiceProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod set_properties {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) storage_service_properties: models::StorageServiceProperties,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -334,7 +333,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -346,25 +346,17 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -372,11 +364,56 @@ pub mod service {
     }
     pub mod get_statistics {
         use super::models;
-        type Response = models::StorageServiceStats;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::StorageServiceStats> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::StorageServiceStats = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -391,7 +428,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -403,40 +441,73 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::StorageServiceStats = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::StorageServiceStats>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod list_containers_segment {
         use super::models;
-        type Response = models::ListContainersSegmentResponse;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ListContainersSegmentResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ListContainersSegmentResponse = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
@@ -475,7 +546,7 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ListContainersSegmentResponse, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -503,6 +574,7 @@ pub mod service {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                                 if let Some(prefix) = &this.prefix {
                                     req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -515,7 +587,6 @@ pub mod service {
                                 if let Some(timeout) = &this.timeout {
                                     req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -524,18 +595,14 @@ pub mod service {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ListContainersSegmentResponse = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -544,12 +611,57 @@ pub mod service {
     }
     pub mod get_user_delegation_key {
         use super::models;
-        type Response = models::UserDelegationKey;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::UserDelegationKey> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::UserDelegationKey = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) key_info: models::KeyInfo,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -564,7 +676,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -576,44 +689,36 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.key_info)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::UserDelegationKey = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UserDelegationKey>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod get_account_info {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -625,18 +730,10 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -644,14 +741,54 @@ pub mod service {
     }
     pub mod submit_batch {
         use super::models;
-        type Response = serde_json::Value;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
+                let bytes = self.0.into_body().collect().await?;
+                let body = bytes;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The media type of the body of the response. For batch requests, this is multipart/mixed; boundary=batchresponse_GUID"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
             pub(crate) content_type: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -666,7 +803,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -678,42 +816,79 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.insert_header("content-length", &this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<bytes::Bytes>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod filter_blobs {
         use super::models;
-        type Response = models::FilterBlobSegment;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::FilterBlobSegment> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::FilterBlobSegment = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) where_: Option<String>,
@@ -746,7 +921,8 @@ pub mod service {
                 self.maxresults = Some(maxresults);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -758,10 +934,10 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -776,21 +952,13 @@ pub mod service {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::FilterBlobSegment = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FilterBlobSegment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -803,12 +971,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, container_name: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 x_ms_client_request_id: None,
@@ -818,12 +984,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> create::RequestBuilder {
+        pub fn create(&self, container_name: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_blob_public_access: None,
@@ -836,12 +1000,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> delete::RequestBuilder {
+        pub fn delete(&self, container_name: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 if_modified_since: None,
@@ -853,12 +1015,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_metadata(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> set_metadata::RequestBuilder {
+        pub fn set_metadata(&self, container_name: impl Into<String>) -> set_metadata::RequestBuilder {
             set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 x_ms_meta: None,
@@ -870,16 +1030,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_access_policy(
-            &self,
-            container_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_access_policy::RequestBuilder {
+        pub fn get_access_policy(&self, container_name: impl Into<String>) -> get_access_policy::RequestBuilder {
             get_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 x_ms_client_request_id: None,
@@ -889,16 +1043,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_access_policy(
-            &self,
-            container_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_access_policy::RequestBuilder {
+        pub fn set_access_policy(&self, container_name: impl Into<String>) -> set_access_policy::RequestBuilder {
             set_access_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 container_acl: None,
                 timeout: None,
                 x_ms_lease_id: None,
@@ -912,12 +1060,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn restore(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> restore::RequestBuilder {
+        pub fn restore(&self, container_name: impl Into<String>) -> restore::RequestBuilder {
             restore::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
                 x_ms_deleted_container_name: None,
@@ -928,18 +1074,11 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `x_ms_source_container_name`: Required.  Specifies the name of the container to rename."]
-        pub fn rename(
-            &self,
-            container_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-            x_ms_source_container_name: impl Into<String>,
-        ) -> rename::RequestBuilder {
+        pub fn rename(&self, container_name: impl Into<String>, x_ms_source_container_name: impl Into<String>) -> rename::RequestBuilder {
             rename::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_source_container_name: x_ms_source_container_name.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -953,14 +1092,12 @@ pub mod container {
         #[doc = "* `body`: Initial data"]
         #[doc = "* `content_length`: The length of the request."]
         #[doc = "* `content_type`: Required. The value of this header must be multipart/mixed with a batch boundary. Example header value: multipart/mixed; boundary=batch_<GUID>"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn submit_batch(
             &self,
             container_name: impl Into<String>,
             body: impl Into<serde_json::Value>,
             content_length: i64,
             content_type: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> submit_batch::RequestBuilder {
             submit_batch::RequestBuilder {
                 client: self.0.clone(),
@@ -968,7 +1105,6 @@ pub mod container {
                 body: body.into(),
                 content_length,
                 content_type: content_type.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -977,12 +1113,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn filter_blobs(&self, container_name: impl Into<String>, x_ms_version: impl Into<String>) -> filter_blobs::RequestBuilder {
+        pub fn filter_blobs(&self, container_name: impl Into<String>) -> filter_blobs::RequestBuilder {
             filter_blobs::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
                 where_: None,
@@ -995,18 +1129,15 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn acquire_lease(
             &self,
             container_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> acquire_lease::RequestBuilder {
             acquire_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_duration: None,
                 x_ms_proposed_lease_id: None,
@@ -1021,20 +1152,17 @@ pub mod container {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
         #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn release_lease(
             &self,
             container_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> release_lease::RequestBuilder {
             release_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -1047,20 +1175,17 @@ pub mod container {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
         #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn renew_lease(
             &self,
             container_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> renew_lease::RequestBuilder {
             renew_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -1072,18 +1197,11 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn break_lease(
-            &self,
-            container_name: impl Into<String>,
-            x_ms_lease_action: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> break_lease::RequestBuilder {
+        pub fn break_lease(&self, container_name: impl Into<String>, x_ms_lease_action: impl Into<String>) -> break_lease::RequestBuilder {
             break_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_break_period: None,
                 if_modified_since: None,
@@ -1098,14 +1216,12 @@ pub mod container {
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
         #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
         #[doc = "* `x_ms_proposed_lease_id`: Proposed lease ID, in a GUID string format. The Blob service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn change_lease(
             &self,
             container_name: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_proposed_lease_id: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> change_lease::RequestBuilder {
             change_lease::RequestBuilder {
                 client: self.0.clone(),
@@ -1113,7 +1229,6 @@ pub mod container {
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_proposed_lease_id: x_ms_proposed_lease_id.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -1124,16 +1239,10 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn list_blob_flat_segment(
-            &self,
-            container_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> list_blob_flat_segment::RequestBuilder {
+        pub fn list_blob_flat_segment(&self, container_name: impl Into<String>) -> list_blob_flat_segment::RequestBuilder {
             list_blob_flat_segment::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
                 prefix: None,
                 marker: None,
                 maxresults: None,
@@ -1147,18 +1256,15 @@ pub mod container {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `delimiter`: When the request includes this parameter, the operation returns a BlobPrefix element in the response body that acts as a placeholder for all blobs whose names begin with the same substring up to the appearance of the delimiter character. The delimiter may be a single character or a string."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn list_blob_hierarchy_segment(
             &self,
             container_name: impl Into<String>,
             delimiter: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> list_blob_hierarchy_segment::RequestBuilder {
             list_blob_hierarchy_segment::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 delimiter: delimiter.into(),
-                x_ms_version: x_ms_version.into(),
                 prefix: None,
                 marker: None,
                 maxresults: None,
@@ -1171,27 +1277,20 @@ pub mod container {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_account_info(
-            &self,
-            container_name: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_account_info::RequestBuilder {
+        pub fn get_account_info(&self, container_name: impl Into<String>) -> get_account_info::RequestBuilder {
             get_account_info::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
-                x_ms_version: x_ms_version.into(),
             }
         }
     }
     pub mod get_properties {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -1212,7 +1311,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1225,27 +1325,19 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1253,12 +1345,11 @@ pub mod container {
     }
     pub mod create {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_blob_public_access: Option<String>,
@@ -1297,7 +1388,8 @@ pub mod container {
                 self.x_ms_deny_encryption_scope_override = Some(x_ms_deny_encryption_scope_override);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1310,6 +1402,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1319,7 +1412,6 @@ pub mod container {
                         if let Some(x_ms_blob_public_access) = &this.x_ms_blob_public_access {
                             req.insert_header("x-ms-blob-public-access", x_ms_blob_public_access);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1334,15 +1426,7 @@ pub mod container {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1350,12 +1434,11 @@ pub mod container {
     }
     pub mod delete {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
@@ -1388,7 +1471,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1401,6 +1485,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1413,21 +1498,12 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1435,12 +1511,11 @@ pub mod container {
     }
     pub mod set_metadata {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_meta: Option<String>,
@@ -1473,7 +1548,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1489,6 +1565,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1501,21 +1578,12 @@ pub mod container {
                         if let Some(if_modified_since) = &this.if_modified_since {
                             req.insert_header("if-modified-since", &if_modified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1523,12 +1591,70 @@ pub mod container {
     }
     pub mod get_access_policy {
         use super::models;
-        type Response = models::SignedIdentifiers;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SignedIdentifiers> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SignedIdentifiers = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Indicated whether data in the container may be accessed publicly and the level of access"]
+            pub fn x_ms_blob_public_access(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-blob-public-access"))
+            }
+            #[doc = "The ETag contains a value that you can use to perform operations conditionally. If the request version is 2011-08-18 or newer, the ETag value will be in quotes."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -1549,7 +1675,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1565,44 +1692,35 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SignedIdentifiers = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SignedIdentifiers>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod set_access_policy {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) container_acl: Option<models::SignedIdentifiers>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -1647,7 +1765,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1663,6 +1782,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = if let Some(container_acl) = &this.container_acl {
                             req.insert_header("content-type", "application/xml");
                             azure_core::to_json(container_acl)?
@@ -1684,20 +1804,11 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1705,12 +1816,11 @@ pub mod container {
     }
     pub mod restore {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_deleted_container_name: Option<String>,
@@ -1737,7 +1847,8 @@ pub mod container {
                 self.x_ms_deleted_container_version = Some(x_ms_deleted_container_version.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1753,10 +1864,10 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1768,15 +1879,7 @@ pub mod container {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1784,12 +1887,11 @@ pub mod container {
     }
     pub mod rename {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_source_container_name: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -1811,7 +1913,8 @@ pub mod container {
                 self.x_ms_source_lease_id = Some(x_ms_source_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1827,10 +1930,10 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1840,15 +1943,7 @@ pub mod container {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1856,7 +1951,48 @@ pub mod container {
     }
     pub mod submit_batch {
         use super::models;
-        type Response = serde_json::Value;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
+                let bytes = self.0.into_body().collect().await?;
+                let body = bytes;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The media type of the body of the response. For batch requests, this is multipart/mixed; boundary=batchresponse_GUID"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1864,7 +2000,6 @@ pub mod container {
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
             pub(crate) content_type: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -1879,7 +2014,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1895,43 +2031,80 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.insert_header("content-length", &this.content_length.to_string());
                         req.insert_header("content-type", &this.content_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<bytes::Bytes>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod filter_blobs {
         use super::models;
-        type Response = models::FilterBlobSegment;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::FilterBlobSegment> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::FilterBlobSegment = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) where_: Option<String>,
@@ -1964,7 +2137,8 @@ pub mod container {
                 self.maxresults = Some(maxresults);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1980,10 +2154,10 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1998,33 +2172,24 @@ pub mod container {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::FilterBlobSegment = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FilterBlobSegment>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod acquire_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_duration: Option<i64>,
             pub(crate) x_ms_proposed_lease_id: Option<String>,
@@ -2063,7 +2228,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2079,6 +2245,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -2095,21 +2262,12 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -2117,14 +2275,13 @@ pub mod container {
     }
     pub mod release_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -2151,7 +2308,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2167,6 +2325,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -2178,21 +2337,12 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -2200,14 +2350,13 @@ pub mod container {
     }
     pub mod renew_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -2234,7 +2383,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2250,6 +2400,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -2261,21 +2412,12 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -2283,13 +2425,12 @@ pub mod container {
     }
     pub mod break_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_break_period: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
@@ -2322,7 +2463,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2338,6 +2480,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -2351,21 +2494,12 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -2373,7 +2507,7 @@ pub mod container {
     }
     pub mod change_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2381,7 +2515,6 @@ pub mod container {
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_proposed_lease_id: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -2408,7 +2541,8 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2424,6 +2558,7 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -2436,21 +2571,12 @@ pub mod container {
                         if let Some(if_unmodified_since) = &this.if_unmodified_since {
                             req.insert_header("if-unmodified-since", &if_unmodified_since.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -2458,12 +2584,61 @@ pub mod container {
     }
     pub mod list_blob_flat_segment {
         use super::models;
-        type Response = models::ListBlobsFlatSegmentResponse;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ListBlobsFlatSegmentResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ListBlobsFlatSegmentResponse = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The media type of the body of the response. For List Blobs this is 'application/xml'"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
@@ -2502,7 +2677,7 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ListBlobsFlatSegmentResponse, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -2534,6 +2709,7 @@ pub mod container {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                                 if let Some(prefix) = &this.prefix {
                                     req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -2546,7 +2722,6 @@ pub mod container {
                                 if let Some(timeout) = &this.timeout {
                                     req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -2555,18 +2730,14 @@ pub mod container {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ListBlobsFlatSegmentResponse = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -2575,13 +2746,62 @@ pub mod container {
     }
     pub mod list_blob_hierarchy_segment {
         use super::models;
-        type Response = models::ListBlobsHierarchySegmentResponse;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ListBlobsHierarchySegmentResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ListBlobsHierarchySegmentResponse = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "The media type of the body of the response. For List Blobs this is 'application/xml'"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) delimiter: String,
-            pub(crate) x_ms_version: String,
             pub(crate) prefix: Option<String>,
             pub(crate) marker: Option<String>,
             pub(crate) maxresults: Option<i64>,
@@ -2620,7 +2840,7 @@ pub mod container {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ListBlobsHierarchySegmentResponse, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -2652,6 +2872,7 @@ pub mod container {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                                 if let Some(prefix) = &this.prefix {
                                     req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -2666,7 +2887,6 @@ pub mod container {
                                 if let Some(timeout) = &this.timeout {
                                     req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -2675,18 +2895,14 @@ pub mod container {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ListBlobsHierarchySegmentResponse = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -2695,15 +2911,15 @@ pub mod container {
     }
     pub mod get_account_info {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
-            pub(crate) x_ms_version: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2719,18 +2935,10 @@ pub mod container {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -2746,18 +2954,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn download(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> download::RequestBuilder {
+        pub fn download(&self, container_name: impl Into<String>, blob: impl Into<String>) -> download::RequestBuilder {
             download::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 versionid: None,
                 timeout: None,
@@ -2781,18 +2982,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn delete(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> delete::RequestBuilder {
+        pub fn delete(&self, container_name: impl Into<String>, blob: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 versionid: None,
                 timeout: None,
@@ -2812,18 +3006,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, container_name: impl Into<String>, blob: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 versionid: None,
                 timeout: None,
@@ -2844,18 +3031,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn undelete(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> undelete::RequestBuilder {
+        pub fn undelete(&self, container_name: impl Into<String>, blob: impl Into<String>) -> undelete::RequestBuilder {
             undelete::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -2865,20 +3045,17 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `x_ms_expiry_option`: Required. Indicates mode of the expiry time"]
         pub fn set_expiry(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
             x_ms_expiry_option: impl Into<String>,
         ) -> set_expiry::RequestBuilder {
             set_expiry::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_expiry_option: x_ms_expiry_option.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -2890,18 +3067,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_http_headers(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_http_headers::RequestBuilder {
+        pub fn set_http_headers(&self, container_name: impl Into<String>, blob: impl Into<String>) -> set_http_headers::RequestBuilder {
             set_http_headers::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_blob_cache_control: None,
                 x_ms_blob_content_type: None,
@@ -2923,18 +3093,15 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_immutability_policy(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> set_immutability_policy::RequestBuilder {
             set_immutability_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
                 if_unmodified_since: None,
@@ -2947,18 +3114,15 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn delete_immutability_policy(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> delete_immutability_policy::RequestBuilder {
             delete_immutability_policy::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -2968,20 +3132,17 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `x_ms_legal_hold`: Specified if a legal hold should be set on the blob."]
         pub fn set_legal_hold(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
             x_ms_legal_hold: bool,
         ) -> set_legal_hold::RequestBuilder {
             set_legal_hold::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_legal_hold,
                 timeout: None,
                 x_ms_client_request_id: None,
@@ -2992,18 +3153,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_metadata(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_metadata::RequestBuilder {
+        pub fn set_metadata(&self, container_name: impl Into<String>, blob: impl Into<String>) -> set_metadata::RequestBuilder {
             set_metadata::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_lease_id: None,
@@ -3025,20 +3179,17 @@ pub mod blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn acquire_lease(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> acquire_lease::RequestBuilder {
             acquire_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_duration: None,
                 x_ms_proposed_lease_id: None,
@@ -3057,14 +3208,12 @@ pub mod blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
         #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn release_lease(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> release_lease::RequestBuilder {
             release_lease::RequestBuilder {
                 client: self.0.clone(),
@@ -3072,7 +3221,6 @@ pub mod blob {
                 blob: blob.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -3089,14 +3237,12 @@ pub mod blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
         #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn renew_lease(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> renew_lease::RequestBuilder {
             renew_lease::RequestBuilder {
                 client: self.0.clone(),
@@ -3104,7 +3250,6 @@ pub mod blob {
                 blob: blob.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -3122,7 +3267,6 @@ pub mod blob {
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
         #[doc = "* `x_ms_lease_id`: Specifies the current lease ID on the resource."]
         #[doc = "* `x_ms_proposed_lease_id`: Proposed lease ID, in a GUID string format. The Blob service returns 400 (Invalid request) if the proposed lease ID is not in the correct format. See Guid Constructor (String) for a list of valid GUID string formats."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn change_lease(
             &self,
             container_name: impl Into<String>,
@@ -3130,7 +3274,6 @@ pub mod blob {
             x_ms_lease_action: impl Into<String>,
             x_ms_lease_id: impl Into<String>,
             x_ms_proposed_lease_id: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> change_lease::RequestBuilder {
             change_lease::RequestBuilder {
                 client: self.0.clone(),
@@ -3139,7 +3282,6 @@ pub mod blob {
                 x_ms_lease_action: x_ms_lease_action.into(),
                 x_ms_lease_id: x_ms_lease_id.into(),
                 x_ms_proposed_lease_id: x_ms_proposed_lease_id.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -3155,20 +3297,17 @@ pub mod blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_lease_action`: Describes what lease action to take."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn break_lease(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_lease_action: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> break_lease::RequestBuilder {
             break_lease::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_lease_action: x_ms_lease_action.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_break_period: None,
                 if_modified_since: None,
@@ -3184,18 +3323,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn create_snapshot(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> create_snapshot::RequestBuilder {
+        pub fn create_snapshot(&self, container_name: impl Into<String>, blob: impl Into<String>) -> create_snapshot::RequestBuilder {
             create_snapshot::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_encryption_key: None,
@@ -3217,20 +3349,17 @@ pub mod blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_copy_source`: Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must either be public or must be authenticated via a shared access signature."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn start_copy_from_url(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> start_copy_from_url::RequestBuilder {
             start_copy_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_access_tier: None,
@@ -3261,14 +3390,12 @@ pub mod blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_requires_sync`: This header indicates that this is a synchronous Copy Blob From URL instead of a Asynchronous Copy Blob."]
         #[doc = "* `x_ms_copy_source`: Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must either be public or must be authenticated via a shared access signature."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn copy_from_url(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_requires_sync: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> copy_from_url::RequestBuilder {
             copy_from_url::RequestBuilder {
                 client: self.0.clone(),
@@ -3276,7 +3403,6 @@ pub mod blob {
                 blob: blob.into(),
                 x_ms_requires_sync: x_ms_requires_sync.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_meta: None,
                 x_ms_access_tier: None,
@@ -3307,20 +3433,17 @@ pub mod blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_copy_action`: Copy action."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn abort_copy_from_url(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_copy_action: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> abort_copy_from_url::RequestBuilder {
             abort_copy_from_url::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_copy_action: x_ms_copy_action.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 x_ms_client_request_id: None,
@@ -3332,20 +3455,17 @@ pub mod blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_access_tier`: Indicates the tier to be set on the blob."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_tier(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_access_tier: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> set_tier::RequestBuilder {
             set_tier::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_access_tier: x_ms_access_tier.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 versionid: None,
                 timeout: None,
@@ -3360,18 +3480,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_account_info(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_account_info::RequestBuilder {
+        pub fn get_account_info(&self, container_name: impl Into<String>, blob: impl Into<String>) -> get_account_info::RequestBuilder {
             get_account_info::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
             }
         }
         #[doc = "The Query operation enables users to select/project on blob data by providing simple query expressions."]
@@ -3379,18 +3492,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn query(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> query::RequestBuilder {
+        pub fn query(&self, container_name: impl Into<String>, blob: impl Into<String>) -> query::RequestBuilder {
             query::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 query_request: None,
                 snapshot: None,
                 timeout: None,
@@ -3411,18 +3517,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_tags(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_tags::RequestBuilder {
+        pub fn get_tags(&self, container_name: impl Into<String>, blob: impl Into<String>) -> get_tags::RequestBuilder {
             get_tags::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
                 snapshot: None,
@@ -3436,18 +3535,11 @@ pub mod blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn set_tags(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> set_tags::RequestBuilder {
+        pub fn set_tags(&self, container_name: impl Into<String>, blob: impl Into<String>) -> set_tags::RequestBuilder {
             set_tags::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 versionid: None,
                 content_md5: None,
@@ -3461,17 +3553,231 @@ pub mod blob {
     }
     pub mod download {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(serde_json::Value),
-            PartialContent206(serde_json::Value),
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
+                let bytes = self.0.into_body().collect().await?;
+                let body = bytes;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            pub fn x_ms_meta(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-meta"))
+            }
+            #[doc = "Optional. Only valid when Object Replication is enabled for the storage container and on the destination blob of the replication."]
+            pub fn x_ms_or_policy_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-or-policy-id"))
+            }
+            #[doc = "Optional. Only valid when Object Replication is enabled for the storage container and on the source blob of the replication. When retrieving this header, it will return the header with the policy id and rule id (e.g. x-ms-or-policyid_ruleid), and the value will be the status of the replication (e.g. complete, failed)."]
+            pub fn x_ms_or(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-or"))
+            }
+            #[doc = "The number of bytes present in the response body."]
+            pub fn content_length(&self) -> azure_core::Result<i64> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
+            }
+            #[doc = "The media type of the body of the response. For Download Blob this is 'application/octet-stream'"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "Indicates the range of bytes returned in the event that the client requested a subset of the blob by setting the 'Range' request header."]
+            pub fn content_range(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-range"))
+            }
+            #[doc = "The ETag contains a value that you can use to perform operations conditionally. If the request version is 2011-08-18 or newer, the ETag value will be in quotes."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the client can check for message content integrity."]
+            pub fn content_md5(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-md5"))
+            }
+            #[doc = "This header returns the value that was specified for the Content-Encoding request header"]
+            pub fn content_encoding(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-encoding"))
+            }
+            #[doc = "This header is returned if it was previously specified for the blob."]
+            pub fn cache_control(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("cache-control"))
+            }
+            #[doc = "This header returns the value that was specified for the 'x-ms-blob-content-disposition' header. The Content-Disposition response header field conveys additional information about how to process the response payload, and also can be used to attach additional metadata. For example, if set to attachment, it indicates that the user-agent should not display the response, but instead show a Save As dialog with a filename other than the blob name specified."]
+            pub fn content_disposition(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-disposition"))
+            }
+            #[doc = "This header returns the value that was specified for the Content-Language request header."]
+            pub fn content_language(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-language"))
+            }
+            #[doc = "The current sequence number for a page blob. This header is not returned for block blobs or append blobs"]
+            pub fn x_ms_blob_sequence_number(&self) -> azure_core::Result<i64> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-sequence-number"))
+            }
+            #[doc = "The blob's type."]
+            pub fn x_ms_blob_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-blob-type"))
+            }
+            #[doc = "Conclusion time of the last attempted Copy Blob operation where this blob was the destination blob. This value can specify the time of a completed, aborted, or failed copy attempt. This header does not appear if a copy is pending, if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List."]
+            pub fn x_ms_copy_completion_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(
+                    self.0
+                        .get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-completion-time"))?,
+                )
+            }
+            #[doc = "Only appears when x-ms-copy-status is failed or pending. Describes the cause of the last fatal or non-fatal copy operation failure. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List"]
+            pub fn x_ms_copy_status_description(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-status-description"))
+            }
+            #[doc = "String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or pass to Abort Copy Blob to abort a pending copy."]
+            pub fn x_ms_copy_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-id"))
+            }
+            #[doc = "Contains the number of bytes copied and the total bytes in the source in the last attempted Copy Blob operation where this blob was the destination blob. Can show between 0 and Content-Length bytes copied. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List"]
+            pub fn x_ms_copy_progress(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-progress"))
+            }
+            #[doc = "URL up to 2 KB in length that specifies the source blob or file used in the last attempted Copy Blob operation where this blob was the destination blob. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List."]
+            pub fn x_ms_copy_source(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-source"))
+            }
+            #[doc = "State of the copy operation identified by x-ms-copy-id."]
+            pub fn x_ms_copy_status(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-status"))
+            }
+            #[doc = "When a blob is leased, specifies whether the lease is of infinite or fixed duration."]
+            pub fn x_ms_lease_duration(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-lease-duration"))
+            }
+            #[doc = "Lease state of the blob."]
+            pub fn x_ms_lease_state(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-lease-state"))
+            }
+            #[doc = "The current lease status of the blob."]
+            pub fn x_ms_lease_status(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-lease-status"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "A DateTime value returned by the service that uniquely identifies the blob. The value of this header indicates the blob version, and may be used in subsequent requests to access this version of the blob."]
+            pub fn x_ms_version_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version-id"))
+            }
+            #[doc = "The value of this header indicates whether version of this blob is a current version, see also x-ms-version-id header."]
+            pub fn x_ms_is_current_version(&self) -> azure_core::Result<bool> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-is-current-version"))
+            }
+            #[doc = "Indicates that the service supports requests for partial blob content."]
+            pub fn accept_ranges(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("accept-ranges"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "The number of committed blocks present in the blob. This header is returned only for append blobs."]
+            pub fn x_ms_blob_committed_block_count(&self) -> azure_core::Result<i32> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-committed-block-count"))
+            }
+            #[doc = "The value of this header is set to true if the blob data and application metadata are completely encrypted using the specified algorithm. Otherwise, the value is set to false (when the blob is unencrypted, or if only parts of the blob/application metadata are encrypted)."]
+            pub fn x_ms_server_encrypted(&self) -> azure_core::Result<bool> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-server-encrypted"))
+            }
+            #[doc = "The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted with a customer-provided key."]
+            pub fn x_ms_encryption_key_sha256(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-encryption-key-sha256"))
+            }
+            #[doc = "Returns the name of the encryption scope used to encrypt the blob contents and application metadata.  Note that the absence of this header implies use of the default account encryption scope."]
+            pub fn x_ms_encryption_scope(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-encryption-scope"))
+            }
+            #[doc = "If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5 header, with the latter calculated from the requested range"]
+            pub fn x_ms_blob_content_md5(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-blob-content-md5"))
+            }
+            #[doc = "The number of tags associated with the blob"]
+            pub fn x_ms_tag_count(&self) -> azure_core::Result<i64> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("x-ms-tag-count"))
+            }
+            #[doc = "If this blob has been sealed"]
+            pub fn x_ms_blob_sealed(&self) -> azure_core::Result<bool> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-sealed"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the blob was last read or written to"]
+            pub fn x_ms_last_access_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(
+                    self.0
+                        .get_str(&azure_core::headers::HeaderName::from_static("x-ms-last-access-time"))?,
+                )
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the blob immutability policy will expire."]
+            pub fn x_ms_immutability_policy_until_date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(
+                    self.0
+                        .get_str(&azure_core::headers::HeaderName::from_static("x-ms-immutability-policy-until-date"))?,
+                )
+            }
+            #[doc = "Indicates immutability policy mode."]
+            pub fn x_ms_immutability_policy_mode(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-immutability-policy-mode"))
+            }
+            #[doc = "Indicates if a legal hold is present on the blob."]
+            pub fn x_ms_legal_hold(&self) -> azure_core::Result<bool> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("x-ms-legal-hold"))
+            }
+            #[doc = "If the request is to read a specified range and the x-ms-range-get-content-crc64 is set to true, then the request returns a crc64 for the range, as long as the range size is less than or equal to 4 MB. If both x-ms-range-get-content-crc64 & x-ms-range-get-content-md5 is specified in the same request, it will fail with 400(Bad Request)"]
+            pub fn x_ms_content_crc64(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-content-crc64"))
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) versionid: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -3570,7 +3876,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3582,6 +3889,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(snapshot) = &this.snapshot {
                             req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                         }
@@ -3627,44 +3935,29 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::PartialContent => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::PartialContent206(rsp_value))
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<bytes::Bytes>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) versionid: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -3739,7 +4032,8 @@ pub mod blob {
                 self.deletetype = Some(deletetype.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3751,6 +4045,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(snapshot) = &this.snapshot {
                             req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                         }
@@ -3781,7 +4076,6 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -3790,15 +4084,7 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -3806,13 +4092,12 @@ pub mod blob {
     }
     pub mod get_properties {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) versionid: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -3893,7 +4178,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -3905,6 +4191,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(snapshot) = &this.snapshot {
                             req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                         }
@@ -3941,21 +4228,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -3963,13 +4241,12 @@ pub mod blob {
     }
     pub mod undelete {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -3984,7 +4261,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4001,24 +4279,16 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4026,13 +4296,12 @@ pub mod blob {
     }
     pub mod set_expiry {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_expiry_option: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -4054,7 +4323,8 @@ pub mod blob {
                 self.x_ms_expiry_time = Some(x_ms_expiry_time.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4071,10 +4341,10 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -4084,15 +4354,7 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4100,13 +4362,12 @@ pub mod blob {
     }
     pub mod set_http_headers {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_blob_cache_control: Option<String>,
             pub(crate) x_ms_blob_content_type: Option<String>,
@@ -4193,7 +4454,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4210,6 +4472,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -4249,21 +4512,12 @@ pub mod blob {
                         if let Some(x_ms_blob_content_disposition) = &this.x_ms_blob_content_disposition {
                             req.insert_header("x-ms-blob-content-disposition", x_ms_blob_content_disposition);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4271,13 +4525,12 @@ pub mod blob {
     }
     pub mod set_immutability_policy {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -4313,7 +4566,8 @@ pub mod blob {
                 self.x_ms_immutability_policy_mode = Some(x_ms_immutability_policy_mode.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4330,10 +4584,10 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -4351,15 +4605,7 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4367,13 +4613,12 @@ pub mod blob {
     }
     pub mod delete_immutability_policy {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -4388,7 +4633,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4405,24 +4651,16 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4430,13 +4668,12 @@ pub mod blob {
     }
     pub mod set_legal_hold {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_legal_hold: bool,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -4452,7 +4689,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4469,25 +4707,17 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.insert_header("x-ms-legal-hold", &this.x_ms_legal_hold.to_string());
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4495,13 +4725,12 @@ pub mod blob {
     }
     pub mod set_metadata {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -4582,7 +4811,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4599,6 +4829,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -4635,21 +4866,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4657,14 +4879,13 @@ pub mod blob {
     }
     pub mod acquire_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_duration: Option<i64>,
             pub(crate) x_ms_proposed_lease_id: Option<String>,
@@ -4721,7 +4942,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4738,6 +4960,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4763,21 +4986,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4785,7 +4999,7 @@ pub mod blob {
     }
     pub mod release_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4793,7 +5007,6 @@ pub mod blob {
             pub(crate) blob: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -4838,7 +5051,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4855,6 +5069,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4875,21 +5090,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -4897,7 +5103,7 @@ pub mod blob {
     }
     pub mod renew_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4905,7 +5111,6 @@ pub mod blob {
             pub(crate) blob: String,
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -4950,7 +5155,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -4967,6 +5173,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -4987,21 +5194,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5009,7 +5207,7 @@ pub mod blob {
     }
     pub mod change_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5018,7 +5216,6 @@ pub mod blob {
             pub(crate) x_ms_lease_action: String,
             pub(crate) x_ms_lease_id: String,
             pub(crate) x_ms_proposed_lease_id: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -5063,7 +5260,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5080,6 +5278,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -5101,21 +5300,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5123,14 +5313,13 @@ pub mod blob {
     }
     pub mod break_lease {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_lease_action: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_break_period: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
@@ -5181,7 +5370,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5198,6 +5388,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-lease-action", &this.x_ms_lease_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -5220,21 +5411,12 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5242,13 +5424,12 @@ pub mod blob {
     }
     pub mod create_snapshot {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_encryption_key: Option<String>,
@@ -5329,7 +5510,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5346,6 +5528,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -5382,21 +5565,12 @@ pub mod blob {
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5404,14 +5578,13 @@ pub mod blob {
     }
     pub mod start_copy_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_copy_source: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
@@ -5543,7 +5716,8 @@ pub mod blob {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5560,6 +5734,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -5606,7 +5781,6 @@ pub mod blob {
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -5630,15 +5804,7 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5646,7 +5812,7 @@ pub mod blob {
     }
     pub mod copy_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5654,7 +5820,6 @@ pub mod blob {
             pub(crate) blob: String,
             pub(crate) x_ms_requires_sync: String,
             pub(crate) x_ms_copy_source: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_meta: Option<String>,
             pub(crate) x_ms_access_tier: Option<String>,
@@ -5792,7 +5957,8 @@ pub mod blob {
                 self.x_ms_copy_source_tag_option = Some(x_ms_copy_source_tag_option.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5809,6 +5975,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-requires-sync", &this.x_ms_requires_sync);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -5850,7 +6017,6 @@ pub mod blob {
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -5883,15 +6049,7 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5899,14 +6057,13 @@ pub mod blob {
     }
     pub mod abort_copy_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_copy_action: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -5927,7 +6084,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -5944,6 +6102,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-copy-action", &this.x_ms_copy_action);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -5951,21 +6110,12 @@ pub mod blob {
                         if let Some(x_ms_lease_id) = &this.x_ms_lease_id {
                             req.insert_header("x-ms-lease-id", x_ms_lease_id);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -5973,18 +6123,13 @@ pub mod blob {
     }
     pub mod set_tier {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_access_tier: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) versionid: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -6029,7 +6174,8 @@ pub mod blob {
                 self.x_ms_if_tags = Some(x_ms_if_tags.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6046,6 +6192,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(snapshot) = &this.snapshot {
                             req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                         }
@@ -6059,7 +6206,6 @@ pub mod blob {
                         if let Some(x_ms_rehydrate_priority) = &this.x_ms_rehydrate_priority {
                             req.insert_header("x-ms-rehydrate-priority", x_ms_rehydrate_priority);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -6071,16 +6217,7 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -6088,16 +6225,16 @@ pub mod blob {
     }
     pub mod get_account_info {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6114,18 +6251,10 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -6133,17 +6262,183 @@ pub mod blob {
     }
     pub mod query {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(serde_json::Value),
-            PartialContent206(serde_json::Value),
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<bytes::Bytes> {
+                let bytes = self.0.into_body().collect().await?;
+                let body = bytes;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            pub fn x_ms_meta(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-meta"))
+            }
+            #[doc = "The number of bytes present in the response body."]
+            pub fn content_length(&self) -> azure_core::Result<i64> {
+                self.0.get_as(&azure_core::headers::HeaderName::from_static("content-length"))
+            }
+            #[doc = "The media type of the body of the response. For Download Blob this is 'application/octet-stream'"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "Indicates the range of bytes returned in the event that the client requested a subset of the blob by setting the 'Range' request header."]
+            pub fn content_range(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-range"))
+            }
+            #[doc = "The ETag contains a value that you can use to perform operations conditionally. If the request version is 2011-08-18 or newer, the ETag value will be in quotes."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "If the blob has an MD5 hash and this operation is to read the full blob, this response header is returned so that the client can check for message content integrity."]
+            pub fn content_md5(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-md5"))
+            }
+            #[doc = "This header returns the value that was specified for the Content-Encoding request header"]
+            pub fn content_encoding(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-encoding"))
+            }
+            #[doc = "This header is returned if it was previously specified for the blob."]
+            pub fn cache_control(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("cache-control"))
+            }
+            #[doc = "This header returns the value that was specified for the 'x-ms-blob-content-disposition' header. The Content-Disposition response header field conveys additional information about how to process the response payload, and also can be used to attach additional metadata. For example, if set to attachment, it indicates that the user-agent should not display the response, but instead show a Save As dialog with a filename other than the blob name specified."]
+            pub fn content_disposition(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-disposition"))
+            }
+            #[doc = "This header returns the value that was specified for the Content-Language request header."]
+            pub fn content_language(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-language"))
+            }
+            #[doc = "The current sequence number for a page blob. This header is not returned for block blobs or append blobs"]
+            pub fn x_ms_blob_sequence_number(&self) -> azure_core::Result<i64> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-sequence-number"))
+            }
+            #[doc = "The blob's type."]
+            pub fn x_ms_blob_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-blob-type"))
+            }
+            #[doc = "Conclusion time of the last attempted Copy Blob operation where this blob was the destination blob. This value can specify the time of a completed, aborted, or failed copy attempt. This header does not appear if a copy is pending, if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List."]
+            pub fn x_ms_copy_completion_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(
+                    self.0
+                        .get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-completion-time"))?,
+                )
+            }
+            #[doc = "Only appears when x-ms-copy-status is failed or pending. Describes the cause of the last fatal or non-fatal copy operation failure. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List"]
+            pub fn x_ms_copy_status_description(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-status-description"))
+            }
+            #[doc = "String identifier for this copy operation. Use with Get Blob Properties to check the status of this copy operation, or pass to Abort Copy Blob to abort a pending copy."]
+            pub fn x_ms_copy_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-id"))
+            }
+            #[doc = "Contains the number of bytes copied and the total bytes in the source in the last attempted Copy Blob operation where this blob was the destination blob. Can show between 0 and Content-Length bytes copied. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List"]
+            pub fn x_ms_copy_progress(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-progress"))
+            }
+            #[doc = "URL up to 2 KB in length that specifies the source blob or file used in the last attempted Copy Blob operation where this blob was the destination blob. This header does not appear if this blob has never been the destination in a Copy Blob operation, or if this blob has been modified after a concluded Copy Blob operation using Set Blob Properties, Put Blob, or Put Block List."]
+            pub fn x_ms_copy_source(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-source"))
+            }
+            #[doc = "State of the copy operation identified by x-ms-copy-id."]
+            pub fn x_ms_copy_status(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-copy-status"))
+            }
+            #[doc = "When a blob is leased, specifies whether the lease is of infinite or fixed duration."]
+            pub fn x_ms_lease_duration(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-lease-duration"))
+            }
+            #[doc = "Lease state of the blob."]
+            pub fn x_ms_lease_state(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-lease-state"))
+            }
+            #[doc = "The current lease status of the blob."]
+            pub fn x_ms_lease_status(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-lease-status"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "Indicates that the service supports requests for partial blob content."]
+            pub fn accept_ranges(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("accept-ranges"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "The number of committed blocks present in the blob. This header is returned only for append blobs."]
+            pub fn x_ms_blob_committed_block_count(&self) -> azure_core::Result<i32> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-committed-block-count"))
+            }
+            #[doc = "The value of this header is set to true if the blob data and application metadata are completely encrypted using the specified algorithm. Otherwise, the value is set to false (when the blob is unencrypted, or if only parts of the blob/application metadata are encrypted)."]
+            pub fn x_ms_server_encrypted(&self) -> azure_core::Result<bool> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-server-encrypted"))
+            }
+            #[doc = "The SHA-256 hash of the encryption key used to encrypt the blob. This header is only returned when the blob was encrypted with a customer-provided key."]
+            pub fn x_ms_encryption_key_sha256(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-encryption-key-sha256"))
+            }
+            #[doc = "Returns the name of the encryption scope used to encrypt the blob contents and application metadata.  Note that the absence of this header implies use of the default account encryption scope."]
+            pub fn x_ms_encryption_scope(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-encryption-scope"))
+            }
+            #[doc = "If the blob has a MD5 hash, and if request contains range header (Range or x-ms-range), this response header is returned with the value of the whole blob's MD5 value. This value may or may not be equal to the value returned in Content-MD5 header, with the latter calculated from the requested range"]
+            pub fn x_ms_blob_content_md5(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-blob-content-md5"))
+            }
+            #[doc = "If the request is to read a specified range and the x-ms-range-get-content-crc64 is set to true, then the request returns a crc64 for the range, as long as the range size is less than or equal to 4 MB. If both x-ms-range-get-content-crc64 and x-ms-range-get-content-md5 is specified in the same request, it will fail with 400(Bad Request)"]
+            pub fn x_ms_content_crc64(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-content-crc64"))
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) query_request: Option<models::QueryRequest>,
             pub(crate) snapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -6224,7 +6519,8 @@ pub mod blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6241,6 +6537,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = if let Some(query_request) = &this.query_request {
                             req.insert_header("content-type", "application/xml");
                             azure_core::to_json(query_request)?
@@ -6280,43 +6577,74 @@ pub mod blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::PartialContent => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: serde_json::Value = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::PartialContent206(rsp_value))
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<bytes::Bytes>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod get_tags {
         use super::models;
-        type Response = models::BlobTags;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::BlobTags> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::BlobTags = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) snapshot: Option<String>,
@@ -6355,7 +6683,8 @@ pub mod blob {
                 self.x_ms_lease_id = Some(x_ms_lease_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6372,10 +6701,10 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -6393,33 +6722,24 @@ pub mod blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::BlobTags = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BlobTags>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod set_tags {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) versionid: Option<String>,
             pub(crate) content_md5: Option<String>,
@@ -6470,7 +6790,8 @@ pub mod blob {
                 self.tags = Some(tags.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -6487,7 +6808,7 @@ pub mod blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -6516,15 +6837,7 @@ pub mod blob {
                             azure_core::EMPTY_BODY
                         };
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -6543,7 +6856,6 @@ pub mod page_blob {
         #[doc = "* `x_ms_blob_type`: Specifies the type of blob to create: block blob, page blob, or append blob."]
         #[doc = "* `content_length`: The length of the request."]
         #[doc = "* `x_ms_blob_content_length`: This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to a 512-byte boundary."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(
             &self,
             container_name: impl Into<String>,
@@ -6551,7 +6863,6 @@ pub mod page_blob {
             x_ms_blob_type: impl Into<String>,
             content_length: i64,
             x_ms_blob_content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
@@ -6560,7 +6871,6 @@ pub mod page_blob {
                 x_ms_blob_type: x_ms_blob_type.into(),
                 content_length,
                 x_ms_blob_content_length,
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_access_tier: None,
                 x_ms_blob_content_type: None,
@@ -6596,7 +6906,6 @@ pub mod page_blob {
         #[doc = "* `x_ms_page_write`: Required. You may specify one of the following options:\n  - Update: Writes the bytes specified by the request body into the specified range. The Range and Content-Length headers must match to perform the update.\n  - Clear: Clears the specified range and releases the space used in storage for that range. To clear a range, set the Content-Length header to zero, and the Range header to a value that indicates the range to clear, up to maximum blob size."]
         #[doc = "* `body`: Initial data"]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload_pages(
             &self,
             container_name: impl Into<String>,
@@ -6604,7 +6913,6 @@ pub mod page_blob {
             x_ms_page_write: impl Into<String>,
             body: impl Into<serde_json::Value>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> upload_pages::RequestBuilder {
             upload_pages::RequestBuilder {
                 client: self.0.clone(),
@@ -6613,7 +6921,6 @@ pub mod page_blob {
                 x_ms_page_write: x_ms_page_write.into(),
                 body: body.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 content_md5: None,
                 x_ms_content_crc64: None,
                 timeout: None,
@@ -6641,14 +6948,12 @@ pub mod page_blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_page_write`: Required. You may specify one of the following options:\n  - Update: Writes the bytes specified by the request body into the specified range. The Range and Content-Length headers must match to perform the update.\n  - Clear: Clears the specified range and releases the space used in storage for that range. To clear a range, set the Content-Length header to zero, and the Range header to a value that indicates the range to clear, up to maximum blob size."]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn clear_pages(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_page_write: impl Into<String>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> clear_pages::RequestBuilder {
             clear_pages::RequestBuilder {
                 client: self.0.clone(),
@@ -6656,7 +6961,6 @@ pub mod page_blob {
                 blob: blob.into(),
                 x_ms_page_write: x_ms_page_write.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_range: None,
                 x_ms_lease_id: None,
@@ -6685,7 +6989,6 @@ pub mod page_blob {
         #[doc = "* `x_ms_source_range`: Bytes of source data in the specified range. The length of this range should match the ContentLength header and x-ms-range/Range destination range header."]
         #[doc = "* `content_length`: The length of the request."]
         #[doc = "* `x_ms_range`: The range of bytes to which the source range would be written. The range should be 512 aligned and range-end is required."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload_pages_from_url(
             &self,
             container_name: impl Into<String>,
@@ -6695,7 +6998,6 @@ pub mod page_blob {
             x_ms_source_range: impl Into<String>,
             content_length: i64,
             x_ms_range: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> upload_pages_from_url::RequestBuilder {
             upload_pages_from_url::RequestBuilder {
                 client: self.0.clone(),
@@ -6706,7 +7008,6 @@ pub mod page_blob {
                 x_ms_source_range: x_ms_source_range.into(),
                 content_length,
                 x_ms_range: x_ms_range.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_source_content_md5: None,
                 x_ms_source_content_crc64: None,
                 timeout: None,
@@ -6736,18 +7037,11 @@ pub mod page_blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_page_ranges(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_page_ranges::RequestBuilder {
+        pub fn get_page_ranges(&self, container_name: impl Into<String>, blob: impl Into<String>) -> get_page_ranges::RequestBuilder {
             get_page_ranges::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 timeout: None,
                 x_ms_range: None,
@@ -6767,18 +7061,15 @@ pub mod page_blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_page_ranges_diff(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> get_page_ranges_diff::RequestBuilder {
             get_page_ranges_diff::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 timeout: None,
                 prevsnapshot: None,
@@ -6801,20 +7092,17 @@ pub mod page_blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_blob_content_length`: This header specifies the maximum size for the page blob, up to 1 TB. The page blob size must be aligned to a 512-byte boundary."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn resize(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_blob_content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> resize::RequestBuilder {
             resize::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_blob_content_length,
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 x_ms_encryption_key: None,
@@ -6835,20 +7123,17 @@ pub mod page_blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_sequence_number_action`: Required if the x-ms-blob-sequence-number header is set for the request. This property applies to page blobs only. This property indicates how the service should modify the blob's sequence number"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn update_sequence_number(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_sequence_number_action: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> update_sequence_number::RequestBuilder {
             update_sequence_number::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_sequence_number_action: x_ms_sequence_number_action.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_lease_id: None,
                 if_modified_since: None,
@@ -6866,20 +7151,17 @@ pub mod page_blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_copy_source`: Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must either be public or must be authenticated via a shared access signature."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn copy_incremental(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> copy_incremental::RequestBuilder {
             copy_incremental::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 if_modified_since: None,
                 if_unmodified_since: None,
@@ -6892,7 +7174,7 @@ pub mod page_blob {
     }
     pub mod create {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6901,7 +7183,6 @@ pub mod page_blob {
             pub(crate) x_ms_blob_type: String,
             pub(crate) content_length: i64,
             pub(crate) x_ms_blob_content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_access_tier: Option<String>,
             pub(crate) x_ms_blob_content_type: Option<String>,
@@ -7057,7 +7338,8 @@ pub mod page_blob {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -7074,6 +7356,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-blob-type", &this.x_ms_blob_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -7137,7 +7420,6 @@ pub mod page_blob {
                         if let Some(x_ms_blob_sequence_number) = &this.x_ms_blob_sequence_number {
                             req.insert_header("x-ms-blob-sequence-number", &x_ms_blob_sequence_number.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -7158,15 +7440,7 @@ pub mod page_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -7174,7 +7448,7 @@ pub mod page_blob {
     }
     pub mod upload_pages {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7183,7 +7457,6 @@ pub mod page_blob {
             pub(crate) x_ms_page_write: String,
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) content_md5: Option<String>,
             pub(crate) x_ms_content_crc64: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -7294,7 +7567,8 @@ pub mod page_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -7311,6 +7585,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
                         req.insert_header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
@@ -7366,20 +7641,11 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -7387,7 +7653,7 @@ pub mod page_blob {
     }
     pub mod clear_pages {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7395,7 +7661,6 @@ pub mod page_blob {
             pub(crate) blob: String,
             pub(crate) x_ms_page_write: String,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_range: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -7494,7 +7759,8 @@ pub mod page_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -7511,6 +7777,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
                         req.insert_header("content-length", &this.content_length.to_string());
                         if let Some(timeout) = &this.timeout {
@@ -7558,21 +7825,12 @@ pub mod page_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -7580,7 +7838,7 @@ pub mod page_blob {
     }
     pub mod upload_pages_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7591,7 +7849,6 @@ pub mod page_blob {
             pub(crate) x_ms_source_range: String,
             pub(crate) content_length: i64,
             pub(crate) x_ms_range: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_source_content_md5: Option<String>,
             pub(crate) x_ms_source_content_crc64: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -7726,7 +7983,8 @@ pub mod page_blob {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -7743,6 +8001,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-page-write", &this.x_ms_page_write);
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
                         req.insert_header("x-ms-source-range", &this.x_ms_source_range);
@@ -7808,7 +8067,6 @@ pub mod page_blob {
                         if let Some(x_ms_source_if_none_match) = &this.x_ms_source_if_none_match {
                             req.insert_header("x-ms-source-if-none-match", x_ms_source_if_none_match);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -7817,15 +8075,7 @@ pub mod page_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -7833,13 +8083,71 @@ pub mod page_blob {
     }
     pub mod get_page_ranges {
         use super::models;
-        type Response = models::PageList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PageList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PageList = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The ETag contains a value that you can use to perform operations conditionally. If the request version is 2011-08-18 or newer, the ETag value will be in quotes."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The size of the blob in bytes."]
+            pub fn x_ms_blob_content_length(&self) -> azure_core::Result<i64> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-content-length"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_range: Option<String>,
@@ -7914,7 +8222,7 @@ pub mod page_blob {
                 self.maxresults = Some(maxresults);
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::PageList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -7947,6 +8255,7 @@ pub mod page_blob {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                                 if let Some(snapshot) = &this.snapshot {
                                     req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                                 }
@@ -7974,7 +8283,6 @@ pub mod page_blob {
                                 if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                                     req.insert_header("x-ms-if-tags", x_ms_if_tags);
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -7989,18 +8297,14 @@ pub mod page_blob {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PageList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -8009,13 +8313,71 @@ pub mod page_blob {
     }
     pub mod get_page_ranges_diff {
         use super::models;
-        type Response = models::PageList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PageList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PageList = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The ETag contains a value that you can use to perform operations conditionally. If the request version is 2011-08-18 or newer, the ETag value will be in quotes."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The size of the blob in bytes."]
+            pub fn x_ms_blob_content_length(&self) -> azure_core::Result<i64> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-content-length"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) prevsnapshot: Option<String>,
@@ -8102,7 +8464,7 @@ pub mod page_blob {
                 self.maxresults = Some(maxresults);
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::PageList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -8135,6 +8497,7 @@ pub mod page_blob {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
+                                req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                                 if let Some(snapshot) = &this.snapshot {
                                     req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                                 }
@@ -8168,7 +8531,6 @@ pub mod page_blob {
                                 if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                                     req.insert_header("x-ms-if-tags", x_ms_if_tags);
                                 }
-                                req.insert_header("x-ms-version", &this.x_ms_version);
                                 if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                                     req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                                 }
@@ -8183,18 +8545,14 @@ pub mod page_blob {
                                 this.client.send(&mut req).await?
                             }
                         };
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PageList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,
                             })),
-                        }
+                        };
+                        rsp?.into_body().await
                     }
                 };
                 azure_core::Pageable::new(make_request)
@@ -8203,14 +8561,13 @@ pub mod page_blob {
     }
     pub mod resize {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_blob_content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) x_ms_encryption_key: Option<String>,
@@ -8285,7 +8642,8 @@ pub mod page_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -8302,6 +8660,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -8336,21 +8695,12 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         req.insert_header("x-ms-blob-content-length", &this.x_ms_blob_content_length.to_string());
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -8358,14 +8708,13 @@ pub mod page_blob {
     }
     pub mod update_sequence_number {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_sequence_number_action: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
@@ -8422,7 +8771,8 @@ pub mod page_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -8439,6 +8789,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -8464,21 +8815,12 @@ pub mod page_blob {
                         if let Some(x_ms_blob_sequence_number) = &this.x_ms_blob_sequence_number {
                             req.insert_header("x-ms-blob-sequence-number", &x_ms_blob_sequence_number.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -8486,14 +8828,13 @@ pub mod page_blob {
     }
     pub mod copy_incremental {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) x_ms_copy_source: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) if_modified_since: Option<time::OffsetDateTime>,
             pub(crate) if_unmodified_since: Option<time::OffsetDateTime>,
@@ -8538,7 +8879,8 @@ pub mod page_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -8555,6 +8897,7 @@ pub mod page_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -8574,21 +8917,12 @@ pub mod page_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -8606,14 +8940,12 @@ pub mod append_blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_blob_type`: Specifies the type of blob to create: block blob, page blob, or append blob."]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn create(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_blob_type: impl Into<String>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
@@ -8621,7 +8953,6 @@ pub mod append_blob {
                 blob: blob.into(),
                 x_ms_blob_type: x_ms_blob_type.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_blob_content_type: None,
                 x_ms_blob_content_encoding: None,
@@ -8654,14 +8985,12 @@ pub mod append_blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `body`: Initial data"]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn append_block(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             body: impl Into<serde_json::Value>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> append_block::RequestBuilder {
             append_block::RequestBuilder {
                 client: self.0.clone(),
@@ -8669,7 +8998,6 @@ pub mod append_blob {
                 blob: blob.into(),
                 body: body.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 content_md5: None,
                 x_ms_content_crc64: None,
@@ -8695,14 +9023,12 @@ pub mod append_blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_copy_source`: Specify a URL to the copy source."]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn append_block_from_url(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> append_block_from_url::RequestBuilder {
             append_block_from_url::RequestBuilder {
                 client: self.0.clone(),
@@ -8710,7 +9036,6 @@ pub mod append_blob {
                 blob: blob.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 x_ms_source_range: None,
                 x_ms_source_content_md5: None,
                 x_ms_source_content_crc64: None,
@@ -8741,18 +9066,11 @@ pub mod append_blob {
         #[doc = "Arguments:"]
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn seal(
-            &self,
-            container_name: impl Into<String>,
-            blob: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> seal::RequestBuilder {
+        pub fn seal(&self, container_name: impl Into<String>, blob: impl Into<String>) -> seal::RequestBuilder {
             seal::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
                 x_ms_lease_id: None,
@@ -8766,7 +9084,7 @@ pub mod append_blob {
     }
     pub mod create {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8774,7 +9092,6 @@ pub mod append_blob {
             pub(crate) blob: String,
             pub(crate) x_ms_blob_type: String,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_blob_content_type: Option<String>,
             pub(crate) x_ms_blob_content_encoding: Option<String>,
@@ -8918,7 +9235,8 @@ pub mod append_blob {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -8935,6 +9253,7 @@ pub mod append_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-blob-type", &this.x_ms_blob_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -8991,7 +9310,6 @@ pub mod append_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -9012,15 +9330,7 @@ pub mod append_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -9028,7 +9338,7 @@ pub mod append_blob {
     }
     pub mod append_block {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9036,7 +9346,6 @@ pub mod append_blob {
             pub(crate) blob: String,
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) content_md5: Option<String>,
             pub(crate) x_ms_content_crc64: Option<String>,
@@ -9135,7 +9444,8 @@ pub mod append_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -9152,6 +9462,7 @@ pub mod append_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
                         if let Some(timeout) = &this.timeout {
@@ -9200,20 +9511,11 @@ pub mod append_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -9221,7 +9523,7 @@ pub mod append_blob {
     }
     pub mod append_block_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9229,7 +9531,6 @@ pub mod append_blob {
             pub(crate) blob: String,
             pub(crate) x_ms_copy_source: String,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_source_range: Option<String>,
             pub(crate) x_ms_source_content_md5: Option<String>,
             pub(crate) x_ms_source_content_crc64: Option<String>,
@@ -9370,7 +9671,8 @@ pub mod append_blob {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -9387,6 +9689,7 @@ pub mod append_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-copy-source", &this.x_ms_copy_source);
                         if let Some(x_ms_source_range) = &this.x_ms_source_range {
                             req.insert_header("x-ms-source-range", x_ms_source_range);
@@ -9452,7 +9755,6 @@ pub mod append_blob {
                         if let Some(x_ms_source_if_none_match) = &this.x_ms_source_if_none_match {
                             req.insert_header("x-ms-source-if-none-match", x_ms_source_if_none_match);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -9461,15 +9763,7 @@ pub mod append_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -9477,13 +9771,12 @@ pub mod append_blob {
     }
     pub mod seal {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -9534,7 +9827,8 @@ pub mod append_blob {
                 self.x_ms_blob_condition_appendpos = Some(x_ms_blob_condition_appendpos);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -9551,10 +9845,10 @@ pub mod append_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -9578,15 +9872,7 @@ pub mod append_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -9605,7 +9891,6 @@ pub mod block_blob {
         #[doc = "* `x_ms_blob_type`: Specifies the type of blob to create: block blob, page blob, or append blob."]
         #[doc = "* `body`: Initial data"]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn upload(
             &self,
             container_name: impl Into<String>,
@@ -9613,7 +9898,6 @@ pub mod block_blob {
             x_ms_blob_type: impl Into<String>,
             body: impl Into<serde_json::Value>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
         ) -> upload::RequestBuilder {
             upload::RequestBuilder {
                 client: self.0.clone(),
@@ -9622,7 +9906,6 @@ pub mod block_blob {
                 x_ms_blob_type: x_ms_blob_type.into(),
                 body: body.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 content_md5: None,
                 x_ms_blob_content_type: None,
@@ -9657,7 +9940,6 @@ pub mod block_blob {
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `x_ms_blob_type`: Specifies the type of blob to create: block blob, page blob, or append blob."]
         #[doc = "* `content_length`: The length of the request."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `x_ms_copy_source`: Specifies the name of the source page blob snapshot. This value is a URL of up to 2 KB in length that specifies a page blob snapshot. The value should be URL-encoded as it would appear in a request URI. The source blob must either be public or must be authenticated via a shared access signature."]
         pub fn put_blob_from_url(
             &self,
@@ -9665,7 +9947,6 @@ pub mod block_blob {
             blob: impl Into<String>,
             x_ms_blob_type: impl Into<String>,
             content_length: i64,
-            x_ms_version: impl Into<String>,
             x_ms_copy_source: impl Into<String>,
         ) -> put_blob_from_url::RequestBuilder {
             put_blob_from_url::RequestBuilder {
@@ -9674,7 +9955,6 @@ pub mod block_blob {
                 blob: blob.into(),
                 x_ms_blob_type: x_ms_blob_type.into(),
                 content_length,
-                x_ms_version: x_ms_version.into(),
                 x_ms_copy_source: x_ms_copy_source.into(),
                 timeout: None,
                 content_md5: None,
@@ -9717,7 +9997,6 @@ pub mod block_blob {
         #[doc = "* `blockid`: A valid Base64 string value that identifies the block. Prior to encoding, the string must be less than or equal to 64 bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for each block."]
         #[doc = "* `content_length`: The length of the request."]
         #[doc = "* `body`: Initial data"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn stage_block(
             &self,
             container_name: impl Into<String>,
@@ -9725,7 +10004,6 @@ pub mod block_blob {
             blockid: impl Into<String>,
             content_length: i64,
             body: impl Into<serde_json::Value>,
-            x_ms_version: impl Into<String>,
         ) -> stage_block::RequestBuilder {
             stage_block::RequestBuilder {
                 client: self.0.clone(),
@@ -9734,7 +10012,6 @@ pub mod block_blob {
                 blockid: blockid.into(),
                 content_length,
                 body: body.into(),
-                x_ms_version: x_ms_version.into(),
                 content_md5: None,
                 x_ms_content_crc64: None,
                 timeout: None,
@@ -9754,7 +10031,6 @@ pub mod block_blob {
         #[doc = "* `blockid`: A valid Base64 string value that identifies the block. Prior to encoding, the string must be less than or equal to 64 bytes in size. For a given blob, the length of the value specified for the blockid parameter must be the same size for each block."]
         #[doc = "* `content_length`: The length of the request."]
         #[doc = "* `x_ms_copy_source`: Specify a URL to the copy source."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn stage_block_from_url(
             &self,
             container_name: impl Into<String>,
@@ -9762,7 +10038,6 @@ pub mod block_blob {
             blockid: impl Into<String>,
             content_length: i64,
             x_ms_copy_source: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> stage_block_from_url::RequestBuilder {
             stage_block_from_url::RequestBuilder {
                 client: self.0.clone(),
@@ -9771,7 +10046,6 @@ pub mod block_blob {
                 blockid: blockid.into(),
                 content_length,
                 x_ms_copy_source: x_ms_copy_source.into(),
-                x_ms_version: x_ms_version.into(),
                 x_ms_source_range: None,
                 x_ms_source_content_md5: None,
                 x_ms_source_content_crc64: None,
@@ -9795,20 +10069,17 @@ pub mod block_blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `blocklisttype`: Specifies whether to return the list of committed blocks, the list of uncommitted blocks, or both lists together."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn get_block_list(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             blocklisttype: impl Into<String>,
-            x_ms_version: impl Into<String>,
         ) -> get_block_list::RequestBuilder {
             get_block_list::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 blocklisttype: blocklisttype.into(),
-                x_ms_version: x_ms_version.into(),
                 snapshot: None,
                 timeout: None,
                 x_ms_lease_id: None,
@@ -9822,20 +10093,17 @@ pub mod block_blob {
         #[doc = "* `container_name`: The container name."]
         #[doc = "* `blob`: The blob name."]
         #[doc = "* `blocks`: Blob Blocks."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn commit_block_list(
             &self,
             container_name: impl Into<String>,
             blob: impl Into<String>,
             blocks: impl Into<models::BlockLookupList>,
-            x_ms_version: impl Into<String>,
         ) -> commit_block_list::RequestBuilder {
             commit_block_list::RequestBuilder {
                 client: self.0.clone(),
                 container_name: container_name.into(),
                 blob: blob.into(),
                 blocks: blocks.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_blob_cache_control: None,
                 x_ms_blob_content_type: None,
@@ -9867,7 +10135,7 @@ pub mod block_blob {
     }
     pub mod upload {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9876,7 +10144,6 @@ pub mod block_blob {
             pub(crate) x_ms_blob_type: String,
             pub(crate) body: serde_json::Value,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) content_md5: Option<String>,
             pub(crate) x_ms_blob_content_type: Option<String>,
@@ -10032,7 +10299,8 @@ pub mod block_blob {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -10049,6 +10317,7 @@ pub mod block_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-blob-type", &this.x_ms_blob_type);
                         req.insert_header("content-type", "application/octet-stream");
                         let req_body = azure_core::to_json(&this.body)?;
@@ -10113,7 +10382,6 @@ pub mod block_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -10133,15 +10401,7 @@ pub mod block_blob {
                             req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -10149,7 +10409,7 @@ pub mod block_blob {
     }
     pub mod put_blob_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10157,7 +10417,6 @@ pub mod block_blob {
             pub(crate) blob: String,
             pub(crate) x_ms_blob_type: String,
             pub(crate) content_length: i64,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_copy_source: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) content_md5: Option<String>,
@@ -10347,7 +10606,8 @@ pub mod block_blob {
                 self.x_ms_copy_source_tag_option = Some(x_ms_copy_source_tag_option.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -10364,6 +10624,7 @@ pub mod block_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("x-ms-blob-type", &this.x_ms_blob_type);
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
@@ -10441,7 +10702,6 @@ pub mod block_blob {
                         if let Some(x_ms_source_if_tags) = &this.x_ms_source_if_tags {
                             req.insert_header("x-ms-source-if-tags", x_ms_source_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -10463,15 +10723,7 @@ pub mod block_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -10479,7 +10731,7 @@ pub mod block_blob {
     }
     pub mod stage_block {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10488,7 +10740,6 @@ pub mod block_blob {
             pub(crate) blockid: String,
             pub(crate) content_length: i64,
             pub(crate) body: serde_json::Value,
-            pub(crate) x_ms_version: String,
             pub(crate) content_md5: Option<String>,
             pub(crate) x_ms_content_crc64: Option<String>,
             pub(crate) timeout: Option<i64>,
@@ -10545,7 +10796,8 @@ pub mod block_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -10562,6 +10814,7 @@ pub mod block_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
                         req.insert_header("content-length", &this.content_length.to_string());
@@ -10591,20 +10844,11 @@ pub mod block_blob {
                         if let Some(x_ms_encryption_scope) = &this.x_ms_encryption_scope {
                             req.insert_header("x-ms-encryption-scope", x_ms_encryption_scope);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -10612,7 +10856,7 @@ pub mod block_blob {
     }
     pub mod stage_block_from_url {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10621,7 +10865,6 @@ pub mod block_blob {
             pub(crate) blockid: String,
             pub(crate) content_length: i64,
             pub(crate) x_ms_copy_source: String,
-            pub(crate) x_ms_version: String,
             pub(crate) x_ms_source_range: Option<String>,
             pub(crate) x_ms_source_content_md5: Option<String>,
             pub(crate) x_ms_source_content_crc64: Option<String>,
@@ -10714,7 +10957,8 @@ pub mod block_blob {
                 self.x_ms_copy_source_authorization = Some(x_ms_copy_source_authorization.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -10731,6 +10975,7 @@ pub mod block_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let blockid = &this.blockid;
                         req.url_mut().query_pairs_mut().append_pair("blockid", blockid);
                         req.insert_header("content-length", &this.content_length.to_string());
@@ -10774,7 +11019,6 @@ pub mod block_blob {
                         if let Some(x_ms_source_if_none_match) = &this.x_ms_source_if_none_match {
                             req.insert_header("x-ms-source-if-none-match", x_ms_source_if_none_match);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -10783,15 +11027,7 @@ pub mod block_blob {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -10799,14 +11035,76 @@ pub mod block_blob {
     }
     pub mod get_block_list {
         use super::models;
-        type Response = models::BlockList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::BlockList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::BlockList = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
+            pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "The ETag contains a value that you can use to perform operations conditionally. If the request version is 2011-08-18 or newer, the ETag value will be in quotes."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "The media type of the body of the response. For Get Block List this is 'application/xml'"]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
+            #[doc = "The size of the blob in bytes."]
+            pub fn x_ms_blob_content_length(&self) -> azure_core::Result<i64> {
+                self.0
+                    .get_as(&azure_core::headers::HeaderName::from_static("x-ms-blob-content-length"))
+            }
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Blob service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) blocklisttype: String,
-            pub(crate) x_ms_version: String,
             pub(crate) snapshot: Option<String>,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_lease_id: Option<String>,
@@ -10839,7 +11137,8 @@ pub mod block_blob {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -10856,6 +11155,7 @@ pub mod block_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(snapshot) = &this.snapshot {
                             req.url_mut().query_pairs_mut().append_pair("snapshot", snapshot);
                         }
@@ -10870,40 +11170,30 @@ pub mod block_blob {
                         if let Some(x_ms_if_tags) = &this.x_ms_if_tags {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::BlockList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BlockList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod commit_block_list {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) container_name: String,
             pub(crate) blob: String,
             pub(crate) blocks: models::BlockLookupList,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_blob_cache_control: Option<String>,
             pub(crate) x_ms_blob_content_type: Option<String>,
@@ -11065,7 +11355,8 @@ pub mod block_blob {
                 self.x_ms_legal_hold = Some(x_ms_legal_hold);
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -11082,6 +11373,7 @@ pub mod block_blob {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -11147,7 +11439,6 @@ pub mod block_blob {
                         }
                         req.insert_header("content-type", "application/xml");
                         let req_body = azure_core::to_json(&this.blocks)?;
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -11167,15 +11458,7 @@ pub mod block_blob {
                             req.insert_header("x-ms-legal-hold", &x_ms_legal_hold.to_string());
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }

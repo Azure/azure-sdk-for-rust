@@ -74,13 +74,7 @@ async fn main() -> azure_core::Result<()> {
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
-        None => {
-            client
-                .create_database(DATABASE)
-                .into_future()
-                .await?
-                .database
-        }
+        None => client.create_database(DATABASE).await?.database,
     };
     println!("database == {:?}", database);
 
@@ -107,7 +101,6 @@ async fn main() -> azure_core::Result<()> {
                 .clone()
                 .database_client(database.id.clone())
                 .create_collection(COLLECTION, "/id")
-                .into_future()
                 .await?
                 .collection
         }
@@ -136,10 +129,7 @@ async fn main() -> azure_core::Result<()> {
     // The method create_document will return, upon success,
     // the document attributes.
 
-    let create_document_response = collection
-        .create_document(doc.clone())
-        .into_future()
-        .await?;
+    let create_document_response = collection.create_document(doc.clone()).await?;
     println!(
         "create_document_response == {:#?}",
         create_document_response
@@ -165,7 +155,6 @@ async fn main() -> azure_core::Result<()> {
         .clone()
         .document_client(doc.id.clone(), &doc.id)?
         .get_document::<MySampleStruct>()
-        .into_future()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
@@ -184,7 +173,6 @@ async fn main() -> azure_core::Result<()> {
             .document_client(doc.id.clone(), &doc.id)?
             .replace_document(doc)
             .if_match_condition(IfMatchCondition::Match(document.etag))
-            .into_future()
             .await?;
         println!(
             "replace_document_response == {:#?}",
@@ -197,7 +185,6 @@ async fn main() -> azure_core::Result<()> {
         .database_client(DATABASE.to_owned())
         .collection_client(COLLECTION.to_owned())
         .delete_collection()
-        .into_future()
         .await?;
     println!("collection deleted");
 
@@ -205,7 +192,6 @@ async fn main() -> azure_core::Result<()> {
     client
         .database_client(database.id)
         .delete_database()
-        .into_future()
         .await?;
     println!("database deleted");
 

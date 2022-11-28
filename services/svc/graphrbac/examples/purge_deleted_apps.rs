@@ -23,7 +23,7 @@ async fn main() -> azure_core::Result<()> {
         for app in apps.value {
             println!("{:?}", app.display_name);
             let obj_id = app.directory_object.object_id.expect("missing object id");
-            client.hard_delete(obj_id, &tenant_id).into_future().await?;
+            client.hard_delete(obj_id, &tenant_id).send().await?;
         }
     }
 

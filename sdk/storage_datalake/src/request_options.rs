@@ -1,7 +1,7 @@
 //! Request properties used in datalake rest api operations
 use azure_core::AppendToUrlQuery;
 use azure_core::Header;
-use azure_storage::core::headers;
+use azure_storage::headers;
 
 #[derive(Debug, Clone)]
 pub enum ResourceType {

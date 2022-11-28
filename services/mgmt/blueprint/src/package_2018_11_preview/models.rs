@@ -68,7 +68,11 @@ pub mod artifact {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactList {
     #[doc = "List of blueprint artifacts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Artifact>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -89,7 +93,12 @@ impl ArtifactList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactPropertiesBase {
     #[doc = "Artifacts which need to be deployed before the specified artifact."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
 }
 impl ArtifactPropertiesBase {
@@ -135,7 +144,11 @@ pub struct AssignmentDeploymentJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<AssignmentDeploymentJobResult>,
     #[doc = "Result of this deployment job for each retry."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub history: Vec<AssignmentDeploymentJobResult>,
     #[doc = "Reference to deployment job resource id."]
     #[serde(rename = "requestUri", default, skip_serializing_if = "Option::is_none")]
@@ -153,7 +166,11 @@ pub struct AssignmentDeploymentJobResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<AzureResourceManagerError>,
     #[doc = "Resources created as result of the deployment job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<AssignmentJobCreatedResource>,
 }
 impl AssignmentDeploymentJobResult {
@@ -179,7 +196,11 @@ impl AssignmentJobCreatedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentList {
     #[doc = "List of blueprint assignments."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Assignment>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -203,10 +224,20 @@ pub struct AssignmentLockSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<assignment_lock_settings::Mode>,
     #[doc = "List of AAD principals excluded from blueprint locks. Up to 5 principals are permitted."]
-    #[serde(rename = "excludedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedPrincipals",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_principals: Vec<String>,
     #[doc = "List\u{a0}of\u{a0}management\u{a0}operations\u{a0}that\u{a0}are\u{a0}excluded\u{a0}from\u{a0}blueprint\u{a0}locks.\u{a0}Up\u{a0}to\u{a0}200\u{a0}actions\u{a0}are\u{a0}permitted. If the lock mode is set to 'AllResourcesReadOnly', then the following actions are automatically appended to 'excludedActions': '*/read', 'Microsoft.Network/virtualNetworks/subnets/join/action' and 'Microsoft.Authorization/locks/delete'. If the lock mode is set to 'AllResourcesDoNotDelete', then the following actions are automatically appended to 'excludedActions': 'Microsoft.Authorization/locks/delete'. Duplicate actions will get removed."]
-    #[serde(rename = "excludedActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_actions: Vec<String>,
 }
 impl AssignmentLockSettings {
@@ -274,7 +305,11 @@ impl AssignmentOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentOperationList {
     #[doc = "List of AssignmentOperation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AssignmentOperation>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -310,7 +345,11 @@ pub struct AssignmentOperationProperties {
     #[serde(rename = "timeFinished", default, skip_serializing_if = "Option::is_none")]
     pub time_finished: Option<String>,
     #[doc = "List of jobs in this blueprint assignment operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub deployments: Vec<AssignmentDeploymentJob>,
 }
 impl AssignmentOperationProperties {
@@ -430,7 +469,12 @@ pub struct AssignmentStatus {
     #[serde(flatten)]
     pub blueprint_resource_status_base: BlueprintResourceStatusBase,
     #[doc = "List of resources that were created by the blueprint assignment."]
-    #[serde(rename = "managedResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "managedResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub managed_resources: Vec<String>,
 }
 impl AssignmentStatus {
@@ -491,7 +535,11 @@ impl Blueprint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintList {
     #[doc = "List of blueprint definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Blueprint>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -615,10 +663,19 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponse>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorResponse {
@@ -707,7 +764,12 @@ pub struct ParameterDefinition {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<serde_json::Value>,
     #[doc = "Array of allowed values for this parameter."]
-    #[serde(rename = "allowedValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_values: Vec<serde_json::Value>,
 }
 impl ParameterDefinition {
@@ -870,7 +932,11 @@ impl PublishedBlueprint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublishedBlueprintList {
     #[doc = "List of published blueprint definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PublishedBlueprint>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -917,7 +983,12 @@ pub struct ResourceGroupDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ParameterDefinitionMetadata>,
     #[doc = "Artifacts which need to be deployed before this resource group."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
     #[doc = "Tags to be assigned to this resource group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -986,7 +1057,11 @@ pub mod resource_provider_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "List of operations supported by this resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperation>,
 }
 impl ResourceProviderOperationList {

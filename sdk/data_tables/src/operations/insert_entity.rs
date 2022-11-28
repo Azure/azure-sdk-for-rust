@@ -38,7 +38,7 @@ where
 
     pub fn into_future(mut self) -> InsertEntity<T> {
         Box::pin(async move {
-            let mut url = self.table_client.url().to_owned();
+            let mut url = self.table_client.url()?;
             url.path_segments_mut()
                 .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
                 .pop()
@@ -67,7 +67,6 @@ where
 
 azure_core::future!(InsertEntity<T>);
 
-#[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for InsertEntityBuilder<T> {
     type IntoFuture = InsertEntity<T>;
     type Output = <InsertEntity<T> as std::future::Future>::Output;

@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
@@ -18,9 +18,10 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let storage_account = StorageClient::new_access_key(&account, &access_key);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let queue_service = QueueServiceClient::new(account, storage_credentials);
 
-    let queue = storage_account.queue_client(queue_name);
+    let queue = queue_service.queue_client(queue_name);
 
     trace!("getting messages");
 
@@ -28,7 +29,6 @@ async fn main() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
-        .into_future()
         .await?;
 
     println!("response == {:#?}", response);
@@ -37,7 +37,6 @@ async fn main() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
-        .into_future()
         .await?;
     println!("get_messages_response == {:#?}", get_messages_response);
 
@@ -52,7 +51,6 @@ async fn main() -> azure_core::Result<()> {
                 format!("new body at {}", OffsetDateTime::now_utc()),
                 Duration::from_secs(4),
             )
-            .into_future()
             .await?;
         println!("response == {:#?}", response);
     }

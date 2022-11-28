@@ -36,7 +36,7 @@ impl CertificateClient {
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     let certificate = client.get("NAME").into_future().await.unwrap();
+    ///     let certificate = client.get("NAME").await.unwrap();
     ///     dbg!(&certificate);
     /// }
     ///
@@ -103,7 +103,7 @@ impl CertificateClient {
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     client.backup("NAME").into_future().await.unwrap();
+    ///     client.backup("NAME").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -198,7 +198,7 @@ impl CertificateClient {
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     client.restore_certificate("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").into_future().await.unwrap();
+    ///     client.restore_certificate("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());

@@ -6,7 +6,7 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/servicebus
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2022-01-preview`.
+The default tag is `package-2021-11`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 

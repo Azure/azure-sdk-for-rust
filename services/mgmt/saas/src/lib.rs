@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2018-03-01-beta")]
 pub mod package_2018_03_01_beta;
 #[cfg(all(feature = "package-2018-03-01-beta", not(feature = "no-default-tag")))]
-pub use package_2018_03_01_beta::{models, Client, ClientBuilder};
+pub use package_2018_03_01_beta::*;

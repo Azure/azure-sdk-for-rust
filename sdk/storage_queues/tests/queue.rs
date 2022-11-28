@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::{date, prelude::*};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 use futures::StreamExt;
 use std::time::Duration;
@@ -16,13 +16,12 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     let queue_name = format!("sdk-{}", Uuid::new_v4());
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-
-    let queue_service_client = storage_client.queue_service_client();
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let queue_service = QueueServiceClient::new(account, storage_credentials);
 
     println!("creating queue {}", queue_name);
 
-    let queue = storage_client.queue_client(queue_name);
+    let queue = queue_service.queue_client(queue_name);
 
     // this step is optional but here we show
     // how to add metadata to a new queue.
@@ -35,11 +34,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         format!("{:?}", OffsetDateTime::now_utc()).into(),
     );
 
-    let response = queue
-        .create()
-        .metadata(metadata.clone())
-        .into_future()
-        .await?;
+    let response = queue.create().metadata(metadata.clone()).await?;
     println!("response == {:#?}", response);
 
     // let's add some more metadata
@@ -51,11 +46,11 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     println!("metadata == {:#?}", metadata);
 
-    let response = queue.set_metadata(metadata).into_future().await?;
+    let response = queue.set_metadata(metadata).await?;
     println!("response == {:#?}", response);
 
     // let's get back the metadata
-    let response = queue.get_metadata().into_future().await?;
+    let response = queue.get_metadata().await?;
     println!("response == {:#?}", response);
 
     // create two queue stored access policies
@@ -75,14 +70,14 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         .enable_all(),
     ];
 
-    let response = queue.set_acl(policies).into_future().await?;
+    let response = queue.set_acl(policies).await?;
     println!("response == {:#?}", response);
 
     // get the queue ACL
-    let response = queue.get_acl().into_future().await?;
+    let response = queue.get_acl().await?;
     println!("response == {:#?}", response);
 
-    let mut stream = queue_service_client.list_queues().into_stream();
+    let mut stream = queue_service.list_queues().into_stream();
     while let Some(entry) = stream.next().await {
         let entry = entry?;
         println!("entry == {:#?}", entry);
@@ -93,7 +88,6 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
         let response = queue
             .put_message(format!("Azure SDK for Rust {}", OffsetDateTime::now_utc()))
-            .into_future()
             .await?;
 
         println!("response == {:#?}", response);
@@ -103,7 +97,6 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(10))
-        .into_future()
         .await?;
     println!("get_messages_response == {:#?}", get_messages_response);
 
@@ -115,7 +108,6 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
                 format!("new body at {}", OffsetDateTime::now_utc()),
                 Duration::from_secs(4),
             )
-            .into_future()
             .await?;
         println!("response == {:#?}", response);
     }
@@ -124,7 +116,6 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(5))
-        .into_future()
         .await?;
 
     println!("get_response == {:#?}", get_response);
@@ -132,17 +123,13 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
     for message_to_delete in get_response.messages {
         println!("deleting message {:?}", message_to_delete);
 
-        let delete_response = queue
-            .pop_receipt_client(message_to_delete)
-            .delete()
-            .into_future()
-            .await?;
+        let delete_response = queue.pop_receipt_client(message_to_delete).delete().await?;
 
         println!("delete_response == {:#?}", delete_response);
     }
 
     // now let's delete the queue
-    let response = queue.delete().into_future().await?;
+    let response = queue.delete().await?;
     println!("response == {:#?}", response);
 
     Ok(())

@@ -1,5 +1,5 @@
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_security_keyvault::SecretClient;
+use azure_security_keyvault::prelude::*;
 use futures::stream::StreamExt;
 use std::{env, sync::Arc};
 

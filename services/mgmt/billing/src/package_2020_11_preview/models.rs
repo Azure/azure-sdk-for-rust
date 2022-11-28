@@ -124,7 +124,11 @@ impl Agreement {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgreementListResult {
     #[doc = "The list of agreements."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Agreement>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -163,7 +167,11 @@ pub struct AgreementProperties {
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "The list of participants that participates in acceptance of an agreement."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub participants: Vec<Participants>,
     #[doc = "The current status of the agreement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -330,7 +338,11 @@ impl BillingAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingAccountListResult {
     #[doc = "The list of billing accounts."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingAccount>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -372,10 +384,19 @@ pub struct BillingAccountProperties {
     #[serde(rename = "enrollmentDetails", default, skip_serializing_if = "Option::is_none")]
     pub enrollment_details: Option<Enrollment>,
     #[doc = "The departments associated to the enrollment."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub departments: Vec<Department>,
     #[doc = "The accounts associated to the enrollment."]
-    #[serde(rename = "enrollmentAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enrollmentAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enrollment_accounts: Vec<EnrollmentAccount>,
     #[doc = "Indicates whether user has read access to the billing account."]
     #[serde(rename = "hasReadAccess", default, skip_serializing_if = "Option::is_none")]
@@ -537,7 +558,11 @@ impl BillingAccountUpdateRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingPermissionsListResult {
     #[doc = "The list of billingPermissions a caller has on a billing account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingPermissionsProperties>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -558,10 +583,19 @@ impl BillingPermissionsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingPermissionsProperties {
     #[doc = "The set of actions that the caller is allowed to perform."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<Action>,
     #[doc = "The set of actions that the caller is not allowed to perform."]
-    #[serde(rename = "notActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub not_actions: Vec<NotAction>,
 }
 impl BillingPermissionsProperties {
@@ -599,7 +633,12 @@ pub struct BillingProfileCreationRequest {
     #[serde(rename = "invoiceEmailOptIn", default, skip_serializing_if = "Option::is_none")]
     pub invoice_email_opt_in: Option<bool>,
     #[doc = "Enabled azure plans for the billing profile."]
-    #[serde(rename = "enabledAzurePlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enabledAzurePlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enabled_azure_plans: Vec<AzurePlan>,
 }
 impl BillingProfileCreationRequest {
@@ -629,7 +668,11 @@ impl BillingProfileInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingProfileListResult {
     #[doc = "The list of billing profiles."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingProfile>,
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -677,7 +720,12 @@ pub struct BillingProfileProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
     #[doc = "Information about the enabled azure plans."]
-    #[serde(rename = "enabledAzurePlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enabledAzurePlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enabled_azure_plans: Vec<AzurePlan>,
     #[doc = "The invoice sections associated to the billing profile. By default this is not populated, unless it's specified in $expand."]
     #[serde(rename = "invoiceSections", default, skip_serializing_if = "Option::is_none")]
@@ -698,7 +746,12 @@ pub struct BillingProfileProperties {
     #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
     pub spending_limit: Option<billing_profile_properties::SpendingLimit>,
     #[doc = "Identifies the cloud environments that are associated with a billing profile. This is a system managed optional field and gets updated as the billing profile gets associated with accounts in various clouds."]
-    #[serde(rename = "targetClouds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetClouds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_clouds: Vec<TargetCloud>,
     #[doc = "Tags of billing profiles."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -876,7 +929,11 @@ pub struct BillingProfilesOnExpand {
     #[serde(rename = "hasMoreResults", default, skip_serializing_if = "Option::is_none")]
     pub has_more_results: Option<bool>,
     #[doc = "The billing profiles associated with the billing account."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingProfile>,
 }
 impl BillingProfilesOnExpand {
@@ -1098,7 +1155,11 @@ impl BillingRoleAssignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingRoleAssignmentListResult {
     #[doc = "The list of role assignments."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingRoleAssignment>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1172,7 +1233,11 @@ impl BillingRoleDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingRoleDefinitionListResult {
     #[doc = "The role definitions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingRoleDefinition>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1196,7 +1261,11 @@ pub struct BillingRoleDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The billingPermissions the role has"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub permissions: Vec<BillingPermissionsProperties>,
     #[doc = "The name of the role"]
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
@@ -1270,7 +1339,12 @@ pub struct BillingSubscriptionProperties {
     #[serde(rename = "skuDescription", default, skip_serializing_if = "Option::is_none")]
     pub sku_description: Option<String>,
     #[doc = "The suspension reason for a subscription. Applies only to subscriptions in Microsoft Online Services Program billing accounts."]
-    #[serde(rename = "suspensionReasons", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "suspensionReasons",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub suspension_reasons: Vec<String>,
 }
 impl BillingSubscriptionProperties {
@@ -1328,7 +1402,11 @@ pub mod billing_subscription_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionsListResult {
     #[doc = "The list of billing subscriptions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BillingSubscription>,
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -1366,7 +1444,11 @@ impl Customer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerListResult {
     #[doc = "The list of customers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Customer>,
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -1465,10 +1547,19 @@ pub struct CustomerProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Azure plans enabled for the customer."]
-    #[serde(rename = "enabledAzurePlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enabledAzurePlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enabled_azure_plans: Vec<AzurePlan>,
     #[doc = "The list of resellers for which an Azure plan is enabled for the customer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resellers: Vec<Reseller>,
 }
 impl CustomerProperties {
@@ -1503,7 +1594,12 @@ pub struct DepartmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "Associated enrollment accounts. By default this is not populated, unless it's specified in $expand."]
-    #[serde(rename = "enrollmentAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enrollmentAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enrollment_accounts: Vec<EnrollmentAccount>,
 }
 impl DepartmentProperties {
@@ -1827,7 +1923,11 @@ impl Instruction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstructionListResult {
     #[doc = "The list of billing instructions used during invoice generation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Instruction>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1887,7 +1987,11 @@ impl Invoice {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvoiceListResult {
     #[doc = "The list of invoices."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Invoice>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1965,10 +2069,18 @@ pub struct InvoiceProperties {
     #[serde(rename = "purchaseOrderNumber", default, skip_serializing_if = "Option::is_none")]
     pub purchase_order_number: Option<String>,
     #[doc = "List of documents available to download such as invoice and tax receipt."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub documents: Vec<Document>,
     #[doc = "List of payments."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub payments: Vec<PaymentProperties>,
     #[doc = "Rebill details for an invoice."]
     #[serde(rename = "rebillDetails", default, skip_serializing_if = "Option::is_none")]
@@ -2141,7 +2253,11 @@ impl InvoiceSectionCreationRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvoiceSectionListResult {
     #[doc = "The list of invoice sections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<InvoiceSection>,
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -2165,7 +2281,11 @@ impl InvoiceSectionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvoiceSectionListWithCreateSubPermissionResult {
     #[doc = "The list of invoice section properties with create subscription permission."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<InvoiceSectionWithCreateSubPermission>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2280,7 +2400,12 @@ pub struct InvoiceSectionWithCreateSubPermission {
     #[serde(rename = "billingProfileSystemId", default, skip_serializing_if = "Option::is_none")]
     pub billing_profile_system_id: Option<String>,
     #[doc = "Enabled azure plans for the associated billing profile."]
-    #[serde(rename = "enabledAzurePlans", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "enabledAzurePlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub enabled_azure_plans: Vec<AzurePlan>,
 }
 impl InvoiceSectionWithCreateSubPermission {
@@ -2417,7 +2542,11 @@ pub struct InvoiceSectionsOnExpand {
     #[serde(rename = "hasMoreResults", default, skip_serializing_if = "Option::is_none")]
     pub has_more_results: Option<bool>,
     #[doc = "The invoice sections associated to the billing profile."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<InvoiceSection>,
 }
 impl InvoiceSectionsOnExpand {
@@ -2472,7 +2601,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of billing operations supported by the Microsoft.Billing resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3047,7 +3180,11 @@ impl Serialize for ProductTransferValidationErrorCode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductsListResult {
     #[doc = "The list of products."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Product>,
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -3147,7 +3284,11 @@ impl PromotionCreateSkuNameRequestProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PromotionList {
     #[doc = "The list of promotions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PromotionResponse>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3276,7 +3417,12 @@ pub type ReservationAppliedScope = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationProperty {
     #[doc = "The array of applied scopes of a reservation. Will be null if the reservation is in Shared scope"]
-    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appliedScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applied_scopes: Vec<ReservationAppliedScope>,
     #[doc = "The applied scope type of the reservation."]
     #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
@@ -3341,7 +3487,11 @@ pub mod reservation_property {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub trend: Option<String>,
         #[doc = "The array of aggregates of a reservation's utilization"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub aggregates: Vec<ReservationUtilizationAggregates>,
     }
     impl Utilization {
@@ -3414,7 +3564,11 @@ impl ReservationUtilizationAggregates {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationsListResult {
     #[doc = "The list of reservations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Reservation>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3623,7 +3777,11 @@ impl Transaction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransactionListResult {
     #[doc = "The list of transactions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Transaction>,
     #[doc = "Total number of records."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -3873,7 +4031,12 @@ pub struct ValidateAddressResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AddressValidationStatus>,
     #[doc = "The list of suggested addresses."]
-    #[serde(rename = "suggestedAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "suggestedAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub suggested_addresses: Vec<AddressDetails>,
     #[doc = "Validation error message."]
     #[serde(rename = "validationMessage", default, skip_serializing_if = "Option::is_none")]

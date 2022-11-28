@@ -13,10 +13,18 @@ pub struct AbnormalTimePeriod {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "List of Possible Cause of downtime"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub events: Vec<DetectorAbnormalTimePeriod>,
     #[doc = "List of proposed solutions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub solutions: Vec<Solution>,
 }
 impl AbnormalTimePeriod {
@@ -80,10 +88,20 @@ pub mod address_response {
         #[serde(rename = "internalIpAddress", default, skip_serializing_if = "Option::is_none")]
         pub internal_ip_address: Option<String>,
         #[doc = "IP addresses appearing on outbound connections."]
-        #[serde(rename = "outboundIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "outboundIpAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub outbound_ip_addresses: Vec<String>,
         #[doc = "Additional virtual IPs."]
-        #[serde(rename = "vipMappings", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "vipMappings",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub vip_mappings: Vec<VirtualIpMapping>,
     }
     impl Properties {
@@ -96,7 +114,12 @@ pub mod address_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AllowedAudiencesValidation {
     #[doc = "The configuration settings of the allowed list of audiences from which to validate the JWT token."]
-    #[serde(rename = "allowedAudiences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedAudiences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_audiences: Vec<String>,
 }
 impl AllowedAudiencesValidation {
@@ -114,10 +137,18 @@ pub struct AnalysisData {
     #[serde(rename = "detectorDefinition", default, skip_serializing_if = "Option::is_none")]
     pub detector_definition: Option<DetectorDefinition>,
     #[doc = "Source Metrics"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metrics: Vec<DiagnosticMetricSet>,
     #[doc = "Additional Source Data"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data: Vec<Vec<NameValuePair>>,
     #[serde(rename = "detectorMetaData", default, skip_serializing_if = "Option::is_none")]
     pub detector_meta_data: Option<ResponseMetaData>,
@@ -441,6 +472,7 @@ pub mod app_service_certificate_order {
         #[serde(
             rename = "appServiceCertificateNotRenewableReasons",
             default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub app_service_certificate_not_renewable_reasons: Vec<String>,
@@ -603,6 +635,7 @@ pub mod app_service_certificate_order_patch_resource {
         #[serde(
             rename = "appServiceCertificateNotRenewableReasons",
             default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
         pub app_service_certificate_not_renewable_reasons: Vec<String>,
@@ -739,10 +772,20 @@ pub struct AppServiceEnvironment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suspended: Option<bool>,
     #[doc = "Custom settings for changing the behavior of the App Service Environment."]
-    #[serde(rename = "clusterSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clusterSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cluster_settings: Vec<NameValuePair>,
     #[doc = "User added ip ranges to whitelist on ASE db"]
-    #[serde(rename = "userWhitelistedIpRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userWhitelistedIpRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_whitelisted_ip_ranges: Vec<String>,
     #[doc = "Flag that displays whether an ASE has linux workers or not"]
     #[serde(rename = "hasLinuxWorkers", default, skip_serializing_if = "Option::is_none")]
@@ -1196,13 +1239,27 @@ pub struct ApplicationStack {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dependency: Option<String>,
     #[doc = "List of major versions available."]
-    #[serde(rename = "majorVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "majorVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub major_versions: Vec<StackMajorVersion>,
     #[doc = "List of frameworks associated with application stack."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frameworks: Vec<ApplicationStack>,
     #[doc = "<code>true</code> if this is the stack is deprecated; otherwise, <code>false</code>."]
-    #[serde(rename = "isDeprecated", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "isDeprecated",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub is_deprecated: Vec<ApplicationStack>,
 }
 impl ApplicationStack {
@@ -1365,9 +1422,19 @@ pub mod ase_v3_networking_configuration {
     #[doc = "AseV3NetworkingConfiguration resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
-        #[serde(rename = "windowsOutboundIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "windowsOutboundIpAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub windows_outbound_ip_addresses: Vec<String>,
-        #[serde(rename = "linuxOutboundIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "linuxOutboundIpAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub linux_outbound_ip_addresses: Vec<String>,
         #[doc = "Property to enable and disable new private endpoint connection creation on ASE"]
         #[serde(rename = "allowNewPrivateEndpointConnections", default, skip_serializing_if = "Option::is_none")]
@@ -1465,16 +1532,31 @@ pub struct AutoHealTriggers {
     #[serde(rename = "privateBytesInKB", default, skip_serializing_if = "Option::is_none")]
     pub private_bytes_in_kb: Option<i32>,
     #[doc = "A rule based on status codes."]
-    #[serde(rename = "statusCodes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusCodes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_codes: Vec<StatusCodesBasedTrigger>,
     #[doc = "Trigger based on request execution time."]
     #[serde(rename = "slowRequests", default, skip_serializing_if = "Option::is_none")]
     pub slow_requests: Option<SlowRequestsBasedTrigger>,
     #[doc = "A rule based on multiple Slow Requests Rule with path"]
-    #[serde(rename = "slowRequestsWithPath", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "slowRequestsWithPath",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub slow_requests_with_path: Vec<SlowRequestsBasedTrigger>,
     #[doc = "A rule based on status codes ranges."]
-    #[serde(rename = "statusCodesRange", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusCodesRange",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_codes_range: Vec<StatusCodesRangeBasedTrigger>,
 }
 impl AutoHealTriggers {
@@ -1510,7 +1592,12 @@ impl AzureActiveDirectory {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureActiveDirectoryLogin {
     #[doc = "Login parameters to send to the OpenID Connect authorization endpoint when\na user logs in. Each parameter must be in the form \"key=value\"."]
-    #[serde(rename = "loginParameters", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loginParameters",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub login_parameters: Vec<String>,
     #[doc = "<code>true</code> if the www-authenticate provider should be omitted from the request; otherwise, <code>false</code>."]
     #[serde(rename = "disableWWWAuthenticate", default, skip_serializing_if = "Option::is_none")]
@@ -1559,7 +1646,12 @@ pub struct AzureActiveDirectoryValidation {
     #[serde(rename = "jwtClaimChecks", default, skip_serializing_if = "Option::is_none")]
     pub jwt_claim_checks: Option<JwtClaimChecks>,
     #[doc = "The list of audiences that can make successful authentication/authorization requests."]
-    #[serde(rename = "allowedAudiences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedAudiences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_audiences: Vec<String>,
 }
 impl AzureActiveDirectoryValidation {
@@ -1771,7 +1863,11 @@ pub mod backup_item {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub log: Option<String>,
         #[doc = "List of databases included in the backup."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub databases: Vec<DatabaseBackupSetting>,
         #[doc = "True if this backup has been created due to a schedule being triggered."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1864,7 +1960,11 @@ pub mod backup_request {
         #[serde(rename = "backupSchedule", default, skip_serializing_if = "Option::is_none")]
         pub backup_schedule: Option<BackupSchedule>,
         #[doc = "Databases included in the backup."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub databases: Vec<DatabaseBackupSetting>,
     }
     impl Properties {
@@ -2061,7 +2161,12 @@ pub mod certificate {
         #[serde(rename = "subjectName", default, skip_serializing_if = "Option::is_none")]
         pub subject_name: Option<String>,
         #[doc = "Host names the certificate applies to."]
-        #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub host_names: Vec<String>,
         #[doc = "Pfx blob."]
         #[serde(rename = "pfxBlob", default, skip_serializing_if = "Option::is_none")]
@@ -2325,7 +2430,12 @@ pub mod certificate_patch_resource {
         #[serde(rename = "subjectName", default, skip_serializing_if = "Option::is_none")]
         pub subject_name: Option<String>,
         #[doc = "Host names the certificate applies to."]
-        #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub host_names: Vec<String>,
         #[doc = "Pfx blob."]
         #[serde(rename = "pfxBlob", default, skip_serializing_if = "Option::is_none")]
@@ -2624,7 +2734,12 @@ impl ContainerCpuStatistics {
 pub struct ContainerCpuUsage {
     #[serde(rename = "totalUsage", default, skip_serializing_if = "Option::is_none")]
     pub total_usage: Option<i64>,
-    #[serde(rename = "perCpuUsage", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "perCpuUsage",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub per_cpu_usage: Vec<i64>,
     #[serde(rename = "kernelModeUsage", default, skip_serializing_if = "Option::is_none")]
     pub kernel_mode_usage: Option<i64>,
@@ -2834,7 +2949,12 @@ pub mod cookie_expiration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CorsSettings {
     #[doc = "Gets or sets the list of origins that should be allowed to make cross-origin\ncalls (for example: http://example.com:12345). Use \"*\" to allow all."]
-    #[serde(rename = "allowedOrigins", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedOrigins",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_origins: Vec<String>,
     #[doc = "Gets or sets whether CORS requests with credentials are allowed. See \nhttps://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Requests_with_credentials\nfor more details."]
     #[serde(rename = "supportCredentials", default, skip_serializing_if = "Option::is_none")]
@@ -2850,7 +2970,11 @@ impl CorsSettings {
 pub struct CsmMoveResourceEnvelope {
     #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<String>,
 }
 impl CsmMoveResourceEnvelope {
@@ -3113,19 +3237,44 @@ pub mod custom_hostname_analysis_result {
         #[serde(rename = "conflictingAppResourceId", default, skip_serializing_if = "Option::is_none")]
         pub conflicting_app_resource_id: Option<String>,
         #[doc = "CName records controller can see for this hostname."]
-        #[serde(rename = "cNameRecords", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "cNameRecords",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub c_name_records: Vec<String>,
         #[doc = "TXT records controller can see for this hostname."]
-        #[serde(rename = "txtRecords", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "txtRecords",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub txt_records: Vec<String>,
         #[doc = "A records controller can see for this hostname."]
-        #[serde(rename = "aRecords", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "aRecords",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub a_records: Vec<String>,
         #[doc = "Alternate CName records controller can see for this hostname."]
-        #[serde(rename = "alternateCNameRecords", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "alternateCNameRecords",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub alternate_c_name_records: Vec<String>,
         #[doc = "Alternate TXT records controller can see for this hostname."]
-        #[serde(rename = "alternateTxtRecords", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "alternateTxtRecords",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub alternate_txt_records: Vec<String>,
     }
     impl Properties {
@@ -3168,7 +3317,12 @@ pub struct DataProviderMetadata {
     #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
     #[doc = "Settings for the data provider"]
-    #[serde(rename = "propertyBag", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "propertyBag",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub property_bag: Vec<KeyValuePairStringObject>,
 }
 impl DataProviderMetadata {
@@ -3180,10 +3334,19 @@ impl DataProviderMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSource {
     #[doc = "Instructions if any for the data source"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub instructions: Vec<String>,
     #[doc = "Datasource Uri Links"]
-    #[serde(rename = "dataSourceUri", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataSourceUri",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_source_uri: Vec<NameValuePair>,
 }
 impl DataSource {
@@ -3216,10 +3379,18 @@ pub struct DataTableResponseObject {
     #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<String>,
     #[doc = "List of columns with data types"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<DataTableResponseColumn>,
     #[doc = "Raw row values"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rows: Vec<Vec<String>>,
 }
 impl DataTableResponseObject {
@@ -3328,7 +3499,11 @@ pub mod default_error_response {
         #[doc = "Detailed error description and debugging information."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub details: Vec<serde_json::Value>,
         #[doc = "More information to debug error."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3525,13 +3700,27 @@ impl DeploymentCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentLocations {
     #[doc = "Available regions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<GeoRegion>,
     #[doc = "Available App Service Environments with full descriptions of the environments."]
-    #[serde(rename = "hostingEnvironments", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostingEnvironments",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hosting_environments: Vec<AppServiceEnvironment>,
     #[doc = "Available App Service Environments with basic information."]
-    #[serde(rename = "hostingEnvironmentDeploymentInfos", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostingEnvironmentDeploymentInfos",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hosting_environment_deployment_infos: Vec<HostingEnvironmentDeploymentInfo>,
 }
 impl DeploymentLocations {
@@ -3558,13 +3747,22 @@ pub struct DetectorAbnormalTimePeriod {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<f64>,
     #[doc = "Downtime metadata"]
-    #[serde(rename = "metaData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metaData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub meta_data: Vec<Vec<NameValuePair>>,
     #[doc = "Represents the type of the Detector"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<detector_abnormal_time_period::Type>,
     #[doc = "List of proposed solutions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub solutions: Vec<Solution>,
 }
 impl DetectorAbnormalTimePeriod {
@@ -3644,10 +3842,20 @@ pub struct DetectorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "List of Support Topics for which this detector is enabled."]
-    #[serde(rename = "supportTopicList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportTopicList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub support_topic_list: Vec<SupportTopic>,
     #[doc = "Analysis Types for which this detector should apply to."]
-    #[serde(rename = "analysisType", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "analysisType",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub analysis_type: Vec<String>,
     #[doc = "Whether this detector is an Analysis Detector or not."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -3694,13 +3902,22 @@ pub mod detector_response {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub metadata: Option<DetectorInfo>,
         #[doc = "Data Set"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub dataset: Vec<DiagnosticData>,
         #[doc = "Identify the status of the most severe insight generated by the detector."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<Status>,
         #[doc = "Additional configuration for different data providers to be used by the UI"]
-        #[serde(rename = "dataProvidersMetadata", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "dataProvidersMetadata",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub data_providers_metadata: Vec<DataProviderMetadata>,
         #[doc = "Suggested utterances where the detector can be applicable"]
         #[serde(rename = "suggestedUtterances", default, skip_serializing_if = "Option::is_none")]
@@ -3758,13 +3975,27 @@ pub mod diagnostic_analysis {
         #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
         pub end_time: Option<time::OffsetDateTime>,
         #[doc = "List of time periods."]
-        #[serde(rename = "abnormalTimePeriods", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "abnormalTimePeriods",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub abnormal_time_periods: Vec<AbnormalTimePeriod>,
         #[doc = "Data by each detector"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub payload: Vec<AnalysisData>,
         #[doc = "Data by each detector for detectors that did not corelate"]
-        #[serde(rename = "nonCorrelatedDetectors", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "nonCorrelatedDetectors",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub non_correlated_detectors: Vec<DetectorDefinition>,
     }
     impl Properties {
@@ -3909,13 +4140,26 @@ pub mod diagnostic_detector_response {
         #[serde(rename = "detectorDefinition", default, skip_serializing_if = "Option::is_none")]
         pub detector_definition: Option<DetectorDefinition>,
         #[doc = "Metrics provided by the detector"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub metrics: Vec<DiagnosticMetricSet>,
         #[doc = "List of Correlated events found by the detector"]
-        #[serde(rename = "abnormalTimePeriods", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "abnormalTimePeriods",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub abnormal_time_periods: Vec<DetectorAbnormalTimePeriod>,
         #[doc = "Additional Data that detector wants to send."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub data: Vec<Vec<NameValuePair>>,
         #[serde(rename = "responseMetaData", default, skip_serializing_if = "Option::is_none")]
         pub response_meta_data: Option<ResponseMetaData>,
@@ -3972,7 +4216,11 @@ pub struct DiagnosticMetricSet {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[doc = "Collection of metric values for the selected period based on the {Microsoft.Web.Hosting.Administration.DiagnosticMetricSet.TimeGrain}"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<DiagnosticMetricSample>,
 }
 impl DiagnosticMetricSet {
@@ -4038,7 +4286,12 @@ pub mod domain {
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Name servers."]
-        #[serde(rename = "nameServers", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "nameServers",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub name_servers: Vec<String>,
         #[doc = "<code>true</code> if domain privacy is enabled for this domain; otherwise, <code>false</code>."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4059,12 +4312,22 @@ pub mod domain {
         #[serde(rename = "readyForDnsRecordManagement", default, skip_serializing_if = "Option::is_none")]
         pub ready_for_dns_record_management: Option<bool>,
         #[doc = "All hostnames derived from the domain and assigned to Azure resources."]
-        #[serde(rename = "managedHostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "managedHostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub managed_host_names: Vec<HostName>,
         #[doc = "Domain purchase consent object, representing acceptance of applicable legal agreements."]
         pub consent: DomainPurchaseConsent,
         #[doc = "Reasons why domain is not renewable."]
-        #[serde(rename = "domainNotRenewableReasons", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "domainNotRenewableReasons",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub domain_not_renewable_reasons: Vec<String>,
         #[doc = "Current DNS type"]
         #[serde(rename = "dnsType", default, skip_serializing_if = "Option::is_none")]
@@ -4312,7 +4575,12 @@ pub mod domain_patch_resource {
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Name servers."]
-        #[serde(rename = "nameServers", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "nameServers",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub name_servers: Vec<String>,
         #[doc = "<code>true</code> if domain privacy is enabled for this domain; otherwise, <code>false</code>."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4333,12 +4601,22 @@ pub mod domain_patch_resource {
         #[serde(rename = "readyForDnsRecordManagement", default, skip_serializing_if = "Option::is_none")]
         pub ready_for_dns_record_management: Option<bool>,
         #[doc = "All hostnames derived from the domain and assigned to Azure resources."]
-        #[serde(rename = "managedHostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "managedHostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub managed_host_names: Vec<HostName>,
         #[doc = "Domain purchase consent object, representing acceptance of applicable legal agreements."]
         pub consent: DomainPurchaseConsent,
         #[doc = "Reasons why domain is not renewable."]
-        #[serde(rename = "domainNotRenewableReasons", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "domainNotRenewableReasons",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub domain_not_renewable_reasons: Vec<String>,
         #[doc = "Current DNS type"]
         #[serde(rename = "dnsType", default, skip_serializing_if = "Option::is_none")]
@@ -4438,7 +4716,12 @@ pub mod domain_patch_resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainPurchaseConsent {
     #[doc = "List of applicable legal agreement keys. This list can be retrieved using ListLegalAgreements API under <code>TopLevelDomain</code> resource."]
-    #[serde(rename = "agreementKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "agreementKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub agreement_keys: Vec<String>,
     #[doc = "Client IP address."]
     #[serde(rename = "agreedBy", default, skip_serializing_if = "Option::is_none")]
@@ -4486,7 +4769,12 @@ pub struct EndpointDependency {
     #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
     #[doc = "The IP Addresses and Ports used when connecting to DomainName."]
-    #[serde(rename = "endpointDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "endpointDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoint_details: Vec<EndpointDetail>,
 }
 impl EndpointDependency {
@@ -4525,10 +4813,19 @@ pub struct ErrorEntity {
     #[serde(rename = "messageTemplate", default, skip_serializing_if = "Option::is_none")]
     pub message_template: Option<String>,
     #[doc = "Parameters for the template."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<String>,
     #[doc = "Inner errors."]
-    #[serde(rename = "innerErrors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "innerErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inner_errors: Vec<ErrorEntity>,
     #[doc = "Basic error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4546,7 +4843,12 @@ impl ErrorEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Experiments {
     #[doc = "List of ramp-up rules."]
-    #[serde(rename = "rampUpRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "rampUpRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ramp_up_rules: Vec<RampUpRule>,
 }
 impl Experiments {
@@ -4705,7 +5007,12 @@ pub struct FunctionAppMajorVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Minor versions associated with the major version."]
-    #[serde(rename = "minorVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "minorVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub minor_versions: Vec<FunctionAppMinorVersion>,
 }
 impl FunctionAppMajorVersion {
@@ -4753,7 +5060,12 @@ pub struct FunctionAppRuntimeSettings {
     #[serde(rename = "siteConfigPropertiesDictionary", default, skip_serializing_if = "Option::is_none")]
     pub site_config_properties_dictionary: Option<SiteConfigPropertiesDictionary>,
     #[doc = "List of supported Functions extension versions."]
-    #[serde(rename = "supportedFunctionsExtensionVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedFunctionsExtensionVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_functions_extension_versions: Vec<String>,
     #[doc = "<code>true</code> if the stack is in preview; otherwise, <code>false</code>."]
     #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
@@ -4826,7 +5138,12 @@ pub mod function_app_stack {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
         #[doc = "List of major versions available."]
-        #[serde(rename = "majorVersions", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "majorVersions",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub major_versions: Vec<FunctionAppMajorVersion>,
         #[doc = "Function App stack preferred OS."]
         #[serde(rename = "preferredOs", default, skip_serializing_if = "Option::is_none")]
@@ -5131,10 +5448,18 @@ pub struct GlobalCsmSkuDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<SkuCapacity>,
     #[doc = "Locations of the SKU."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "Capabilities of the SKU, e.g., is traffic manager enabled?"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<Capability>,
 }
 impl GlobalCsmSkuDescription {
@@ -5155,7 +5480,12 @@ pub struct GlobalValidation {
     #[serde(rename = "redirectToProvider", default, skip_serializing_if = "Option::is_none")]
     pub redirect_to_provider: Option<String>,
     #[doc = "The paths for which unauthenticated flow would not be redirected to the login page."]
-    #[serde(rename = "excludedPaths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedPaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_paths: Vec<String>,
 }
 impl GlobalValidation {
@@ -5238,7 +5568,12 @@ pub struct HostName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "List of apps the hostname is assigned to. This list will have more than one app only if the hostname is pointing to a Traffic Manager."]
-    #[serde(rename = "siteNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "siteNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub site_names: Vec<String>,
     #[doc = "Name of the Azure resource the hostname is assigned to. If it is assigned to a Traffic Manager then it will be the Traffic Manager name otherwise it will be the app name."]
     #[serde(rename = "azureResourceName", default, skip_serializing_if = "Option::is_none")]
@@ -5742,10 +6077,18 @@ pub struct InboundEnvironmentEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The IP addresses that network traffic will originate from in cidr notation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<String>,
     #[doc = "The ports that network traffic will arrive to the App Service Environment at."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ports: Vec<String>,
 }
 impl InboundEnvironmentEndpoint {
@@ -5861,10 +6204,20 @@ pub mod ip_security_restriction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JwtClaimChecks {
     #[doc = "The list of the allowed groups."]
-    #[serde(rename = "allowedGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_groups: Vec<String>,
     #[doc = "The list of the allowed client applications."]
-    #[serde(rename = "allowedClientApplications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedClientApplications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_client_applications: Vec<String>,
 }
 impl JwtClaimChecks {
@@ -6183,7 +6536,12 @@ pub struct Login {
     #[serde(rename = "preserveUrlFragmentsForLogins", default, skip_serializing_if = "Option::is_none")]
     pub preserve_url_fragments_for_logins: Option<bool>,
     #[doc = "External URLs that can be redirected to as part of logging in or logging out of the app. Note that the query string part of the URL is ignored.\nThis is an advanced setting typically only needed by Windows Store application backends.\nNote that URLs within the current domain are always implicitly allowed."]
-    #[serde(rename = "allowedExternalRedirectUrls", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedExternalRedirectUrls",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_external_redirect_urls: Vec<String>,
     #[doc = "The configuration settings of the session cookie's expiration."]
     #[serde(rename = "cookieExpiration", default, skip_serializing_if = "Option::is_none")]
@@ -6213,7 +6571,11 @@ impl LoginRoutes {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoginScopes {
     #[doc = "A list of the scopes that should be requested while authenticating."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scopes: Vec<String>,
 }
 impl LoginScopes {
@@ -6285,7 +6647,11 @@ pub mod ms_deploy_log {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "List of log entry messages"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub entries: Vec<MsDeployLogEntry>,
     }
     impl Properties {
@@ -6453,15 +6819,33 @@ pub struct MetricSpecification {
     pub fill_gap_with_zero: Option<bool>,
     #[serde(rename = "isInternal", default, skip_serializing_if = "Option::is_none")]
     pub is_internal: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<Dimension>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub availabilities: Vec<MetricAvailability>,
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
 }
 impl MetricSpecification {
@@ -6633,10 +7017,20 @@ pub mod network_features {
         #[serde(rename = "virtualNetworkConnection", default, skip_serializing_if = "Option::is_none")]
         pub virtual_network_connection: Option<VnetInfo>,
         #[doc = "The Hybrid Connections summary view."]
-        #[serde(rename = "hybridConnections", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hybridConnections",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub hybrid_connections: Vec<RelayServiceConnectionEntity>,
         #[doc = "The Hybrid Connection V2 (Service Bus) view."]
-        #[serde(rename = "hybridConnectionsV2", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hybridConnectionsV2",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub hybrid_connections_v2: Vec<HybridConnection>,
     }
     impl Properties {
@@ -6732,7 +7126,11 @@ pub struct OpenIdConnectLogin {
     #[serde(rename = "nameClaimType", default, skip_serializing_if = "Option::is_none")]
     pub name_claim_type: Option<String>,
     #[doc = "A list of the scopes that should be requested while authenticating."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scopes: Vec<String>,
 }
 impl OpenIdConnectLogin {
@@ -6771,7 +7169,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation::Status>,
     #[doc = "Any errors associate with the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<ErrorEntity>,
     #[doc = "Time when operation has started."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
@@ -6810,7 +7212,11 @@ pub struct OutboundEnvironmentEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "The endpoints that the App Service Environment reaches the service at."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<EndpointDependency>,
 }
 impl OutboundEnvironmentEndpoint {
@@ -6910,7 +7316,11 @@ pub struct PerfMonSet {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[doc = "Collection of workers that are active during this time."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<PerfMonSample>,
 }
 impl PerfMonSet {
@@ -7115,7 +7525,12 @@ pub mod private_access {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
         #[doc = "The Virtual Networks (and subnets) allowed to access the site privately."]
-        #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "virtualNetworks",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub virtual_networks: Vec<PrivateAccessVirtualNetwork>,
     }
     impl Properties {
@@ -7152,7 +7567,11 @@ pub struct PrivateAccessVirtualNetwork {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "A List of subnets that access is allowed to on this Virtual Network. An empty array (but not null) is interpreted to mean that all subnets are allowed within this Virtual Network."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<PrivateAccessSubnet>,
 }
 impl PrivateAccessVirtualNetwork {
@@ -7251,10 +7670,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "RequiredMembers of a private link resource"]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "RequiredZoneNames of a private link resource"]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -7316,16 +7745,32 @@ pub mod process_info {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub parent: Option<String>,
         #[doc = "Child process list."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub children: Vec<String>,
         #[doc = "Thread list."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub threads: Vec<ProcessThreadInfo>,
         #[doc = "List of open files."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub open_file_handles: Vec<String>,
         #[doc = "List of modules."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub modules: Vec<ProcessModuleInfo>,
         #[doc = "File name of this process."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7758,7 +8203,11 @@ pub struct QueryUtterancesResults {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     #[doc = "Array of utterance results for search query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub results: Vec<QueryUtterancesResult>,
 }
 impl QueryUtterancesResults {
@@ -7846,7 +8295,12 @@ pub mod recommendation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub channels: Option<properties::Channels>,
         #[doc = "The list of category tags that this recommendation belongs to."]
-        #[serde(rename = "categoryTags", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "categoryTags",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub category_tags: Vec<String>,
         #[doc = "Name of action recommended by this object."]
         #[serde(rename = "actionName", default, skip_serializing_if = "Option::is_none")]
@@ -7855,7 +8309,11 @@ pub mod recommendation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<i32>,
         #[doc = "The list of states of this recommendation. If it's null then it should be considered \"Active\"."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub states: Vec<String>,
         #[doc = "The beginning time in UTC of a range that the recommendation refers to."]
         #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -8017,7 +8475,12 @@ pub mod recommendation_rule {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub channels: Option<properties::Channels>,
         #[doc = "The list of category tags that this recommendation rule belongs to."]
-        #[serde(rename = "categoryTags", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "categoryTags",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub category_tags: Vec<String>,
         #[doc = "True if this is associated with a dynamically added rule"]
         #[serde(rename = "isDynamic", default, skip_serializing_if = "Option::is_none")]
@@ -8164,7 +8627,12 @@ pub mod remote_private_endpoint_connection {
         #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
         pub private_link_service_connection_state: Option<PrivateLinkConnectionState>,
         #[doc = "Private IPAddresses mapped to the remote private endpoint"]
-        #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "ipAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub ip_addresses: Vec<String>,
     }
     impl Properties {
@@ -8201,7 +8669,12 @@ pub mod remote_private_endpoint_connection_arm_resource {
         #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
         pub private_link_service_connection_state: Option<PrivateLinkConnectionState>,
         #[doc = "Private IPAddresses mapped to the remote private endpoint"]
-        #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "ipAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub ip_addresses: Vec<String>,
     }
     impl Properties {
@@ -8456,7 +8929,12 @@ pub mod resource_metric_definition {
         #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
         pub primary_aggregation_type: Option<String>,
         #[doc = "List of time grains supported for the metric together with retention period."]
-        #[serde(rename = "metricAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "metricAvailabilities",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub metric_availabilities: Vec<ResourceMetricAvailability>,
         #[doc = "Resource URI."]
         #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
@@ -8665,7 +9143,11 @@ pub struct ResponseMessageEnvelopeRemotePrivateEndpointConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
     #[doc = "Logical Availability Zones the service is hosted in"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl ResponseMessageEnvelopeRemotePrivateEndpointConnection {
@@ -8715,7 +9197,11 @@ pub mod restore_request {
         #[serde(rename = "siteName", default, skip_serializing_if = "Option::is_none")]
         pub site_name: Option<String>,
         #[doc = "Collection of databases which should be restored. This list has to match the list of databases included in the backup."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub databases: Vec<DatabaseBackupSetting>,
         #[doc = "Changes a logic when restoring an app with custom domains. <code>true</code> to remove custom domains automatically. If <code>false</code>, custom domains are added to \nthe app's object when it is being restored, but that might fail due to conflicts during the operation."]
         #[serde(rename = "ignoreConflictingHostNames", default, skip_serializing_if = "Option::is_none")]
@@ -8779,7 +9265,11 @@ pub struct SampleUtterance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
     #[doc = "Links attribute of sample utterance."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub links: Vec<String>,
     #[doc = "Question id of sample utterance (for stackoverflow questions titles)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8793,9 +9283,19 @@ impl SampleUtterance {
 #[doc = "Resource metrics service provided by Microsoft.Insights resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
 }
 impl ServiceSpecification {
@@ -8837,7 +9337,12 @@ pub mod site {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub state: Option<String>,
         #[doc = "Hostnames associated with the app."]
-        #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub host_names: Vec<String>,
         #[doc = "Name of the repository site."]
         #[serde(rename = "repositorySiteName", default, skip_serializing_if = "Option::is_none")]
@@ -8849,13 +9354,23 @@ pub mod site {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
         #[doc = "Enabled hostnames for the app.Hostnames need to be assigned (see HostNames) AND enabled. Otherwise,\nthe app is not served on those hostnames."]
-        #[serde(rename = "enabledHostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "enabledHostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub enabled_host_names: Vec<String>,
         #[doc = "Management information availability state for the app."]
         #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Hostname SSL states are used to manage the SSL bindings for app's hostnames."]
-        #[serde(rename = "hostNameSslStates", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hostNameSslStates",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub host_name_ssl_states: Vec<HostNameSslState>,
         #[doc = "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."]
         #[serde(rename = "serverFarmId", default, skip_serializing_if = "Option::is_none")]
@@ -8876,7 +9391,12 @@ pub mod site {
         #[serde(rename = "siteConfig", default, skip_serializing_if = "Option::is_none")]
         pub site_config: Option<SiteConfig>,
         #[doc = "Azure Traffic Manager hostnames associated with the app. Read-only."]
-        #[serde(rename = "trafficManagerHostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "trafficManagerHostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub traffic_manager_host_names: Vec<String>,
         #[doc = "<code>true</code> to stop SCM (KUDU) site when the app is stopped; otherwise, <code>false</code>. The default is <code>false</code>."]
         #[serde(rename = "scmSiteAlsoStopped", default, skip_serializing_if = "Option::is_none")]
@@ -9027,7 +9547,12 @@ pub mod site_auth_settings {
         #[serde(rename = "tokenStoreEnabled", default, skip_serializing_if = "Option::is_none")]
         pub token_store_enabled: Option<bool>,
         #[doc = "External URLs that can be redirected to as part of logging in or logging out of the app. Note that the query string part of the URL is ignored.\nThis is an advanced setting typically only needed by Windows Store application backends.\nNote that URLs within the current domain are always implicitly allowed."]
-        #[serde(rename = "allowedExternalRedirectUrls", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "allowedExternalRedirectUrls",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub allowed_external_redirect_urls: Vec<String>,
         #[doc = "The default authentication provider to use when multiple providers are configured.\nThis setting is only needed if multiple providers are configured and the unauthenticated client\naction is set to \"RedirectToLoginPage\"."]
         #[serde(rename = "defaultProvider", default, skip_serializing_if = "Option::is_none")]
@@ -9054,10 +9579,20 @@ pub mod site_auth_settings {
         #[serde(rename = "validateIssuer", default, skip_serializing_if = "Option::is_none")]
         pub validate_issuer: Option<bool>,
         #[doc = "Allowed audience values to consider when validating JWTs issued by \nAzure Active Directory. Note that the <code>ClientID</code> value is always considered an\nallowed audience, regardless of this setting."]
-        #[serde(rename = "allowedAudiences", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "allowedAudiences",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub allowed_audiences: Vec<String>,
         #[doc = "Login parameters to send to the OpenID Connect authorization endpoint when\na user logs in. Each parameter must be in the form \"key=value\"."]
-        #[serde(rename = "additionalLoginParams", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "additionalLoginParams",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub additional_login_params: Vec<String>,
         #[doc = "Gets a JSON string containing the Azure AD Acl settings."]
         #[serde(rename = "aadClaimsAuthorization", default, skip_serializing_if = "Option::is_none")]
@@ -9072,7 +9607,12 @@ pub mod site_auth_settings {
         #[serde(rename = "googleClientSecretSettingName", default, skip_serializing_if = "Option::is_none")]
         pub google_client_secret_setting_name: Option<String>,
         #[doc = "The OAuth 2.0 scopes that will be requested as part of Google Sign-In authentication.\nThis setting is optional. If not specified, \"openid\", \"profile\", and \"email\" are used as default scopes.\nGoogle Sign-In documentation: https://developers.google.com/identity/sign-in/web/"]
-        #[serde(rename = "googleOAuthScopes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "googleOAuthScopes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub google_o_auth_scopes: Vec<String>,
         #[doc = "The App ID of the Facebook app used for login.\nThis setting is required for enabling Facebook Login.\nFacebook Login documentation: https://developers.facebook.com/docs/facebook-login"]
         #[serde(rename = "facebookAppId", default, skip_serializing_if = "Option::is_none")]
@@ -9084,7 +9624,12 @@ pub mod site_auth_settings {
         #[serde(rename = "facebookAppSecretSettingName", default, skip_serializing_if = "Option::is_none")]
         pub facebook_app_secret_setting_name: Option<String>,
         #[doc = "The OAuth 2.0 scopes that will be requested as part of Facebook Login authentication.\nThis setting is optional.\nFacebook Login documentation: https://developers.facebook.com/docs/facebook-login"]
-        #[serde(rename = "facebookOAuthScopes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "facebookOAuthScopes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub facebook_o_auth_scopes: Vec<String>,
         #[doc = "The Client Id of the GitHub app used for login.\nThis setting is required for enabling Github login"]
         #[serde(rename = "gitHubClientId", default, skip_serializing_if = "Option::is_none")]
@@ -9096,7 +9641,12 @@ pub mod site_auth_settings {
         #[serde(rename = "gitHubClientSecretSettingName", default, skip_serializing_if = "Option::is_none")]
         pub git_hub_client_secret_setting_name: Option<String>,
         #[doc = "The OAuth 2.0 scopes that will be requested as part of GitHub Login authentication.\nThis setting is optional"]
-        #[serde(rename = "gitHubOAuthScopes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "gitHubOAuthScopes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub git_hub_o_auth_scopes: Vec<String>,
         #[doc = "The OAuth 1.0a consumer key of the Twitter application used for sign-in.\nThis setting is required for enabling Twitter Sign-In.\nTwitter Sign-In documentation: https://dev.twitter.com/web/sign-in"]
         #[serde(rename = "twitterConsumerKey", default, skip_serializing_if = "Option::is_none")]
@@ -9121,7 +9671,12 @@ pub mod site_auth_settings {
         )]
         pub microsoft_account_client_secret_setting_name: Option<String>,
         #[doc = "The OAuth 2.0 scopes that will be requested as part of Microsoft Account authentication.\nThis setting is optional. If not specified, \"wl.basic\" is used as the default scope.\nMicrosoft Account Scopes and permissions documentation: https://msdn.microsoft.com/en-us/library/dn631845.aspx"]
-        #[serde(rename = "microsoftAccountOAuthScopes", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "microsoftAccountOAuthScopes",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub microsoft_account_o_auth_scopes: Vec<String>,
         #[doc = "\"true\" if the auth config settings should be read from a file,\n\"false\" otherwise"]
         #[serde(rename = "isAuthFromFile", default, skip_serializing_if = "Option::is_none")]
@@ -9206,13 +9761,28 @@ pub struct SiteCloneability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<site_cloneability::Result>,
     #[doc = "List of features enabled on app that prevent cloning."]
-    #[serde(rename = "blockingFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blockingFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blocking_features: Vec<SiteCloneabilityCriterion>,
     #[doc = "List of features enabled on app that are non-blocking but cannot be cloned. The app can still be cloned\nbut the features in this list will not be set up on cloned app."]
-    #[serde(rename = "unsupportedFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "unsupportedFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub unsupported_features: Vec<SiteCloneabilityCriterion>,
     #[doc = "List of blocking application characteristics."]
-    #[serde(rename = "blockingCharacteristics", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "blockingCharacteristics",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub blocking_characteristics: Vec<SiteCloneabilityCriterion>,
 }
 impl SiteCloneability {
@@ -9252,7 +9822,12 @@ pub struct SiteConfig {
     #[serde(rename = "numberOfWorkers", default, skip_serializing_if = "Option::is_none")]
     pub number_of_workers: Option<i32>,
     #[doc = "Default documents."]
-    #[serde(rename = "defaultDocuments", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultDocuments",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_documents: Vec<String>,
     #[doc = ".NET Framework version."]
     #[serde(rename = "netFrameworkVersion", default, skip_serializing_if = "Option::is_none")]
@@ -9306,16 +9881,31 @@ pub struct SiteConfig {
     #[serde(rename = "publishingUsername", default, skip_serializing_if = "Option::is_none")]
     pub publishing_username: Option<String>,
     #[doc = "Application settings."]
-    #[serde(rename = "appSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub app_settings: Vec<NameValuePair>,
     #[doc = "Connection strings."]
-    #[serde(rename = "connectionStrings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectionStrings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connection_strings: Vec<ConnStringInfo>,
     #[doc = "MachineKey of an app."]
     #[serde(rename = "machineKey", default, skip_serializing_if = "Option::is_none")]
     pub machine_key: Option<SiteMachineKey>,
     #[doc = "Handler mappings."]
-    #[serde(rename = "handlerMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "handlerMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub handler_mappings: Vec<HandlerMapping>,
     #[doc = "Document root."]
     #[serde(rename = "documentRoot", default, skip_serializing_if = "Option::is_none")]
@@ -9348,7 +9938,12 @@ pub struct SiteConfig {
     #[serde(rename = "managedPipelineMode", default, skip_serializing_if = "Option::is_none")]
     pub managed_pipeline_mode: Option<site_config::ManagedPipelineMode>,
     #[doc = "Virtual applications."]
-    #[serde(rename = "virtualApplications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualApplications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_applications: Vec<VirtualApplication>,
     #[doc = "Site load balancing."]
     #[serde(rename = "loadBalancing", default, skip_serializing_if = "Option::is_none")]
@@ -9405,10 +10000,20 @@ pub struct SiteConfig {
     #[serde(rename = "keyVaultReferenceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_reference_identity: Option<String>,
     #[doc = "IP security restrictions for main."]
-    #[serde(rename = "ipSecurityRestrictions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipSecurityRestrictions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_security_restrictions: Vec<IpSecurityRestriction>,
     #[doc = "IP security restrictions for scm."]
-    #[serde(rename = "scmIpSecurityRestrictions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "scmIpSecurityRestrictions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scm_ip_security_restrictions: Vec<IpSecurityRestriction>,
     #[doc = "IP security restrictions for scm to use main."]
     #[serde(rename = "scmIpSecurityRestrictionsUseMain", default, skip_serializing_if = "Option::is_none")]
@@ -9823,7 +10428,11 @@ pub mod site_extension_info {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub feed_url: Option<String>,
         #[doc = "List of authors."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub authors: Vec<String>,
         #[doc = "Installer command line parameters."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9988,7 +10597,12 @@ pub mod site_patch_resource {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub state: Option<String>,
         #[doc = "Hostnames associated with the app."]
-        #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub host_names: Vec<String>,
         #[doc = "Name of the repository site."]
         #[serde(rename = "repositorySiteName", default, skip_serializing_if = "Option::is_none")]
@@ -10000,13 +10614,23 @@ pub mod site_patch_resource {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
         #[doc = "Enabled hostnames for the app.Hostnames need to be assigned (see HostNames) AND enabled. Otherwise,\nthe app is not served on those hostnames."]
-        #[serde(rename = "enabledHostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "enabledHostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub enabled_host_names: Vec<String>,
         #[doc = "Management information availability state for the app."]
         #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Hostname SSL states are used to manage the SSL bindings for app's hostnames."]
-        #[serde(rename = "hostNameSslStates", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "hostNameSslStates",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub host_name_ssl_states: Vec<HostNameSslState>,
         #[doc = "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."]
         #[serde(rename = "serverFarmId", default, skip_serializing_if = "Option::is_none")]
@@ -10027,7 +10651,12 @@ pub mod site_patch_resource {
         #[serde(rename = "siteConfig", default, skip_serializing_if = "Option::is_none")]
         pub site_config: Option<SiteConfig>,
         #[doc = "Azure Traffic Manager hostnames associated with the app. Read-only."]
-        #[serde(rename = "trafficManagerHostNames", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "trafficManagerHostNames",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub traffic_manager_host_names: Vec<String>,
         #[doc = "<code>true</code> to stop SCM (KUDU) site when the app is stopped; otherwise, <code>false</code>. The default is <code>false</code>."]
         #[serde(rename = "scmSiteAlsoStopped", default, skip_serializing_if = "Option::is_none")]
@@ -10303,10 +10932,18 @@ pub struct SkuDescription {
     #[serde(rename = "skuCapacity", default, skip_serializing_if = "Option::is_none")]
     pub sku_capacity: Option<SkuCapacity>,
     #[doc = "Locations of the SKU."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "Capabilities of the SKU, e.g., is traffic manager enabled?"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<Capability>,
 }
 impl SkuDescription {
@@ -10359,7 +10996,11 @@ pub struct SkuInfos {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[doc = "List of SKUs the subscription is able to use."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub skus: Vec<GlobalCsmSkuDescription>,
 }
 impl SkuInfos {
@@ -10371,13 +11012,28 @@ impl SkuInfos {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SlotConfigNames {
     #[doc = "List of connection string names."]
-    #[serde(rename = "connectionStringNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "connectionStringNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connection_string_names: Vec<String>,
     #[doc = "List of application settings names."]
-    #[serde(rename = "appSettingNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appSettingNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub app_setting_names: Vec<String>,
     #[doc = "List of external Azure storage account identifiers."]
-    #[serde(rename = "azureStorageConfigNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureStorageConfigNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_storage_config_names: Vec<String>,
 }
 impl SlotConfigNames {
@@ -10638,10 +11294,18 @@ pub struct Solution {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<solution::Type>,
     #[doc = "Solution Data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data: Vec<Vec<NameValuePair>>,
     #[doc = "Solution Metadata."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metadata: Vec<Vec<NameValuePair>>,
 }
 impl Solution {
@@ -10730,7 +11394,12 @@ pub struct StackMajorVersion {
     #[serde(rename = "isDefault", default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
     #[doc = "Minor versions associated with the major version."]
-    #[serde(rename = "minorVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "minorVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub minor_versions: Vec<StackMinorVersion>,
     #[doc = "<code>true</code> if this supports Application Insights; otherwise, <code>false</code>."]
     #[serde(rename = "applicationInsights", default, skip_serializing_if = "Option::is_none")]
@@ -10878,7 +11547,12 @@ pub struct StaticSite {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
     #[doc = "The custom domains associated with this static site."]
-    #[serde(rename = "customDomains", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customDomains",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_domains: Vec<String>,
     #[doc = "A user's github repository token. This is used to setup the Github Actions workflow file and API secrets."]
     #[serde(rename = "repositoryToken", default, skip_serializing_if = "Option::is_none")]
@@ -10887,7 +11561,12 @@ pub struct StaticSite {
     #[serde(rename = "buildProperties", default, skip_serializing_if = "Option::is_none")]
     pub build_properties: Option<StaticSiteBuildProperties>,
     #[doc = "Private endpoint connections"]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<ResponseMessageEnvelopeRemotePrivateEndpointConnection>,
     #[doc = "State indicating whether staging environments are allowed or not allowed for a static web app."]
     #[serde(rename = "stagingEnvironmentPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -10905,7 +11584,12 @@ pub struct StaticSite {
     #[serde(rename = "keyVaultReferenceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_reference_identity: Option<String>,
     #[doc = "User provided function apps registered with the static site"]
-    #[serde(rename = "userProvidedFunctionApps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "userProvidedFunctionApps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub user_provided_function_apps: Vec<StaticSiteUserProvidedFunctionApp>,
     #[doc = "The provider that submitted the last deployment to the primary environment of the static site."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10991,7 +11675,12 @@ pub mod static_site_build_arm_resource {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<properties::Status>,
         #[doc = "User provided function apps registered with the static site build"]
-        #[serde(rename = "userProvidedFunctionApps", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "userProvidedFunctionApps",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub user_provided_function_apps: Vec<StaticSiteUserProvidedFunctionApp>,
     }
     impl Properties {
@@ -11914,7 +12603,11 @@ pub struct StringList {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
     #[doc = "List of string resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub properties: Vec<String>,
 }
 impl StringList {
@@ -12118,7 +12811,11 @@ pub mod triggered_job_history {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "List of triggered web job runs."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub runs: Vec<TriggeredJobRun>,
     }
     impl Properties {
@@ -12620,7 +13317,12 @@ pub struct VirtualApplication {
     #[serde(rename = "preloadEnabled", default, skip_serializing_if = "Option::is_none")]
     pub preload_enabled: Option<bool>,
     #[doc = "Virtual directories for virtual application."]
-    #[serde(rename = "virtualDirectories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualDirectories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_directories: Vec<VirtualDirectory>,
 }
 impl VirtualApplication {
@@ -12756,7 +13458,11 @@ pub mod vnet_info {
         #[serde(rename = "certBlob", default, skip_serializing_if = "Option::is_none")]
         pub cert_blob: Option<String>,
         #[doc = "The routes that this Virtual Network connection uses."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub routes: Vec<VnetRoute>,
         #[doc = "<code>true</code> if a resync is required; otherwise, <code>false</code>."]
         #[serde(rename = "resyncRequired", default, skip_serializing_if = "Option::is_none")]
@@ -12918,10 +13624,19 @@ pub mod vnet_validation_failure_details {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub failed: Option<bool>,
         #[doc = "A list of tests that failed in the validation."]
-        #[serde(rename = "failedTests", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "failedTests",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub failed_tests: Vec<VnetValidationTestFailure>,
         #[doc = "A list of warnings generated during validation."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub warnings: Vec<VnetValidationTestFailure>,
     }
     impl Properties {
@@ -13012,7 +13727,12 @@ pub struct WebAppMajorVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Minor versions associated with the major version."]
-    #[serde(rename = "minorVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "minorVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub minor_versions: Vec<WebAppMinorVersion>,
 }
 impl WebAppMajorVersion {
@@ -13127,7 +13847,12 @@ pub mod web_app_stack {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
         #[doc = "List of major versions available."]
-        #[serde(rename = "majorVersions", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "majorVersions",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub major_versions: Vec<WebAppMajorVersion>,
         #[doc = "Web App stack preferred OS."]
         #[serde(rename = "preferredOs", default, skip_serializing_if = "Option::is_none")]
@@ -13346,7 +14071,12 @@ pub struct WorkerPool {
     #[serde(rename = "workerCount", default, skip_serializing_if = "Option::is_none")]
     pub worker_count: Option<i32>,
     #[doc = "Names of all instances in the worker pool (read only)."]
-    #[serde(rename = "instanceNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "instanceNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub instance_names: Vec<String>,
 }
 impl WorkerPool {

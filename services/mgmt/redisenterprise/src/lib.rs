@@ -6,20 +6,20 @@
 #[cfg(feature = "package-preview-2021-02")]
 pub mod package_preview_2021_02;
 #[cfg(all(feature = "package-preview-2021-02", not(feature = "no-default-tag")))]
-pub use package_preview_2021_02::{models, Client, ClientBuilder};
+pub use package_preview_2021_02::*;
 #[cfg(feature = "package-2022-01")]
 pub mod package_2022_01;
 #[cfg(all(feature = "package-2022-01", not(feature = "no-default-tag")))]
-pub use package_2022_01::{models, Client, ClientBuilder};
+pub use package_2022_01::*;
 #[cfg(feature = "package-2021-08")]
 pub mod package_2021_08;
 #[cfg(all(feature = "package-2021-08", not(feature = "no-default-tag")))]
-pub use package_2021_08::{models, Client, ClientBuilder};
+pub use package_2021_08::*;
 #[cfg(feature = "package-2021-03")]
 pub mod package_2021_03;
 #[cfg(all(feature = "package-2021-03", not(feature = "no-default-tag")))]
-pub use package_2021_03::{models, Client, ClientBuilder};
+pub use package_2021_03::*;
 #[cfg(feature = "package-2020-10-01-preview")]
 pub mod package_2020_10_01_preview;
 #[cfg(all(feature = "package-2020-10-01-preview", not(feature = "no-default-tag")))]
-pub use package_2020_10_01_preview::{models, Client, ClientBuilder};
+pub use package_2020_10_01_preview::*;

@@ -109,7 +109,11 @@ pub mod active_directory_connector_domain_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveDirectoryConnectorListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ActiveDirectoryConnectorResource>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -420,7 +424,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponseBody>,
 }
 impl ErrorResponseBody {
@@ -661,7 +669,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -682,7 +694,11 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageOfDataControllerResource {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataControllerResource>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -727,7 +743,11 @@ impl PostgresInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PostgresInstanceListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PostgresInstance>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -900,7 +920,11 @@ impl SqlManagedInstanceK8sSpec {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlManagedInstanceListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlManagedInstance>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1095,7 +1119,11 @@ impl SqlServerInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServerInstanceListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlServerInstance>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1338,11 +1366,16 @@ pub mod sql_server_instance_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "LicenseType")]
     pub enum LicenseType {
-        Paid,
+        Undefined,
         Free,
         #[serde(rename = "HADR")]
         Hadr,
-        Undefined,
+        #[serde(rename = "ServerCAL")]
+        ServerCal,
+        LicenseOnly,
+        #[serde(rename = "PAYG")]
+        Payg,
+        Paid,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1368,10 +1401,13 @@ pub mod sql_server_instance_properties {
             S: Serializer,
         {
             match self {
-                Self::Paid => serializer.serialize_unit_variant("LicenseType", 0u32, "Paid"),
+                Self::Undefined => serializer.serialize_unit_variant("LicenseType", 0u32, "Undefined"),
                 Self::Free => serializer.serialize_unit_variant("LicenseType", 1u32, "Free"),
                 Self::Hadr => serializer.serialize_unit_variant("LicenseType", 2u32, "HADR"),
-                Self::Undefined => serializer.serialize_unit_variant("LicenseType", 3u32, "Undefined"),
+                Self::ServerCal => serializer.serialize_unit_variant("LicenseType", 3u32, "ServerCAL"),
+                Self::LicenseOnly => serializer.serialize_unit_variant("LicenseType", 4u32, "LicenseOnly"),
+                Self::Payg => serializer.serialize_unit_variant("LicenseType", 5u32, "PAYG"),
+                Self::Paid => serializer.serialize_unit_variant("LicenseType", 6u32, "Paid"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

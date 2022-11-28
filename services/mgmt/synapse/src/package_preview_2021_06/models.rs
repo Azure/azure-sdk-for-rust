@@ -120,7 +120,11 @@ impl AzureAdOnlyAuthentication {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAdOnlyAuthenticationListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureAdOnlyAuthentication>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -251,7 +255,11 @@ pub struct BigDataPoolResourceInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of Big Data pools"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BigDataPoolResourceInfo>,
 }
 impl azure_core::Continuable for BigDataPoolResourceInfoListResult {
@@ -283,6 +291,9 @@ pub struct BigDataPoolResourceProperties {
     #[doc = "Whether compute isolation is required or not."]
     #[serde(rename = "isComputeIsolationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_compute_isolation_enabled: Option<bool>,
+    #[doc = "Whether autotune is required or not."]
+    #[serde(rename = "isAutotuneEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_autotune_enabled: Option<bool>,
     #[doc = "Whether session level packages enabled."]
     #[serde(rename = "sessionLevelPackagesEnabled", default, skip_serializing_if = "Option::is_none")]
     pub session_level_packages_enabled: Option<bool>,
@@ -302,7 +313,12 @@ pub struct BigDataPoolResourceProperties {
     #[serde(rename = "libraryRequirements", default, skip_serializing_if = "Option::is_none")]
     pub library_requirements: Option<LibraryRequirements>,
     #[doc = "List of custom libraries/packages associated with the spark pool."]
-    #[serde(rename = "customLibraries", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customLibraries",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_libraries: Vec<LibraryInfo>,
     #[doc = "SparkConfig Properties for a Big Data pool powered by Apache Spark"]
     #[serde(rename = "sparkConfigProperties", default, skip_serializing_if = "Option::is_none")]
@@ -421,6 +437,38 @@ pub mod big_data_pool_resource_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "Workspace Check Default Storage Account Status."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckDefaultStorageAccountStatus {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Properties of the Check Default Storage Account Status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CheckDefaultStorageAccountStatusProperties>,
+}
+impl CheckDefaultStorageAccountStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of the Check Default Storage Account Status."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckDefaultStorageAccountStatusProperties {
+    #[doc = "Is Storage Account Status Linked."]
+    #[serde(rename = "isPrivateLinked", default, skip_serializing_if = "Option::is_none")]
+    pub is_private_linked: Option<bool>,
+    #[doc = "Endpoint ResourceId."]
+    #[serde(rename = "privateEndpointResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint_resource_id: Option<String>,
+}
+impl CheckDefaultStorageAccountStatusProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A request about whether a workspace name is available"]
@@ -670,7 +718,11 @@ impl DataMaskingRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingRuleListResult {
     #[doc = "The list of Sql pool data masking rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataMaskingRule>,
 }
 impl azure_core::Continuable for DataMaskingRuleListResult {
@@ -768,6 +820,251 @@ pub mod data_masking_rule_properties {
         Text,
     }
 }
+#[doc = "Properties of a datawarehousequeries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWareHouseQueriesProperties {
+    #[doc = "Requested QueryId. of datawarehousequeries"]
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[doc = "The start time for queries datawarehousequeries"]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time for queries"]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The duration of requested queries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<f64>,
+    #[doc = " Status of dataWarehouseQueries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = " QueryText Message"]
+    #[serde(rename = "queryText", default, skip_serializing_if = "Option::is_none")]
+    pub query_text: Option<String>,
+    #[doc = "dataWarehouseQueries Importance"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub importance: Option<String>,
+    #[doc = "Requested GroupName "]
+    #[serde(rename = "groupName", default, skip_serializing_if = "Option::is_none")]
+    pub group_name: Option<String>,
+    #[doc = "Requested ClassifierName"]
+    #[serde(rename = "classifierName", default, skip_serializing_if = "Option::is_none")]
+    pub classifier_name: Option<String>,
+    #[doc = "AllocationPercentage of the Resource"]
+    #[serde(rename = "resourceAllocationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub resource_allocation_percentage: Option<String>,
+    #[doc = "The operation error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[doc = "Login Details"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub login: Option<String>,
+    #[doc = "Progress value"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<f64>,
+    #[doc = "SessionId for Resource"]
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[doc = "Requested ResourceClass"]
+    #[serde(rename = "resourceClass", default, skip_serializing_if = "Option::is_none")]
+    pub resource_class: Option<data_ware_house_queries_properties::ResourceClass>,
+    #[doc = "Requested ConcurrencySlots"]
+    #[serde(rename = "concurrencySlots", default, skip_serializing_if = "Option::is_none")]
+    pub concurrency_slots: Option<String>,
+}
+impl DataWareHouseQueriesProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_ware_house_queries_properties {
+    use super::*;
+    #[doc = "Requested ResourceClass"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResourceClass {
+        #[serde(rename = "xlargerc")]
+        Xlargerc,
+        #[serde(rename = "largerc")]
+        Largerc,
+        #[serde(rename = "mediumrc")]
+        Mediumrc,
+        #[serde(rename = "smallrc")]
+        Smallrc,
+    }
+}
+#[doc = "The response to a list datawarehouse queries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueries {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a datawarehousequeries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataWareHouseQueriesProperties>,
+}
+impl DataWarehouseQueries {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list datawarehouse queries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesList {
+    #[doc = "The response to a list datawarehouse queries."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<DataWarehouseQueries>,
+}
+impl DataWarehouseQueriesList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list datawarehouse queries.steps"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesSteps {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Properties of a datawarehousequeries."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataWarehouseQueriesStepsProperties>,
+}
+impl DataWarehouseQueriesSteps {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list datawarehouse queries.steps"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesStepsList {
+    #[doc = "Link to the next page of results"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Resource properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<DataWarehouseQueriesSteps>,
+}
+impl DataWarehouseQueriesStepsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of a datawarehousequeries."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataWarehouseQueriesStepsProperties {
+    #[doc = "Requested QueryId. of datawarehousequeries steps"]
+    #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
+    pub query_id: Option<String>,
+    #[doc = "The start time of dataWarehouseQueries Steps."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time of dataWarehouseQueries Steps."]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The duration of requested dataWarehouseQueries Steps."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<f64>,
+    #[doc = " Status of dataWarehouseQueries Steps"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = " QueryText Message"]
+    #[serde(rename = "queryText", default, skip_serializing_if = "Option::is_none")]
+    pub query_text: Option<String>,
+    #[doc = "dataWarehouseQueries step index"]
+    #[serde(rename = "stepIndex", default, skip_serializing_if = "Option::is_none")]
+    pub step_index: Option<String>,
+    #[doc = "Type of operation"]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    pub operation_type: Option<data_warehouse_queries_steps_properties::OperationType>,
+    #[doc = "Type of distribution"]
+    #[serde(rename = "distributionType", default, skip_serializing_if = "Option::is_none")]
+    pub distribution_type: Option<data_warehouse_queries_steps_properties::DistributionType>,
+    #[doc = "Type of location"]
+    #[serde(rename = "locationType", default, skip_serializing_if = "Option::is_none")]
+    pub location_type: Option<data_warehouse_queries_steps_properties::LocationType>,
+    #[doc = "Number of rows count"]
+    #[serde(rename = "rowCount", default, skip_serializing_if = "Option::is_none")]
+    pub row_count: Option<String>,
+}
+impl DataWarehouseQueriesStepsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_warehouse_queries_steps_properties {
+    use super::*;
+    #[doc = "Type of operation"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OperationType {
+        BackupAzureDatabaseOperation,
+        BroadcastMoveOperation,
+        CheckEncryptionStatusOperation,
+        CopyOperation,
+        CreateDiagnosticsOperation,
+        #[serde(rename = "DSQLCallBackOperation")]
+        DsqlCallBackOperation,
+        DbccShowStatisticsOperation,
+        DistributedExchangeOperation,
+        DistributeReplicatedTableMoveOperation,
+        DropDiagnosticsNotifyOperation,
+        DropDiagnosticsSynchronizeOperation,
+        ExternalBroadcastMove,
+        ExternalExportControlMove,
+        ExternalExportControlOperation,
+        ExternalExportDistributedMove,
+        ExternalExportDistributedOperation,
+        ExternalExportReplicatedMove,
+        ExternalExportReplicatedOperation,
+        ExternalShuffleOperation,
+        ExternalStatisticsOperation,
+        HadoopBroadcastOperation,
+        HadoopRoundRobinOperation,
+        HadoopShuffleOperation,
+        InsertBulkOperation,
+        MetaDataCreateOperation,
+        MoveOperation,
+        OnOperation,
+        PartitionMoveOperation,
+        #[serde(rename = "RandomIDOperation")]
+        RandomIdOperation,
+        ReconfigureOperation,
+        ReturnOperation,
+        RoundRobinMoveOperation,
+        SetIdentityInsertOperation,
+        SetOptionsOperation,
+        ShuffleMoveOperation,
+        SingleSourceRoundRobinMoveOperation,
+        TempTablePropertiesOperation,
+        TrimMoveOperation,
+    }
+    #[doc = "Type of distribution"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DistributionType {
+        AllAzureEndpoints,
+        AllComputeNodes,
+        AllDistributions,
+        AllNodes,
+        ComputeNode,
+        Distribution,
+        SubsetDistributions,
+        SubsetNodes,
+        Unspecified,
+    }
+    #[doc = "Type of location"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LocationType {
+        Compute,
+        Control,
+        #[serde(rename = "DMS")]
+        Dms,
+    }
+}
 #[doc = "User activities of a data warehouse"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataWarehouseUserActivities {
@@ -815,7 +1112,11 @@ impl DedicatedSqLminimalTlsSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedSqLminimalTlsSettingsListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DedicatedSqLminimalTlsSettings>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -901,7 +1202,11 @@ impl EncryptionProtector {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProtectorListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EncryptionProtector>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1106,10 +1411,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -1153,7 +1467,11 @@ impl ExtendedServerBlobAuditingPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedServerBlobAuditingPolicyListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExtendedServerBlobAuditingPolicy>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1188,7 +1506,12 @@ pub struct ExtendedServerBlobAuditingPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
-    #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "auditActionsAndGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub audit_actions_and_groups: Vec<String>,
     #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -1246,7 +1569,11 @@ impl ExtendedSqlPoolBlobAuditingPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedSqlPoolBlobAuditingPolicyListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExtendedSqlPoolBlobAuditingPolicy>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1281,7 +1608,12 @@ pub struct ExtendedSqlPoolBlobAuditingPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
-    #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "auditActionsAndGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub audit_actions_and_groups: Vec<String>,
     #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -1349,7 +1681,11 @@ impl GeoBackupPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeoBackupPolicyListResult {
     #[doc = "The list of geo backup policies."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GeoBackupPolicy>,
 }
 impl azure_core::Continuable for GeoBackupPolicyListResult {
@@ -1642,7 +1978,11 @@ pub struct IntegrationRuntimeMonitoringData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Integration runtime node monitoring data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nodes: Vec<IntegrationRuntimeNodeMonitoringData>,
 }
 impl IntegrationRuntimeMonitoringData {
@@ -1702,7 +2042,11 @@ pub struct IntegrationRuntimeOutboundNetworkDependenciesCategoryEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "The endpoints for outbound network dependency."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<IntegrationRuntimeOutboundNetworkDependenciesEndpoint>,
 }
 impl IntegrationRuntimeOutboundNetworkDependenciesCategoryEndpoint {
@@ -1717,7 +2061,12 @@ pub struct IntegrationRuntimeOutboundNetworkDependenciesEndpoint {
     #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
     #[doc = "The details of endpoint."]
-    #[serde(rename = "endpointDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "endpointDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoint_details: Vec<IntegrationRuntimeOutboundNetworkDependenciesEndpointDetails>,
 }
 impl IntegrationRuntimeOutboundNetworkDependenciesEndpoint {
@@ -1741,7 +2090,11 @@ impl IntegrationRuntimeOutboundNetworkDependenciesEndpointDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeOutboundNetworkDependenciesEndpointsResponse {
     #[doc = "The list of outbound network dependency endpoints."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IntegrationRuntimeOutboundNetworkDependenciesCategoryEndpoint>,
 }
 impl IntegrationRuntimeOutboundNetworkDependenciesEndpointsResponse {
@@ -1904,7 +2257,12 @@ pub struct IntegrationRuntimeSsisProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<integration_runtime_ssis_properties::Edition>,
     #[doc = "Custom setup without script properties for a SSIS integration runtime."]
-    #[serde(rename = "expressCustomSetupProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "expressCustomSetupProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub express_custom_setup_properties: Vec<CustomSetupBase>,
 }
 impl IntegrationRuntimeSsisProperties {
@@ -2125,7 +2483,12 @@ pub struct IntegrationRuntimeVNetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<String>,
     #[doc = "Resource IDs of the public IP addresses that this integration runtime will use."]
-    #[serde(rename = "publicIPs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIPs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_i_ps: Vec<String>,
     #[doc = "The ID of subnet, to which this Azure-SSIS integration runtime will be joined."]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
@@ -2157,7 +2520,11 @@ pub struct IpFirewallRuleInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of IP firewall rules"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IpFirewallRuleInfo>,
 }
 impl azure_core::Continuable for IpFirewallRuleInfoListResult {
@@ -2271,7 +2638,11 @@ pub struct KeyInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of keys"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Key>,
 }
 impl azure_core::Continuable for KeyInfoListResult {
@@ -2475,7 +2846,11 @@ impl LinkedIntegrationRuntimeType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListSqlPoolSecurityAlertPolicies {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolSecurityAlertPolicy>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2513,7 +2888,12 @@ pub struct MaintenanceWindowOptionsProperties {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
     #[doc = "Available maintenance cycles e.g. {Saturday, 0, 48*60}, {Wednesday, 0, 24*60}."]
-    #[serde(rename = "maintenanceWindowCycles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "maintenanceWindowCycles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub maintenance_window_cycles: Vec<MaintenanceWindowTimeRange>,
     #[doc = "Minimum duration of maintenance window."]
     #[serde(rename = "minDurationInMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -2625,7 +3005,12 @@ impl MaintenanceWindows {
 #[doc = "Maintenance windows resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceWindowsProperties {
-    #[serde(rename = "timeRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "timeRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub time_ranges: Vec<MaintenanceWindowTimeRange>,
 }
 impl MaintenanceWindowsProperties {
@@ -2714,18 +3099,83 @@ pub mod managed_identity_sql_control_settings_model {
             use super::*;
             #[doc = "Desired state"]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(remote = "DesiredState")]
             pub enum DesiredState {
                 Enabled,
                 Disabled,
+                #[serde(skip_deserializing)]
+                UnknownValue(String),
+            }
+            impl FromStr for DesiredState {
+                type Err = value::Error;
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+            impl<'de> Deserialize<'de> for DesiredState {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                    Ok(deserialized)
+                }
+            }
+            impl Serialize for DesiredState {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        Self::Enabled => serializer.serialize_unit_variant("DesiredState", 0u32, "Enabled"),
+                        Self::Disabled => serializer.serialize_unit_variant("DesiredState", 1u32, "Disabled"),
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
             }
             #[doc = "Actual state"]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(remote = "ActualState")]
             pub enum ActualState {
                 Enabling,
                 Enabled,
                 Disabling,
                 Disabled,
                 Unknown,
+                #[serde(skip_deserializing)]
+                UnknownValue(String),
+            }
+            impl FromStr for ActualState {
+                type Err = value::Error;
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+            impl<'de> Deserialize<'de> for ActualState {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                    Ok(deserialized)
+                }
+            }
+            impl Serialize for ActualState {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        Self::Enabling => serializer.serialize_unit_variant("ActualState", 0u32, "Enabling"),
+                        Self::Enabled => serializer.serialize_unit_variant("ActualState", 1u32, "Enabled"),
+                        Self::Disabling => serializer.serialize_unit_variant("ActualState", 2u32, "Disabling"),
+                        Self::Disabled => serializer.serialize_unit_variant("ActualState", 3u32, "Disabled"),
+                        Self::Unknown => serializer.serialize_unit_variant("ActualState", 4u32, "Unknown"),
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
             }
         }
     }
@@ -2765,7 +3215,11 @@ pub struct ManagedIntegrationRuntimeError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[doc = "Managed integration runtime error parameters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<String>,
     #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2804,7 +3258,11 @@ pub struct ManagedIntegrationRuntimeNode {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<managed_integration_runtime_node::Status>,
     #[doc = "The errors that occurred on this integration runtime node."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<ManagedIntegrationRuntimeError>,
 }
 impl ManagedIntegrationRuntimeNode {
@@ -2872,7 +3330,11 @@ pub struct ManagedIntegrationRuntimeOperationResult {
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
     #[doc = "Managed integration runtime error parameters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<String>,
     #[doc = "The activity id for the operation request."]
     #[serde(rename = "activityId", default, skip_serializing_if = "Option::is_none")]
@@ -2910,10 +3372,19 @@ pub struct ManagedIntegrationRuntimeStatusTypeProperties {
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
     pub create_time: Option<time::OffsetDateTime>,
     #[doc = "The list of nodes for managed integration runtime."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nodes: Vec<ManagedIntegrationRuntimeNode>,
     #[doc = "The errors that occurred on this integration runtime."]
-    #[serde(rename = "otherErrors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "otherErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub other_errors: Vec<ManagedIntegrationRuntimeError>,
     #[doc = "Properties of managed integration runtime operation result."]
     #[serde(rename = "lastOperation", default, skip_serializing_if = "Option::is_none")]
@@ -2949,7 +3420,12 @@ pub struct ManagedVirtualNetworkSettings {
     #[serde(rename = "linkedAccessCheckOnTargetResource", default, skip_serializing_if = "Option::is_none")]
     pub linked_access_check_on_target_resource: Option<bool>,
     #[doc = "Allowed Aad Tenant Ids For Linking"]
-    #[serde(rename = "allowedAadTenantIdsForLinking", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedAadTenantIdsForLinking",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_aad_tenant_ids_for_linking: Vec<String>,
 }
 impl ManagedVirtualNetworkSettings {
@@ -3053,7 +3529,11 @@ pub struct OperationMetaMetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "Metric dimensions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<OperationMetaMetricDimensionSpecification>,
     #[doc = "Whether the metric supports instance-level aggregation"]
     #[serde(rename = "supportsInstanceLevelAggregation", default, skip_serializing_if = "Option::is_none")]
@@ -3083,10 +3563,20 @@ impl OperationMetaPropertyInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaServiceSpecification {
     #[doc = "Service metric specifications"]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
     #[doc = "Service log specifications"]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
 }
 impl OperationMetaServiceSpecification {
@@ -3228,7 +3718,11 @@ impl PrivateEndpointConnectionForPrivateLinkHubBasic {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnectionForPrivateLinkHub>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -3248,7 +3742,11 @@ impl PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionList {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3307,7 +3805,11 @@ pub struct PrivateLinkHubInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of privateLinkHubs"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkHub>,
 }
 impl azure_core::Continuable for PrivateLinkHubInfoListResult {
@@ -3340,7 +3842,12 @@ pub struct PrivateLinkHubProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "List of private endpoint connections"]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnectionForPrivateLinkHubBasic>,
 }
 impl PrivateLinkHubProperties {
@@ -3366,7 +3873,11 @@ impl PrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkResource>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3390,10 +3901,20 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "The private link resource required member names."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "Required DNS zone names of the the private link resource."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
@@ -3452,7 +3973,11 @@ pub struct QueryInterval {
     #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
     pub execution_count: Option<f64>,
     #[doc = "The list of query metrics during this interval."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metrics: Vec<QueryMetric>,
 }
 impl QueryInterval {
@@ -3501,7 +4026,11 @@ pub struct QueryStatistic {
     #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
     pub query_id: Option<String>,
     #[doc = "The list of query intervals."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub intervals: Vec<QueryInterval>,
 }
 impl QueryStatistic {
@@ -3526,7 +4055,11 @@ impl RecommendedSensitivityLabelUpdate {
 #[doc = "A list of recommended sensitivity label update operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedSensitivityLabelUpdateList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<RecommendedSensitivityLabelUpdate>,
 }
 impl RecommendedSensitivityLabelUpdateList {
@@ -3578,7 +4111,11 @@ impl RecoverableSqlPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableSqlPoolListResult {
     #[doc = "A list of recoverable sql pool"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RecoverableSqlPool>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3664,7 +4201,11 @@ impl ReplicationLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLinkListResult {
     #[doc = "The list of Sql pool replication links housed in the Sql pool."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReplicationLink>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3903,7 +4444,11 @@ impl RestorePoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorePointListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RestorePoint>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3952,6 +4497,149 @@ pub mod restore_point_properties {
         Discrete,
     }
 }
+#[doc = "Properties for Scope Pool"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScopePoolProperties {
+    #[doc = "The Creation Date for Scope Pool"]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
+    #[doc = "The maximum numbers of jobs that can queue up"]
+    #[serde(rename = "maxQueuedJobs", default, skip_serializing_if = "Option::is_none")]
+    pub max_queued_jobs: Option<f64>,
+    #[doc = "The maximum number of jobs that can run simultaneously"]
+    #[serde(rename = "maxRunningJobs", default, skip_serializing_if = "Option::is_none")]
+    pub max_running_jobs: Option<f64>,
+    #[doc = "The max tokens per pool"]
+    #[serde(rename = "maxTokens", default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<f64>,
+    #[doc = "The max ECO tokens per pool"]
+    #[serde(rename = "maxEcoTokens", default, skip_serializing_if = "Option::is_none")]
+    pub max_eco_tokens: Option<f64>,
+    #[doc = "Scope Pool Extended Properties"]
+    #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
+    pub extended_properties: Option<scope_pool_properties::ExtendedProperties>,
+    #[doc = "Provisioning State of Scope Pool"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<scope_pool_properties::ProvisioningState>,
+}
+impl ScopePoolProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod scope_pool_properties {
+    use super::*;
+    #[doc = "Scope Pool Extended Properties"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct ExtendedProperties {
+        #[doc = "Scope pool Limit And Policies"]
+        #[serde(rename = "poolLimitAndPolicies", default, skip_serializing_if = "Option::is_none")]
+        pub pool_limit_and_policies: Option<extended_properties::PoolLimitAndPolicies>,
+    }
+    impl ExtendedProperties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod extended_properties {
+        use super::*;
+        #[doc = "Scope pool Limit And Policies"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct PoolLimitAndPolicies {
+            #[doc = "Max Tokens Per Job"]
+            #[serde(rename = "maxTokensPerJob", default, skip_serializing_if = "Option::is_none")]
+            pub max_tokens_per_job: Option<f64>,
+            #[doc = "Max ECO Tokens Per Job"]
+            #[serde(rename = "maxEcoTokensPerJob", default, skip_serializing_if = "Option::is_none")]
+            pub max_eco_tokens_per_job: Option<f64>,
+        }
+        impl PoolLimitAndPolicies {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+    #[doc = "Provisioning State of Scope Pool"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Provisioning,
+        Succeeded,
+        Deleting,
+        Failed,
+        DeleteError,
+        UpdateError,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Provisioning => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Provisioning"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Succeeded"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::DeleteError => serializer.serialize_unit_variant("ProvisioningState", 4u32, "DeleteError"),
+                Self::UpdateError => serializer.serialize_unit_variant("ProvisioningState", 5u32, "UpdateError"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Scope pool for workspace"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScopePools {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Properties for Scope Pool"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScopePoolProperties>,
+}
+impl ScopePools {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list Scope pools request"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScopePoolsListResult {
+    #[doc = "A list of Scope pools"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+}
+impl azure_core::Continuable for ScopePoolsListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl ScopePoolsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {
@@ -3983,10 +4671,20 @@ pub struct SecurityAlertPolicyProperties {
     #[doc = "Specifies the state of the policy, whether it is enabled or disabled or a policy has not been applied yet on the specific Sql pool."]
     pub state: security_alert_policy_properties::State,
     #[doc = "Specifies an array of alerts that are disabled. Allowed values are: Sql_Injection, Sql_Injection_Vulnerability, Access_Anomaly, Data_Exfiltration, Unsafe_Action"]
-    #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disabledAlerts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disabled_alerts: Vec<String>,
     #[doc = "Specifies an array of e-mail addresses to which the alert is sent."]
-    #[serde(rename = "emailAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "emailAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub email_addresses: Vec<String>,
     #[doc = "Specifies that the alert is sent to the account administrators."]
     #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
@@ -4240,7 +4938,11 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "The list of nodes for this integration runtime."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nodes: Vec<SelfHostedIntegrationRuntimeNode>,
     #[doc = "The date at which the integration runtime will be scheduled to update, in ISO8601 format."]
     #[serde(rename = "scheduledUpdateDate", default, with = "azure_core::date::rfc3339::option")]
@@ -4255,7 +4957,12 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<serde_json::Value>,
     #[doc = "The URLs for the services used in integration runtime backend service."]
-    #[serde(rename = "serviceUrls", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceUrls",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_urls: Vec<String>,
     #[doc = "The state of integration runtime auto update."]
     #[serde(rename = "autoUpdate", default, skip_serializing_if = "Option::is_none")]
@@ -4264,7 +4971,11 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
     pub version_status: Option<String>,
     #[doc = "The list of linked integration runtimes that are created to share with this integration runtime."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub links: Vec<LinkedIntegrationRuntime>,
     #[doc = "The version that the integration runtime is going to update to."]
     #[serde(rename = "pushedVersion", default, skip_serializing_if = "Option::is_none")]
@@ -4279,7 +4990,12 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(rename = "serviceRegion", default, skip_serializing_if = "Option::is_none")]
     pub service_region: Option<String>,
     #[doc = "The newer versions on download center."]
-    #[serde(rename = "newerVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "newerVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub newer_versions: Vec<String>,
 }
 impl SelfHostedIntegrationRuntimeStatusTypeProperties {
@@ -4362,7 +5078,11 @@ impl SensitivityLabel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabelListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SensitivityLabel>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4442,7 +5162,11 @@ impl SensitivityLabelUpdate {
 #[doc = "A list of sensitivity label update operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabelUpdateList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub operations: Vec<SensitivityLabelUpdate>,
 }
 impl SensitivityLabelUpdateList {
@@ -4503,7 +5227,11 @@ impl ServerBlobAuditingPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBlobAuditingPolicyListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerBlobAuditingPolicy>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4535,7 +5263,12 @@ pub struct ServerBlobAuditingPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
-    #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "auditActionsAndGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub audit_actions_and_groups: Vec<String>,
     #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -4549,6 +5282,9 @@ pub struct ServerBlobAuditingPolicyProperties {
     #[doc = "Specifies the amount of time in milliseconds that can elapse before audit actions are forced to be processed.\r\nThe default minimum value is 1000 (1 second). The maximum is 2,147,483,647."]
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
+    #[doc = "Specifies the state of devops audit. If state is Enabled, devops logs will be sent to Azure Monitor.\r\nIn order to send the events to Azure Monitor, specify 'State' as 'Enabled', 'IsAzureMonitorTargetEnabled' as true and 'IsDevopsAuditEnabled' as true\r\n\r\nWhen using REST API to configure auditing, Diagnostic Settings with 'DevOpsOperationsAudit' diagnostic logs category on the master database should also be created.\r\n\r\nDiagnostic Settings URI format:\r\nPUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Sql/servers/{serverName}/databases/master/providers/microsoft.insights/diagnosticSettings/{settingsName}?api-version=2017-05-01-preview\r\n\r\nFor more information, see [Diagnostic Settings REST API](https://go.microsoft.com/fwlink/?linkid=2033207)\r\nor [Diagnostic Settings PowerShell](https://go.microsoft.com/fwlink/?linkid=2033043)\r\n"]
+    #[serde(rename = "isDevopsAuditEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_devops_audit_enabled: Option<bool>,
 }
 impl ServerBlobAuditingPolicyProperties {
     pub fn new(state: server_blob_auditing_policy_properties::State) -> Self {
@@ -4562,6 +5298,7 @@ impl ServerBlobAuditingPolicyProperties {
             is_storage_secondary_key_in_use: None,
             is_azure_monitor_target_enabled: None,
             queue_delay_ms: None,
+            is_devops_audit_enabled: None,
         }
     }
 }
@@ -4592,7 +5329,11 @@ impl ServerSecurityAlertPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerSecurityAlertPolicyListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerSecurityAlertPolicy>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4615,10 +5356,20 @@ pub struct ServerSecurityAlertPolicyProperties {
     #[doc = "Specifies the state of the policy, whether it is enabled or disabled or a policy has not been applied yet on the specific server"]
     pub state: server_security_alert_policy_properties::State,
     #[doc = "Specifies an array of alerts that are disabled. Allowed values are: Sql_Injection, Sql_Injection_Vulnerability, Access_Anomaly, Data_Exfiltration, Unsafe_Action"]
-    #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disabledAlerts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disabled_alerts: Vec<String>,
     #[doc = "Specifies an array of e-mail addresses to which the alert is sent."]
-    #[serde(rename = "emailAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "emailAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub email_addresses: Vec<String>,
     #[doc = "Specifies that the alert is sent to the account administrators."]
     #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
@@ -4728,7 +5479,11 @@ impl ServerVulnerabilityAssessment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessmentListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerVulnerabilityAssessment>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4859,7 +5614,11 @@ pub struct SparkConfigurationInfo {
     #[doc = "SparkConfiguration configs."]
     pub configs: serde_json::Value,
     #[doc = "Annotations for SparkConfiguration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub annotations: Vec<String>,
     #[doc = "additional Notes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4870,6 +5629,9 @@ pub struct SparkConfigurationInfo {
     #[doc = "The timestamp of resource creation."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
+    #[doc = "SparkConfiguration merge configs."]
+    #[serde(rename = "configMergeRule", default, skip_serializing_if = "Option::is_none")]
+    pub config_merge_rule: Option<serde_json::Value>,
 }
 impl SparkConfigurationInfo {
     pub fn new(configs: serde_json::Value) -> Self {
@@ -4880,6 +5642,7 @@ impl SparkConfigurationInfo {
             notes: None,
             created_by: None,
             created: None,
+            config_merge_rule: None,
         }
     }
 }
@@ -4961,7 +5724,11 @@ impl SqlPoolBlobAuditingPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolBlobAuditingPolicyListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolBlobAuditingPolicy>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4993,7 +5760,12 @@ pub struct SqlPoolBlobAuditingPolicyProperties {
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
     #[doc = "Specifies the Actions-Groups and Actions to audit.\r\n\r\nThe recommended set of action groups to use is the following combination - this will audit all the queries and stored procedures executed against the database, as well as successful and failed logins:\r\n\r\nBATCH_COMPLETED_GROUP,\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP,\r\nFAILED_DATABASE_AUTHENTICATION_GROUP.\r\n\r\nThis above combination is also the set that is configured by default when enabling auditing from the Azure portal.\r\n\r\nThe supported action groups to audit are (note: choose only specific groups that cover your auditing needs. Using unnecessary groups could lead to very large quantities of audit records):\r\n\r\nAPPLICATION_ROLE_CHANGE_PASSWORD_GROUP\r\nBACKUP_RESTORE_GROUP\r\nDATABASE_LOGOUT_GROUP\r\nDATABASE_OBJECT_CHANGE_GROUP\r\nDATABASE_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nDATABASE_OBJECT_PERMISSION_CHANGE_GROUP\r\nDATABASE_OPERATION_GROUP\r\nDATABASE_PERMISSION_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_CHANGE_GROUP\r\nDATABASE_PRINCIPAL_IMPERSONATION_GROUP\r\nDATABASE_ROLE_MEMBER_CHANGE_GROUP\r\nFAILED_DATABASE_AUTHENTICATION_GROUP\r\nSCHEMA_OBJECT_ACCESS_GROUP\r\nSCHEMA_OBJECT_CHANGE_GROUP\r\nSCHEMA_OBJECT_OWNERSHIP_CHANGE_GROUP\r\nSCHEMA_OBJECT_PERMISSION_CHANGE_GROUP\r\nSUCCESSFUL_DATABASE_AUTHENTICATION_GROUP\r\nUSER_CHANGE_PASSWORD_GROUP\r\nBATCH_STARTED_GROUP\r\nBATCH_COMPLETED_GROUP\r\n\r\nThese are groups that cover all sql statements and stored procedures executed against the database, and should not be used in combination with other groups as this will result in duplicate audit logs.\r\n\r\nFor more information, see [Database-Level Audit Action Groups](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-action-groups).\r\n\r\nFor Database auditing policy, specific Actions can also be specified (note that Actions cannot be specified for Server auditing policy). The supported actions to audit are:\r\nSELECT\r\nUPDATE\r\nINSERT\r\nDELETE\r\nEXECUTE\r\nRECEIVE\r\nREFERENCES\r\n\r\nThe general form for defining an action to be audited is:\r\n{action} ON {object} BY {principal}\r\n\r\nNote that <object> in the above format can refer to an object like a table, view, or stored procedure, or an entire database or schema. For the latter cases, the forms DATABASE::{db_name} and SCHEMA::{schema_name} are used, respectively.\r\n\r\nFor example:\r\nSELECT on dbo.myTable by public\r\nSELECT on DATABASE::myDatabase by public\r\nSELECT on SCHEMA::mySchema by public\r\n\r\nFor more information, see [Database-Level Audit Actions](https://docs.microsoft.com/en-us/sql/relational-databases/security/auditing/sql-server-audit-action-groups-and-actions#database-level-audit-actions)"]
-    #[serde(rename = "auditActionsAndGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "auditActionsAndGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub audit_actions_and_groups: Vec<String>,
     #[doc = "Specifies the blob storage subscription Id."]
     #[serde(rename = "storageAccountSubscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -5032,7 +5804,11 @@ pub mod sql_pool_blob_auditing_policy_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolOperation>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5067,7 +5843,11 @@ impl SqlPoolColumn {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolColumnListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolColumn>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5294,7 +6074,11 @@ pub struct SqlPoolInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of SQL pools"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPool>,
 }
 impl azure_core::Continuable for SqlPoolInfoListResult {
@@ -5582,7 +6366,11 @@ impl SqlPoolSchema {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolSchemaListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolSchema>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5628,7 +6416,11 @@ impl SqlPoolTable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolTableListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolTable>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5713,7 +6505,11 @@ impl SqlPoolVulnerabilityAssessment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolVulnerabilityAssessmentListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SqlPoolVulnerabilityAssessment>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5823,7 +6619,11 @@ pub struct SsisEnvironment {
     #[serde(rename = "folderId", default, skip_serializing_if = "Option::is_none")]
     pub folder_id: Option<i64>,
     #[doc = "Variable in environment"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub variables: Vec<SsisVariable>,
 }
 impl SsisEnvironment {
@@ -5897,7 +6697,11 @@ impl SsisObjectMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsisObjectMetadataListResponse {
     #[doc = "List of SSIS object metadata."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SsisObjectMetadata>,
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -5985,7 +6789,11 @@ pub struct SsisPackage {
     #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<i64>,
     #[doc = "Parameters in package"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<SsisParameter>,
 }
 impl SsisPackage {
@@ -6056,10 +6864,19 @@ pub struct SsisProject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
     #[doc = "Environment reference in project"]
-    #[serde(rename = "environmentRefs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentRefs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_refs: Vec<SsisEnvironmentReference>,
     #[doc = "Parameters in project"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parameters: Vec<SsisParameter>,
 }
 impl SsisProject {
@@ -6139,7 +6956,11 @@ pub struct TopQueries {
     #[serde(rename = "observedMetric", default, skip_serializing_if = "Option::is_none")]
     pub observed_metric: Option<top_queries::ObservedMetric>,
     #[doc = "The list of queries."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub queries: Vec<QueryStatistic>,
 }
 impl TopQueries {
@@ -6242,7 +7063,11 @@ impl TransparentDataEncryption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<TransparentDataEncryption>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6278,6 +7103,50 @@ pub mod transparent_data_encryption_properties {
     pub enum Status {
         Enabled,
         Disabled,
+    }
+}
+#[doc = "Trusted Service By Pass Configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TrustedServiceByPassConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Trusted Service By Pass Configuration properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<trusted_service_by_pass_configuration::Properties>,
+}
+impl TrustedServiceByPassConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod trusted_service_by_pass_configuration {
+    use super::*;
+    #[doc = "Trusted Service By Pass Configuration properties"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "Trusted Service By pass Configuration Info"]
+        #[serde(rename = "trustedServiceBypassConfigurationInfo", default, skip_serializing_if = "Option::is_none")]
+        pub trusted_service_bypass_configuration_info: Option<properties::TrustedServiceBypassConfigurationInfo>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Trusted Service By pass Configuration Info"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct TrustedServiceBypassConfigurationInfo {
+            #[doc = "Trusted Service By pass Enabled"]
+            #[serde(rename = "trustedServiceBypassEnabled", default, skip_serializing_if = "Option::is_none")]
+            pub trusted_service_bypass_enabled: Option<bool>,
+        }
+        impl TrustedServiceBypassConfigurationInfo {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
     }
 }
 #[doc = "Update integration runtime node request."]
@@ -6352,7 +7221,11 @@ pub struct VulnerabilityAssessmentRecurringScansProperties {
     #[serde(rename = "emailSubscriptionAdmins", default, skip_serializing_if = "Option::is_none")]
     pub email_subscription_admins: Option<bool>,
     #[doc = "Specifies an array of e-mail addresses to which the scan notification is sent."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub emails: Vec<String>,
 }
 impl VulnerabilityAssessmentRecurringScansProperties {
@@ -6393,7 +7266,11 @@ impl VulnerabilityAssessmentScanRecord {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentScanRecordListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VulnerabilityAssessmentScanRecord>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6429,7 +7306,11 @@ pub struct VulnerabilityAssessmentScanRecordProperties {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The scan errors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<VulnerabilityAssessmentScanError>,
     #[doc = "The scan results storage container path."]
     #[serde(rename = "storageContainerPath", default, skip_serializing_if = "Option::is_none")]
@@ -6542,7 +7423,11 @@ impl WorkloadClassifier {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadClassifierListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadClassifier>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6611,7 +7496,11 @@ impl WorkloadGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadGroupListResult {
     #[doc = "Array of results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WorkloadGroup>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6704,7 +7593,11 @@ pub struct WorkspaceInfoListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of workspaces"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Workspace>,
 }
 impl azure_core::Continuable for WorkspaceInfoListResult {
@@ -6849,7 +7742,12 @@ pub struct WorkspaceProperties {
     #[serde(rename = "managedVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
     pub managed_virtual_network: Option<String>,
     #[doc = "Private endpoint connections to the workspace"]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Details of the encryption associated with the workspace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

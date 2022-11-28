@@ -1,0 +1,6 @@
+[workspace]
+members = [
+{%- for dir in dirs %}
+  "{{dir}}",
+{%- endfor %}
+]

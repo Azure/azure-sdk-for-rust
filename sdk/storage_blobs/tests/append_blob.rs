@@ -3,7 +3,7 @@
 extern crate log;
 
 use azure_core::prelude::*;
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::{container::PublicAccess, prelude::*};
 use bytes::Bytes;
 use futures::StreamExt;
@@ -19,9 +19,9 @@ async fn put_append_blob() {
     let container_name: &'static str = "rust-upload-test";
     let _data = b"abcdef";
 
-    let storage = StorageClient::new_access_key(&account, &access_key);
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -38,7 +38,6 @@ async fn put_append_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -50,13 +49,12 @@ async fn put_append_blob() {
     blob.put_append_blob()
         .content_type("text/plain")
         .metadata(metadata)
-        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let resp = blob.get_metadata().into_future().await.unwrap();
+    let resp = blob.get_metadata().await.unwrap();
 
     assert_eq!(resp.metadata.len(), 2);
 

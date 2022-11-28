@@ -31,7 +31,11 @@ pub struct AddsConfiguration {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Item>,
     #[doc = "The total count of configuration."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -61,7 +65,12 @@ pub struct AddsServiceMember {
     #[serde(rename = "siteName", default, skip_serializing_if = "Option::is_none")]
     pub site_name: Option<String>,
     #[doc = "The list of ADDS roles."]
-    #[serde(rename = "addsRoles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addsRoles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub adds_roles: Vec<String>,
     #[doc = "Indicates if the global catalog for this domain is reachable or not."]
     #[serde(rename = "gcReachable", default, skip_serializing_if = "Option::is_none")]
@@ -76,7 +85,12 @@ pub struct AddsServiceMember {
     #[serde(rename = "sysvolState", default, skip_serializing_if = "Option::is_none")]
     pub sysvol_state: Option<bool>,
     #[doc = "The list of domain controller types."]
-    #[serde(rename = "dcTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dcTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dc_types: Vec<String>,
     #[doc = "The id of the server."]
     #[serde(rename = "serviceMemberId", default, skip_serializing_if = "Option::is_none")]
@@ -97,7 +111,11 @@ pub struct AddsServiceMember {
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The server specific configuration related dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<Item>,
     #[doc = "Indicates if the server is disabled or not. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -106,7 +124,12 @@ pub struct AddsServiceMember {
     #[serde(rename = "disabledReason", default, skip_serializing_if = "Option::is_none")]
     pub disabled_reason: Option<i64>,
     #[doc = "The list of installed QFEs for the server."]
-    #[serde(rename = "installedQfes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "installedQfes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub installed_qfes: Vec<Hotfix>,
     #[doc = "The date and time , in UTC, when the server was last disabled."]
     #[serde(rename = "lastDisabled", default, with = "azure_core::date::rfc3339::option")]
@@ -131,10 +154,20 @@ pub struct AddsServiceMember {
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
     #[doc = "The monitoring configuration of the server which determines what activities are monitored by Azure Active Directory Connect Health."]
-    #[serde(rename = "monitoringConfigurationsComputed", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monitoringConfigurationsComputed",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monitoring_configurations_computed: Vec<Item>,
     #[doc = "The customized monitoring configuration of the server which determines what activities are monitored by Azure Active Directory Connect Health."]
-    #[serde(rename = "monitoringConfigurationsCustomized", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monitoringConfigurationsCustomized",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monitoring_configurations_customized: Vec<Item>,
     #[doc = "The name of the operating system installed in the machine."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -143,10 +176,19 @@ pub struct AddsServiceMember {
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
     #[doc = "Server specific properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub properties: Vec<Item>,
     #[doc = "The list of recommended hotfixes for the server."]
-    #[serde(rename = "recommendedQfes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "recommendedQfes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recommended_qfes: Vec<Hotfix>,
     #[doc = "The total count of alerts that are resolved for this server."]
     #[serde(rename = "resolvedAlerts", default, skip_serializing_if = "Option::is_none")]
@@ -183,7 +225,11 @@ pub struct AddsServiceMembers {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AddsServiceMember>,
     #[doc = "The total count of service members."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -258,13 +304,23 @@ pub struct Alert {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remediation: Option<String>,
     #[doc = "The help links to get more information related to the alert."]
-    #[serde(rename = "relatedLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "relatedLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub related_links: Vec<HelpLink>,
     #[doc = "The scope of the alert. Indicates if it is a service or a server related alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[doc = "Additional information related to the alert."]
-    #[serde(rename = "additionalInformation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInformation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_information: Vec<AdditionalInformation>,
     #[doc = "The date and time,in UTC,when the alert was created."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
@@ -279,10 +335,20 @@ pub struct Alert {
     #[serde(rename = "monitorRoleType", default, skip_serializing_if = "Option::is_none")]
     pub monitor_role_type: Option<String>,
     #[doc = "The active alert properties."]
-    #[serde(rename = "activeAlertProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "activeAlertProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub active_alert_properties: Vec<Item>,
     #[doc = "The resolved alert properties."]
-    #[serde(rename = "resolvedAlertProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resolvedAlertProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resolved_alert_properties: Vec<Item>,
     #[doc = "The tenant Id."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -421,7 +487,11 @@ impl AlertFeedback {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertFeedbacks {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AlertFeedback>,
 }
 impl azure_core::Continuable for AlertFeedbacks {
@@ -439,7 +509,11 @@ impl AlertFeedbacks {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Alerts {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Alert>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -511,7 +585,11 @@ impl AssociatedObject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeDelta {
     #[doc = "The delta values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<ValueDelta>,
     #[doc = "The name of the attribute delta."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -691,7 +769,12 @@ pub mod attribute_mapping {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeMppingSource {
     #[doc = "The source attribute."]
-    #[serde(rename = "sourceAttribute", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAttribute",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_attribute: Vec<String>,
     #[doc = "The value for dn part."]
     #[serde(rename = "dnPart", default, skip_serializing_if = "Option::is_none")]
@@ -730,10 +813,19 @@ pub struct ChangeNotReimportedDelta {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub anchor: Option<String>,
     #[doc = "The delta attributes for distinguished names."]
-    #[serde(rename = "dnAttributes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnAttributes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dn_attributes: Vec<AttributeDelta>,
     #[doc = "The attributes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attributes: Vec<AttributeDelta>,
     #[doc = "The operation type."]
     #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
@@ -809,13 +901,27 @@ pub struct ChangeNotReimportedEntry {
     #[serde(rename = "primaryObjectClass", default, skip_serializing_if = "Option::is_none")]
     pub primary_object_class: Option<String>,
     #[doc = "The list of object classes."]
-    #[serde(rename = "objectClasses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "objectClasses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub object_classes: Vec<String>,
     #[doc = "The delta attributes for distinguished names."]
-    #[serde(rename = "dnAttributes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnAttributes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dn_attributes: Vec<AttributeDelta>,
     #[doc = "The attributes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attributes: Vec<AttributeDelta>,
     #[doc = "The distinguished name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -863,16 +969,35 @@ pub struct Connector {
     #[serde(rename = "timeLastModified", default, with = "azure_core::date::rfc3339::option")]
     pub time_last_modified: Option<time::OffsetDateTime>,
     #[doc = "The partitions of the connector."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub partitions: Vec<Partition>,
     #[doc = "The run profiles of the connector."]
-    #[serde(rename = "runProfiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "runProfiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub run_profiles: Vec<RunProfile>,
     #[doc = "The class inclusion list of the connector."]
-    #[serde(rename = "classesIncluded", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "classesIncluded",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub classes_included: Vec<String>,
     #[doc = "The attribute inclusion list of the connector."]
-    #[serde(rename = "attributesIncluded", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "attributesIncluded",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attributes_included: Vec<String>,
 }
 impl Connector {
@@ -917,7 +1042,11 @@ impl ConnectorConnectionError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorConnectionErrors {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConnectorConnectionError>,
 }
 impl ConnectorConnectionErrors {
@@ -929,10 +1058,19 @@ impl ConnectorConnectionErrors {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorMetadata {
     #[doc = "The list of connectors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connectors: Vec<ConnectorMetadataDetails>,
     #[doc = "The list of run profile names."]
-    #[serde(rename = "runProfileNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "runProfileNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub run_profile_names: Vec<String>,
 }
 impl ConnectorMetadata {
@@ -998,7 +1136,11 @@ pub struct ConnectorObjectError {
     #[serde(rename = "serverErrorDetail", default, skip_serializing_if = "Option::is_none")]
     pub server_error_detail: Option<String>,
     #[doc = "The value corresponding to attribute name."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl ConnectorObjectError {
@@ -1010,7 +1152,11 @@ impl ConnectorObjectError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorObjectErrors {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConnectorObjectError>,
 }
 impl ConnectorObjectErrors {
@@ -1022,7 +1168,11 @@ impl ConnectorObjectErrors {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Connectors {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Connector>,
 }
 impl azure_core::Continuable for Connectors {
@@ -1046,7 +1196,12 @@ pub struct Credential {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The credential data."]
-    #[serde(rename = "credentialData", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "credentialData",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub credential_data: Vec<String>,
 }
 impl Credential {
@@ -1058,7 +1213,11 @@ impl Credential {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Credentials {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Credential>,
 }
 impl azure_core::Continuable for Credentials {
@@ -1076,7 +1235,11 @@ impl Credentials {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataFreshnessDetails {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Item>,
 }
 impl azure_core::Continuable for DataFreshnessDetails {
@@ -1179,7 +1342,11 @@ pub struct Dimensions {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Dimension>,
     #[doc = "The total count of dimensions."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -1239,7 +1406,11 @@ impl ErrorCount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorCounts {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ErrorCount>,
 }
 impl azure_core::Continuable for ErrorCounts {
@@ -1281,7 +1452,11 @@ impl ErrorDetail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorReportUsersEntries {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ErrorReportUsersEntry>,
 }
 impl azure_core::Continuable for ErrorReportUsersEntries {
@@ -1443,7 +1618,11 @@ impl ExportError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportErrors {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExportError>,
 }
 impl ExportErrors {
@@ -1479,7 +1658,11 @@ pub struct ExportStatuses {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExportStatus>,
     #[doc = "The total count of service elements."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -1536,10 +1719,18 @@ pub struct ForestSummary {
     #[serde(rename = "totalDcCount", default, skip_serializing_if = "Option::is_none")]
     pub total_dc_count: Option<i64>,
     #[doc = "The list of domain controller names."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub domains: Vec<String>,
     #[doc = "The list of site names."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sites: Vec<String>,
 }
 impl ForestSummary {
@@ -1563,7 +1754,12 @@ pub struct GlobalConfiguration {
     #[serde(rename = "numSavedPwdEvent", default, skip_serializing_if = "Option::is_none")]
     pub num_saved_pwd_event: Option<i64>,
     #[doc = "The list of additional feature sets."]
-    #[serde(rename = "featureSet", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "featureSet",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub feature_set: Vec<Item>,
 }
 impl GlobalConfiguration {
@@ -1575,7 +1771,11 @@ impl GlobalConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalConfigurations {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GlobalConfiguration>,
 }
 impl azure_core::Continuable for GlobalConfigurations {
@@ -1626,7 +1826,11 @@ impl Hotfix {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Hotfixes {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Hotfix>,
 }
 impl Hotfixes {
@@ -1733,7 +1937,11 @@ impl IpAddressAggregateSetting {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddressAggregates {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IpAddressAggregate>,
     #[doc = "URL to get the next set of IP Aggregate list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1870,7 +2078,11 @@ pub mod import_error {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportErrors {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ImportError>,
 }
 impl ImportErrors {
@@ -1930,7 +2142,11 @@ impl InboundReplicationNeighbor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundReplicationNeighbors {
     #[doc = "The details of inbound replication neighbors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<InboundReplicationNeighbor>,
 }
 impl InboundReplicationNeighbors {
@@ -1957,7 +2173,11 @@ impl Item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Items {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Item>,
 }
 impl azure_core::Continuable for Items {
@@ -2050,7 +2270,11 @@ impl MergedExportError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MergedExportErrors {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MergedExportError>,
 }
 impl azure_core::Continuable for MergedExportErrors {
@@ -2092,7 +2316,11 @@ pub struct MetricMetadata {
     #[serde(rename = "metricName", default, skip_serializing_if = "Option::is_none")]
     pub metric_name: Option<String>,
     #[doc = "The groupings for the metrics."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub groupings: Vec<MetricGroup>,
     #[doc = "The display name for the metric."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -2131,7 +2359,11 @@ pub struct MetricMetadataList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MetricMetadata>,
     #[doc = "The total count of service elements."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -2158,7 +2390,11 @@ pub struct MetricSet {
     #[serde(rename = "setName", default, skip_serializing_if = "Option::is_none")]
     pub set_name: Option<String>,
     #[doc = "The list of the metric values."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<i64>,
 }
 impl MetricSet {
@@ -2170,10 +2406,19 @@ impl MetricSet {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSets {
     #[doc = "The list of metric set."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sets: Vec<MetricSet>,
     #[doc = "The list of timestamps for each metric in the metric set."]
-    #[serde(rename = "timeStamps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "timeStamps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub time_stamps: Vec<time::OffsetDateTime>,
 }
 impl MetricSets {
@@ -2188,7 +2433,11 @@ pub struct Metrics {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Item>,
     #[doc = "The total count of metrics."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -2230,7 +2479,11 @@ impl ModuleConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleConfigurations {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ModuleConfiguration>,
 }
 impl ModuleConfigurations {
@@ -2317,7 +2570,11 @@ pub struct OperationListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of operations supported by the Microsoft.ADHybridHealthService resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The total count of operations."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -2380,13 +2637,28 @@ pub struct PartitionScope {
     #[serde(rename = "isDefault", default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
     #[doc = "The in-scope object classes."]
-    #[serde(rename = "objectClasses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "objectClasses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub object_classes: Vec<String>,
     #[doc = "The list of containers included."]
-    #[serde(rename = "containersIncluded", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containersIncluded",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub containers_included: Vec<String>,
     #[doc = "The list of containers excluded."]
-    #[serde(rename = "containersExcluded", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containersExcluded",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub containers_excluded: Vec<String>,
 }
 impl PartitionScope {
@@ -2494,7 +2766,11 @@ pub mod password_management_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationDetailsList {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReplicationSummary>,
     #[doc = "The total count of replication detail elements."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -2557,7 +2833,12 @@ pub struct ReplicationSummary {
     #[serde(rename = "lastSuccessfulSync", default, with = "azure_core::date::rfc3339::option")]
     pub last_successful_sync: Option<time::OffsetDateTime>,
     #[doc = "List of individual domain controller neighbor's inbound replication status."]
-    #[serde(rename = "inboundNeighborCollection", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNeighborCollection",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_neighbor_collection: Vec<InboundReplicationNeighbor>,
 }
 impl ReplicationSummary {
@@ -2569,7 +2850,11 @@ impl ReplicationSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationSummaryList {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReplicationSummary>,
 }
 impl azure_core::Continuable for ReplicationSummaryList {
@@ -2626,7 +2911,11 @@ impl RiskyIpBlobUri {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RiskyIpBlobUris {
     #[doc = "The list of blob uris."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RiskyIpBlobUri>,
 }
 impl azure_core::Continuable for RiskyIpBlobUris {
@@ -2674,7 +2963,12 @@ pub struct RunProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The run steps of the run profile."]
-    #[serde(rename = "runSteps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "runSteps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub run_steps: Vec<RunStep>,
 }
 impl RunProfile {
@@ -2686,7 +2980,11 @@ impl RunProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunProfiles {
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RunProfile>,
 }
 impl RunProfiles {
@@ -2868,7 +3166,11 @@ pub struct ServiceMembers {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceMember>,
     #[doc = "The total count of service elements."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -2904,7 +3206,12 @@ pub struct ServiceProperties {
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The list of additional emails that are configured to receive notifications about the service."]
-    #[serde(rename = "customNotificationEmails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customNotificationEmails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_notification_emails: Vec<String>,
     #[doc = "Indicates if the service is disabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2945,7 +3252,12 @@ pub struct ServiceProperties {
     )]
     pub notification_emails_enabled_for_global_admins: Option<bool>,
     #[doc = "The list of emails to whom service notifications will be sent."]
-    #[serde(rename = "notificationEmails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationEmails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_emails: Vec<String>,
     #[doc = "Gets the original disable state."]
     #[serde(rename = "originalDisabledState", default, skip_serializing_if = "Option::is_none")]
@@ -2984,7 +3296,11 @@ pub struct Services {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The value returned by the operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceProperties>,
     #[doc = "The total count of service elements."]
     #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
@@ -3062,7 +3378,12 @@ pub struct Tenant {
     #[serde(rename = "disabledReason", default, skip_serializing_if = "Option::is_none")]
     pub disabled_reason: Option<i64>,
     #[doc = "The list of global administrators for the tenant."]
-    #[serde(rename = "globalAdminsEmail", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "globalAdminsEmail",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub global_admins_email: Vec<String>,
     #[doc = "The initial domain of the tenant."]
     #[serde(rename = "initialDomain", default, skip_serializing_if = "Option::is_none")]
@@ -3116,7 +3437,12 @@ impl TenantOnboardingDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserPreference {
     #[doc = "The name of the metric."]
-    #[serde(rename = "metricNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_names: Vec<String>,
 }
 impl UserPreference {

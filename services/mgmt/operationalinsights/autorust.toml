@@ -1,6 +1,6 @@
 [tags]
 # duplicate SystemData
-deny = ["package-2022-02"]
+deny = ["package-2022-02", "package-2022-10"]
 
 [properties]
 boxed = [

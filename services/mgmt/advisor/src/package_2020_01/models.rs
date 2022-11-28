@@ -59,7 +59,11 @@ pub struct ConfigDataProperties {
     #[serde(rename = "lowCpuThreshold", default, skip_serializing_if = "Option::is_none")]
     pub low_cpu_threshold: Option<config_data_properties::LowCpuThreshold>,
     #[doc = "Advisor digest configuration. Valid only for subscriptions"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub digests: Vec<DigestConfig>,
 }
 impl ConfigDataProperties {
@@ -119,7 +123,11 @@ pub mod config_data_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationListResult {
     #[doc = "The list of configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfigData>,
     #[doc = "The link used to get the next page of configurations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -149,7 +157,11 @@ pub struct DigestConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<i32>,
     #[doc = "Categories to send digest for. If categories are not provided, then digest will be sent for all categories."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub categories: Vec<String>,
     #[doc = "Language for digest content body. Value must be ISO 639-1 code for one of Azure portal supported languages. Otherwise, it will be converted into one. Default value is English (en)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -228,7 +240,11 @@ impl MetadataEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataEntityListResult {
     #[doc = "The list of metadata entities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MetadataEntity>,
     #[doc = "The link used to get the next page of metadata."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -252,13 +268,28 @@ pub struct MetadataEntityProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The list of keys on which this entity depends on."]
-    #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dependsOn",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub depends_on: Vec<String>,
     #[doc = "The list of scenarios applicable to this metadata entity."]
-    #[serde(rename = "applicableScenarios", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicableScenarios",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applicable_scenarios: Vec<String>,
     #[doc = "The list of supported values."]
-    #[serde(rename = "supportedValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_values: Vec<MetadataSupportedValueDetail>,
 }
 impl MetadataEntityProperties {
@@ -324,7 +355,11 @@ pub struct OperationEntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationEntity>,
 }
 impl azure_core::Continuable for OperationEntityListResult {
@@ -362,14 +397,16 @@ pub struct RecommendationProperties {
     #[doc = "The recommendation-type GUID."]
     #[serde(rename = "recommendationTypeId", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_type_id: Option<String>,
-    #[doc = "The potential risk of not implementing the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub risk: Option<recommendation_properties::Risk>,
     #[doc = "A summary of the recommendation."]
     #[serde(rename = "shortDescription", default, skip_serializing_if = "Option::is_none")]
     pub short_description: Option<ShortDescription>,
     #[doc = "The list of snoozed and dismissed rules for the recommendation."]
-    #[serde(rename = "suppressionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "suppressionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub suppression_ids: Vec<String>,
     #[doc = "Extended properties"]
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
@@ -390,7 +427,11 @@ pub struct RecommendationProperties {
     #[serde(rename = "potentialBenefits", default, skip_serializing_if = "Option::is_none")]
     pub potential_benefits: Option<String>,
     #[doc = "The list of recommended actions to implement recommendation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<serde_json::Value>,
     #[doc = "The automated way to apply recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -488,45 +529,6 @@ pub mod recommendation_properties {
             }
         }
     }
-    #[doc = "The potential risk of not implementing the recommendation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Risk")]
-    pub enum Risk {
-        Error,
-        Warning,
-        None,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Risk {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Risk {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Risk {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Error => serializer.serialize_unit_variant("Risk", 0u32, "Error"),
-                Self::Warning => serializer.serialize_unit_variant("Risk", 1u32, "Warning"),
-                Self::None => serializer.serialize_unit_variant("Risk", 2u32, "None"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
 }
 #[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -591,7 +593,11 @@ pub struct ResourceRecommendationBaseListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of recommendations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceRecommendationBase>,
 }
 impl azure_core::Continuable for ResourceRecommendationBaseListResult {
@@ -608,10 +614,10 @@ impl ResourceRecommendationBaseListResult {
 #[doc = "A summary of the recommendation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShortDescription {
-    #[doc = "The issue or opportunity identified by the recommendation."]
+    #[doc = "The issue or opportunity identified by the recommendation and proposed solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub problem: Option<String>,
-    #[doc = "The remediation action suggested by the recommendation."]
+    #[doc = "The issue or opportunity identified by the recommendation and proposed solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub solution: Option<String>,
 }
@@ -641,7 +647,11 @@ pub struct SuppressionContractListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "The list of suppressions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SuppressionContract>,
 }
 impl azure_core::Continuable for SuppressionContractListResult {

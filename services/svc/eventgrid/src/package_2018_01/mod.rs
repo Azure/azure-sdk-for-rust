@@ -139,14 +139,15 @@ impl Client {
 }
 pub mod publish_event_grid_events {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) events: Vec<models::EventGridEvent>,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -164,15 +165,7 @@ pub mod publish_event_grid_events {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.events)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -180,7 +173,7 @@ pub mod publish_event_grid_events {
 }
 pub mod publish_cloud_event_events {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -193,7 +186,8 @@ pub mod publish_cloud_event_events {
             self.aeg_channel_name = Some(aeg_channel_name.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -214,15 +208,7 @@ pub mod publish_cloud_event_events {
                         req.insert_header("aeg-channel-name", aeg_channel_name);
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -230,14 +216,15 @@ pub mod publish_cloud_event_events {
 }
 pub mod publish_custom_event_events {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) events: Vec<models::CustomEventEvent>,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -255,15 +242,7 @@ pub mod publish_custom_event_events {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.events)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }

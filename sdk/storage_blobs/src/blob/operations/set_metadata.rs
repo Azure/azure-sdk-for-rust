@@ -50,7 +50,7 @@ pub struct SetMetadataResponse {
 }
 
 impl TryFrom<&Headers> for SetMetadataResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         Ok(SetMetadataResponse {

@@ -1,5 +1,5 @@
 use azure_core::error::{ErrorKind, ResultExt};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::{BufMut, Bytes};
 
@@ -17,8 +17,9 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container_name)
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_client = BlobServiceClient::new(account, storage_credentials)
+        .container_client(container_name)
         .blob_client("test1");
 
     // this example fills a 1 KB file with ASCII text and
@@ -42,11 +43,7 @@ async fn main() -> azure_core::Result<()> {
         block_ids.push(block_id.clone());
         let hash = md5::compute(slice.clone());
 
-        let put_block_response = blob_client
-            .put_block(block_id, slice)
-            .hash(hash)
-            .into_future()
-            .await?;
+        let put_block_response = blob_client.put_block(block_id, slice).hash(hash).await?;
 
         println!("put_block_response == {:#?}", put_block_response);
     }
@@ -59,7 +56,6 @@ async fn main() -> azure_core::Result<()> {
     let res = blob_client
         .put_block_list(block_list)
         .content_md5(md5::compute(data))
-        .into_future()
         .await?;
     println!("PutBlockList == {:?}", res);
 

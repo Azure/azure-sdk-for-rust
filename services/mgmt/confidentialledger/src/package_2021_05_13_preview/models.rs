@@ -131,7 +131,11 @@ impl ConfidentialLedger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfidentialLedgerList {
     #[doc = "List of Confidential Ledgers"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfidentialLedger>,
     #[doc = "The URL the client should use to fetch the next page (per server side paging)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -215,10 +219,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -266,10 +279,20 @@ pub struct LedgerProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Array of all AAD based Security Principals."]
-    #[serde(rename = "aadBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "aadBasedSecurityPrincipals",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub aad_based_security_principals: Vec<AadBasedSecurityPrincipal>,
     #[doc = "Array of all cert based Security Principals."]
-    #[serde(rename = "certBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "certBasedSecurityPrincipals",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cert_based_security_principals: Vec<CertBasedSecurityPrincipal>,
 }
 impl LedgerProperties {
@@ -439,7 +462,11 @@ impl ResourceProviderOperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[doc = "Resource provider operations list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceProviderOperationDefinition>,
     #[doc = "The URI that can be used to request the next page for list of Azure operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

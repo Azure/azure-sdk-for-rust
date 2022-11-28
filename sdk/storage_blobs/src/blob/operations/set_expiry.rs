@@ -36,7 +36,7 @@ pub struct SetBlobExpiryResponse {
 }
 
 impl TryFrom<Response> for SetBlobExpiryResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(response: Response) -> Result<Self, Self::Error> {
         let headers = response.headers();

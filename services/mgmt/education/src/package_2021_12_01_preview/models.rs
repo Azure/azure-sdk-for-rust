@@ -173,7 +173,11 @@ impl GrantDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GrantListResponse {
     #[doc = "The list of labs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GrantDetails>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -220,7 +224,11 @@ impl JoinRequestDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JoinRequestList {
     #[doc = "The list of requests."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JoinRequestDetails>,
     #[doc = "the link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -316,7 +324,11 @@ impl LabDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LabListResult {
     #[doc = "The list of labs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LabDetails>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -553,7 +565,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -639,7 +655,11 @@ impl StudentLabDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StudentLabListResult {
     #[doc = "The list of labs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StudentLabDetails>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -779,7 +799,11 @@ pub mod student_lab_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StudentListResult {
     #[doc = "The list of students."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StudentDetails>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

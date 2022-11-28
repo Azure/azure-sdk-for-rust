@@ -11,7 +11,7 @@ pub(crate) const HEADER_CONSISTENCY_LEVEL: HeaderName =
 pub(crate) const HEADER_SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
 pub(crate) const HEADER_ALLOW_MULTIPLE_WRITES: HeaderName =
     HeaderName::from_static("x-ms-cosmos-allow-tentative-writes");
-pub(crate) const HEADER_A_IM: HeaderName = HeaderName::from_static("A-IM");
+pub(crate) const HEADER_A_IM: HeaderName = HeaderName::from_static("a-im");
 pub(crate) const HEADER_DOCUMENTDB_PARTITIONRANGEID: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
 pub(crate) const HEADER_DOCUMENTDB_PARTITIONKEY: HeaderName =

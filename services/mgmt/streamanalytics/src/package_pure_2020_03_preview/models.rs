@@ -45,7 +45,11 @@ impl ClusterJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterJobListResult {
     #[doc = "A list of streaming jobs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ClusterJob>,
     #[doc = "The URL to fetch the next set of streaming jobs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -66,7 +70,11 @@ impl ClusterJobListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterListResult {
     #[doc = "A list of clusters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Cluster>,
     #[doc = "The URL to fetch the next set of clusters."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -234,7 +242,11 @@ pub mod error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
         #[doc = "Error details."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub details: Vec<ErrorDetails>,
     }
     impl Error {
@@ -335,7 +347,11 @@ impl PrivateEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointListResult {
     #[doc = "A list of private endpoints."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpoint>,
     #[doc = "The URL to fetch the next set of private endpoints."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -359,7 +375,12 @@ pub struct PrivateEndpointProperties {
     #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
     pub created_date: Option<String>,
     #[doc = "A list of connections to the remote resource. Immutable after it is set."]
-    #[serde(rename = "manualPrivateLinkServiceConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "manualPrivateLinkServiceConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manual_private_link_service_connections: Vec<PrivateLinkServiceConnection>,
 }
 impl PrivateEndpointProperties {
@@ -404,7 +425,12 @@ pub struct PrivateLinkServiceConnectionProperties {
     #[serde(rename = "privateLinkServiceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_id: Option<String>,
     #[doc = "The ID(s) of the group(s) obtained from the remote resource that this private endpoint should connect to. Required on PUT (CreateOrUpdate) requests."]
-    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub group_ids: Vec<String>,
     #[doc = "A message passed to the owner of the remote resource with this connection request. Restricted to 140 chars."]
     #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]

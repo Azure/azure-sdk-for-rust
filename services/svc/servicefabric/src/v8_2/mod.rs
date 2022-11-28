@@ -3486,7 +3486,30 @@ impl Client {
 }
 pub mod get_cluster_manifest {
     use super::models;
-    type Response = models::ClusterManifest;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterManifest> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterManifest = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3498,7 +3521,8 @@ pub mod get_cluster_manifest {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3518,27 +3542,42 @@ pub mod get_cluster_manifest {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterManifest = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterManifest>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_health {
     use super::models;
-    type Response = models::ClusterHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3580,7 +3619,8 @@ pub mod get_cluster_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3626,27 +3666,42 @@ pub mod get_cluster_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_health_using_policy {
     use super::models;
-    type Response = models::ClusterHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3694,7 +3749,8 @@ pub mod get_cluster_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3745,27 +3801,42 @@ pub mod get_cluster_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_health_chunk {
     use super::models;
-    type Response = models::ClusterHealthChunk;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealthChunk> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterHealthChunk = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3777,7 +3848,8 @@ pub mod get_cluster_health_chunk {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3797,27 +3869,42 @@ pub mod get_cluster_health_chunk {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterHealthChunk = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterHealthChunk>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
     use super::models;
-    type Response = models::ClusterHealthChunk;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterHealthChunk> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterHealthChunk = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3838,7 +3925,8 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3863,27 +3951,19 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterHealthChunk = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterHealthChunk>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_cluster_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3902,7 +3982,8 @@ pub mod report_cluster_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3926,15 +4007,7 @@ pub mod report_cluster_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -3942,7 +4015,30 @@ pub mod report_cluster_health {
 }
 pub mod get_provisioned_fabric_code_version_info_list {
     use super::models;
-    type Response = models::FabricCodeVersionInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::FabricCodeVersionInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::FabricCodeVersionInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -3960,7 +4056,8 @@ pub mod get_provisioned_fabric_code_version_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -3983,27 +4080,42 @@ pub mod get_provisioned_fabric_code_version_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::FabricCodeVersionInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FabricCodeVersionInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_provisioned_fabric_config_version_info_list {
     use super::models;
-    type Response = models::FabricConfigVersionInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::FabricConfigVersionInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::FabricConfigVersionInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4021,7 +4133,8 @@ pub mod get_provisioned_fabric_config_version_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4044,27 +4157,42 @@ pub mod get_provisioned_fabric_config_version_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::FabricConfigVersionInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FabricConfigVersionInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_upgrade_progress {
     use super::models;
-    type Response = models::ClusterUpgradeProgressObject;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterUpgradeProgressObject> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterUpgradeProgressObject = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4076,7 +4204,8 @@ pub mod get_cluster_upgrade_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4096,27 +4225,42 @@ pub mod get_cluster_upgrade_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterUpgradeProgressObject = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterUpgradeProgressObject>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_configuration {
     use super::models;
-    type Response = models::ClusterConfiguration;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterConfiguration> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterConfiguration = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4129,7 +4273,8 @@ pub mod get_cluster_configuration {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4153,27 +4298,42 @@ pub mod get_cluster_configuration {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterConfiguration = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterConfiguration>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_configuration_upgrade_status {
     use super::models;
-    type Response = models::ClusterConfigurationUpgradeStatusInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterConfigurationUpgradeStatusInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterConfigurationUpgradeStatusInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4185,7 +4345,8 @@ pub mod get_cluster_configuration_upgrade_status {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4205,27 +4366,42 @@ pub mod get_cluster_configuration_upgrade_status {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterConfigurationUpgradeStatusInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterConfigurationUpgradeStatusInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_upgrade_orchestration_service_state {
     use super::models;
-    type Response = models::UpgradeOrchestrationServiceState;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UpgradeOrchestrationServiceState> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UpgradeOrchestrationServiceState = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4237,7 +4413,8 @@ pub mod get_upgrade_orchestration_service_state {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4257,27 +4434,42 @@ pub mod get_upgrade_orchestration_service_state {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UpgradeOrchestrationServiceState = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpgradeOrchestrationServiceState>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod set_upgrade_orchestration_service_state {
     use super::models;
-    type Response = models::UpgradeOrchestrationServiceStateSummary;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UpgradeOrchestrationServiceStateSummary> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UpgradeOrchestrationServiceStateSummary = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4290,7 +4482,8 @@ pub mod set_upgrade_orchestration_service_state {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4311,27 +4504,21 @@ pub mod set_upgrade_orchestration_service_state {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UpgradeOrchestrationServiceStateSummary = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(
+            self,
+        ) -> futures::future::BoxFuture<'static, azure_core::Result<models::UpgradeOrchestrationServiceStateSummary>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod provision_cluster {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4344,7 +4531,8 @@ pub mod provision_cluster {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4365,15 +4553,7 @@ pub mod provision_cluster {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4381,7 +4561,7 @@ pub mod provision_cluster {
 }
 pub mod unprovision_cluster {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4394,7 +4574,8 @@ pub mod unprovision_cluster {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4415,15 +4596,7 @@ pub mod unprovision_cluster {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4431,7 +4604,7 @@ pub mod unprovision_cluster {
 }
 pub mod rollback_cluster_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4443,7 +4616,8 @@ pub mod rollback_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4464,15 +4638,7 @@ pub mod rollback_cluster_upgrade {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4480,7 +4646,7 @@ pub mod rollback_cluster_upgrade {
 }
 pub mod resume_cluster_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4493,7 +4659,8 @@ pub mod resume_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4514,15 +4681,7 @@ pub mod resume_cluster_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4530,7 +4689,7 @@ pub mod resume_cluster_upgrade {
 }
 pub mod start_cluster_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4543,7 +4702,8 @@ pub mod start_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4564,15 +4724,7 @@ pub mod start_cluster_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4580,7 +4732,7 @@ pub mod start_cluster_upgrade {
 }
 pub mod start_cluster_configuration_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4593,7 +4745,8 @@ pub mod start_cluster_configuration_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4614,15 +4767,7 @@ pub mod start_cluster_configuration_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4630,7 +4775,7 @@ pub mod start_cluster_configuration_upgrade {
 }
 pub mod update_cluster_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4643,7 +4788,8 @@ pub mod update_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4664,15 +4810,7 @@ pub mod update_cluster_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4680,7 +4818,30 @@ pub mod update_cluster_upgrade {
 }
 pub mod get_aad_metadata {
     use super::models;
-    type Response = models::AadMetadataObject;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::AadMetadataObject> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::AadMetadataObject = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4692,7 +4853,8 @@ pub mod get_aad_metadata {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4712,27 +4874,42 @@ pub mod get_aad_metadata {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::AadMetadataObject = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AadMetadataObject>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_version {
     use super::models;
-    type Response = models::ClusterVersion;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterVersion> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterVersion = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4744,7 +4921,8 @@ pub mod get_cluster_version {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4764,27 +4942,42 @@ pub mod get_cluster_version {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterVersion = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterVersion>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_load {
     use super::models;
-    type Response = models::ClusterLoadInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterLoadInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterLoadInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4796,7 +4989,8 @@ pub mod get_cluster_load {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4816,27 +5010,19 @@ pub mod get_cluster_load {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterLoadInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterLoadInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod toggle_verbose_service_placement_health_reporting {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4849,7 +5035,8 @@ pub mod toggle_verbose_service_placement_health_reporting {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4875,15 +5062,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -4891,7 +5070,30 @@ pub mod toggle_verbose_service_placement_health_reporting {
 }
 pub mod validate_cluster_upgrade {
     use super::models;
-    type Response = models::ValidateClusterUpgradeResult;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ValidateClusterUpgradeResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ValidateClusterUpgradeResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4904,7 +5106,8 @@ pub mod validate_cluster_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -4925,27 +5128,42 @@ pub mod validate_cluster_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ValidateClusterUpgradeResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ValidateClusterUpgradeResult>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_node_info_list {
     use super::models;
-    type Response = models::PagedNodeInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedNodeInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedNodeInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -4975,7 +5193,8 @@ pub mod get_node_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5004,30 +5223,41 @@ pub mod get_node_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedNodeInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedNodeInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_node_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::NodeInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -5041,7 +5271,8 @@ pub mod get_node_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5061,28 +5292,42 @@ pub mod get_node_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_node_health {
     use super::models;
-    type Response = models::NodeHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5101,7 +5346,8 @@ pub mod get_node_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5126,27 +5372,42 @@ pub mod get_node_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_node_health_using_policy {
     use super::models;
-    type Response = models::NodeHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5171,7 +5432,8 @@ pub mod get_node_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5201,27 +5463,19 @@ pub mod get_node_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_node_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5241,7 +5495,8 @@ pub mod report_node_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5265,15 +5520,7 @@ pub mod report_node_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5281,7 +5528,30 @@ pub mod report_node_health {
 }
 pub mod get_node_load_info {
     use super::models;
-    type Response = models::NodeLoadInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeLoadInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeLoadInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5294,7 +5564,8 @@ pub mod get_node_load_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5318,27 +5589,19 @@ pub mod get_node_load_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeLoadInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeLoadInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod disable_node {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5352,7 +5615,8 @@ pub mod disable_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5373,15 +5637,7 @@ pub mod disable_node {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5389,7 +5645,7 @@ pub mod disable_node {
 }
 pub mod enable_node {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5402,7 +5658,8 @@ pub mod enable_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5423,15 +5680,7 @@ pub mod enable_node {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5439,7 +5688,7 @@ pub mod enable_node {
 }
 pub mod remove_node_state {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5452,7 +5701,8 @@ pub mod remove_node_state {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5473,15 +5723,7 @@ pub mod remove_node_state {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5489,7 +5731,7 @@ pub mod remove_node_state {
 }
 pub mod restart_node {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5503,7 +5745,8 @@ pub mod restart_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5524,15 +5767,7 @@ pub mod restart_node {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5540,7 +5775,7 @@ pub mod restart_node {
 }
 pub mod remove_configuration_overrides {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5553,7 +5788,8 @@ pub mod remove_configuration_overrides {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5577,15 +5813,7 @@ pub mod remove_configuration_overrides {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5593,7 +5821,30 @@ pub mod remove_configuration_overrides {
 }
 pub mod get_configuration_overrides {
     use super::models;
-    type Response = models::ConfigParameterOverrideList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ConfigParameterOverrideList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ConfigParameterOverrideList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5606,7 +5857,8 @@ pub mod get_configuration_overrides {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5630,27 +5882,19 @@ pub mod get_configuration_overrides {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ConfigParameterOverrideList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConfigParameterOverrideList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod add_configuration_parameter_overrides {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5670,7 +5914,8 @@ pub mod add_configuration_parameter_overrides {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5698,15 +5943,7 @@ pub mod add_configuration_parameter_overrides {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5714,7 +5951,7 @@ pub mod add_configuration_parameter_overrides {
 }
 pub mod remove_node_tags {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5722,7 +5959,8 @@ pub mod remove_node_tags {
         pub(crate) node_tags: models::NodeTagsList,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5740,15 +5978,7 @@ pub mod remove_node_tags {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.node_tags)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5756,7 +5986,7 @@ pub mod remove_node_tags {
 }
 pub mod add_node_tags {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5764,7 +5994,8 @@ pub mod add_node_tags {
         pub(crate) node_tags: models::NodeTagsList,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5782,15 +6013,7 @@ pub mod add_node_tags {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.node_tags)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -5798,7 +6021,30 @@ pub mod add_node_tags {
 }
 pub mod get_application_type_info_list {
     use super::models;
-    type Response = models::PagedApplicationTypeInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationTypeInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedApplicationTypeInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5834,7 +6080,8 @@ pub mod get_application_type_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5871,27 +6118,42 @@ pub mod get_application_type_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedApplicationTypeInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedApplicationTypeInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_type_info_list_by_name {
     use super::models;
-    type Response = models::PagedApplicationTypeInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationTypeInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedApplicationTypeInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -5928,7 +6190,8 @@ pub mod get_application_type_info_list_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -5968,31 +6231,19 @@ pub mod get_application_type_info_list_by_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedApplicationTypeInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedApplicationTypeInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod provision_application_type {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        Accepted202,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6005,7 +6256,8 @@ pub mod provision_application_type {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6026,16 +6278,7 @@ pub mod provision_application_type {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -6043,11 +6286,7 @@ pub mod provision_application_type {
 }
 pub mod unprovision_application_type {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        Accepted202,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6061,7 +6300,8 @@ pub mod unprovision_application_type {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6086,16 +6326,7 @@ pub mod unprovision_application_type {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -6103,7 +6334,30 @@ pub mod unprovision_application_type {
 }
 pub mod get_service_type_info_list {
     use super::models;
-    type Response = models::ServiceTypeInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceTypeInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceTypeInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6117,7 +6371,8 @@ pub mod get_service_type_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6145,30 +6400,41 @@ pub mod get_service_type_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceTypeInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceTypeInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_type_info_by_name {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::ServiceTypeInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceTypeInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceTypeInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -6184,7 +6450,8 @@ pub mod get_service_type_info_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6213,28 +6480,42 @@ pub mod get_service_type_info_by_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceTypeInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceTypeInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_manifest {
     use super::models;
-    type Response = models::ServiceTypeManifest;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceTypeManifest> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceTypeManifest = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6249,7 +6530,8 @@ pub mod get_service_manifest {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6281,27 +6563,42 @@ pub mod get_service_manifest {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceTypeManifest = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceTypeManifest>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_type_info_list {
     use super::models;
-    type Response = models::DeployedServiceTypeInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceTypeInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServiceTypeInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6321,7 +6618,8 @@ pub mod get_deployed_service_type_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6351,30 +6649,41 @@ pub mod get_deployed_service_type_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServiceTypeInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServiceTypeInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_type_info_by_name {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::DeployedServiceTypeInfoList),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceTypeInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServiceTypeInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -6396,7 +6705,8 @@ pub mod get_deployed_service_type_info_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6427,28 +6737,19 @@ pub mod get_deployed_service_type_info_by_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServiceTypeInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServiceTypeInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod create_application {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6461,7 +6762,8 @@ pub mod create_application {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6482,15 +6784,7 @@ pub mod create_application {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Created => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -6498,7 +6792,7 @@ pub mod create_application {
 }
 pub mod delete_application {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6517,7 +6811,8 @@ pub mod delete_application {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6547,15 +6842,7 @@ pub mod delete_application {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -6563,10 +6850,29 @@ pub mod delete_application {
 }
 pub mod get_application_load_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::ApplicationLoadInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationLoadInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationLoadInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -6580,7 +6886,8 @@ pub mod get_application_load_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6604,28 +6911,42 @@ pub mod get_application_load_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationLoadInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationLoadInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_info_list {
     use super::models;
-    type Response = models::PagedApplicationInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedApplicationInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6667,7 +6988,8 @@ pub mod get_application_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6708,30 +7030,41 @@ pub mod get_application_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedApplicationInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedApplicationInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::ApplicationInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -6751,7 +7084,8 @@ pub mod get_application_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6776,28 +7110,42 @@ pub mod get_application_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_health {
     use super::models;
-    type Response = models::ApplicationHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6834,7 +7182,8 @@ pub mod get_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6879,27 +7228,42 @@ pub mod get_application_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_health_using_policy {
     use super::models;
-    type Response = models::ApplicationHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -6942,7 +7306,8 @@ pub mod get_application_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -6992,27 +7357,19 @@ pub mod get_application_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_application_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7032,7 +7389,8 @@ pub mod report_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7060,15 +7418,7 @@ pub mod report_application_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7076,7 +7426,7 @@ pub mod report_application_health {
 }
 pub mod start_application_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7090,7 +7440,8 @@ pub mod start_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7115,15 +7466,7 @@ pub mod start_application_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7131,7 +7474,30 @@ pub mod start_application_upgrade {
 }
 pub mod get_application_upgrade {
     use super::models;
-    type Response = models::ApplicationUpgradeProgressInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationUpgradeProgressInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationUpgradeProgressInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7144,7 +7510,8 @@ pub mod get_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7168,27 +7535,19 @@ pub mod get_application_upgrade {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationUpgradeProgressInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationUpgradeProgressInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod update_application_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7202,7 +7561,8 @@ pub mod update_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7227,15 +7587,7 @@ pub mod update_application_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7243,7 +7595,7 @@ pub mod update_application_upgrade {
 }
 pub mod update_application {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7257,7 +7609,8 @@ pub mod update_application {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7282,15 +7635,7 @@ pub mod update_application {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7298,7 +7643,7 @@ pub mod update_application {
 }
 pub mod resume_application_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7312,7 +7657,8 @@ pub mod resume_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7337,15 +7683,7 @@ pub mod resume_application_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7353,7 +7691,7 @@ pub mod resume_application_upgrade {
 }
 pub mod rollback_application_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7366,7 +7704,8 @@ pub mod rollback_application_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7391,15 +7730,7 @@ pub mod rollback_application_upgrade {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7407,7 +7738,30 @@ pub mod rollback_application_upgrade {
 }
 pub mod get_deployed_application_info_list {
     use super::models;
-    type Response = models::PagedDeployedApplicationInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedDeployedApplicationInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedDeployedApplicationInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7438,7 +7792,8 @@ pub mod get_deployed_application_info_list {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7469,30 +7824,41 @@ pub mod get_deployed_application_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedDeployedApplicationInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedDeployedApplicationInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_application_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::DeployedApplicationInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedApplicationInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedApplicationInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -7513,7 +7879,8 @@ pub mod get_deployed_application_info {
             self.include_health_state = Some(include_health_state);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7543,28 +7910,42 @@ pub mod get_deployed_application_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedApplicationInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedApplicationInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_application_health {
     use super::models;
-    type Response = models::DeployedApplicationHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedApplicationHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedApplicationHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7596,7 +7977,8 @@ pub mod get_deployed_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7637,27 +8019,42 @@ pub mod get_deployed_application_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedApplicationHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedApplicationHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_application_health_using_policy {
     use super::models;
-    type Response = models::DeployedApplicationHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedApplicationHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedApplicationHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7695,7 +8092,8 @@ pub mod get_deployed_application_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7741,27 +8139,19 @@ pub mod get_deployed_application_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedApplicationHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedApplicationHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_deployed_application_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7782,7 +8172,8 @@ pub mod report_deployed_application_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7811,15 +8202,7 @@ pub mod report_deployed_application_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -7827,7 +8210,30 @@ pub mod report_deployed_application_health {
 }
 pub mod get_application_manifest {
     use super::models;
-    type Response = models::ApplicationTypeManifest;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationTypeManifest> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationTypeManifest = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7841,7 +8247,8 @@ pub mod get_application_manifest {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7869,27 +8276,42 @@ pub mod get_application_manifest {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationTypeManifest = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationTypeManifest>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_info_list {
     use super::models;
-    type Response = models::PagedServiceInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedServiceInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedServiceInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -7914,7 +8336,8 @@ pub mod get_service_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -7944,30 +8367,41 @@ pub mod get_service_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedServiceInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedServiceInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::ServiceInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -7982,7 +8416,8 @@ pub mod get_service_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8007,28 +8442,42 @@ pub mod get_service_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_name_info {
     use super::models;
-    type Response = models::ApplicationNameInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationNameInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationNameInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8041,7 +8490,8 @@ pub mod get_application_name_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8065,27 +8515,19 @@ pub mod get_application_name_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationNameInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationNameInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod create_service {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8099,7 +8541,8 @@ pub mod create_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8124,15 +8567,7 @@ pub mod create_service {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -8140,7 +8575,7 @@ pub mod create_service {
 }
 pub mod create_service_from_template {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8154,7 +8589,8 @@ pub mod create_service_from_template {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8179,15 +8615,7 @@ pub mod create_service_from_template {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -8195,7 +8623,7 @@ pub mod create_service_from_template {
 }
 pub mod delete_service {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8214,7 +8642,8 @@ pub mod delete_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8240,15 +8669,7 @@ pub mod delete_service {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -8256,7 +8677,7 @@ pub mod delete_service {
 }
 pub mod update_service {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8270,7 +8691,8 @@ pub mod update_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8291,15 +8713,7 @@ pub mod update_service {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -8307,7 +8721,30 @@ pub mod update_service {
 }
 pub mod get_service_description {
     use super::models;
-    type Response = models::ServiceDescription;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceDescription> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceDescription = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8320,7 +8757,8 @@ pub mod get_service_description {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8344,27 +8782,42 @@ pub mod get_service_description {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceDescription = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceDescription>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_health {
     use super::models;
-    type Response = models::ServiceHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8395,7 +8848,8 @@ pub mod get_service_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8430,27 +8884,42 @@ pub mod get_service_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_health_using_policy {
     use super::models;
-    type Response = models::ServiceHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8487,7 +8956,8 @@ pub mod get_service_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8527,27 +8997,19 @@ pub mod get_service_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_service_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8567,7 +9029,8 @@ pub mod report_service_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8591,15 +9054,7 @@ pub mod report_service_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -8607,7 +9062,30 @@ pub mod report_service_health {
 }
 pub mod resolve_service {
     use super::models;
-    type Response = models::ResolvedServicePartition;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ResolvedServicePartition> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ResolvedServicePartition = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8638,7 +9116,8 @@ pub mod resolve_service {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8677,27 +9156,42 @@ pub mod resolve_service {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ResolvedServicePartition = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ResolvedServicePartition>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_unplaced_replica_information {
     use super::models;
-    type Response = models::UnplacedReplicaInformation;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UnplacedReplicaInformation> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UnplacedReplicaInformation = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8722,7 +9216,8 @@ pub mod get_unplaced_replica_information {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8754,27 +9249,42 @@ pub mod get_unplaced_replica_information {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UnplacedReplicaInformation = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UnplacedReplicaInformation>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_loaded_partition_info_list {
     use super::models;
-    type Response = models::LoadedPartitionInformationResultList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::LoadedPartitionInformationResultList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::LoadedPartitionInformationResultList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8805,7 +9315,8 @@ pub mod get_loaded_partition_info_list {
             self.continuation_token = Some(continuation_token.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8836,27 +9347,42 @@ pub mod get_loaded_partition_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::LoadedPartitionInformationResultList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::LoadedPartitionInformationResultList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_info_list {
     use super::models;
-    type Response = models::PagedServicePartitionInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedServicePartitionInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedServicePartitionInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8875,7 +9401,8 @@ pub mod get_partition_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8898,30 +9425,41 @@ pub mod get_partition_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedServicePartitionInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedServicePartitionInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::ServicePartitionInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServicePartitionInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServicePartitionInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -8935,7 +9473,8 @@ pub mod get_partition_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -8955,28 +9494,42 @@ pub mod get_partition_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServicePartitionInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServicePartitionInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_name_info {
     use super::models;
-    type Response = models::ServiceNameInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceNameInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceNameInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -8989,7 +9542,8 @@ pub mod get_service_name_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9013,27 +9567,42 @@ pub mod get_service_name_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceNameInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceNameInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_health {
     use super::models;
-    type Response = models::PartitionHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9064,7 +9633,8 @@ pub mod get_partition_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9099,27 +9669,42 @@ pub mod get_partition_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_health_using_policy {
     use super::models;
-    type Response = models::PartitionHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9156,7 +9741,8 @@ pub mod get_partition_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9196,27 +9782,19 @@ pub mod get_partition_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_partition_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9236,7 +9814,8 @@ pub mod report_partition_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9264,15 +9843,7 @@ pub mod report_partition_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9280,7 +9851,30 @@ pub mod report_partition_health {
 }
 pub mod get_partition_load_information {
     use super::models;
-    type Response = models::PartitionLoadInformation;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionLoadInformation> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionLoadInformation = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9293,7 +9887,8 @@ pub mod get_partition_load_information {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9317,27 +9912,19 @@ pub mod get_partition_load_information {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionLoadInformation = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionLoadInformation>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod reset_partition_load {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9350,7 +9937,8 @@ pub mod reset_partition_load {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9371,15 +9959,7 @@ pub mod reset_partition_load {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9387,7 +9967,7 @@ pub mod reset_partition_load {
 }
 pub mod recover_partition {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9400,7 +9980,8 @@ pub mod recover_partition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9421,15 +10002,7 @@ pub mod recover_partition {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9437,7 +10010,7 @@ pub mod recover_partition {
 }
 pub mod recover_service_partitions {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9450,7 +10023,8 @@ pub mod recover_service_partitions {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9475,15 +10049,7 @@ pub mod recover_service_partitions {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9491,7 +10057,7 @@ pub mod recover_service_partitions {
 }
 pub mod recover_system_partitions {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9503,7 +10069,8 @@ pub mod recover_system_partitions {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9524,15 +10091,7 @@ pub mod recover_system_partitions {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9540,7 +10099,7 @@ pub mod recover_system_partitions {
 }
 pub mod recover_all_partitions {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9552,7 +10111,8 @@ pub mod recover_all_partitions {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9573,15 +10133,7 @@ pub mod recover_all_partitions {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9589,7 +10141,7 @@ pub mod recover_all_partitions {
 }
 pub mod move_primary_replica {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9614,7 +10166,8 @@ pub mod move_primary_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9647,15 +10200,7 @@ pub mod move_primary_replica {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9663,7 +10208,7 @@ pub mod move_primary_replica {
 }
 pub mod move_secondary_replica {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9689,7 +10234,8 @@ pub mod move_secondary_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9724,15 +10270,7 @@ pub mod move_secondary_replica {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9740,7 +10278,30 @@ pub mod move_secondary_replica {
 }
 pub mod update_partition_load {
     use super::models;
-    type Response = models::PagedUpdatePartitionLoadResultList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedUpdatePartitionLoadResultList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedUpdatePartitionLoadResultList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9765,7 +10326,8 @@ pub mod update_partition_load {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9792,27 +10354,19 @@ pub mod update_partition_load {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedUpdatePartitionLoadResultList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedUpdatePartitionLoadResultList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod move_instance {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9844,7 +10398,8 @@ pub mod move_instance {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9881,15 +10436,7 @@ pub mod move_instance {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9897,7 +10444,7 @@ pub mod move_instance {
 }
 pub mod move_auxiliary_replica {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -9929,7 +10476,8 @@ pub mod move_auxiliary_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -9966,15 +10514,7 @@ pub mod move_auxiliary_replica {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -9982,14 +10522,38 @@ pub mod move_auxiliary_replica {
 }
 pub mod create_repair_task {
     use super::models;
-    type Response = models::RepairTaskUpdateInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RepairTaskUpdateInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task: models::RepairTask,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10007,34 +10571,50 @@ pub mod create_repair_task {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.repair_task)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RepairTaskUpdateInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod cancel_repair_task {
     use super::models;
-    type Response = models::RepairTaskUpdateInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RepairTaskUpdateInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_cancel_description: models::RepairTaskCancelDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10052,34 +10632,27 @@ pub mod cancel_repair_task {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.repair_task_cancel_description)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RepairTaskUpdateInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod delete_repair_task {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_delete_description: models::RepairTaskDeleteDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10097,15 +10670,7 @@ pub mod delete_repair_task {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.repair_task_delete_description)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -10113,7 +10678,30 @@ pub mod delete_repair_task {
 }
 pub mod get_repair_task_list {
     use super::models;
-    type Response = models::RepairTaskList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RepairTaskList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10137,7 +10725,8 @@ pub mod get_repair_task_list {
             self.executor_filter = Some(executor_filter.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10165,34 +10754,50 @@ pub mod get_repair_task_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RepairTaskList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RepairTaskList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod force_approve_repair_task {
     use super::models;
-    type Response = models::RepairTaskUpdateInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RepairTaskUpdateInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_approve_description: models::RepairTaskApproveDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10210,34 +10815,50 @@ pub mod force_approve_repair_task {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.repair_task_approve_description)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RepairTaskUpdateInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod update_repair_task_health_policy {
     use super::models;
-    type Response = models::RepairTaskUpdateInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RepairTaskUpdateInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task_update_health_policy_description: models::RepairTaskUpdateHealthPolicyDescription,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10255,34 +10876,50 @@ pub mod update_repair_task_health_policy {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.repair_task_update_health_policy_description)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RepairTaskUpdateInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod update_repair_execution_state {
     use super::models;
-    type Response = models::RepairTaskUpdateInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RepairTaskUpdateInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RepairTaskUpdateInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) repair_task: models::RepairTask,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10300,27 +10937,42 @@ pub mod update_repair_execution_state {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.repair_task)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RepairTaskUpdateInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RepairTaskUpdateInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_replica_info_list {
     use super::models;
-    type Response = models::PagedReplicaInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedReplicaInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedReplicaInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10339,7 +10991,8 @@ pub mod get_replica_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10366,30 +11019,41 @@ pub mod get_replica_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedReplicaInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedReplicaInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_replica_info {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::ReplicaInfo),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ReplicaInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -10404,7 +11068,8 @@ pub mod get_replica_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10429,28 +11094,42 @@ pub mod get_replica_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ReplicaInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_replica_health {
     use super::models;
-    type Response = models::ReplicaHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ReplicaHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10470,7 +11149,8 @@ pub mod get_replica_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10500,27 +11180,42 @@ pub mod get_replica_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ReplicaHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_replica_health_using_policy {
     use super::models;
-    type Response = models::ReplicaHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ReplicaHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10546,7 +11241,8 @@ pub mod get_replica_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10581,27 +11277,19 @@ pub mod get_replica_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ReplicaHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_replica_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10623,7 +11311,8 @@ pub mod report_replica_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10654,15 +11343,7 @@ pub mod report_replica_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -10670,10 +11351,29 @@ pub mod report_replica_health {
 }
 pub mod get_deployed_service_replica_info_list {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::DeployedServiceReplicaInfoList),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServiceReplicaInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -10700,7 +11400,8 @@ pub mod get_deployed_service_replica_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10733,28 +11434,42 @@ pub mod get_deployed_service_replica_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServiceReplicaInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_replica_detail_info {
     use super::models;
-    type Response = models::DeployedServiceReplicaDetailInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10769,7 +11484,8 @@ pub mod get_deployed_service_replica_detail_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10795,27 +11511,42 @@ pub mod get_deployed_service_replica_detail_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaDetailInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_replica_detail_info_by_partition_id {
     use super::models;
-    type Response = models::DeployedServiceReplicaDetailInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10829,7 +11560,8 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10854,27 +11586,19 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaDetailInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod restart_replica {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10889,7 +11613,8 @@ pub mod restart_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10916,15 +11641,7 @@ pub mod restart_replica {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -10932,7 +11649,7 @@ pub mod restart_replica {
 }
 pub mod remove_replica {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -10953,7 +11670,8 @@ pub mod remove_replica {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -10985,15 +11703,7 @@ pub mod remove_replica {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -11001,7 +11711,30 @@ pub mod remove_replica {
 }
 pub mod get_deployed_service_package_info_list {
     use super::models;
-    type Response = models::DeployedServicePackageInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServicePackageInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11015,7 +11748,8 @@ pub mod get_deployed_service_package_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11040,30 +11774,41 @@ pub mod get_deployed_service_package_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServicePackageInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServicePackageInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_package_info_list_by_name {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::DeployedServicePackageInfoList),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServicePackageInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -11079,7 +11824,8 @@ pub mod get_deployed_service_package_info_list_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11105,28 +11851,42 @@ pub mod get_deployed_service_package_info_list_by_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServicePackageInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServicePackageInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_package_health {
     use super::models;
-    type Response = models::DeployedServicePackageHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServicePackageHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11147,7 +11907,8 @@ pub mod get_deployed_service_package_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11178,27 +11939,42 @@ pub mod get_deployed_service_package_health {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServicePackageHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServicePackageHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_deployed_service_package_health_using_policy {
     use super::models;
-    type Response = models::DeployedServicePackageHealth;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServicePackageHealth> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedServicePackageHealth = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11225,7 +12001,8 @@ pub mod get_deployed_service_package_health_using_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11261,27 +12038,19 @@ pub mod get_deployed_service_package_health_using_policy {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedServicePackageHealth = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedServicePackageHealth>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod report_deployed_service_package_health {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11303,7 +12072,8 @@ pub mod report_deployed_service_package_health {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11333,15 +12103,7 @@ pub mod report_deployed_service_package_health {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -11349,7 +12111,7 @@ pub mod report_deployed_service_package_health {
 }
 pub mod deploy_service_package_to_node {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11363,7 +12125,8 @@ pub mod deploy_service_package_to_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11388,15 +12151,7 @@ pub mod deploy_service_package_to_node {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -11404,7 +12159,30 @@ pub mod deploy_service_package_to_node {
 }
 pub mod get_deployed_code_package_info_list {
     use super::models;
-    type Response = models::DeployedCodePackageInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedCodePackageInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::DeployedCodePackageInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11430,7 +12208,8 @@ pub mod get_deployed_code_package_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11463,27 +12242,19 @@ pub mod get_deployed_code_package_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::DeployedCodePackageInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DeployedCodePackageInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod restart_deployed_code_package {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11498,7 +12269,8 @@ pub mod restart_deployed_code_package {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11524,15 +12296,7 @@ pub mod restart_deployed_code_package {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -11540,7 +12304,30 @@ pub mod restart_deployed_code_package {
 }
 pub mod get_container_logs_deployed_on_node {
     use super::models;
-    type Response = models::ContainerLogs;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ContainerLogs> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ContainerLogs = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11568,7 +12355,8 @@ pub mod get_container_logs_deployed_on_node {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11605,27 +12393,42 @@ pub mod get_container_logs_deployed_on_node {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ContainerLogs = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerLogs>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod invoke_container_api {
     use super::models;
-    type Response = models::ContainerApiResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ContainerApiResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ContainerApiResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11643,7 +12446,8 @@ pub mod invoke_container_api {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11679,27 +12483,19 @@ pub mod invoke_container_api {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.container_api_request_body)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ContainerApiResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApiResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod create_compose_deployment {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11712,7 +12508,8 @@ pub mod create_compose_deployment {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11733,15 +12530,7 @@ pub mod create_compose_deployment {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -11749,7 +12538,30 @@ pub mod create_compose_deployment {
 }
 pub mod get_compose_deployment_status {
     use super::models;
-    type Response = models::ComposeDeploymentStatusInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ComposeDeploymentStatusInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ComposeDeploymentStatusInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11762,7 +12574,8 @@ pub mod get_compose_deployment_status {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11782,27 +12595,42 @@ pub mod get_compose_deployment_status {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ComposeDeploymentStatusInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComposeDeploymentStatusInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_compose_deployment_status_list {
     use super::models;
-    type Response = models::PagedComposeDeploymentStatusInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedComposeDeploymentStatusInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedComposeDeploymentStatusInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11826,7 +12654,8 @@ pub mod get_compose_deployment_status_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11852,27 +12681,42 @@ pub mod get_compose_deployment_status_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedComposeDeploymentStatusInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedComposeDeploymentStatusInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_compose_deployment_upgrade_progress {
     use super::models;
-    type Response = models::ComposeDeploymentUpgradeProgressInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ComposeDeploymentUpgradeProgressInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ComposeDeploymentUpgradeProgressInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11885,7 +12729,8 @@ pub mod get_compose_deployment_upgrade_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11909,27 +12754,19 @@ pub mod get_compose_deployment_upgrade_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ComposeDeploymentUpgradeProgressInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComposeDeploymentUpgradeProgressInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod remove_compose_deployment {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11942,7 +12779,8 @@ pub mod remove_compose_deployment {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -11967,15 +12805,7 @@ pub mod remove_compose_deployment {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -11983,7 +12813,7 @@ pub mod remove_compose_deployment {
 }
 pub mod start_compose_deployment_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -11997,7 +12827,8 @@ pub mod start_compose_deployment_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12022,15 +12853,7 @@ pub mod start_compose_deployment_upgrade {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12038,7 +12861,7 @@ pub mod start_compose_deployment_upgrade {
 }
 pub mod start_rollback_compose_deployment_upgrade {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12051,7 +12874,8 @@ pub mod start_rollback_compose_deployment_upgrade {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12076,15 +12900,7 @@ pub mod start_rollback_compose_deployment_upgrade {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12092,7 +12908,30 @@ pub mod start_rollback_compose_deployment_upgrade {
 }
 pub mod get_chaos {
     use super::models;
-    type Response = models::Chaos;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::Chaos> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::Chaos = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12104,7 +12943,8 @@ pub mod get_chaos {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12124,27 +12964,19 @@ pub mod get_chaos {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::Chaos = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Chaos>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod start_chaos {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12157,7 +12989,8 @@ pub mod start_chaos {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12178,15 +13011,7 @@ pub mod start_chaos {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12194,7 +13019,7 @@ pub mod start_chaos {
 }
 pub mod stop_chaos {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12206,7 +13031,8 @@ pub mod stop_chaos {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12227,15 +13053,7 @@ pub mod stop_chaos {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12243,7 +13061,30 @@ pub mod stop_chaos {
 }
 pub mod get_chaos_events {
     use super::models;
-    type Response = models::ChaosEventsSegment;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ChaosEventsSegment> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ChaosEventsSegment = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12279,7 +13120,8 @@ pub mod get_chaos_events {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12311,27 +13153,42 @@ pub mod get_chaos_events {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ChaosEventsSegment = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ChaosEventsSegment>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_chaos_schedule {
     use super::models;
-    type Response = models::ChaosScheduleDescription;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ChaosScheduleDescription> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ChaosScheduleDescription = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12343,7 +13200,8 @@ pub mod get_chaos_schedule {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12363,27 +13221,19 @@ pub mod get_chaos_schedule {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ChaosScheduleDescription = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ChaosScheduleDescription>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod post_chaos_schedule {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12396,7 +13246,8 @@ pub mod post_chaos_schedule {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12417,15 +13268,7 @@ pub mod post_chaos_schedule {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.chaos_schedule)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12433,7 +13276,30 @@ pub mod post_chaos_schedule {
 }
 pub mod get_image_store_content {
     use super::models;
-    type Response = models::ImageStoreContent;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ImageStoreContent> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ImageStoreContent = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12446,7 +13312,8 @@ pub mod get_image_store_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12466,27 +13333,19 @@ pub mod get_image_store_content {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ImageStoreContent = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ImageStoreContent>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod upload_file {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12499,7 +13358,8 @@ pub mod upload_file {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12519,15 +13379,7 @@ pub mod upload_file {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12535,7 +13387,7 @@ pub mod upload_file {
 }
 pub mod delete_image_store_content {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12548,7 +13400,8 @@ pub mod delete_image_store_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12568,15 +13421,7 @@ pub mod delete_image_store_content {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12584,7 +13429,30 @@ pub mod delete_image_store_content {
 }
 pub mod get_image_store_root_content {
     use super::models;
-    type Response = models::ImageStoreContent;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ImageStoreContent> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ImageStoreContent = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12596,7 +13464,8 @@ pub mod get_image_store_root_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12616,27 +13485,19 @@ pub mod get_image_store_root_content {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ImageStoreContent = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ImageStoreContent>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod copy_image_store_content {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12649,7 +13510,8 @@ pub mod copy_image_store_content {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12670,15 +13532,7 @@ pub mod copy_image_store_content {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12686,7 +13540,7 @@ pub mod copy_image_store_content {
 }
 pub mod delete_image_store_upload_session {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12699,7 +13553,8 @@ pub mod delete_image_store_upload_session {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12721,15 +13576,7 @@ pub mod delete_image_store_upload_session {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12737,7 +13584,7 @@ pub mod delete_image_store_upload_session {
 }
 pub mod commit_image_store_upload_session {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12750,7 +13597,8 @@ pub mod commit_image_store_upload_session {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12773,15 +13621,7 @@ pub mod commit_image_store_upload_session {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12789,7 +13629,30 @@ pub mod commit_image_store_upload_session {
 }
 pub mod get_image_store_upload_session_by_id {
     use super::models;
-    type Response = models::UploadSession;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UploadSession> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UploadSession = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12802,7 +13665,8 @@ pub mod get_image_store_upload_session_by_id {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12824,27 +13688,42 @@ pub mod get_image_store_upload_session_by_id {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UploadSession = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UploadSession>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_image_store_upload_session_by_path {
     use super::models;
-    type Response = models::UploadSession;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::UploadSession> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::UploadSession = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12857,7 +13736,8 @@ pub mod get_image_store_upload_session_by_path {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12881,27 +13761,19 @@ pub mod get_image_store_upload_session_by_path {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::UploadSession = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::UploadSession>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod upload_file_chunk {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12916,7 +13788,8 @@ pub mod upload_file_chunk {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12943,15 +13816,7 @@ pub mod upload_file_chunk {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -12959,7 +13824,30 @@ pub mod upload_file_chunk {
 }
 pub mod get_image_store_root_folder_size {
     use super::models;
-    type Response = models::FolderSizeInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::FolderSizeInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::FolderSizeInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -12971,7 +13859,8 @@ pub mod get_image_store_root_folder_size {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -12991,27 +13880,42 @@ pub mod get_image_store_root_folder_size {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::FolderSizeInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FolderSizeInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_image_store_folder_size {
     use super::models;
-    type Response = models::FolderSizeInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::FolderSizeInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::FolderSizeInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13024,7 +13928,8 @@ pub mod get_image_store_folder_size {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13048,27 +13953,42 @@ pub mod get_image_store_folder_size {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::FolderSizeInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FolderSizeInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_image_store_info {
     use super::models;
-    type Response = models::ImageStoreInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ImageStoreInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ImageStoreInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13080,7 +14000,8 @@ pub mod get_image_store_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13100,27 +14021,42 @@ pub mod get_image_store_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ImageStoreInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ImageStoreInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod invoke_infrastructure_command {
     use super::models;
-    type Response = models::InfrastructureServiceResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::InfrastructureServiceResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::InfrastructureServiceResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13139,7 +14075,8 @@ pub mod invoke_infrastructure_command {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13165,27 +14102,42 @@ pub mod invoke_infrastructure_command {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::InfrastructureServiceResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::InfrastructureServiceResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod invoke_infrastructure_query {
     use super::models;
-    type Response = models::InfrastructureServiceResponse;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::InfrastructureServiceResponse> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::InfrastructureServiceResponse = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13204,7 +14156,8 @@ pub mod invoke_infrastructure_query {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13229,27 +14182,19 @@ pub mod invoke_infrastructure_query {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::InfrastructureServiceResponse = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::InfrastructureServiceResponse>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod start_data_loss {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13265,7 +14210,8 @@ pub mod start_data_loss {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13295,15 +14241,7 @@ pub mod start_data_loss {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13311,7 +14249,30 @@ pub mod start_data_loss {
 }
 pub mod get_data_loss_progress {
     use super::models;
-    type Response = models::PartitionDataLossProgress;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionDataLossProgress> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionDataLossProgress = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13326,7 +14287,8 @@ pub mod get_data_loss_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13353,27 +14315,19 @@ pub mod get_data_loss_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionDataLossProgress = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionDataLossProgress>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod start_quorum_loss {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13390,7 +14344,8 @@ pub mod start_quorum_loss {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13424,15 +14379,7 @@ pub mod start_quorum_loss {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13440,7 +14387,30 @@ pub mod start_quorum_loss {
 }
 pub mod get_quorum_loss_progress {
     use super::models;
-    type Response = models::PartitionQuorumLossProgress;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionQuorumLossProgress> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionQuorumLossProgress = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13455,7 +14425,8 @@ pub mod get_quorum_loss_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13482,27 +14453,19 @@ pub mod get_quorum_loss_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionQuorumLossProgress = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionQuorumLossProgress>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod start_partition_restart {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13518,7 +14481,8 @@ pub mod start_partition_restart {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13550,15 +14514,7 @@ pub mod start_partition_restart {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13566,7 +14522,30 @@ pub mod start_partition_restart {
 }
 pub mod get_partition_restart_progress {
     use super::models;
-    type Response = models::PartitionRestartProgress;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionRestartProgress> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionRestartProgress = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13581,7 +14560,8 @@ pub mod get_partition_restart_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13608,27 +14588,19 @@ pub mod get_partition_restart_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionRestartProgress = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionRestartProgress>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod start_node_transition {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13645,7 +14617,8 @@ pub mod start_node_transition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13682,15 +14655,7 @@ pub mod start_node_transition {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13698,7 +14663,30 @@ pub mod start_node_transition {
 }
 pub mod get_node_transition_progress {
     use super::models;
-    type Response = models::NodeTransitionProgress;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeTransitionProgress> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeTransitionProgress = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13712,7 +14700,8 @@ pub mod get_node_transition_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13738,27 +14727,42 @@ pub mod get_node_transition_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeTransitionProgress = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeTransitionProgress>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_fault_operation_list {
     use super::models;
-    type Response = models::OperationStatusList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::OperationStatusList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::OperationStatusList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13772,7 +14776,8 @@ pub mod get_fault_operation_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13798,27 +14803,19 @@ pub mod get_fault_operation_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::OperationStatusList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationStatusList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod cancel_operation {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13832,7 +14829,8 @@ pub mod cancel_operation {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13857,15 +14855,7 @@ pub mod cancel_operation {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13873,7 +14863,7 @@ pub mod cancel_operation {
 }
 pub mod create_backup_policy {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13892,7 +14882,8 @@ pub mod create_backup_policy {
             self.validate_connection = Some(validate_connection);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13918,15 +14909,7 @@ pub mod create_backup_policy {
                             .append_pair("ValidateConnection", &validate_connection.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Created => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13934,7 +14917,7 @@ pub mod create_backup_policy {
 }
 pub mod delete_backup_policy {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -13947,7 +14930,8 @@ pub mod delete_backup_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -13972,15 +14956,7 @@ pub mod delete_backup_policy {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -13988,7 +14964,30 @@ pub mod delete_backup_policy {
 }
 pub mod get_backup_policy_list {
     use super::models;
-    type Response = models::PagedBackupPolicyDescriptionList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupPolicyDescriptionList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupPolicyDescriptionList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14012,7 +15011,8 @@ pub mod get_backup_policy_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14038,27 +15038,42 @@ pub mod get_backup_policy_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupPolicyDescriptionList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupPolicyDescriptionList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_backup_policy_by_name {
     use super::models;
-    type Response = models::BackupPolicyDescription;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::BackupPolicyDescription> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::BackupPolicyDescription = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14071,7 +15086,8 @@ pub mod get_backup_policy_by_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14095,27 +15111,42 @@ pub mod get_backup_policy_by_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::BackupPolicyDescription = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BackupPolicyDescription>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_all_entities_backed_up_by_policy {
     use super::models;
-    type Response = models::PagedBackupEntityList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupEntityList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupEntityList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14140,7 +15171,8 @@ pub mod get_all_entities_backed_up_by_policy {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14170,27 +15202,19 @@ pub mod get_all_entities_backed_up_by_policy {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupEntityList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupEntityList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod update_backup_policy {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14210,7 +15234,8 @@ pub mod update_backup_policy {
             self.validate_connection = Some(validate_connection);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14240,15 +15265,7 @@ pub mod update_backup_policy {
                             .append_pair("ValidateConnection", &validate_connection.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14256,7 +15273,7 @@ pub mod update_backup_policy {
 }
 pub mod enable_application_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14270,7 +15287,8 @@ pub mod enable_application_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14295,15 +15313,7 @@ pub mod enable_application_backup {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14311,7 +15321,7 @@ pub mod enable_application_backup {
 }
 pub mod disable_application_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14330,7 +15340,8 @@ pub mod disable_application_backup {
             self.disable_backup_description = Some(disable_backup_description.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14359,15 +15370,7 @@ pub mod disable_application_backup {
                         azure_core::EMPTY_BODY
                     };
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14375,7 +15378,30 @@ pub mod disable_application_backup {
 }
 pub mod get_application_backup_configuration_info {
     use super::models;
-    type Response = models::PagedBackupConfigurationInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupConfigurationInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupConfigurationInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14400,7 +15426,8 @@ pub mod get_application_backup_configuration_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14430,27 +15457,42 @@ pub mod get_application_backup_configuration_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupConfigurationInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupConfigurationInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_backup_list {
     use super::models;
-    type Response = models::PagedBackupInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14493,7 +15535,8 @@ pub mod get_application_backup_list {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14536,27 +15579,19 @@ pub mod get_application_backup_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod suspend_application_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14569,7 +15604,8 @@ pub mod suspend_application_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14594,15 +15630,7 @@ pub mod suspend_application_backup {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14610,7 +15638,7 @@ pub mod suspend_application_backup {
 }
 pub mod resume_application_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14623,7 +15651,8 @@ pub mod resume_application_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14648,15 +15677,7 @@ pub mod resume_application_backup {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14664,7 +15685,7 @@ pub mod resume_application_backup {
 }
 pub mod enable_service_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14678,7 +15699,8 @@ pub mod enable_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14699,15 +15721,7 @@ pub mod enable_service_backup {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14715,7 +15729,7 @@ pub mod enable_service_backup {
 }
 pub mod disable_service_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14734,7 +15748,8 @@ pub mod disable_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14759,15 +15774,7 @@ pub mod disable_service_backup {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -14775,7 +15782,30 @@ pub mod disable_service_backup {
 }
 pub mod get_service_backup_configuration_info {
     use super::models;
-    type Response = models::PagedBackupConfigurationInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupConfigurationInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupConfigurationInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14800,7 +15830,8 @@ pub mod get_service_backup_configuration_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14830,27 +15861,42 @@ pub mod get_service_backup_configuration_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupConfigurationInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupConfigurationInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_backup_list {
     use super::models;
-    type Response = models::PagedBackupInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14893,7 +15939,8 @@ pub mod get_service_backup_list {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14932,27 +15979,19 @@ pub mod get_service_backup_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod suspend_service_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -14965,7 +16004,8 @@ pub mod suspend_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -14986,15 +16026,7 @@ pub mod suspend_service_backup {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15002,7 +16034,7 @@ pub mod suspend_service_backup {
 }
 pub mod resume_service_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15015,7 +16047,8 @@ pub mod resume_service_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15036,15 +16069,7 @@ pub mod resume_service_backup {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15052,7 +16077,7 @@ pub mod resume_service_backup {
 }
 pub mod enable_partition_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15066,7 +16091,8 @@ pub mod enable_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15091,15 +16117,7 @@ pub mod enable_partition_backup {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15107,7 +16125,7 @@ pub mod enable_partition_backup {
 }
 pub mod disable_partition_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15126,7 +16144,8 @@ pub mod disable_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15155,15 +16174,7 @@ pub mod disable_partition_backup {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15171,7 +16182,30 @@ pub mod disable_partition_backup {
 }
 pub mod get_partition_backup_configuration_info {
     use super::models;
-    type Response = models::PartitionBackupConfigurationInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionBackupConfigurationInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionBackupConfigurationInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15184,7 +16218,8 @@ pub mod get_partition_backup_configuration_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15208,27 +16243,42 @@ pub mod get_partition_backup_configuration_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionBackupConfigurationInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionBackupConfigurationInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_backup_list {
     use super::models;
-    type Response = models::PagedBackupInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15259,7 +16309,8 @@ pub mod get_partition_backup_list {
             self.end_date_time_filter = Some(end_date_time_filter.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15296,27 +16347,19 @@ pub mod get_partition_backup_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod suspend_partition_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15329,7 +16372,8 @@ pub mod suspend_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15354,15 +16398,7 @@ pub mod suspend_partition_backup {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15370,7 +16406,7 @@ pub mod suspend_partition_backup {
 }
 pub mod resume_partition_backup {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15383,7 +16419,8 @@ pub mod resume_partition_backup {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15408,15 +16445,7 @@ pub mod resume_partition_backup {
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15424,7 +16453,7 @@ pub mod resume_partition_backup {
 }
 pub mod backup_partition {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15449,7 +16478,8 @@ pub mod backup_partition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15479,15 +16509,7 @@ pub mod backup_partition {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15495,7 +16517,30 @@ pub mod backup_partition {
 }
 pub mod get_partition_backup_progress {
     use super::models;
-    type Response = models::BackupProgressInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::BackupProgressInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::BackupProgressInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15508,7 +16553,8 @@ pub mod get_partition_backup_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15532,27 +16578,19 @@ pub mod get_partition_backup_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::BackupProgressInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BackupProgressInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod restore_partition {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15572,7 +16610,8 @@ pub mod restore_partition {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15598,15 +16637,7 @@ pub mod restore_partition {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Accepted => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15614,7 +16645,30 @@ pub mod restore_partition {
 }
 pub mod get_partition_restore_progress {
     use super::models;
-    type Response = models::RestoreProgressInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RestoreProgressInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RestoreProgressInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15627,7 +16681,8 @@ pub mod get_partition_restore_progress {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15651,27 +16706,42 @@ pub mod get_partition_restore_progress {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::RestoreProgressInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::RestoreProgressInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_backups_from_backup_location {
     use super::models;
-    type Response = models::PagedBackupInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedBackupInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedBackupInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15696,7 +16766,8 @@ pub mod get_backups_from_backup_location {
             self.max_results = Some(max_results);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15723,27 +16794,19 @@ pub mod get_backups_from_backup_location {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.get_backup_by_storage_query_description)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedBackupInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedBackupInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod create_name {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15756,7 +16819,8 @@ pub mod create_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15777,15 +16841,7 @@ pub mod create_name {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Created => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15793,7 +16849,7 @@ pub mod create_name {
 }
 pub mod get_name_exists_info {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15806,7 +16862,8 @@ pub mod get_name_exists_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15826,15 +16883,7 @@ pub mod get_name_exists_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15842,7 +16891,7 @@ pub mod get_name_exists_info {
 }
 pub mod delete_name {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15855,7 +16904,8 @@ pub mod delete_name {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15875,15 +16925,7 @@ pub mod delete_name {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -15891,7 +16933,30 @@ pub mod delete_name {
 }
 pub mod get_sub_name_info_list {
     use super::models;
-    type Response = models::PagedSubNameInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedSubNameInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedSubNameInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15916,7 +16981,8 @@ pub mod get_sub_name_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -15942,27 +17008,42 @@ pub mod get_sub_name_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedSubNameInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedSubNameInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_property_info_list {
     use super::models;
-    type Response = models::PagedPropertyInfoList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PagedPropertyInfoList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PagedPropertyInfoList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -15987,7 +17068,8 @@ pub mod get_property_info_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16015,27 +17097,42 @@ pub mod get_property_info_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PagedPropertyInfoList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedPropertyInfoList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_property_info {
     use super::models;
-    type Response = models::PropertyInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PropertyInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PropertyInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16049,7 +17146,8 @@ pub mod get_property_info {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16071,27 +17169,19 @@ pub mod get_property_info {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PropertyInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PropertyInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod put_property {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16105,7 +17195,8 @@ pub mod put_property {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16126,15 +17217,7 @@ pub mod put_property {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -16142,7 +17225,7 @@ pub mod put_property {
 }
 pub mod delete_property {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16156,7 +17239,8 @@ pub mod delete_property {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16178,15 +17262,7 @@ pub mod delete_property {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -16194,7 +17270,30 @@ pub mod delete_property {
 }
 pub mod submit_property_batch {
     use super::models;
-    type Response = models::SuccessfulPropertyBatchInfo;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::SuccessfulPropertyBatchInfo> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::SuccessfulPropertyBatchInfo = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16208,7 +17307,8 @@ pub mod submit_property_batch {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16233,27 +17333,42 @@ pub mod submit_property_batch {
                         req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::SuccessfulPropertyBatchInfo = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SuccessfulPropertyBatchInfo>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_cluster_event_list {
     use super::models;
-    type Response = models::ClusterEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ClusterEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ClusterEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16285,7 +17400,8 @@ pub mod get_cluster_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16324,27 +17440,42 @@ pub mod get_cluster_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ClusterEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ClusterEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_containers_event_list {
     use super::models;
-    type Response = models::ContainerInstanceEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ContainerInstanceEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ContainerInstanceEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16376,7 +17507,8 @@ pub mod get_containers_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16415,27 +17547,42 @@ pub mod get_containers_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ContainerInstanceEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerInstanceEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_node_event_list {
     use super::models;
-    type Response = models::NodeEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16468,7 +17615,8 @@ pub mod get_node_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16511,27 +17659,42 @@ pub mod get_node_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_nodes_event_list {
     use super::models;
-    type Response = models::NodeEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::NodeEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::NodeEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16563,7 +17726,8 @@ pub mod get_nodes_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16602,27 +17766,42 @@ pub mod get_nodes_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::NodeEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NodeEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_application_event_list {
     use super::models;
-    type Response = models::ApplicationEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16655,7 +17834,8 @@ pub mod get_application_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16698,27 +17878,42 @@ pub mod get_application_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_applications_event_list {
     use super::models;
-    type Response = models::ApplicationEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ApplicationEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ApplicationEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16750,7 +17945,8 @@ pub mod get_applications_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16789,27 +17985,42 @@ pub mod get_applications_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ApplicationEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_service_event_list {
     use super::models;
-    type Response = models::ServiceEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16842,7 +18053,8 @@ pub mod get_service_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16885,27 +18097,42 @@ pub mod get_service_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_services_event_list {
     use super::models;
-    type Response = models::ServiceEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ServiceEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -16937,7 +18164,8 @@ pub mod get_services_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -16976,27 +18204,42 @@ pub mod get_services_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ServiceEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_event_list {
     use super::models;
-    type Response = models::PartitionEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -17029,7 +18272,8 @@ pub mod get_partition_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -17072,27 +18316,42 @@ pub mod get_partition_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partitions_event_list {
     use super::models;
-    type Response = models::PartitionEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartitionEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartitionEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -17124,7 +18383,8 @@ pub mod get_partitions_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -17163,27 +18423,42 @@ pub mod get_partitions_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartitionEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PartitionEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_replica_event_list {
     use super::models;
-    type Response = models::ReplicaEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ReplicaEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -17217,7 +18492,8 @@ pub mod get_partition_replica_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -17261,27 +18537,42 @@ pub mod get_partition_replica_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ReplicaEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_partition_replicas_event_list {
     use super::models;
-    type Response = models::ReplicaEventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaEventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::ReplicaEventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -17314,7 +18605,8 @@ pub mod get_partition_replicas_event_list {
             self.skip_correlation_lookup = Some(skip_correlation_lookup);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -17357,27 +18649,42 @@ pub mod get_partition_replicas_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::ReplicaEventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaEventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_correlated_event_list {
     use super::models;
-    type Response = models::EventList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::EventList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::EventList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -17390,7 +18697,8 @@ pub mod get_correlated_event_list {
             self.timeout = Some(timeout);
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -17414,21 +18722,13 @@ pub mod get_correlated_event_list {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::EventList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EventList>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
@@ -17483,14 +18783,38 @@ pub mod mesh_secret {
     }
     pub mod get {
         use super::models;
-        type Response = models::SecretResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SecretResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SecretResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17511,31 +18835,41 @@ pub mod mesh_secret {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SecretResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod create_or_update {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::SecretResourceDescription),
-            Created201(models::SecretResourceDescription),
-            Accepted202,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SecretResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SecretResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -17544,7 +18878,8 @@ pub mod mesh_secret {
             pub(crate) secret_resource_description: models::SecretResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17566,45 +18901,27 @@ pub mod mesh_secret {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.secret_resource_description)?;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SecretResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17625,17 +18942,7 @@ pub mod mesh_secret {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -17643,13 +18950,37 @@ pub mod mesh_secret {
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedSecretResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedSecretResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedSecretResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17666,21 +18997,15 @@ pub mod mesh_secret {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedSecretResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedSecretResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -17766,7 +19091,30 @@ pub mod mesh_secret_value {
     }
     pub mod get {
         use super::models;
-        type Response = models::SecretValueResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SecretValueResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SecretValueResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -17774,7 +19122,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17796,31 +19145,41 @@ pub mod mesh_secret_value {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretValueResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SecretValueResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod add_value {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::SecretValueResourceDescription),
-            Created201(models::SecretValueResourceDescription),
-            Accepted202,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SecretValueResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SecretValueResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -17830,7 +19189,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_description: models::SecretValueResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17853,38 +19213,19 @@ pub mod mesh_secret_value {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.secret_value_resource_description)?;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretValueResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretValueResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SecretValueResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -17892,7 +19233,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17914,17 +19256,7 @@ pub mod mesh_secret_value {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -17932,14 +19264,38 @@ pub mod mesh_secret_value {
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedSecretValueResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedSecretValueResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedSecretValueResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) secret_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -17960,27 +19316,44 @@ pub mod mesh_secret_value {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedSecretValueResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedSecretValueResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod show {
         use super::models;
-        type Response = models::SecretValue;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SecretValue> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SecretValue = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -17988,7 +19361,8 @@ pub mod mesh_secret_value {
             pub(crate) secret_value_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18011,21 +19385,13 @@ pub mod mesh_secret_value {
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SecretValue = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SecretValue>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18081,14 +19447,38 @@ pub mod mesh_volume {
     }
     pub mod get {
         use super::models;
-        type Response = models::VolumeResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::VolumeResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::VolumeResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18109,31 +19499,41 @@ pub mod mesh_volume {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::VolumeResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VolumeResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod create_or_update {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::VolumeResourceDescription),
-            Created201(models::VolumeResourceDescription),
-            Accepted202,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::VolumeResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::VolumeResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -18142,7 +19542,8 @@ pub mod mesh_volume {
             pub(crate) volume_resource_description: models::VolumeResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18164,45 +19565,27 @@ pub mod mesh_volume {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.volume_resource_description)?;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::VolumeResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::VolumeResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::VolumeResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) volume_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18223,17 +19606,7 @@ pub mod mesh_volume {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -18241,13 +19614,37 @@ pub mod mesh_volume {
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedVolumeResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedVolumeResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedVolumeResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18264,21 +19661,15 @@ pub mod mesh_volume {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedVolumeResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedVolumeResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18334,14 +19725,38 @@ pub mod mesh_network {
     }
     pub mod get {
         use super::models;
-        type Response = models::NetworkResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::NetworkResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::NetworkResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18362,31 +19777,41 @@ pub mod mesh_network {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::NetworkResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NetworkResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod create_or_update {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::NetworkResourceDescription),
-            Created201(models::NetworkResourceDescription),
-            Accepted202,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::NetworkResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::NetworkResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -18395,7 +19820,8 @@ pub mod mesh_network {
             pub(crate) network_resource_description: models::NetworkResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18417,45 +19843,27 @@ pub mod mesh_network {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.network_resource_description)?;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::NetworkResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::NetworkResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::NetworkResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) network_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18476,17 +19884,7 @@ pub mod mesh_network {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -18494,13 +19892,37 @@ pub mod mesh_network {
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedNetworkResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedNetworkResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedNetworkResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18517,21 +19939,15 @@ pub mod mesh_network {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedNetworkResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedNetworkResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18598,14 +20014,38 @@ pub mod mesh_application {
     }
     pub mod get {
         use super::models;
-        type Response = models::ApplicationResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ApplicationResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ApplicationResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18626,31 +20066,41 @@ pub mod mesh_application {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ApplicationResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod create_or_update {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::ApplicationResourceDescription),
-            Created201(models::ApplicationResourceDescription),
-            Accepted202,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ApplicationResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ApplicationResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -18659,7 +20109,8 @@ pub mod mesh_application {
             pub(crate) application_resource_description: models::ApplicationResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18681,45 +20132,27 @@ pub mod mesh_application {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.application_resource_description)?;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ApplicationResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ApplicationResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18740,17 +20173,7 @@ pub mod mesh_application {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -18758,13 +20181,37 @@ pub mod mesh_application {
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedApplicationResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedApplicationResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedApplicationResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18781,34 +20228,52 @@ pub mod mesh_application {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedApplicationResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedApplicationResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod get_upgrade_progress {
         use super::models;
-        type Response = models::ApplicationResourceUpgradeProgressInfo;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ApplicationResourceUpgradeProgressInfo> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ApplicationResourceUpgradeProgressInfo = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18829,21 +20294,15 @@ pub mod mesh_application {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ApplicationResourceUpgradeProgressInfo = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ApplicationResourceUpgradeProgressInfo>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -18879,7 +20338,30 @@ pub mod mesh_service {
     }
     pub mod get {
         use super::models;
-        type Response = models::ServiceResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ServiceResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -18887,7 +20369,8 @@ pub mod mesh_service {
             pub(crate) service_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18909,34 +20392,50 @@ pub mod mesh_service {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ServiceResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedServiceResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedServiceResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedServiceResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) application_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -18957,21 +20456,15 @@ pub mod mesh_service {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedServiceResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedServiceResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19007,7 +20500,30 @@ pub mod mesh_code_package {
     }
     pub mod get_container_logs {
         use super::models;
-        type Response = models::ContainerLogs;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ContainerLogs> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ContainerLogs = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -19023,7 +20539,8 @@ pub mod mesh_code_package {
                 self.tail = Some(tail.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19050,21 +20567,13 @@ pub mod mesh_code_package {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ContainerLogs = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerLogs>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19109,7 +20618,30 @@ pub mod mesh_service_replica {
     }
     pub mod get {
         use super::models;
-        type Response = models::ServiceReplicaDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceReplicaDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ServiceReplicaDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -19118,7 +20650,8 @@ pub mod mesh_service_replica {
             pub(crate) replica_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19141,27 +20674,42 @@ pub mod mesh_service_replica {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::ServiceReplicaDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ServiceReplicaDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedServiceReplicaDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedServiceReplicaDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedServiceReplicaDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -19169,7 +20717,8 @@ pub mod mesh_service_replica {
             pub(crate) service_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19191,21 +20740,15 @@ pub mod mesh_service_replica {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedServiceReplicaDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedServiceReplicaDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -19261,14 +20804,38 @@ pub mod mesh_gateway {
     }
     pub mod get {
         use super::models;
-        type Response = models::GatewayResourceDescription;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::GatewayResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::GatewayResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19289,31 +20856,41 @@ pub mod mesh_gateway {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::GatewayResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod create_or_update {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200(models::GatewayResourceDescription),
-            Created201(models::GatewayResourceDescription),
-            Accepted202,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::GatewayResourceDescription> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::GatewayResourceDescription = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
@@ -19322,7 +20899,8 @@ pub mod mesh_gateway {
             pub(crate) gateway_resource_description: models::GatewayResourceDescription,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19344,45 +20922,27 @@ pub mod mesh_gateway {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.gateway_resource_description)?;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::GatewayResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Ok200(rsp_value))
-                            }
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::GatewayResourceDescription = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GatewayResourceDescription>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Ok200,
-            Accepted202,
-            NoContent204,
-        }
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) gateway_resource_name: String,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19403,17 +20963,7 @@ pub mod mesh_gateway {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                            azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -19421,13 +20971,37 @@ pub mod mesh_gateway {
     }
     pub mod list {
         use super::models;
-        type Response = models::PagedGatewayResourceDescriptionList;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::PagedGatewayResourceDescriptionList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::PagedGatewayResourceDescriptionList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
         impl RequestBuilder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -19444,21 +21018,15 @@ pub mod mesh_gateway {
                             .append_pair(azure_core::query_param::API_VERSION, "8.2");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::PagedGatewayResourceDescriptionList = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::PagedGatewayResourceDescriptionList>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

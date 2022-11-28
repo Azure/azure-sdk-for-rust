@@ -15,7 +15,7 @@ pub use get_entity::GetEntityBuilder;
 pub use insert_entity::InsertEntityBuilder;
 pub use insert_or_replace_or_merge_entity::InsertOrReplaceOrMergeEntityBuilder;
 pub use list_tables::ListTablesBuilder;
-pub use query_entity::QueryEntityBuilder;
+pub use query_entity::{QueryEntityBuilder, QueryEntityResponse};
 pub use transaction::TransactionBuilder;
 pub use update_or_merge_entity::UpdateOrMergeEntityBuilder;
 
@@ -25,7 +25,7 @@ use azure_core::{
     headers::{self, etag_from_headers, HeaderName},
     CollectedResponse, Etag,
 };
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
 use url::Url;

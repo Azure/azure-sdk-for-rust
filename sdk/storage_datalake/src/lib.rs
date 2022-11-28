@@ -10,13 +10,10 @@ should also be possible with this crate.
 TODO
 */
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub(crate) mod authorization_policies;
 pub mod clients;
 pub mod file_system;
 pub mod operations;

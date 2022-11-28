@@ -1,6 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, RequestId};
-use azure_storage::xml::read_xml;
+use azure_core::{headers::*, prelude::*, xml::read_xml, RequestId};
 use time::OffsetDateTime;
 
 operation! {

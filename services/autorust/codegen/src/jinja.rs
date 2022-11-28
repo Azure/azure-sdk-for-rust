@@ -48,11 +48,26 @@ impl<'a> CheckAllServicesYml<'a> {
 
 #[derive(Template)]
 #[template(path = "Cargo.toml.jinja")]
-pub struct CargoToml {
+pub struct CargoToml<'a> {
+    pub package_name: &'a str,
+    pub default_feature: &'a str,
+    pub features: Vec<String>,
+    pub azure_core_features: Vec<&'a str>,
+}
+
+impl<'a> CargoToml<'a> {
+    pub fn create(&self, path: impl AsRef<Utf8Path>) -> Result<()> {
+        render(self, path)
+    }
+}
+
+#[derive(Template)]
+#[template(path = "WorkspaceCargo.toml.jinja")]
+pub struct WorkspaceCargoToml {
     pub dirs: Vec<String>,
 }
 
-impl CargoToml {
+impl WorkspaceCargoToml {
     pub fn create(&self, path: impl AsRef<Utf8Path>) -> Result<()> {
         render(self, path)
     }

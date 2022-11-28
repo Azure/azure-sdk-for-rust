@@ -1,0 +1,4 @@
+[tags]
+deny = [
+    "profile-hybrid-2020-09-01", # ignore hybrid
+  ]

@@ -1,4 +1,4 @@
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 use std::num::NonZeroU32;
@@ -15,11 +15,11 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let blob_service_client = storage_client.blob_service_client();
-    let container_client = storage_client.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container_client = blob_service.container_client(&container_name);
 
-    let page = blob_service_client
+    let page = blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -38,7 +38,6 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
@@ -53,7 +52,7 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    assert!(page.blobs.blobs.is_empty());
+    assert!(page.blobs.blobs().next().is_some());
 
     println!("Adding blobs");
 
@@ -63,7 +62,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("blob_at_root{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
     }
 
@@ -73,7 +71,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("firstfolder/blob_at_1stfolder{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
     }
 
@@ -83,7 +80,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("secondroot/blobsd{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
     }
 
@@ -93,7 +89,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("firstfolder/secondfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
     }
 
@@ -103,7 +98,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("firstfolder/thirdfolder/blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
     }
 
@@ -116,7 +110,6 @@ async fn main() -> azure_core::Result<()> {
             ))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
     }
 
@@ -131,14 +124,11 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "List blob / returned {} blobs with blob_prefix == {:?}",
-        page.blobs.blobs.len(),
-        page.blobs.blob_prefix
+        page.blobs.blobs().count(),
+        page.blobs.prefixes().collect::<Vec<_>>()
     );
-    page.blobs
-        .blobs
-        .iter()
-        .for_each(|b| println!("\t{}", b.name));
-    assert_eq!(page.blobs.blobs.len(), 4);
+    page.blobs.blobs().for_each(|b| println!("\t{}", b.name));
+    assert_eq!(page.blobs.blobs().count(), 4);
 
     let page = container_client
         .list_blobs()
@@ -152,14 +142,11 @@ async fn main() -> azure_core::Result<()> {
 
     println!(
         "List blob firstfolder/ returned {} blobs with blob_prefix == {:?}",
-        page.blobs.blobs.len(),
-        page.blobs.blob_prefix
+        page.blobs.blobs().count(),
+        page.blobs.prefixes().collect::<Vec<_>>()
     );
-    page.blobs
-        .blobs
-        .iter()
-        .for_each(|b| println!("\t{}", b.name));
-    assert_eq!(page.blobs.blobs.len(), 3);
+    page.blobs.blobs().for_each(|b| println!("\t{}", b.name));
+    assert_eq!(page.blobs.blobs().count(), 3);
 
     let mut stream = container_client
         .list_blobs()
@@ -169,7 +156,7 @@ async fn main() -> azure_core::Result<()> {
     println!("Streaming results without prefix");
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
-        let len = value?.blobs.blobs.len();
+        let len = value?.blobs.blobs().count();
         println!("\treceived {} blobs", len);
         match cnt {
             // we added 21 blobs so 5x4 + 1
@@ -180,7 +167,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

@@ -6,4 +6,4 @@
 #[cfg(feature = "package-2014-04-preview")]
 pub mod package_2014_04_preview;
 #[cfg(all(feature = "package-2014-04-preview", not(feature = "no-default-tag")))]
-pub use package_2014_04_preview::{models, Client, ClientBuilder};
+pub use package_2014_04_preview::*;

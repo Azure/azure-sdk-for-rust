@@ -1,5 +1,5 @@
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_security_keyvault::SecretClient;
+use azure_security_keyvault::prelude::*;
 use std::{env, sync::Arc};
 
 #[tokio::main]
@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = SecretClient::new(&keyvault_url, creds)?;
 
-    client.restore_secret(&backup_blob).into_future().await?;
+    client.restore_secret(&backup_blob).await?;
 
     Ok(())
 }

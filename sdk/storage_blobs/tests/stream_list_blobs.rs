@@ -1,5 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 
@@ -13,9 +13,9 @@ async fn stream_list_blobs() {
 
     let container_name = "streamlistblobs235xx752zdve";
 
-    let storage = StorageClient::new_access_key(&account, &access_key);
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container = blob_service.container_client(container_name);
 
     let page = blob_service
         .list_containers()
@@ -37,7 +37,6 @@ async fn stream_list_blobs() {
     container
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await
         .unwrap();
 
@@ -47,7 +46,6 @@ async fn stream_list_blobs() {
             .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await
             .unwrap();
     }
@@ -59,7 +57,7 @@ async fn stream_list_blobs() {
 
     let mut cnt = 0u32;
     while let Some(value) = stream.next().await {
-        let len = value.unwrap().blobs.blobs.len();
+        let len = value.unwrap().blobs.blobs().count();
         println!("received {} blobs", len);
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),
@@ -69,5 +67,5 @@ async fn stream_list_blobs() {
         cnt += 1;
     }
 
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
 }

@@ -1,2 +1,2 @@
 pub use crate::clients::*;
-pub(crate) use crate::{account::*, certificates::*, keys::*, secrets::*};
+pub use crate::{account::*, certificates::*, keys::*, secrets::*};

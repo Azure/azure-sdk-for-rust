@@ -162,7 +162,11 @@ impl JobCollectionDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionListResult {
     #[doc = "Gets the job collections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobCollectionDefinition>,
     #[doc = "Gets or sets the URL to get the next set of job collections."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -354,7 +358,11 @@ impl JobHistoryFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryListResult {
     #[doc = "Gets or sets the job histories under job."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobHistoryDefinition>,
     #[doc = "Gets or sets the URL to get the next set of job histories."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -374,7 +382,11 @@ impl JobHistoryListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobListResult {
     #[doc = "Gets or sets all jobs under job collection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<JobDefinition>,
     #[doc = "Gets or sets the URL to get the next set of jobs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -474,19 +486,42 @@ pub mod job_recurrence {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrenceSchedule {
     #[doc = "Gets or sets the days of the week that the job should execute on."]
-    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "weekDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub week_days: Vec<String>,
     #[doc = "Gets or sets the hours of the day that the job should execute at."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hours: Vec<i64>,
     #[doc = "Gets or sets the minutes of the hour that the job should execute at."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub minutes: Vec<i64>,
     #[doc = "Gets or sets the days of the month that the job should execute on. Must be between 1 and 31."]
-    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monthDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub month_days: Vec<i64>,
     #[doc = "Gets or sets the occurrences of days within a month."]
-    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monthlyOccurrences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monthly_occurrences: Vec<JobRecurrenceScheduleMonthlyOccurrence>,
 }
 impl JobRecurrenceSchedule {

@@ -8,10 +8,10 @@ operation! {
     PutBlockList,
     client: BlobClient,
     block_list: BlockList,
-    ?content_type: ContentType,
-    ?content_encoding: ContentEncoding,
-    ?content_language: ContentLanguage,
-    ?content_disposition: ContentDisposition,
+    ?content_type: BlobContentType,
+    ?content_encoding: BlobContentEncoding,
+    ?content_language: BlobContentLanguage,
+    ?content_disposition: BlobContentDisposition,
     ?content_md5: BlobContentMD5,
     ?metadata: Metadata,
     ?access_tier: AccessTier,
@@ -32,7 +32,7 @@ impl PutBlockListBuilder {
             // calculate the xml MD5. This can be made optional
             // if needed, but i think it's best to calculate it.
             let md5 = {
-                let hash = md5::compute(body_bytes.clone());
+                let hash = md5::compute(&body_bytes);
                 base64::encode(hash.0)
             };
 

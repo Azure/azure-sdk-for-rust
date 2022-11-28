@@ -3,6 +3,110 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "A List of azure ad administrators."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AdministratorListResult {
+    #[doc = "The list of azure ad administrator of a server"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AzureAdAdministrator>,
+    #[doc = "The link used to get the next page of operations."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AdministratorListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl AdministratorListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of an administrator."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AdministratorProperties {
+    #[doc = "Type of the sever administrator."]
+    #[serde(rename = "administratorType", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_type: Option<administrator_properties::AdministratorType>,
+    #[doc = "Login name of the server administrator."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub login: Option<String>,
+    #[doc = "SID (object ID) of the server administrator."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sid: Option<String>,
+    #[doc = "Tenant ID of the administrator."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The resource id of the identity used for AAD Authentication."]
+    #[serde(rename = "identityResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub identity_resource_id: Option<String>,
+}
+impl AdministratorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod administrator_properties {
+    use super::*;
+    #[doc = "Type of the sever administrator."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AdministratorType")]
+    pub enum AdministratorType {
+        ActiveDirectory,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AdministratorType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AdministratorType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AdministratorType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ActiveDirectory => serializer.serialize_unit_variant("AdministratorType", 0u32, "ActiveDirectory"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Represents a Administrator."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureAdAdministrator {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of an administrator."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AdministratorProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl AzureAdAdministrator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Storage Profile properties of a server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Backup {
@@ -25,7 +129,11 @@ impl Backup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
     #[doc = "A list of supported capabilities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CapabilityProperties>,
     #[doc = "Link to retrieve next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -49,13 +157,28 @@ pub struct CapabilityProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zone: Option<String>,
     #[doc = "Supported high availability mode"]
-    #[serde(rename = "supportedHAMode", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedHAMode",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_ha_mode: Vec<String>,
     #[doc = "supported geo backup regions"]
-    #[serde(rename = "supportedGeoBackupRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedGeoBackupRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_geo_backup_regions: Vec<String>,
     #[doc = "A list of supported flexible server editions."]
-    #[serde(rename = "supportedFlexibleServerEditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedFlexibleServerEditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_flexible_server_editions: Vec<ServerEditionCapability>,
 }
 impl CapabilityProperties {
@@ -135,7 +258,11 @@ pub mod configuration_for_batch_update {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationListForBatchUpdate {
     #[doc = "The list of server configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfigurationForBatchUpdate>,
     #[doc = "Whether to reset all server parameters to default."]
     #[serde(rename = "resetAllToDefault", default, skip_serializing_if = "Option::is_none")]
@@ -190,7 +317,11 @@ pub mod configuration_list_for_batch_update {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationListResult {
     #[doc = "The list of server configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Configuration>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -403,13 +534,13 @@ pub struct DataEncryption {
     #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub primary_user_assigned_identity_id: Option<String>,
     #[doc = "Primary key uri"]
-    #[serde(rename = "primaryKeyUri", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "primaryKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub primary_key_uri: Option<String>,
     #[doc = "Geo backup user identity resource id as identity can't cross region, need identity in same region as geo backup"]
     #[serde(rename = "geoBackupUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_user_assigned_identity_id: Option<String>,
     #[doc = "Geo backup key uri as key vault can't cross region, need cmk in same region as geo backup"]
-    #[serde(rename = "geoBackupKeyUri", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "geoBackupKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_key_uri: Option<String>,
     #[doc = "The key type, AzureKeyVault for enable cmk, SystemManaged for disable cmk."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -450,7 +581,11 @@ impl Database {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseListResult {
     #[doc = "The list of databases housed in a server"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Database>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -562,10 +697,19 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponse>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorResponse {
@@ -597,7 +741,11 @@ impl FirewallRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
     #[doc = "The list of firewall rules in a server."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallRule>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -797,7 +945,11 @@ impl LogFile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogFileListResult {
     #[doc = "The list of logFiles in a server"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LogFile>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -955,7 +1107,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "Collection of available operation details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL client should use to fetch the next page (per server side paging)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1090,7 +1246,11 @@ impl ServerBackup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBackupListResult {
     #[doc = "The list of backups of a server."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServerBackup>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1132,10 +1292,20 @@ pub struct ServerEditionCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "A list of supported storage editions"]
-    #[serde(rename = "supportedStorageEditions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedStorageEditions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_storage_editions: Vec<StorageEditionCapability>,
     #[doc = "A list of supported server versions."]
-    #[serde(rename = "supportedServerVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedServerVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_server_versions: Vec<ServerVersionCapability>,
 }
 impl ServerEditionCapability {
@@ -1168,7 +1338,11 @@ impl ServerForUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerListResult {
     #[doc = "The list of servers"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Server>,
     #[doc = "The link used to get the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1430,7 +1604,12 @@ pub struct ServerVersionCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "A list of supported Skus"]
-    #[serde(rename = "supportedSkus", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedSkus",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_skus: Vec<SkuCapability>,
 }
 impl ServerVersionCapability {
@@ -1616,7 +1795,12 @@ pub struct VirtualNetworkSubnetUsageResult {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "A list of delegated subnet usage"]
-    #[serde(rename = "delegatedSubnetsUsage", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "delegatedSubnetsUsage",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delegated_subnets_usage: Vec<DelegatedSubnetUsage>,
 }
 impl VirtualNetworkSubnetUsageResult {

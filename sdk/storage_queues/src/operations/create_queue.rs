@@ -1,6 +1,6 @@
 use crate::clients::QueueClient;
 use azure_core::{error::Error, headers::Headers, prelude::*, Method, Response as AzureResponse};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
 operation! {
@@ -12,7 +12,7 @@ operation! {
 impl CreateQueueBuilder {
     pub fn into_future(mut self) -> CreateQueue {
         Box::pin(async move {
-            let url = self.client.url_with_segments(None)?;
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             if let Some(metadata) = &self.metadata {
@@ -21,10 +21,9 @@ impl CreateQueueBuilder {
                 }
             }
 
-            let mut request =
-                self.client
-                    .storage_client()
-                    .finalize_request(url, Method::Put, headers, None)?;
+            let mut request = self
+                .client
+                .finalize_request(url, Method::Put, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

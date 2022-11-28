@@ -1,5 +1,5 @@
 use azure_core::{error::ErrorKind, StatusCode};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use uuid::Uuid;
 
@@ -14,15 +14,16 @@ async fn main() -> azure_core::Result<()> {
     let container_name = format!("example-{}", Uuid::new_v4());
     let blob_name = format!("missing-{}.txt", Uuid::new_v4());
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let container_client = storage_client.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let container_client =
+        ClientBuilder::new(account, storage_credentials).container_client(&container_name);
     println!("creating container {}", container_name);
-    container_client.create().into_future().await?;
+    container_client.create().await?;
 
     let blob_client = container_client.blob_client(&blob_name);
 
     println!("getting properties for {}/{}", container_name, blob_name);
-    let result = blob_client.get_properties().into_future().await;
+    let result = blob_client.get_properties().await;
     let error = result.expect_err("get_properties on missing blob should fail");
     if let ErrorKind::HttpResponse {
         status: StatusCode::NotFound,
@@ -35,7 +36,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     // cleanup
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
 
     Ok(())
 }

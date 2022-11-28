@@ -287,10 +287,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -317,7 +326,11 @@ pub struct ErrorObject {
     #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
     pub time_stamp: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
 }
 impl ErrorObject {
@@ -395,7 +408,11 @@ pub struct MetricSpecifications {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "The dimensions of metric."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimensions>,
 }
 impl MetricSpecifications {
@@ -447,10 +464,20 @@ pub mod operation_detail {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ServiceSpecification {
             #[doc = "The metric specifications."]
-            #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+            #[serde(
+                rename = "metricSpecifications",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
             pub metric_specifications: Vec<MetricSpecifications>,
             #[doc = "The log specifications."]
-            #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+            #[serde(
+                rename = "logSpecifications",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
             pub log_specifications: Vec<LogSpecifications>,
         }
         impl ServiceSpecification {
@@ -485,7 +512,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of analysis services operations supported by the Microsoft.AnalysisServices resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationDetail>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -646,7 +677,11 @@ pub mod resource_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAdministrators {
     #[doc = "An array of administrator user identities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub members: Vec<String>,
 }
 impl ServerAdministrators {
@@ -673,7 +708,11 @@ impl SkuDetailsForExistingResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuEnumerationForExistingResourceResult {
     #[doc = "The collection of available SKUs for existing resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuDetailsForExistingResource>,
 }
 impl SkuEnumerationForExistingResourceResult {
@@ -685,7 +724,11 @@ impl SkuEnumerationForExistingResourceResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuEnumerationForNewResourceResult {
     #[doc = "The collection of available SKUs for new resources"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceSku>,
 }
 impl SkuEnumerationForNewResourceResult {

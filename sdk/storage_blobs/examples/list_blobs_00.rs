@@ -1,5 +1,5 @@
 use azure_core::{prelude::Timeout, Context};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 use std::num::NonZeroU32;
@@ -17,9 +17,9 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let blob_service = storage_client.blob_service_client();
-    let container_client = storage_client.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container_client = blob_service.container_client(&container_name);
 
     let page = blob_service
         .list_containers()
@@ -43,7 +43,6 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::None)
         .context(context)
-        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
@@ -53,7 +52,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
         println!("\tAdded blob {}", i);
     }
@@ -66,8 +64,8 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    println!("List blob returned {} blobs.", page.blobs.blobs.len());
-    for cont in page.blobs.blobs.iter() {
+    println!("List blob returned {} blobs.", page.blobs.blobs().count());
+    for cont in page.blobs.blobs() {
         println!("\t{}\t{} bytes", cont.name, cont.properties.content_length);
     }
 
@@ -78,7 +76,7 @@ async fn main() -> azure_core::Result<()> {
 
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
-        let len = value?.blobs.blobs.len();
+        let len = value?.blobs.blobs().count();
         println!("received {} blobs", len);
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),
@@ -88,7 +86,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

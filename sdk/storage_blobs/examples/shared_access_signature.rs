@@ -1,5 +1,5 @@
 use azure_core::date;
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use time::OffsetDateTime;
 
@@ -26,13 +26,13 @@ fn code() -> azure_core::Result<()> {
     let now = OffsetDateTime::now_utc() - date::duration_from_minutes(15);
     let later = now + date::duration_from_hours(1);
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let container_client = storage_client.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let service_client = BlobServiceClient::new(account, storage_credentials);
+    let container_client = service_client.container_client(container_name);
     let blob_client = container_client.blob_client(&blob_name);
 
-    let sas = storage_client
+    let sas = service_client
         .shared_access_signature(
-            AccountSasResource::Blob,
             AccountSasResourceType::Object,
             later,
             AccountSasPermissions {

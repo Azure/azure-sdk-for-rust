@@ -66,6 +66,7 @@ pub struct GetBlobResponse {
     pub blob: Blob,
     pub data: ResponseBody,
     pub date: OffsetDateTime,
+    pub content_range: Option<Range>,
     pub remaining_range: Option<Range>,
 }
 
@@ -94,6 +95,7 @@ impl GetBlobResponse {
             blob,
             data,
             date,
+            content_range: content_range.map(|cr| Range::new(cr.start(), cr.end())),
             remaining_range,
         })
     }
@@ -106,7 +108,7 @@ impl Continuable for GetBlobResponse {
     }
 }
 
-// caclculate the first Range for use at the beginning of the Pageable.
+// calculate the first Range for use at the beginning of the Pageable.
 fn initial_range(chunk_size: u64, request_range: Option<Range>) -> Range {
     match request_range {
         Some(range) => {

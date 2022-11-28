@@ -8,10 +8,10 @@ operation! {
     client: BlobClient,
     body: Body,
     ?hash: Hash,
-    ?content_type: ContentType,
-    ?content_encoding: ContentEncoding,
-    ?content_language: ContentLanguage,
-    ?content_disposition: ContentDisposition,
+    ?content_type: BlobContentType,
+    ?content_encoding: BlobContentEncoding,
+    ?content_language: BlobContentLanguage,
+    ?content_disposition: BlobContentDisposition,
     ?metadata: Metadata,
     ?access_tier: AccessTier,
     ?tags: Tags,
@@ -43,7 +43,7 @@ impl PutBlockBlobBuilder {
                 url,
                 azure_core::Method::Put,
                 headers,
-                Some(self.body.clone()),
+                Some(self.body),
             )?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;

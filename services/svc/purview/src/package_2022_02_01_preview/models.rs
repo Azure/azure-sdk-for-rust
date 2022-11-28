@@ -1046,7 +1046,11 @@ impl AzureKeyVault {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureKeyVaultList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureKeyVault>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -2279,7 +2283,11 @@ pub mod classification_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClassificationRuleList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ClassificationRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -2465,7 +2473,11 @@ pub mod credential {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Credential>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -2568,9 +2580,19 @@ pub struct CustomClassificationRuleProperties {
     pub minimum_percentage_match: Option<f64>,
     #[serde(rename = "classificationAction", default, skip_serializing_if = "Option::is_none")]
     pub classification_action: Option<custom_classification_rule_properties::ClassificationAction>,
-    #[serde(rename = "dataPatterns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dataPatterns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub data_patterns: Vec<ClassificationRulePattern>,
-    #[serde(rename = "columnPatterns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "columnPatterns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub column_patterns: Vec<ClassificationRulePattern>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -2828,7 +2850,11 @@ pub struct DataSource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     pub kind: data_source::Kind,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scans: Vec<Scan>,
 }
 impl DataSource {
@@ -2932,7 +2958,11 @@ pub mod data_source {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DataSource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -3000,7 +3030,11 @@ pub struct ErrorInfo {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorInfo>,
 }
 impl ErrorInfo {
@@ -3016,7 +3050,11 @@ pub struct ErrorModel {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorModel>,
 }
 impl ErrorModel {
@@ -3131,9 +3169,19 @@ impl Filter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FilterProperties {
-    #[serde(rename = "excludeUriPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludeUriPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclude_uri_prefixes: Vec<String>,
-    #[serde(rename = "includeUriPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includeUriPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub include_uri_prefixes: Vec<String>,
 }
 impl FilterProperties {
@@ -3626,15 +3674,38 @@ impl ProxyResource {
 pub struct RecurrenceSchedule {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub minutes: Vec<i32>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hours: Vec<i32>,
-    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "weekDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub week_days: Vec<String>,
-    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monthDays",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub month_days: Vec<i32>,
-    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "monthlyOccurrences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
 }
 impl RecurrenceSchedule {
@@ -3722,11 +3793,25 @@ impl RegexClassificationRulePattern {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNameFilter {
-    #[serde(rename = "excludePrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludePrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclude_prefixes: Vec<String>,
-    #[serde(rename = "includePrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includePrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub include_prefixes: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<String>,
 }
 impl ResourceNameFilter {
@@ -4086,7 +4171,12 @@ pub struct Scan {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     pub kind: scan::Kind,
-    #[serde(rename = "scanResults", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "scanResults",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scan_results: Vec<ScanResult>,
 }
 impl Scan {
@@ -4233,7 +4323,11 @@ pub mod scan {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanDiagnostics {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notifications: Vec<Notification>,
     #[serde(rename = "exceptionCountMap", default, skip_serializing_if = "Option::is_none")]
     pub exception_count_map: Option<serde_json::Value>,
@@ -4245,7 +4339,11 @@ impl ScanDiagnostics {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanHistoryList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScanResult>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -4265,7 +4363,11 @@ impl ScanHistoryList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Scan>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -4656,7 +4758,11 @@ pub mod scan_ruleset {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanRulesetList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ScanRuleset>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -4680,9 +4786,19 @@ pub struct ScanRulesetProperties {
     pub created_at: Option<time::OffsetDateTime>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "excludedSystemClassifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "excludedSystemClassifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub excluded_system_classifications: Vec<String>,
-    #[serde(rename = "includedCustomClassificationRuleNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includedCustomClassificationRuleNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub included_custom_classification_rule_names: Vec<String>,
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
@@ -4694,9 +4810,19 @@ impl ScanRulesetProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanningRule {
-    #[serde(rename = "fileExtensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fileExtensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub file_extensions: Vec<String>,
-    #[serde(rename = "customFileExtensions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customFileExtensions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_file_extensions: Vec<CustomFileExtension>,
 }
 impl ScanningRule {
@@ -5041,7 +5167,11 @@ pub mod system_scan_ruleset {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemScanRulesetList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SystemScanRuleset>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

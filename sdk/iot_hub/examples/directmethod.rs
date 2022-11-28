@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         serde_json::from_str(&payload)?,
     );
 
-    let response = direct_method.into_future().await?;
+    let response = direct_method.await?;
 
     println!(
         "Received a response from the direct method with status code {} and payload {:?}",

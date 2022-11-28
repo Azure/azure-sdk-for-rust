@@ -226,7 +226,11 @@ pub struct Error {
     #[doc = "A human-readable representation of the error."]
     pub message: String,
     #[doc = "An array of details about specific errors that led to this reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
     #[doc = "The target of the particular error (e.g., the name of the property in error)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

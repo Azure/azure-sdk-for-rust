@@ -197,10 +197,18 @@ pub struct AzureMachineLearningServiceFunctionBindingProperties {
     #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
     #[doc = "The inputs for the Azure Machine Learning web service endpoint."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<AzureMachineLearningServiceInputColumn>,
     #[doc = "A list of outputs from the Azure Machine Learning web service endpoint execution."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<AzureMachineLearningServiceOutputColumn>,
     #[doc = "Number between 1 and 10000 describing maximum number of rows for every Azure ML RRS execute request. Default is 1000."]
     #[serde(rename = "batchSize", default, skip_serializing_if = "Option::is_none")]
@@ -271,7 +279,12 @@ pub struct AzureMachineLearningServiceInputs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "A list of input columns for the Azure Machine Learning web service endpoint."]
-    #[serde(rename = "columnNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "columnNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub column_names: Vec<AzureMachineLearningServiceInputColumn>,
 }
 impl AzureMachineLearningServiceInputs {
@@ -327,7 +340,11 @@ pub struct AzureMachineLearningStudioFunctionBindingProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inputs: Option<AzureMachineLearningStudioInputs>,
     #[doc = "A list of outputs from the Azure Machine Learning Studio endpoint execution."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<AzureMachineLearningStudioOutputColumn>,
     #[doc = "Number between 1 and 10000 describing maximum number of rows for every Azure ML RRS execute request. Default is 1000."]
     #[serde(rename = "batchSize", default, skip_serializing_if = "Option::is_none")]
@@ -395,7 +412,12 @@ pub struct AzureMachineLearningStudioInputs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "A list of input columns for the Azure Machine Learning Studio endpoint."]
-    #[serde(rename = "columnNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "columnNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub column_names: Vec<AzureMachineLearningStudioInputColumn>,
 }
 impl AzureMachineLearningStudioInputs {
@@ -620,7 +642,12 @@ pub struct AzureTableOutputDataSourceProperties {
     #[serde(rename = "rowKey", default, skip_serializing_if = "Option::is_none")]
     pub row_key: Option<String>,
     #[doc = "If specified, each item in the array is the name of a column to remove (if present) from output event entities."]
-    #[serde(rename = "columnsToRemove", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "columnsToRemove",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns_to_remove: Vec<String>,
     #[doc = "The number of rows to write to the Azure Table at a time."]
     #[serde(rename = "batchSize", default, skip_serializing_if = "Option::is_none")]
@@ -635,7 +662,12 @@ impl AzureTableOutputDataSourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobDataSourceProperties {
     #[doc = "A list of one or more Azure Storage accounts. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "storageAccounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub storage_accounts: Vec<StorageAccount>,
     #[doc = "The name of a container within the associated Storage account. This container contains either the blob(s) to be read from or written to. Required on PUT (CreateOrReplace) requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -869,10 +901,18 @@ pub struct CompileQuery {
     #[doc = "The query to compile."]
     pub query: String,
     #[doc = "The inputs for the query compilation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<QueryInput>,
     #[doc = "The functions for the query compilation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub functions: Vec<QueryFunction>,
     #[doc = "Describes the type of the job. Valid values are `Cloud` and 'Edge'."]
     #[serde(rename = "jobType")]
@@ -1029,7 +1069,11 @@ impl DiagnosticCondition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Diagnostics {
     #[doc = "A collection of zero or more conditions applicable to the resource, or to the job overall, that warrant customer attention."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub conditions: Vec<DiagnosticCondition>,
 }
 impl Diagnostics {
@@ -1150,7 +1194,11 @@ pub mod error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
         #[doc = "Error details."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub details: Vec<ErrorDetails>,
     }
     impl Error {
@@ -1231,7 +1279,12 @@ pub struct EventHubOutputDataSourceProperties {
     #[doc = "The key/column that is used to determine to which partition to send event data."]
     #[serde(rename = "partitionKey", default, skip_serializing_if = "Option::is_none")]
     pub partition_key: Option<String>,
-    #[serde(rename = "propertyColumns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "propertyColumns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub property_columns: Vec<String>,
 }
 impl EventHubOutputDataSourceProperties {
@@ -1428,7 +1481,11 @@ impl FunctionBinding {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FunctionConfiguration {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<FunctionInput>,
     #[doc = "Describes the output of a function."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1461,7 +1518,11 @@ impl FunctionInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FunctionListResult {
     #[doc = "A list of functions under a streaming job. Populated by a 'List' operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Function>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1556,7 +1617,11 @@ impl Input {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputListResult {
     #[doc = "A list of inputs under a streaming job. Populated by a 'List' operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Input>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1853,7 +1918,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Stream Analytics operations supported by the Microsoft.StreamAnalytics resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1937,7 +2006,11 @@ impl Serialize for OutputErrorPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputListResult {
     #[doc = "A list of outputs under a streaming job. Populated by a 'List' operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Output>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2117,19 +2190,39 @@ impl QueryCompilationError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryCompilationResult {
     #[doc = "Error messages produced by the compiler."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub errors: Vec<QueryCompilationError>,
     #[doc = "Warning messages produced by the compiler."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub warnings: Vec<String>,
     #[doc = "All input names used by the query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<String>,
     #[doc = "All output names used by the query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<String>,
     #[doc = "All function names used by the query."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub functions: Vec<String>,
 }
 impl QueryCompilationResult {
@@ -2410,7 +2503,11 @@ pub struct SampleInputResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SampleInputResultStatus>,
     #[doc = "Diagnostics messages. E.g. message indicating some partitions from the input have no data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub diagnostics: Vec<String>,
     #[doc = "A SAS URL to download the sampled input data."]
     #[serde(rename = "eventsDownloadUrl", default, skip_serializing_if = "Option::is_none")]
@@ -2533,7 +2630,12 @@ pub struct ServiceBusQueueOutputDataSourceProperties {
     #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
     pub queue_name: Option<String>,
     #[doc = "A string array of the names of output columns to be attached to Service Bus messages as custom properties."]
-    #[serde(rename = "propertyColumns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "propertyColumns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub property_columns: Vec<String>,
     #[serde(rename = "systemPropertyColumns", default, skip_serializing_if = "Option::is_none")]
     pub system_property_columns: Option<serde_json::Value>,
@@ -2569,7 +2671,12 @@ pub struct ServiceBusTopicOutputDataSourceProperties {
     #[serde(rename = "topicName", default, skip_serializing_if = "Option::is_none")]
     pub topic_name: Option<String>,
     #[doc = "A string array of the names of output columns to be attached to Service Bus messages as custom properties."]
-    #[serde(rename = "propertyColumns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "propertyColumns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub property_columns: Vec<String>,
     #[serde(rename = "systemPropertyColumns", default, skip_serializing_if = "Option::is_none")]
     pub system_property_columns: Option<serde_json::Value>,
@@ -2659,7 +2766,11 @@ impl StreamingJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingJobListResult {
     #[doc = "A list of streaming jobs. Populated by a 'List' operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<StreamingJob>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2725,16 +2836,28 @@ pub struct StreamingJobProperties {
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "A list of one or more inputs to the streaming job. The name property for each input is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual input."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inputs: Vec<Input>,
     #[doc = "A transformation object, containing all information associated with the named transformation. All transformations are contained under a streaming job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transformation: Option<Transformation>,
     #[doc = "A list of one or more outputs for the streaming job. The name property for each output is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual output."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<Output>,
     #[doc = "A list of one or more functions for the streaming job. The name property for each function is required when specifying this property in a PUT request. This property cannot be modify via a PATCH operation. You must use the PATCH API available for the individual transformation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub functions: Vec<Function>,
     #[doc = "The current entity tag for the streaming job. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2938,7 +3061,11 @@ pub mod subscription_quota {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionQuotasListResult {
     #[doc = "List of quotas for the subscription in a particular region."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubscriptionQuota>,
 }
 impl SubscriptionQuotasListResult {

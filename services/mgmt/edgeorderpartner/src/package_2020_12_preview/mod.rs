@@ -178,13 +178,36 @@ impl Client {
 }
 pub mod list_operations_partner {
     use super::models;
-    type Response = models::OperationListResult;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::OperationListResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::OperationListResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
     impl RequestBuilder {
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<models::OperationListResult, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
@@ -230,18 +253,14 @@ pub mod list_operations_partner {
                             this.client.send(&mut req).await?
                         }
                     };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::OperationListResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
+                    let rsp = match rsp.status() {
+                        azure_core::StatusCode::Ok => Ok(Response(rsp)),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code,
                             error_code: None,
                         })),
-                    }
+                    };
+                    rsp?.into_body().await
                 }
             };
             azure_core::Pageable::new(make_request)
@@ -250,12 +269,7 @@ pub mod list_operations_partner {
 }
 pub mod manage_inventory_metadata {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        Accepted202,
-        NoContent204,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -267,7 +281,8 @@ pub mod manage_inventory_metadata {
     }
     impl RequestBuilder {
         #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -285,17 +300,7 @@ pub mod manage_inventory_metadata {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.manage_inventory_metadata_request)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::Accepted => Ok(Response::Accepted202),
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -303,11 +308,7 @@ pub mod manage_inventory_metadata {
 }
 pub mod manage_link {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200,
-        NoContent204,
-    }
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -318,7 +319,8 @@ pub mod manage_link {
         pub(crate) manage_link_request: models::ManageLinkRequest,
     }
     impl RequestBuilder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -336,16 +338,7 @@ pub mod manage_link {
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.manage_link_request)?;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(Response::Ok200),
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -353,7 +346,30 @@ pub mod manage_link {
 }
 pub mod search_inventories {
     use super::models;
-    type Response = models::PartnerInventoryList;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PartnerInventoryList> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PartnerInventoryList = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -361,7 +377,7 @@ pub mod search_inventories {
         pub(crate) search_inventories_request: models::SearchInventoriesRequest,
     }
     impl RequestBuilder {
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<models::PartnerInventoryList, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
@@ -409,18 +425,14 @@ pub mod search_inventories {
                             this.client.send(&mut req).await?
                         }
                     };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::PartnerInventoryList = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
+                    let rsp = match rsp.status() {
+                        azure_core::StatusCode::Ok => Ok(Response(rsp)),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code,
                             error_code: None,
                         })),
-                    }
+                    };
+                    rsp?.into_body().await
                 }
             };
             azure_core::Pageable::new(make_request)

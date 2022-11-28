@@ -42,15 +42,12 @@ async fn trigger_operations() -> azure_core::Result<()> {
     let client = setup_mock::initialize("trigger_operations")?;
 
     // create a temp database
-    let _create_database_response = client.create_database(DATABASE_NAME).into_future().await?;
+    let _create_database_response = client.create_database(DATABASE_NAME).await?;
 
     let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
-    let _ = database
-        .create_collection(COLLECTION_NAME, "/id")
-        .into_future()
-        .await?;
+    let _ = database.create_collection(COLLECTION_NAME, "/id").await?;
 
     let collection = database.collection_client(COLLECTION_NAME);
     let trigger = collection.trigger_client(TRIGGER_NAME);
@@ -61,7 +58,6 @@ async fn trigger_operations() -> azure_core::Result<()> {
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
-        .into_future()
         .await?;
 
     let ret = trigger
@@ -71,7 +67,6 @@ async fn trigger_operations() -> azure_core::Result<()> {
             trigger::TriggerOperation::All,
         )
         .consistency_level(ret)
-        .into_future()
         .await?;
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
@@ -89,11 +84,10 @@ async fn trigger_operations() -> azure_core::Result<()> {
     let _ = trigger
         .delete_trigger()
         .consistency_level(last_session_token.expect("no triggers were found in collection"))
-        .into_future()
         .await?;
 
     // delete the database
-    database.delete_database().into_future().await?;
+    database.delete_database().await?;
 
     Ok(())
 }

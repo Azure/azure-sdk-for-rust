@@ -13,7 +13,7 @@ operation! {
 impl UpdateOrMergeEntityBuilder {
     pub fn into_future(mut self) -> UpdateOrMergeEntity {
         Box::pin(async move {
-            let url = self.client.url().clone();
+            let url = self.client.url()?;
 
             let mut headers = Headers::new();
             headers.add(ContentType::APPLICATION_JSON);

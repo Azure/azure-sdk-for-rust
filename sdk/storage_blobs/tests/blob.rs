@@ -3,7 +3,7 @@
 extern crate log;
 
 use azure_core::date;
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::{blob::BlockListType, container::PublicAccess, prelude::*};
 use bytes::Bytes;
 use futures::StreamExt;
@@ -14,21 +14,53 @@ use url::Url;
 use uuid::Uuid;
 
 #[tokio::test]
+async fn content_headers() -> azure_core::Result<()> {
+    let container_name = format!("headers-{}", Uuid::new_v4());
+    let blob_service = initialize();
+    let container_client = blob_service.container_client(&container_name);
+    container_client.create().await?;
+    let blob_client = container_client.blob_client("as_json.json");
+
+    let content_type = "text/plain";
+    let content_language = "custom/language";
+    let content_disposition = "inline";
+
+    blob_client
+        .put_block_blob("data")
+        .content_type(content_type)
+        .content_language(content_language)
+        .content_disposition(content_disposition)
+        .await?;
+
+    let properties = blob_client.get_properties().await?;
+
+    print!("got: {:#?}", properties.blob.properties);
+
+    assert_eq!(content_type, properties.blob.properties.content_type);
+    assert_eq!(
+        content_language,
+        properties.blob.properties.content_language.unwrap()
+    );
+    assert_eq!(
+        content_disposition,
+        properties.blob.properties.content_disposition.unwrap()
+    );
+
+    container_client.delete().await?;
+    Ok(())
+}
+
+#[tokio::test]
 async fn create_and_delete_container() -> azure_core::Result<()> {
     let container_name = format!("create-{}", Uuid::new_v4());
 
-    let storage_client = initialize();
-    let blob_service = storage_client.blob_service_client();
-    let container = storage_client.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
 
-    container
-        .create()
-        .public_access(PublicAccess::None)
-        .into_future()
-        .await?;
+    container.create().public_access(PublicAccess::None).await?;
 
     // get acl without stored access policy list
-    let _result = container.get_acl().into_future().await?;
+    let _result = container.get_acl().await?;
 
     // set stored acess policy list
     let dt_start = OffsetDateTime::now_utc();
@@ -41,11 +73,10 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
     let _result = container
         .set_acl(PublicAccess::None)
         .stored_access_policy_list(sapl.clone())
-        .into_future()
         .await?;
 
     // now we get back the acess policy list and compare to the one created
-    let result = container.get_acl().into_future().await?;
+    let result = container.get_acl().await?;
 
     assert!(result.public_access == PublicAccess::None);
     // we cannot compare the returned result because Azure will
@@ -61,7 +92,7 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
         assert!(i1.permission == i2.permission);
     }
 
-    let res = container.get_properties().into_future().await?;
+    let res = container.get_properties().await?;
     assert!(res.container.public_access == PublicAccess::None);
 
     let list = blob_service
@@ -83,18 +114,16 @@ async fn create_and_delete_container() -> azure_core::Result<()> {
 
     let res = container
         .acquire_lease(Duration::from_secs(30))
-        .into_future()
         .await
         .unwrap();
     let lease_id = res.lease_id;
     let lease = container.container_lease_client(res.lease_id);
 
-    let _res = lease.renew().into_future().await.unwrap();
+    let _res = lease.renew().await.unwrap();
 
     container
         .delete()
         .lease_id(lease_id) // must pass the lease here too
-        .into_future()
         .await?;
 
     Ok(())
@@ -106,14 +135,13 @@ async fn put_and_get_block_list() {
     let container_name = format!("sdkrust{}", u);
     let name = "asd - ()krustputblock.txt";
 
-    let storage = initialize();
-    let container = storage.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(name);
 
     container
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await
         .expect("container already present");
 
@@ -125,21 +153,18 @@ async fn put_and_get_block_list() {
 
     let put_block_response = blob
         .put_block("block1", Bytes::from(contents1))
-        .into_future()
         .await
         .unwrap();
 
     assert!(put_block_response.content_crc64.is_some());
 
     blob.put_block("block2", Bytes::from(contents2))
-        .into_future()
         .await
         .unwrap();
 
     let put_block_response = blob
         .put_block("block3", Bytes::from(contents3))
         .hash(digest3)
-        .into_future()
         .await
         .unwrap();
 
@@ -148,56 +173,47 @@ async fn put_and_get_block_list() {
     let received_block_list = blob
         .get_block_list()
         .block_list_type(BlockListType::All)
-        .into_future()
         .await
         .unwrap();
 
     blob.put_block_list(received_block_list.block_with_size_list.into())
-        .into_future()
         .await
         .unwrap();
 
-    let res = blob
-        .acquire_lease(Duration::from_secs(60))
-        .into_future()
-        .await
-        .unwrap();
+    let res = blob.acquire_lease(Duration::from_secs(60)).await.unwrap();
     println!("Acquire lease == {:?}", res);
 
     let lease_id = res.lease_id;
     let lease = blob.blob_lease_client(lease_id);
 
-    let res = lease.renew().into_future().await.unwrap();
+    let res = lease.renew().await.unwrap();
     println!("Renew lease == {:?}", res);
 
     let res = blob
         .break_lease()
         .lease_break_period(Duration::from_secs(15))
-        .into_future()
         .await
         .unwrap();
     println!("Break lease == {:?}", res);
 
-    let res = lease.release().into_future().await.unwrap();
+    let res = lease.release().await.unwrap();
     println!("Release lease == {:?}", res);
 
     let res = blob
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .into_future()
         .await
         .unwrap();
     println!("Delete blob == {:?}", res);
 
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
 
     println!("container {} deleted!", container_name);
 }
 
 #[tokio::test]
 async fn list_containers() {
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
+    let blob_service = initialize();
     trace!("running list_containers");
 
     let mut stream = blob_service
@@ -217,9 +233,8 @@ async fn put_block_blob() {
     let container_name: &'static str = "rust-upload-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -236,7 +251,6 @@ async fn put_block_blob() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -247,7 +261,6 @@ async fn put_block_blob() {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await
         .unwrap();
 
@@ -260,9 +273,8 @@ async fn copy_blob() -> azure_core::Result<()> {
     let container_name = format!("copy-blob-{}", Uuid::new_v4());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -276,11 +288,7 @@ async fn copy_blob() -> azure_core::Result<()> {
         .iter()
         .any(|x| x.name == container_name)
     {
-        container
-            .create()
-            .public_access(PublicAccess::None)
-            .into_future()
-            .await?;
+        container.create().public_access(PublicAccess::None).await?;
     }
 
     // calculate md5 too!
@@ -289,7 +297,6 @@ async fn copy_blob() -> azure_core::Result<()> {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await?;
 
     trace!("created {:?}", blob_name);
@@ -304,9 +311,9 @@ async fn copy_blob() -> azure_core::Result<()> {
     ))
     .unwrap();
 
-    cloned_blob.copy(url).into_future().await?;
+    cloned_blob.copy(url).await?;
 
-    container.delete().into_future().await?;
+    container.delete().await?;
     Ok(())
 }
 
@@ -323,9 +330,8 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     let container_name = format!("properties-{}", Uuid::new_v4());
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(&container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -342,7 +348,6 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -353,18 +358,17 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let blob_properties = blob.get_properties().into_future().await.unwrap();
+    let blob_properties = blob.get_properties().await.unwrap();
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
     let _ = requires_send_future(blob.get_properties().into_future());
-    container.delete().into_future().await?;
+    container.delete().await?;
     Ok(())
 }
 
@@ -374,9 +378,8 @@ async fn put_block_blob_and_snapshot() {
     let container_name: &'static str = "rust-snapshot-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if blob_service
@@ -394,7 +397,6 @@ async fn put_block_blob_and_snapshot() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -405,18 +407,17 @@ async fn put_block_blob_and_snapshot() {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await
         .unwrap();
 
     trace!("created {:?}", blob_name);
 
-    let snapshot = blob.snapshot().into_future().await.unwrap().snapshot;
+    let snapshot = blob.snapshot().await.unwrap().snapshot;
 
     trace!("crated snapshot: {:?} of {:?}", snapshot, blob_name);
 
     // Clean-up test
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
     trace!("container {} deleted!", container_name);
 }
 
@@ -426,9 +427,8 @@ async fn set_blobtier() {
     let container_name: &'static str = "rust-set-blobtier-test";
     let data = Bytes::from_static(b"abcdef");
 
-    let storage = initialize();
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(container_name);
+    let blob_service = initialize();
+    let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
     if !blob_service
@@ -445,7 +445,6 @@ async fn set_blobtier() {
         container
             .create()
             .public_access(PublicAccess::None)
-            .into_future()
             .await
             .unwrap();
     }
@@ -456,7 +455,6 @@ async fn set_blobtier() {
     blob.put_block_blob(data)
         .content_type("text/plain")
         .hash(digest)
-        .into_future()
         .await
         .unwrap();
 
@@ -465,55 +463,40 @@ async fn set_blobtier() {
     //
     // Hot -> Cool
     //
-    blob.set_blob_tier(AccessTier::Cool)
-        .into_future()
-        .await
-        .unwrap();
+    blob.set_blob_tier(AccessTier::Cool).await.unwrap();
 
     trace!("blob access tier set to {:?}", AccessTier::Cool);
 
     //
     // Cool -> Hot
     //
-    blob.set_blob_tier(AccessTier::Hot)
-        .into_future()
-        .await
-        .unwrap();
+    blob.set_blob_tier(AccessTier::Hot).await.unwrap();
 
     trace!("blob access tier set to {:?}", AccessTier::Hot);
 
     //
     // Hot -> Archive
     //
-    blob.set_blob_tier(AccessTier::Archive)
-        .into_future()
-        .await
-        .unwrap();
+    blob.set_blob_tier(AccessTier::Archive).await.unwrap();
 
     trace!("blob access tier set to {:?}", AccessTier::Archive);
 
     //
     // Archive -> Cool
     //
-    blob.set_blob_tier(AccessTier::Cool)
-        .into_future()
-        .await
-        .unwrap();
+    blob.set_blob_tier(AccessTier::Cool).await.unwrap();
 
     trace!("blob access tier set to {:?}", AccessTier::Cool);
 
     //
     // Archive -> Cool (rehydrating)
     //
-    blob.set_blob_tier(AccessTier::Cool)
-        .into_future()
-        .await
-        .unwrap();
+    blob.set_blob_tier(AccessTier::Cool).await.unwrap();
 
     trace!("blob access tier set to {:?}", AccessTier::Cool);
 
     // Clean-up test
-    container.delete().into_future().await.unwrap();
+    container.delete().await.unwrap();
     println!("container {} deleted!", container_name);
 }
 
@@ -529,11 +512,12 @@ fn send_check() {
     );
 }
 
-fn initialize() -> StorageClient {
+fn initialize() -> BlobServiceClient {
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    StorageClient::new_access_key(&account, &access_key)
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    BlobServiceClient::new(account, storage_credentials)
 }

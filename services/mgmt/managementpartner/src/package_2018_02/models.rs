@@ -105,7 +105,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "this is the operation response list"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResponse>,
     #[doc = "Url to get the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

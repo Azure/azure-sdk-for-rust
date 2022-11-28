@@ -94,10 +94,18 @@ pub struct CreateManagementGroupChildInfo {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The roles definitions associated with the management group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<String>,
     #[doc = "The list of children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<CreateManagementGroupChildInfo>,
 }
 impl CreateManagementGroupChildInfo {
@@ -136,13 +144,21 @@ pub struct CreateManagementGroupProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The roles definitions associated with the management group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<String>,
     #[doc = "The details of a management group used during creation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<CreateManagementGroupDetails>,
     #[doc = "The list of children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<CreateManagementGroupChildInfo>,
 }
 impl CreateManagementGroupProperties {
@@ -256,7 +272,11 @@ impl DescendantInfoProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DescendantListResult {
     #[doc = "The list of descendants."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DescendantInfo>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -316,7 +336,11 @@ pub struct EntityHierarchyItemProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<Permissions>,
     #[doc = "The list of children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<EntityHierarchyItem>,
 }
 impl EntityHierarchyItemProperties {
@@ -372,10 +396,20 @@ pub struct EntityInfoProperties {
     #[serde(rename = "numberOfChildGroups", default, skip_serializing_if = "Option::is_none")]
     pub number_of_child_groups: Option<i64>,
     #[doc = "The parent display name chain from the root group to the immediate parent"]
-    #[serde(rename = "parentDisplayNameChain", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "parentDisplayNameChain",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parent_display_name_chain: Vec<String>,
     #[doc = "The parent name chain from the root group to the immediate parent"]
-    #[serde(rename = "parentNameChain", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "parentNameChain",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parent_name_chain: Vec<String>,
 }
 impl EntityInfoProperties {
@@ -387,7 +421,11 @@ impl EntityInfoProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityListResult {
     #[doc = "The list of entities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EntityInfo>,
     #[doc = "Total count of records that match the filter"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -501,7 +539,11 @@ impl HierarchySettingsInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchySettingsList {
     #[doc = "The list of hierarchy settings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HierarchySettingsInfo>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -567,10 +609,18 @@ pub struct ManagementGroupChildInfo {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The roles definitions associated with the management group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<String>,
     #[doc = "The list of children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<ManagementGroupChildInfo>,
 }
 impl ManagementGroupChildInfo {
@@ -647,7 +697,11 @@ impl ManagementGroupInfoProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupListResult {
     #[doc = "The list of management groups."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagementGroupInfo>,
     #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -689,16 +743,28 @@ pub struct ManagementGroupProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The role definitions associated with the management group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<String>,
     #[doc = "The details of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ManagementGroupDetails>,
     #[doc = "The list of children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<ManagementGroupChildInfo>,
     #[doc = "The path from the root to the current group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path: Vec<ManagementGroupPathElement>,
 }
 impl ManagementGroupProperties {
@@ -746,7 +812,11 @@ impl OperationDisplayProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Management resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

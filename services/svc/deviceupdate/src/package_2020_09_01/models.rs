@@ -493,7 +493,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "An array of errors that led to the reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
     #[doc = "An object containing more specific information than the current object about the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -847,7 +851,11 @@ impl Serialize for OperationStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeploymentDeviceStates {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeploymentDeviceState>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -868,7 +876,11 @@ impl PageableListOfDeploymentDeviceStates {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeployments {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Deployment>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -889,7 +901,11 @@ impl PageableListOfDeployments {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceClasses {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeviceClass>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -910,7 +926,11 @@ impl PageableListOfDeviceClasses {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceTags {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DeviceTag>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -931,7 +951,11 @@ impl PageableListOfDeviceTags {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDevices {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Device>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -952,7 +976,11 @@ impl PageableListOfDevices {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfGroups {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Group>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -973,7 +1001,11 @@ impl PageableListOfGroups {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfOperations {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -994,7 +1026,11 @@ impl PageableListOfOperations {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfStrings {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<String>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1015,7 +1051,11 @@ impl PageableListOfStrings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdatableDevices {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UpdatableDevices>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1036,7 +1076,11 @@ impl PageableListOfUpdatableDevices {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdateIds {
     #[doc = "The collection of pageable items."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<UpdateId>,
     #[doc = "The link to the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

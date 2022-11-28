@@ -27,7 +27,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 "6YS6w5wqkpdfkEW7iOP1NvituehFlFRfPko2n7KY4Gk",
             ),
         )
-        .into_future()
         .await?;
 
     println!(
@@ -50,7 +49,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             ),
             module.etag,
         )
-        .into_future()
         .await?;
 
     println!(
@@ -59,7 +57,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     let module = service_client
         .get_module_identity(module.device_id, module.module_id)
-        .into_future()
         .await?;
     let module: ModuleIdentityResponse = module.try_into()?;
     println!("Identity is: {:?}", module);
@@ -70,7 +67,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     service_client
         .delete_module_identity(module.device_id, module.module_id, module.etag)
-        .into_future()
         .await?;
 
     Ok(())

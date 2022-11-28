@@ -46,7 +46,11 @@ impl ManagedPrivateEndpointConnectionState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedPrivateEndpointListResponse {
     #[doc = "List of managed private endpoints"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ManagedPrivateEndpoint>,
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -85,7 +89,11 @@ pub struct ManagedPrivateEndpointProperties {
     #[serde(rename = "isReserved", default, skip_serializing_if = "Option::is_none")]
     pub is_reserved: Option<bool>,
     #[doc = "List of fully qualified domain names"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdns: Vec<String>,
     #[doc = "Denotes whether the managed private endpoint is compliant"]
     #[serde(rename = "isCompliant", default, skip_serializing_if = "Option::is_none")]

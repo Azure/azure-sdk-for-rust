@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::error::{ErrorKind, ResultExt};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 use uuid::Uuid;
@@ -21,9 +21,9 @@ async fn code() -> azure_core::Result<()> {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let storage = StorageClient::new_access_key(&account, &access_key);
-    let blob_service = storage.blob_service_client();
-    let container = storage.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container = blob_service.container_client(&container_name);
     let blob = container.blob_client(file_name);
 
     if !blob_service
@@ -37,11 +37,7 @@ async fn code() -> azure_core::Result<()> {
         .any(|x| x.name == container_name)
     {
         println!("create container");
-        container
-            .create()
-            .public_access(PublicAccess::None)
-            .into_future()
-            .await?;
+        container.create().public_access(PublicAccess::None).await?;
     }
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
@@ -49,7 +45,6 @@ async fn code() -> azure_core::Result<()> {
 
     blob.put_block_blob(string)
         .content_type("text/plain")
-        .into_future()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -75,11 +70,10 @@ async fn code() -> azure_core::Result<()> {
 
     blob.delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .into_future()
         .await?;
 
     println!("{}/{} blob deleted!", container_name, file_name);
 
-    container.delete().into_future().await?;
+    container.delete().await?;
     Ok(())
 }

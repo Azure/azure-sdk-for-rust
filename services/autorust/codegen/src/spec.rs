@@ -64,11 +64,11 @@ impl Spec {
     fn read_file(docs: &mut IndexMap<Utf8PathBuf, OpenAPI>, file_path: impl AsRef<Utf8Path>) -> Result<()> {
         let file_path = file_path.as_ref();
         if !docs.contains_key(file_path) {
-            let doc = openapi::parse(&file_path)?;
+            let doc = openapi::parse(file_path)?;
             let ref_files = openapi::get_reference_file_paths(file_path, &doc);
             docs.insert(Utf8PathBuf::from(file_path), doc);
             for ref_file in ref_files {
-                let child_path = io::join(&file_path, &ref_file)?;
+                let child_path = io::join(file_path, &ref_file)?;
                 Self::read_file(docs, &child_path)?;
             }
         }
@@ -105,20 +105,33 @@ impl Spec {
         }
     }
 
-    pub fn consumes(&self) -> Vec<&str> {
-        let mut versions: Vec<_> = self
-            .docs()
+    fn consumes(&self) -> impl Iterator<Item = &str> {
+        self.docs()
             .values()
             .filter(|doc| !doc.paths().is_empty())
             .flat_map(|api| &api.consumes)
             .map(String::as_str)
-            .collect();
-        versions.sort_unstable();
-        versions
     }
 
     pub fn pick_consumes(&self) -> Option<&str> {
-        crate::content_type::pick_consumes(self.consumes())
+        crate::content_type::pick(self.consumes())
+    }
+
+    fn produces(&self) -> impl Iterator<Item = &str> {
+        self.docs()
+            .values()
+            .filter(|doc| !doc.paths().is_empty())
+            .flat_map(|api| &api.produces)
+            .map(String::as_str)
+    }
+
+    pub fn pick_produces(&self) -> Option<&str> {
+        crate::content_type::pick(self.produces())
+    }
+
+    pub fn has_xml(&self) -> bool {
+        self.pick_consumes() == Some(crate::content_type::APPLICATION_XML)
+            || self.pick_produces() == Some(crate::content_type::APPLICATION_XML)
     }
 
     /// get a list of `api-version`s used
@@ -144,7 +157,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match &reference.file {
             None => doc_file.to_owned(),
-            Some(file) => io::join(doc_file, &file)?,
+            Some(file) => io::join(doc_file, file)?,
         };
         let name = reference
             .name
@@ -253,7 +266,7 @@ impl Spec {
     fn operations_unresolved(&self) -> Result<Vec<WebOperationUnresolved>> {
         let mut operations: Vec<WebOperationUnresolved> = Vec::new();
         for (doc_file, doc) in self.docs() {
-            if self.is_input_file(&doc_file) {
+            if self.is_input_file(doc_file) {
                 let paths = self.resolve_path_map(doc_file, &doc.paths())?;
                 for (path, item) in &paths {
                     operations.extend(path_operations_unresolved(doc_file, path, item))
@@ -451,6 +464,24 @@ impl Default for WebOperation {
             consumes: Default::default(),
             produces: Default::default(),
         }
+    }
+}
+
+impl WebOperation {
+    pub fn consumes_xml(&self) -> bool {
+        self.consumes
+            .iter()
+            .any(|consumes| consumes == crate::content_type::APPLICATION_XML)
+    }
+
+    pub fn produces_xml(&self) -> bool {
+        self.produces
+            .iter()
+            .any(|produces| produces == crate::content_type::APPLICATION_XML)
+    }
+
+    pub fn has_xml(&self) -> bool {
+        self.consumes_xml() || self.produces_xml()
     }
 }
 

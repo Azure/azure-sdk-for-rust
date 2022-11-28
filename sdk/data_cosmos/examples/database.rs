@@ -66,17 +66,12 @@ async fn main() -> azure_core::Result<()> {
                     .create_document(document)
                     .is_upsert(true)
                     .partition_key(&43u32)?
-                    .into_future()
                     .await?;
 
                 println!("`create_document` response: {:?}", create_document);
 
                 // Alternatively, we can just fetch a specific collection directly
-                let _ = database
-                    .collection_client("cnt")
-                    .get_collection()
-                    .into_future()
-                    .await?;
+                let _ = database.collection_client("cnt").get_collection().await?;
 
                 // Replace the collection's indexing policy
                 indexing_policy_new
@@ -87,7 +82,6 @@ async fn main() -> azure_core::Result<()> {
                 let replace_collection_response = collection
                     .replace_collection("/age")
                     .indexing_policy(indexing_policy_new)
-                    .into_future()
                     .await?;
                 println!(
                     "`replace_collection` response: {:#?}",

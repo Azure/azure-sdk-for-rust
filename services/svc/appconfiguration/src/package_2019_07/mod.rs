@@ -286,7 +286,40 @@ impl Client {
 }
 pub mod get_keys {
     use super::models;
-    type Response = models::KeyListResult;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyListResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyListResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -316,7 +349,7 @@ pub mod get_keys {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<models::KeyListResult, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
@@ -371,18 +404,14 @@ pub mod get_keys {
                             this.client.send(&mut req).await?
                         }
                     };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyListResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
+                    let rsp = match rsp.status() {
+                        azure_core::StatusCode::Ok => Ok(Response(rsp)),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code,
                             error_code: None,
                         })),
-                    }
+                    };
+                    rsp?.into_body().await
                 }
             };
             azure_core::Pageable::new(make_request)
@@ -391,7 +420,7 @@ pub mod get_keys {
 }
 pub mod check_keys {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -421,7 +450,8 @@ pub mod check_keys {
             self.accept_datetime = Some(accept_datetime.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -450,15 +480,7 @@ pub mod check_keys {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -466,7 +488,40 @@ pub mod check_keys {
 }
 pub mod get_key_values {
     use super::models;
-    type Response = models::KeyValueListResult;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValueListResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValueListResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -508,7 +563,7 @@ pub mod get_key_values {
             self.select = select;
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<models::KeyValueListResult, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
@@ -566,18 +621,14 @@ pub mod get_key_values {
                             this.client.send(&mut req).await?
                         }
                     };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValueListResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
+                    let rsp = match rsp.status() {
+                        azure_core::StatusCode::Ok => Ok(Response(rsp)),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code,
                             error_code: None,
                         })),
-                    }
+                    };
+                    rsp?.into_body().await
                 }
             };
             azure_core::Pageable::new(make_request)
@@ -586,7 +637,7 @@ pub mod get_key_values {
 }
 pub mod check_key_values {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -628,7 +679,8 @@ pub mod check_key_values {
             self.select = select;
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -660,15 +712,7 @@ pub mod check_key_values {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -676,7 +720,48 @@ pub mod check_key_values {
 }
 pub mod get_key_value {
     use super::models;
-    type Response = models::KeyValue;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValue> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValue = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        #[doc = "An identifier representing the returned state of the resource."]
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
+        #[doc = "A UTC datetime that specifies the last time the resource was modified."]
+        pub fn last_modified(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -719,7 +804,8 @@ pub mod get_key_value {
             self.select = select;
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -751,27 +837,56 @@ pub mod get_key_value {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KeyValue>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod put_key_value {
     use super::models;
-    type Response = models::KeyValue;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValue> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValue = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        #[doc = "An identifier representing the returned state of the resource."]
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -808,7 +923,8 @@ pub mod put_key_value {
             self.if_none_match = Some(if_none_match.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -842,30 +958,55 @@ pub mod put_key_value {
                         req.insert_header("if-none-match", if_none_match);
                     }
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KeyValue>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod delete_key_value {
     use super::models;
-    #[derive(Debug)]
-    pub enum Response {
-        Ok200(models::KeyValue),
-        NoContent204,
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValue> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValue = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        #[doc = "An identifier representing the returned state of the resource."]
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
     }
     #[derive(Clone)]
     pub struct RequestBuilder {
@@ -891,7 +1032,8 @@ pub mod delete_key_value {
             self.if_match = Some(if_match.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -917,28 +1059,19 @@ pub mod delete_key_value {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
-                            Ok(Response::Ok200(rsp_value))
-                        }
-                        azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KeyValue>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod check_key_value {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -981,7 +1114,8 @@ pub mod check_key_value {
             self.select = select;
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1013,15 +1147,7 @@ pub mod check_key_value {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -1029,7 +1155,40 @@ pub mod check_key_value {
 }
 pub mod get_labels {
     use super::models;
-    type Response = models::LabelListResult;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::LabelListResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::LabelListResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1065,7 +1224,7 @@ pub mod get_labels {
             self.select = select;
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<models::LabelListResult, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
@@ -1120,18 +1279,14 @@ pub mod get_labels {
                             this.client.send(&mut req).await?
                         }
                     };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::LabelListResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
+                    let rsp = match rsp.status() {
+                        azure_core::StatusCode::Ok => Ok(Response(rsp)),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code,
                             error_code: None,
                         })),
-                    }
+                    };
+                    rsp?.into_body().await
                 }
             };
             azure_core::Pageable::new(make_request)
@@ -1140,7 +1295,7 @@ pub mod get_labels {
 }
 pub mod check_labels {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1176,7 +1331,8 @@ pub mod check_labels {
             self.select = select;
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1205,15 +1361,7 @@ pub mod check_labels {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }
@@ -1221,7 +1369,44 @@ pub mod check_labels {
 }
 pub mod put_lock {
     use super::models;
-    type Response = models::KeyValue;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValue> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValue = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        #[doc = "An identifier representing the returned state of the resource."]
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1252,7 +1437,8 @@ pub mod put_lock {
             self.if_none_match = Some(if_none_match.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1281,27 +1467,56 @@ pub mod put_lock {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KeyValue>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod delete_lock {
     use super::models;
-    type Response = models::KeyValue;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValue> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValue = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        #[doc = "An identifier representing the returned state of the resource."]
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1332,7 +1547,8 @@ pub mod delete_lock {
             self.if_none_match = Some(if_none_match.into());
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1361,27 +1577,52 @@ pub mod delete_lock {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValue = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        #[doc = "Send the request and return the response body."]
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::KeyValue>> {
+            Box::pin(async move { self.send().await?.into_body().await })
         }
     }
 }
 pub mod get_revisions {
     use super::models;
-    type Response = models::KeyValueListResult;
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::KeyValueListResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::KeyValueListResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1423,7 +1664,7 @@ pub mod get_revisions {
             self.select = select;
             self
         }
-        pub fn into_stream(self) -> azure_core::Pageable<Response, azure_core::error::Error> {
+        pub fn into_stream(self) -> azure_core::Pageable<models::KeyValueListResult, azure_core::error::Error> {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
@@ -1481,18 +1722,14 @@ pub mod get_revisions {
                             this.client.send(&mut req).await?
                         }
                     };
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => {
-                            let rsp_body = rsp_stream.collect().await?;
-                            let rsp_value: models::KeyValueListResult = serde_json::from_slice(&rsp_body)?;
-                            Ok(rsp_value)
-                        }
+                    let rsp = match rsp.status() {
+                        azure_core::StatusCode::Ok => Ok(Response(rsp)),
                         status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                             status: status_code,
                             error_code: None,
                         })),
-                    }
+                    };
+                    rsp?.into_body().await
                 }
             };
             azure_core::Pageable::new(make_request)
@@ -1501,7 +1738,7 @@ pub mod get_revisions {
 }
 pub mod check_revisions {
     use super::models;
-    type Response = ();
+    pub struct Response(azure_core::Response);
     #[derive(Clone)]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
@@ -1543,7 +1780,8 @@ pub mod check_revisions {
             self.select = select;
             self
         }
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        #[doc = "Send the request and returns the response."]
+        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -1575,15 +1813,7 @@ pub mod check_revisions {
                     }
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
-                    let rsp = this.client.send(&mut req).await?;
-                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                    match rsp_status {
-                        azure_core::StatusCode::Ok => Ok(()),
-                        status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                            status: status_code,
-                            error_code: None,
-                        })),
-                    }
+                    Ok(Response(this.client.send(&mut req).await?))
                 }
             })
         }

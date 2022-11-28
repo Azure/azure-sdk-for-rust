@@ -44,11 +44,7 @@ async fn main() -> azure_core::Result<()> {
     // try get on the first database (if any)
     if let Some(db) = databases.databases.first() {
         println!("getting info of database {}", &db.id);
-        let db = client
-            .database_client(db.id.clone())
-            .get_database()
-            .into_future()
-            .await?;
+        let db = client.database_client(db.id.clone()).get_database().await?;
         println!("db {} found == {:?}", &db.database.id, &db);
     }
 
@@ -75,7 +71,6 @@ async fn main() -> azure_core::Result<()> {
             let collection_response = database
                 .collection_client(collection.id)
                 .get_collection()
-                .into_future()
                 .await?;
 
             println!("\tcollection_response {:?}", collection_response);

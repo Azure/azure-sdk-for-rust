@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 use azure_core::prelude::*;
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::Bytes;
 
@@ -23,8 +23,9 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container_name)
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_client = BlobServiceClient::new(account, storage_credentials)
+        .container_client(container_name)
         .blob_client(&blob_name);
 
     let data = Bytes::from_static(&[51; 2000]);
@@ -48,7 +49,6 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .metadata(metadata)
         .sequence_number(100)
-        .into_future()
         .await?;
     println!("put_page_blob == {:?}", res);
 
@@ -58,7 +58,6 @@ async fn main() -> azure_core::Result<()> {
     let res = blob_client
         .put_page(BA512Range::new(0, 511)?, slice.clone())
         .hash(digest)
-        .into_future()
         .await?;
     println!("update first page == {:?}", res);
 
@@ -66,7 +65,6 @@ async fn main() -> azure_core::Result<()> {
     let res = blob_client
         .put_page(BA512Range::new(512, 1023)?, slice.clone())
         .hash(digest)
-        .into_future()
         .await?;
     println!("update second page == {:?}", res);
 
@@ -75,23 +73,19 @@ async fn main() -> azure_core::Result<()> {
         .put_page(BA512Range::new(512, 1023)?, slice)
         .hash(digest)
         .if_sequence_number(IfSequenceNumber::Equal(100))
-        .into_future()
         .await?;
     println!("update sequence number condition == {:?}", res);
 
     // let's get page ranges
-    let res = blob_client.get_page_ranges().into_future().await?;
+    let res = blob_client.get_page_ranges().await?;
     println!("get page ranges == {:?}", res);
 
     // let's clear a page
-    let res = blob_client
-        .clear_page(BA512Range::new(0, 511)?)
-        .into_future()
-        .await?;
+    let res = blob_client.clear_page(BA512Range::new(0, 511)?).await?;
     println!("clear first page {:?}", res);
 
     // let's get page ranges again
-    let res = blob_client.get_page_ranges().into_future().await?;
+    let res = blob_client.get_page_ranges().await?;
     println!("get page ranges == {:?}", res);
 
     Ok(())

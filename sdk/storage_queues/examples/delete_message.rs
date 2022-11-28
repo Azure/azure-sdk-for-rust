@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 use std::time::Duration;
 
@@ -17,9 +17,10 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("Please pass the queue name as first parameter");
 
-    let storage_account = StorageClient::new_access_key(&account, &access_key);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let queue_service = QueueServiceClient::new(account, storage_credentials);
 
-    let queue = storage_account.queue_client(queue_name);
+    let queue = queue_service.queue_client(queue_name);
 
     trace!("getting messages");
 
@@ -27,7 +28,6 @@ async fn main() -> azure_core::Result<()> {
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
-        .into_future()
         .await?;
 
     println!("get_response == {:#?}", get_response);
@@ -38,11 +38,7 @@ async fn main() -> azure_core::Result<()> {
         for message_to_delete in get_response.messages {
             println!("deleting message {:?}", message_to_delete);
 
-            let delete_response = queue
-                .pop_receipt_client(message_to_delete)
-                .delete()
-                .into_future()
-                .await?;
+            let delete_response = queue.pop_receipt_client(message_to_delete).delete().await?;
 
             println!("delete_response == {:#?}", delete_response);
         }

@@ -3,66 +3,77 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Body, Method, Request, Response, Url,
+    Body, Method, Request, Response, StatusCode, Url,
 };
 use azure_storage::{
-    core::clients::{ServiceType, StorageClient, StorageCredentials},
     prelude::BlobSasPermissions,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
+    CloudLocation, StorageCredentials,
 };
 use time::OffsetDateTime;
 
-pub trait AsContainerClient {
-    fn container_client(&self, container_name: impl Into<String>) -> ContainerClient;
-}
-
-impl AsContainerClient for StorageClient {
-    fn container_client(&self, container_name: impl Into<String>) -> ContainerClient {
-        ContainerClient::new(self.clone(), container_name.into())
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct ContainerClient {
-    storage_client: StorageClient,
+    service_client: BlobServiceClient,
     container_name: String,
 }
 
 impl ContainerClient {
-    pub(crate) fn new(storage_client: StorageClient, container_name: String) -> Self {
+    /// Create a new `ContainerClient` from a `BlobServiceClient` and a container name
+    pub(crate) fn new(service_client: BlobServiceClient, container_name: String) -> Self {
         Self {
-            storage_client,
+            service_client,
             container_name,
         }
     }
 
+    pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
+        let cloud_location: CloudLocation = url.try_into()?;
+
+        let container = url.path().split_terminator('/').nth(1).ok_or_else(|| {
+            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
+                "unable to find storage container from url"
+            })
+        })?;
+
+        let client = ClientBuilder::with_location(cloud_location).container_client(container);
+        Ok(client)
+    }
+
+    /// Create a container
     pub fn create(&self) -> CreateBuilder {
         CreateBuilder::new(self.clone())
     }
 
+    /// Delete a container
     pub fn delete(&self) -> DeleteBuilder {
         DeleteBuilder::new(self.clone())
     }
 
+    /// Get a container acl
     pub fn get_acl(&self) -> GetACLBuilder {
         GetACLBuilder::new(self.clone())
     }
 
+    /// Set a container acl
     pub fn set_acl(&self, public_access: PublicAccess) -> SetACLBuilder {
         SetACLBuilder::new(self.clone(), public_access)
     }
 
+    /// Get a container's properties
     pub fn get_properties(&self) -> GetPropertiesBuilder {
         GetPropertiesBuilder::new(self.clone())
     }
 
+    /// List the blobs in a container
     pub fn list_blobs(&self) -> ListBlobsBuilder {
         ListBlobsBuilder::new(self.clone())
     }
 
+    /// Acquite a lease on a container
     pub fn acquire_lease<LD: Into<LeaseDuration>>(
         &self,
         lease_duration: LD,
@@ -70,8 +81,25 @@ impl ContainerClient {
         AcquireLeaseBuilder::new(self.clone(), lease_duration.into())
     }
 
+    /// Break the lease on a container
     pub fn break_lease(&self) -> BreakLeaseBuilder {
         BreakLeaseBuilder::new(self.clone())
+    }
+
+    /// Check whether the container exists.
+    pub async fn exists(&self) -> azure_core::Result<bool> {
+        match self.get_properties().await {
+            Ok(_) => Ok(true),
+            Err(err)
+                if err
+                    .as_http_error()
+                    .map(|e| e.status() == StatusCode::NotFound)
+                    .unwrap_or_default() =>
+            {
+                Ok(false)
+            }
+            Err(err) => Err(err),
+        }
     }
 
     pub fn container_lease_client(&self, lease_id: LeaseId) -> ContainerLeaseClient {
@@ -86,27 +114,28 @@ impl ContainerClient {
         &self.container_name
     }
 
-    pub fn storage_client(&self) -> &StorageClient {
-        &self.storage_client
-    }
-
+    /// Create a shared access signature.
     pub fn shared_access_signature(
         &self,
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let canonicalized_resource = format!(
-            "/blob/{}/{}",
-            self.storage_client().account(),
-            self.container_name(),
-        );
-
-        match self.storage_client().storage_credentials() {
-            StorageCredentials::Key(_, key) => Ok(
-                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Container),
-            ),
-            _ => Err(Error::message(ErrorKind::Credential,
-                "Shared access signature generation - SAS can be generated only from key and account clients",
+        match self.service_client.credentials() {
+            StorageCredentials::Key(account, ref key) => {
+                let canonicalized_resource =
+                    format!("/blob/{}/{}", account, self.container_name(),);
+                Ok(BlobSharedAccessSignature::new(
+                    key.to_string(),
+                    canonicalized_resource,
+                    permissions,
+                    expiry,
+                    BlobSignedResource::Container,
+                ))
+            }
+            _ => Err(Error::message(
+                ErrorKind::Credential,
+                "Shared access signature generation - \
+                SAS can be generated only from key and account clients",
             )),
         }
     }
@@ -122,8 +151,22 @@ impl ContainerClient {
 
     /// Full URL for the container.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        self.storage_client
-            .blob_url_with_segments(Some(self.container_name.as_str()).into_iter())
+        let container_name = self
+            .container_name()
+            .strip_prefix('/')
+            .unwrap_or_else(|| self.container_name());
+        let sep = if self.service_client.url()?.path().ends_with('/') {
+            ""
+        } else {
+            "/"
+        };
+
+        let url = format!("{}{}{}", self.service_client.url()?, sep, container_name);
+        Ok(url::Url::parse(&url)?)
+    }
+
+    pub(crate) fn credentials(&self) -> &StorageCredentials {
+        self.service_client.credentials()
     }
 
     pub(crate) async fn send(
@@ -131,9 +174,7 @@ impl ContainerClient {
         context: &mut Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
-        self.storage_client
-            .send(context, request, ServiceType::Blob)
-            .await
+        self.service_client.send(context, request).await
     }
 
     pub(crate) fn finalize_request(
@@ -143,7 +184,7 @@ impl ContainerClient {
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.storage_client
+        self.service_client
             .finalize_request(url, method, headers, request_body)
     }
 }
@@ -152,12 +193,11 @@ impl ContainerClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::{blob::clients::AsBlobClient, core::prelude::*};
+    use crate::clients::ClientBuilder;
+    use futures::StreamExt;
 
     fn get_emulator_client(container_name: &str) -> ContainerClient {
-        let storage_account = StorageClient::new_emulator_default();
-
-        storage_account.container_client(container_name)
+        ClientBuilder::emulator().container_client(container_name)
     }
 
     #[tokio::test]
@@ -167,12 +207,10 @@ mod integration_tests {
 
         container_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
         container_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }
@@ -184,7 +222,6 @@ mod integration_tests {
 
         container_client
             .create()
-            .into_future()
             .await
             .expect("create container should succeed");
 
@@ -192,18 +229,20 @@ mod integration_tests {
         container_client
             .blob_client("hello.txt")
             .put_block_blob("world")
-            .into_future()
             .await
             .expect("put block blob should succeed");
         let list = container_client
             .list_blobs()
-            .execute()
+            .into_stream()
+            .next()
             .await
+            .expect("list blobs next() should return value")
             .expect("list blobs should succeed");
-        assert_eq!(list.blobs.blobs.len(), 1);
-        assert_eq!(list.blobs.blobs[0].name, "hello.txt");
+        let blobs: Vec<_> = list.blobs.blobs().collect();
+        assert_eq!(blobs.len(), 1);
+        assert_eq!(blobs[0].name, "hello.txt");
         assert_eq!(
-            list.blobs.blobs[0]
+            blobs[0]
                 .properties
                 .content_md5
                 .as_ref()
@@ -214,7 +253,6 @@ mod integration_tests {
 
         container_client
             .delete()
-            .into_future()
             .await
             .expect("delete container should succeed");
     }

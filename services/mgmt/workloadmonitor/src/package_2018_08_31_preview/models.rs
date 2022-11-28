@@ -72,7 +72,11 @@ pub struct ComponentProperties {
     #[serde(rename = "aggregateProperties", default, skip_serializing_if = "Option::is_none")]
     pub aggregate_properties: Option<serde_json::Value>,
     #[doc = "component children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<Component>,
 }
 impl ComponentProperties {
@@ -180,7 +184,11 @@ pub struct ComponentsCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of components."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Component>,
 }
 impl azure_core::Continuable for ComponentsCollection {
@@ -222,7 +230,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The list of invalid fields send in request, in case of validation error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorFieldContract>,
 }
 impl azure_core::Continuable for ErrorResponse {
@@ -380,7 +392,12 @@ pub struct MonitorInstanceProperties {
     #[serde(rename = "healthStateCategory", default, skip_serializing_if = "Option::is_none")]
     pub health_state_category: Option<monitor_instance_properties::HealthStateCategory>,
     #[doc = "Health state changes."]
-    #[serde(rename = "healthStateChanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "healthStateChanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub health_state_changes: Vec<HealthStateChange>,
     #[doc = "Start time for health state changes."]
     #[serde(rename = "healthStateChangesStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -398,7 +415,11 @@ pub struct MonitorInstanceProperties {
     #[serde(rename = "aggregateProperties", default, skip_serializing_if = "Option::is_none")]
     pub aggregate_properties: Option<serde_json::Value>,
     #[doc = "Health instance children."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub children: Vec<MonitorInstance>,
 }
 impl MonitorInstanceProperties {
@@ -559,7 +580,11 @@ pub struct MonitorInstancesCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of health instances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MonitorInstance>,
 }
 impl azure_core::Continuable for MonitorInstancesCollection {
@@ -613,7 +638,11 @@ pub struct MonitorProperties {
     #[serde(rename = "monitorState", default, skip_serializing_if = "Option::is_none")]
     pub monitor_state: Option<monitor_properties::MonitorState>,
     #[doc = "Collection of MonitorCriteria. For PATCH calls, instead of partial list, complete list of expected criteria should be passed for proper updating."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub criteria: Vec<MonitorCriteria>,
     #[doc = "Generates alerts or not"]
     #[serde(rename = "alertGeneration", default, skip_serializing_if = "Option::is_none")]
@@ -708,7 +737,11 @@ pub struct MonitorsCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of Monitor."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Monitor>,
 }
 impl azure_core::Continuable for MonitorsCollection {
@@ -743,7 +776,12 @@ impl NotificationSetting {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettingProperties {
     #[doc = "List of action group resource ids to be notified"]
-    #[serde(rename = "actionGroupResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "actionGroupResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub action_group_resource_ids: Vec<String>,
 }
 impl NotificationSettingProperties {
@@ -754,7 +792,11 @@ impl NotificationSettingProperties {
 #[doc = "Model for collection of notificationSettings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettingsCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NotificationSetting>,
     #[doc = "URL to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -796,7 +838,11 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "List of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
 }
 impl azure_core::Continuable for OperationListResult {

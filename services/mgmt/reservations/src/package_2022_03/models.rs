@@ -5,7 +5,11 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppliedReservationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<String>,
     #[doc = "Url to get the next page of reservations"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -41,6 +45,23 @@ pub struct AppliedReservationsProperties {
     pub reservation_order_ids: Option<AppliedReservationList>,
 }
 impl AppliedReservationsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AppliedScopeProperties {
+    #[doc = "Tenant ID of the applied scope type"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Management group ID of the format /providers/Microsoft.Management/managementGroups/{managementGroupId}"]
+    #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub management_group_id: Option<String>,
+    #[doc = "Management group display name"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+impl AppliedScopeProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -108,7 +129,11 @@ impl AvailableScopeRequest {
 #[doc = "Available scope request properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableScopeRequestProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scopes: Vec<String>,
 }
 impl AvailableScopeRequestProperties {
@@ -220,10 +245,20 @@ impl CalculateExchangeRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CalculateExchangeRequestProperties {
     #[doc = "List of reservations that are being purchased in this exchange."]
-    #[serde(rename = "reservationsToPurchase", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reservationsToPurchase",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations_to_purchase: Vec<PurchaseRequest>,
     #[doc = "List of reservations that are being returned in this exchange."]
-    #[serde(rename = "reservationsToExchange", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reservationsToExchange",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations_to_exchange: Vec<ReservationToReturn>,
 }
 impl CalculateExchangeRequestProperties {
@@ -244,10 +279,20 @@ pub struct CalculateExchangeResponseProperties {
     #[serde(rename = "purchasesTotal", default, skip_serializing_if = "Option::is_none")]
     pub purchases_total: Option<Price>,
     #[doc = "Details of the reservations being purchased"]
-    #[serde(rename = "reservationsToPurchase", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reservationsToPurchase",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations_to_purchase: Vec<ReservationToPurchaseCalculateExchange>,
     #[doc = "Details of the reservations being returned"]
-    #[serde(rename = "reservationsToExchange", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reservationsToExchange",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations_to_exchange: Vec<ReservationToExchange>,
     #[doc = "Exchange policy errors"]
     #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
@@ -300,7 +345,12 @@ pub struct CalculatePriceResponseProperties {
     #[doc = "Amount that Microsoft uses for record. Used during refund for calculating refund limit. Tax is not included."]
     #[serde(rename = "pricingCurrencyTotal", default, skip_serializing_if = "Option::is_none")]
     pub pricing_currency_total: Option<calculate_price_response_properties::PricingCurrencyTotal>,
-    #[serde(rename = "paymentSchedule", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "paymentSchedule",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub payment_schedule: Vec<PaymentDetail>,
 }
 impl CalculatePriceResponseProperties {
@@ -341,6 +391,46 @@ pub mod calculate_price_response_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CalculateRefundRequest {
+    #[doc = "Fully qualified identifier of the reservation order being returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CalculateRefundRequestProperties>,
+}
+impl CalculateRefundRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CalculateRefundRequestProperties {
+    #[doc = "The scope of the refund, e.g. Reservation"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[doc = "Reservation to return"]
+    #[serde(rename = "reservationToReturn", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_to_return: Option<ReservationToReturn>,
+}
+impl CalculateRefundRequestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CalculateRefundResponse {
+    #[doc = "Fully qualified identifier of the reservation being returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundResponseProperties>,
+}
+impl CalculateRefundResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Catalog {
     #[doc = "The type of resource the SKU applies to."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -352,16 +442,33 @@ pub struct Catalog {
     #[serde(rename = "billingPlans", default, skip_serializing_if = "Option::is_none")]
     pub billing_plans: Option<serde_json::Value>,
     #[doc = "Available reservation terms for this resource"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub terms: Vec<ReservationTerm>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
-    #[serde(rename = "skuProperties", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "skuProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sku_properties: Vec<SkuProperty>,
     #[doc = "Pricing information about the SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msrp: Option<catalog::Msrp>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub restrictions: Vec<SkuRestriction>,
     #[doc = "The tier of this SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -369,7 +476,11 @@ pub struct Catalog {
     #[doc = "The size of this SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<SkuCapability>,
 }
 impl Catalog {
@@ -408,7 +519,11 @@ pub struct ChangeDirectoryResponse {
     #[doc = "Change directory result for reservation order or reservation"]
     #[serde(rename = "reservationOrder", default, skip_serializing_if = "Option::is_none")]
     pub reservation_order: Option<ChangeDirectoryResult>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations: Vec<ChangeDirectoryResult>,
 }
 impl ChangeDirectoryResponse {
@@ -441,7 +556,11 @@ impl ChangeDirectoryResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateGenericQuotaRequestParameters {
     #[doc = "Quota change requests."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CurrentQuotaLimitBase>,
 }
 impl CreateGenericQuotaRequestParameters {
@@ -644,6 +763,8 @@ pub enum ErrorResponseCode {
     FulfillmentError,
     CalculatePriceFailed,
     AppliedScopesSameAsExisting,
+    SelfServiceRefundNotSupported,
+    RefundLimitExceeded,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -759,6 +880,10 @@ impl Serialize for ErrorResponseCode {
             Self::AppliedScopesSameAsExisting => {
                 serializer.serialize_unit_variant("ErrorResponseCode", 55u32, "AppliedScopesSameAsExisting")
             }
+            Self::SelfServiceRefundNotSupported => {
+                serializer.serialize_unit_variant("ErrorResponseCode", 56u32, "SelfServiceRefundNotSupported")
+            }
+            Self::RefundLimitExceeded => serializer.serialize_unit_variant("ErrorResponseCode", 57u32, "RefundLimitExceeded"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -868,7 +993,12 @@ impl ExchangePolicyError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExchangePolicyErrors {
     #[doc = "Exchange Policy errors"]
-    #[serde(rename = "policyErrors", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "policyErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub policy_errors: Vec<ExchangePolicyError>,
 }
 impl ExchangePolicyErrors {
@@ -913,10 +1043,20 @@ pub struct ExchangeResponseProperties {
     #[serde(rename = "purchasesTotal", default, skip_serializing_if = "Option::is_none")]
     pub purchases_total: Option<Price>,
     #[doc = "Details of the reservations being purchased"]
-    #[serde(rename = "reservationsToPurchase", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reservationsToPurchase",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations_to_purchase: Vec<ReservationToPurchaseExchange>,
     #[doc = "Details of the reservations being returned"]
-    #[serde(rename = "reservationsToExchange", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "reservationsToExchange",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations_to_exchange: Vec<ReservationToReturnForExchange>,
     #[doc = "Exchange policy errors"]
     #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
@@ -1097,7 +1237,11 @@ impl Serialize for Location {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MergeProperties {
     #[doc = "Format of the resource id should be /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub sources: Vec<String>,
 }
 impl MergeProperties {
@@ -1133,7 +1277,11 @@ impl OperationDisplay {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResponse>,
     #[doc = "Url to get the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1496,7 +1644,11 @@ pub mod purchase_request_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimits {
     #[doc = "List of quotas (service limits)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CurrentQuotaLimitBase>,
     #[doc = "The URI for fetching the next page of quotas (service limits). When no more pages exist, the value is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1517,7 +1669,11 @@ impl QuotaLimits {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimitsResponse {
     #[doc = "List of quotas with the quota request status."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CurrentQuotaLimit>,
     #[doc = "The URI for fetching the next page of quota limits. When no more pages exist, the value is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1583,7 +1739,11 @@ impl QuotaRequestDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestDetailsList {
     #[doc = "The quota requests."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<QuotaRequestDetails>,
     #[doc = "The URI to fetch the next page of quota limits. When there are no more pages, this is null."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1634,7 +1794,11 @@ pub struct QuotaRequestProperties {
     #[serde(rename = "requestSubmitTime", default, with = "azure_core::date::rfc3339::option")]
     pub request_submit_time: Option<time::OffsetDateTime>,
     #[doc = "The quotaRequests."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SubRequest>,
 }
 impl QuotaRequestProperties {
@@ -1742,6 +1906,147 @@ impl QuotaRequestSubmitResponse201 {
         Self::default()
     }
 }
+#[doc = "billing information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundBillingInformation {
+    #[doc = "Represent the billing plans."]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
+    pub billing_plan: Option<ReservationBillingPlan>,
+    #[doc = "The number of completed transactions in this reservation's payment"]
+    #[serde(rename = "completedTransactions", default, skip_serializing_if = "Option::is_none")]
+    pub completed_transactions: Option<i32>,
+    #[doc = "The number of total transactions in this reservation's payment"]
+    #[serde(rename = "totalTransactions", default, skip_serializing_if = "Option::is_none")]
+    pub total_transactions: Option<i32>,
+    #[serde(rename = "billingCurrencyTotalPaidAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_currency_total_paid_amount: Option<Price>,
+    #[serde(rename = "billingCurrencyProratedAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_currency_prorated_amount: Option<Price>,
+    #[serde(
+        rename = "billingCurrencyRemainingCommitmentAmount",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub billing_currency_remaining_commitment_amount: Option<Price>,
+}
+impl RefundBillingInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "error details"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundPolicyError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorResponseCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl RefundPolicyError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Refund policy result"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundPolicyResult {
+    #[doc = "Refund policy result property"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundPolicyResultProperty>,
+}
+impl RefundPolicyResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Refund policy result property"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundPolicyResultProperty {
+    #[serde(rename = "consumedRefundsTotal", default, skip_serializing_if = "Option::is_none")]
+    pub consumed_refunds_total: Option<Price>,
+    #[serde(rename = "maxRefundLimit", default, skip_serializing_if = "Option::is_none")]
+    pub max_refund_limit: Option<Price>,
+    #[doc = "Refund Policy errors"]
+    #[serde(
+        rename = "policyErrors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub policy_errors: Vec<RefundPolicyError>,
+}
+impl RefundPolicyResultProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundRequestProperties>,
+}
+impl RefundRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundRequestProperties {
+    #[doc = "SessionId that was returned by CalculateRefund API."]
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[doc = "The scope of the refund, e.g. Reservation"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[doc = "Reservation to return"]
+    #[serde(rename = "reservationToReturn", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_to_return: Option<ReservationToReturn>,
+    #[doc = "The reason of returning the reservation"]
+    #[serde(rename = "returnReason", default, skip_serializing_if = "Option::is_none")]
+    pub return_reason: Option<String>,
+}
+impl RefundRequestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundResponse {
+    #[doc = "Fully qualified identifier of the reservation being returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefundResponseProperties>,
+}
+impl RefundResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefundResponseProperties {
+    #[doc = "Refund session identifier"]
+    #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[doc = "Quantity to be returned"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i32>,
+    #[serde(rename = "billingRefundAmount", default, skip_serializing_if = "Option::is_none")]
+    pub billing_refund_amount: Option<Price>,
+    #[serde(rename = "pricingRefundAmount", default, skip_serializing_if = "Option::is_none")]
+    pub pricing_refund_amount: Option<Price>,
+    #[doc = "Refund policy result"]
+    #[serde(rename = "policyResult", default, skip_serializing_if = "Option::is_none")]
+    pub policy_result: Option<RefundPolicyResult>,
+    #[doc = "billing information"]
+    #[serde(rename = "billingInformation", default, skip_serializing_if = "Option::is_none")]
+    pub billing_information: Option<RefundBillingInformation>,
+}
+impl RefundResponseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type Renew = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RenewPropertiesResponse {
@@ -1829,7 +2134,11 @@ impl Serialize for ReservationBillingPlan {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReservationResponse>,
     #[doc = "Url to get the next page of reservations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1852,7 +2161,12 @@ pub struct ReservationMergeProperties {
     #[serde(rename = "mergeDestination", default, skip_serializing_if = "Option::is_none")]
     pub merge_destination: Option<String>,
     #[doc = "Resource Ids of the Source Reservation's merged to form this Reservation. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
-    #[serde(rename = "mergeSources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "mergeSources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub merge_sources: Vec<String>,
 }
 impl ReservationMergeProperties {
@@ -1871,7 +2185,11 @@ pub struct ReservationOrderBillingPlanInformation {
     #[doc = "For recurring billing plans, indicates the date when next payment will be processed. Null when total is paid off."]
     #[serde(rename = "nextPaymentDueDate", default, skip_serializing_if = "Option::is_none")]
     pub next_payment_due_date: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transactions: Vec<PaymentDetail>,
 }
 impl ReservationOrderBillingPlanInformation {
@@ -1881,7 +2199,11 @@ impl ReservationOrderBillingPlanInformation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationOrderList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReservationOrderResponse>,
     #[doc = "Url to get the next page of reservationOrders."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1930,7 +2252,11 @@ pub struct ReservationOrderProperties {
     #[doc = "Information describing the type of billing plan for this reservation."]
     #[serde(rename = "planInformation", default, skip_serializing_if = "Option::is_none")]
     pub plan_information: Option<ReservationOrderBillingPlanInformation>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub reservations: Vec<ReservationResponse>,
 }
 impl ReservationOrderProperties {
@@ -2009,7 +2335,12 @@ pub mod reservation_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationSplitProperties {
     #[doc = "List of destination Resource Id that are created due to split. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
-    #[serde(rename = "splitDestinations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "splitDestinations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub split_destinations: Vec<String>,
     #[doc = "Resource Id of the Reservation from which this is split. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "splitSource", default, skip_serializing_if = "Option::is_none")]
@@ -2098,6 +2429,20 @@ pub struct ReservationSummary {
     pub processing_count: Option<f64>,
 }
 impl ReservationSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ReservationSwapProperties {
+    #[doc = "Resource Id of the Source Reservation that gets swapped. Format of the resource Id is /providers/microsoft.capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
+    #[serde(rename = "swapSource", default, skip_serializing_if = "Option::is_none")]
+    pub swap_source: Option<String>,
+    #[doc = "Reservation Resource Id that the original resource gets swapped to. Format of the resource Id is /providers/microsoft.capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
+    #[serde(rename = "swapDestination", default, skip_serializing_if = "Option::is_none")]
+    pub swap_destination: Option<String>,
+}
+impl ReservationSwapProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2262,7 +2607,11 @@ impl ReservationUtilizationAggregates {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationsListResult {
     #[doc = "The list of reservations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ReservationResponse>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2345,6 +2694,10 @@ pub struct ReservationsProperties {
     pub split_properties: Option<ReservationSplitProperties>,
     #[serde(rename = "mergeProperties", default, skip_serializing_if = "Option::is_none")]
     pub merge_properties: Option<ReservationMergeProperties>,
+    #[serde(rename = "swapProperties", default, skip_serializing_if = "Option::is_none")]
+    pub swap_properties: Option<ReservationSwapProperties>,
+    #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scope_properties: Option<AppliedScopeProperties>,
     #[doc = "Subscription that will be charged for purchasing Reservation"]
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,
@@ -2386,7 +2739,11 @@ pub mod reservations_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub trend: Option<String>,
         #[doc = "The array of aggregates of a reservation's utilization"]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub aggregates: Vec<ReservationUtilizationAggregates>,
     }
     impl Utilization {
@@ -2566,7 +2923,11 @@ pub struct ServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The list of error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ServiceErrorDetail>,
 }
 impl ServiceError {
@@ -2633,7 +2994,11 @@ pub struct SkuRestriction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
     #[doc = "The reason for restriction."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
@@ -2647,7 +3012,11 @@ impl SkuRestriction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SplitProperties {
     #[doc = "List of the quantities in the new reservations to create."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub quantities: Vec<i32>,
     #[doc = "Resource id of the reservation to be split. Format of the resource id should be /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
@@ -2700,7 +3069,11 @@ impl SubRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionScopeProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub scopes: Vec<ScopeProperties>,
 }
 impl SubscriptionScopeProperties {

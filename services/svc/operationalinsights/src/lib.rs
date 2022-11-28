@@ -6,12 +6,12 @@
 #[cfg(feature = "v1")]
 pub mod v1;
 #[cfg(all(feature = "v1", not(feature = "no-default-tag")))]
-pub use v1::{models, Client, ClientBuilder};
+pub use v1::*;
 #[cfg(feature = "20210519")]
 pub mod v20210519;
 #[cfg(all(feature = "20210519", not(feature = "no-default-tag")))]
-pub use v20210519::{models, Client, ClientBuilder};
+pub use v20210519::*;
 #[cfg(feature = "20171001")]
 pub mod v20171001;
 #[cfg(all(feature = "20171001", not(feature = "no-default-tag")))]
-pub use v20171001::{models, Client, ClientBuilder};
+pub use v20171001::*;

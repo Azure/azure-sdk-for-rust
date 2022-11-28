@@ -6,12 +6,12 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/cosmos-db/
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-preview-2022-05`.
+The default tag is `package-preview-2022-08`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-preview-2022-08` has 220 operations from 1 API versions: `2022-08-15-preview`. Use crate feature `package-preview-2022-08` to enable. The operations will be in the `package_preview_2022_08` module.
 - `package-preview-2022-05` has 216 operations from 1 API versions: `2022-05-15-preview`. Use crate feature `package-preview-2022-05` to enable. The operations will be in the `package_preview_2022_05` module.
 - `package-preview-2022-02` has 216 operations from 1 API versions: `2022-02-15-preview`. Use crate feature `package-preview-2022-02` to enable. The operations will be in the `package_preview_2022_02` module.
 - `package-preview-2021-11` has 207 operations from 1 API versions: `2021-11-15-preview`. Use crate feature `package-preview-2021-11` to enable. The operations will be in the `package_preview_2021_11` module.
 - `package-preview-2021-10` has 200 operations from 1 API versions: `2021-10-15-preview`. Use crate feature `package-preview-2021-10` to enable. The operations will be in the `package_preview_2021_10` module.
-- `package-preview-2021-04` has 167 operations from 1 API versions: `2021-04-01-preview`. Use crate feature `package-preview-2021-04` to enable. The operations will be in the `package_preview_2021_04` module.

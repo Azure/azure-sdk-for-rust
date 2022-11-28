@@ -7,7 +7,11 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperations {
     #[doc = "Collection of available operation details"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationDetail>,
     #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -31,7 +35,11 @@ pub struct BotResponseList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Gets the list of Azure Health Bot results and their properties."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HealthBot>,
 }
 impl azure_core::Continuable for BotResponseList {
@@ -78,10 +86,19 @@ pub mod error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
         #[doc = "The error details."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub details: Vec<Error>,
         #[doc = "The error additional info."]
-        #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "additionalInfo",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub additional_info: Vec<ErrorAdditionalInfo>,
     }
     impl Error {

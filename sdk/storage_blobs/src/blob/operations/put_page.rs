@@ -38,7 +38,7 @@ impl PutPageBuilder {
                 url,
                 azure_core::Method::Put,
                 headers,
-                Some(self.content.clone()),
+                Some(self.content),
             )?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;

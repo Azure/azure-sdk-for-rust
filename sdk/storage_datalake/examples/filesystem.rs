@@ -1,4 +1,4 @@
-use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_storage::prelude::StorageCredentials;
 use azure_storage_datalake::prelude::*;
 use futures::stream::StreamExt;
 use std::num::NonZeroU32;
@@ -6,15 +6,13 @@ use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let data_lake_client = create_data_lake_client().await.unwrap();
+    let data_lake_client = create_data_lake_client();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-example00-{}",
         OffsetDateTime::now_utc().unix_timestamp()
     );
-    let file_system_client = data_lake_client
-        .clone()
-        .into_file_system_client(file_system_name.to_string());
+    let file_system_client = data_lake_client.file_system_client(file_system_name.to_string());
 
     let mut fs_properties = Properties::new();
     fs_properties.insert("AddedVia", "Azure SDK for Rust");
@@ -23,7 +21,6 @@ async fn main() -> azure_core::Result<()> {
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-        .into_future()
         .await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
@@ -37,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     println!(
         "get file system properties response == {:?}\n",
         get_fs_props_response
@@ -45,37 +42,32 @@ async fn main() -> azure_core::Result<()> {
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
-    let set_fs_props_response = file_system_client
-        .set_properties(fs_properties)
-        .into_future()
-        .await?;
+    let set_fs_props_response = file_system_client.set_properties(fs_properties).await?;
     println!(
         "set file system properties response == {:?}\n",
         set_fs_props_response
     );
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     println!(
         "get file system properties response == {:?}\n",
         get_fs_props_response
     );
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().into_future().await?;
+    let delete_fs_response = file_system_client.delete().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())
 }
 
-async fn create_data_lake_client() -> azure_core::Result<DataLakeClient> {
+fn create_data_lake_client() -> DataLakeClient {
     let account_name = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
     let account_key = std::env::var("ADLSGEN2_STORAGE_ACCESS_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCESS_KEY first!");
 
-    Ok(DataLakeClient::new(
-        StorageSharedKeyCredential::new(account_name, account_key),
-        None,
-    ))
+    let storage_credentials = StorageCredentials::Key(account_name.clone(), account_key);
+    DataLakeClient::new(account_name, storage_credentials)
 }

@@ -62,7 +62,12 @@ impl Serialize for Access {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressSpace {
     #[doc = "A list of address blocks reserved for this virtual network in CIDR notation."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
 }
 impl AddressSpace {
@@ -82,7 +87,11 @@ pub struct ApplicationGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -170,16 +179,31 @@ impl ApplicationGatewayAvailableSslOptions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableSslOptionsPropertiesFormat {
     #[doc = "List of available Ssl predefined policy."]
-    #[serde(rename = "predefinedPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "predefinedPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub predefined_policies: Vec<SubResource>,
     #[doc = "Ssl predefined policy name enums."]
     #[serde(rename = "defaultPolicy", default, skip_serializing_if = "Option::is_none")]
     pub default_policy: Option<PolicyNameEnum>,
     #[doc = "List of available Ssl cipher suites."]
-    #[serde(rename = "availableCipherSuites", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableCipherSuites",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_cipher_suites: Vec<CipherSuitesEnum>,
     #[doc = "List of available Ssl protocols."]
-    #[serde(rename = "availableProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_protocols: Vec<ProtocolsEnum>,
 }
 impl ApplicationGatewayAvailableSslOptionsPropertiesFormat {
@@ -191,7 +215,11 @@ impl ApplicationGatewayAvailableSslOptionsPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableSslPredefinedPolicies {
     #[doc = "List of available Ssl predefined policy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationGatewaySslPredefinedPolicy>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -212,7 +240,11 @@ impl ApplicationGatewayAvailableSslPredefinedPolicies {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayAvailableWafRuleSetsResult {
     #[doc = "The list of application gateway rule sets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationGatewayFirewallRuleSet>,
 }
 impl ApplicationGatewayAvailableWafRuleSetsResult {
@@ -262,10 +294,20 @@ impl ApplicationGatewayBackendAddressPool {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddressPoolPropertiesFormat {
     #[doc = "Collection of references to IPs defined in network interfaces."]
-    #[serde(rename = "backendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendIPConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
     #[doc = "Backend addresses."]
-    #[serde(rename = "backendAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_addresses: Vec<ApplicationGatewayBackendAddress>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -280,7 +322,12 @@ impl ApplicationGatewayBackendAddressPoolPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHealth {
     #[doc = "A list of ApplicationGatewayBackendHealthPool resources."]
-    #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendAddressPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_address_pools: Vec<ApplicationGatewayBackendHealthPool>,
 }
 impl ApplicationGatewayBackendHealth {
@@ -295,7 +342,11 @@ pub struct ApplicationGatewayBackendHealthHttpSettings {
     #[serde(rename = "backendHttpSettings", default, skip_serializing_if = "Option::is_none")]
     pub backend_http_settings: Option<ApplicationGatewayBackendHttpSettings>,
     #[doc = "List of ApplicationGatewayBackendHealthServer resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub servers: Vec<ApplicationGatewayBackendHealthServer>,
 }
 impl ApplicationGatewayBackendHealthHttpSettings {
@@ -325,7 +376,12 @@ pub struct ApplicationGatewayBackendHealthPool {
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub backend_address_pool: Option<ApplicationGatewayBackendAddressPool>,
     #[doc = "List of ApplicationGatewayBackendHealthHttpSettings resources."]
-    #[serde(rename = "backendHttpSettingsCollection", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendHttpSettingsCollection",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_http_settings_collection: Vec<ApplicationGatewayBackendHealthHttpSettings>,
 }
 impl ApplicationGatewayBackendHealthPool {
@@ -442,10 +498,20 @@ pub struct ApplicationGatewayBackendHttpSettingsPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub probe: Option<SubResource>,
     #[doc = "Array of references to application gateway authentication certificates."]
-    #[serde(rename = "authenticationCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "authenticationCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authentication_certificates: Vec<SubResource>,
     #[doc = "Array of references to application gateway trusted root certificates."]
-    #[serde(rename = "trustedRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_root_certificates: Vec<SubResource>,
     #[doc = "Connection draining allows open connections to a backend server to be active for a specified time after the backend server got removed from the configuration."]
     #[serde(rename = "connectionDraining", default, skip_serializing_if = "Option::is_none")]
@@ -605,7 +671,11 @@ pub struct ApplicationGatewayFirewallDisabledRuleGroup {
     #[serde(rename = "ruleGroupName")]
     pub rule_group_name: String,
     #[doc = "The list of rules that will be disabled. If null, all rules of the rule group will be disabled."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<i32>,
 }
 impl ApplicationGatewayFirewallDisabledRuleGroup {
@@ -885,13 +955,23 @@ pub struct ApplicationGatewayHttpListenerPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Custom error configurations of the HTTP listener."]
-    #[serde(rename = "customErrorConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customErrorConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_error_configurations: Vec<ApplicationGatewayCustomError>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "firewallPolicy", default, skip_serializing_if = "Option::is_none")]
     pub firewall_policy: Option<SubResource>,
     #[doc = "List of Host names for HTTP Listener that allows special wildcard characters as well."]
-    #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub host_names: Vec<String>,
 }
 impl ApplicationGatewayHttpListenerPropertiesFormat {
@@ -941,7 +1021,11 @@ impl ApplicationGatewayIpConfigurationPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayListResult {
     #[doc = "List of an application gateways in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationGateway>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1026,7 +1110,12 @@ impl ApplicationGatewayLoadDistributionPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayLoadDistributionPolicyPropertiesFormat {
     #[doc = "Load Distribution Targets resource of an application gateway."]
-    #[serde(rename = "loadDistributionTargets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadDistributionTargets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_distribution_targets: Vec<ApplicationGatewayLoadDistributionTarget>,
     #[doc = "Load Distribution Algorithm enums."]
     #[serde(rename = "loadDistributionAlgorithm", default, skip_serializing_if = "Option::is_none")]
@@ -1136,7 +1225,11 @@ impl ApplicationGatewayPathRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPathRulePropertiesFormat {
     #[doc = "Path rules of URL path map."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub paths: Vec<String>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
@@ -1192,7 +1285,11 @@ impl ApplicationGatewayPrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateEndpointConnectionListResult {
     #[doc = "List of private endpoint connections on an application gateway."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationGatewayPrivateEndpointConnection>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1257,7 +1354,12 @@ impl ApplicationGatewayPrivateLinkConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkConfigurationProperties {
     #[doc = "An array of application gateway private link ip configurations."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<ApplicationGatewayPrivateLinkIpConfiguration>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1342,7 +1444,11 @@ impl ApplicationGatewayPrivateLinkResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPrivateLinkResourceListResult {
     #[doc = "List of private link resources of an application gateway."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationGatewayPrivateLinkResource>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1366,10 +1472,20 @@ pub struct ApplicationGatewayPrivateLinkResourceProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
     #[doc = "Required member names of private link resource."]
-    #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredMembers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_members: Vec<String>,
     #[doc = "Required DNS zone names of the the private link resource."]
-    #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_zone_names: Vec<String>,
 }
 impl ApplicationGatewayPrivateLinkResourceProperties {
@@ -1407,7 +1523,12 @@ pub struct ApplicationGatewayProbeHealthResponseMatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub body: Option<String>,
     #[doc = "Allowed ranges of healthy status codes. Default range of healthy status codes is 200-399."]
-    #[serde(rename = "statusCodes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "statusCodes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub status_codes: Vec<String>,
 }
 impl ApplicationGatewayProbeHealthResponseMatch {
@@ -1470,52 +1591,131 @@ pub struct ApplicationGatewayPropertiesFormat {
     #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<application_gateway_properties_format::OperationalState>,
     #[doc = "Subnets of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "gatewayIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "gatewayIPConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub gateway_ip_configurations: Vec<ApplicationGatewayIpConfiguration>,
     #[doc = "Authentication certificates of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "authenticationCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "authenticationCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authentication_certificates: Vec<ApplicationGatewayAuthenticationCertificate>,
     #[doc = "Trusted Root certificates of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "trustedRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_root_certificates: Vec<ApplicationGatewayTrustedRootCertificate>,
     #[doc = "Trusted client certificates of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "trustedClientCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedClientCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_client_certificates: Vec<ApplicationGatewayTrustedClientCertificate>,
     #[doc = "SSL certificates of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "sslCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sslCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ssl_certificates: Vec<ApplicationGatewaySslCertificate>,
     #[doc = "Frontend IP addresses of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendIPConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_ip_configurations: Vec<ApplicationGatewayFrontendIpConfiguration>,
     #[doc = "Frontend ports of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "frontendPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_ports: Vec<ApplicationGatewayFrontendPort>,
     #[doc = "Probes of the application gateway resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub probes: Vec<ApplicationGatewayProbe>,
     #[doc = "Backend address pool of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendAddressPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_address_pools: Vec<ApplicationGatewayBackendAddressPool>,
     #[doc = "Backend http settings of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "backendHttpSettingsCollection", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendHttpSettingsCollection",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_http_settings_collection: Vec<ApplicationGatewayBackendHttpSettings>,
     #[doc = "Http listeners of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "httpListeners", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "httpListeners",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub http_listeners: Vec<ApplicationGatewayHttpListener>,
     #[doc = "SSL profiles of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "sslProfiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sslProfiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ssl_profiles: Vec<ApplicationGatewaySslProfile>,
     #[doc = "URL path map of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "urlPathMaps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "urlPathMaps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub url_path_maps: Vec<ApplicationGatewayUrlPathMap>,
     #[doc = "Request routing rules of the application gateway resource."]
-    #[serde(rename = "requestRoutingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestRoutingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_routing_rules: Vec<ApplicationGatewayRequestRoutingRule>,
     #[doc = "Rewrite rules for the application gateway resource."]
-    #[serde(rename = "rewriteRuleSets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "rewriteRuleSets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rewrite_rule_sets: Vec<ApplicationGatewayRewriteRuleSet>,
     #[doc = "Redirect configurations of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
-    #[serde(rename = "redirectConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "redirectConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub redirect_configurations: Vec<ApplicationGatewayRedirectConfiguration>,
     #[doc = "Application gateway web application firewall configuration."]
     #[serde(rename = "webApplicationFirewallConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1533,10 +1733,20 @@ pub struct ApplicationGatewayPropertiesFormat {
     #[serde(rename = "autoscaleConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub autoscale_configuration: Option<ApplicationGatewayAutoscaleConfiguration>,
     #[doc = "PrivateLink configurations on application gateway."]
-    #[serde(rename = "privateLinkConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateLinkConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_link_configurations: Vec<ApplicationGatewayPrivateLinkConfiguration>,
     #[doc = "Private Endpoint connections on application gateway."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<ApplicationGatewayPrivateEndpointConnection>,
     #[doc = "The resource GUID property of the application gateway resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -1545,13 +1755,23 @@ pub struct ApplicationGatewayPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Custom error configurations of the application gateway resource."]
-    #[serde(rename = "customErrorConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customErrorConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_error_configurations: Vec<ApplicationGatewayCustomError>,
     #[doc = "If true, associates a firewall policy with an application gateway regardless whether the policy differs from the WAF Config."]
     #[serde(rename = "forceFirewallPolicyAssociation", default, skip_serializing_if = "Option::is_none")]
     pub force_firewall_policy_association: Option<bool>,
     #[doc = "Load distribution policies of the application gateway resource."]
-    #[serde(rename = "loadDistributionPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadDistributionPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_distribution_policies: Vec<ApplicationGatewayLoadDistributionPolicy>,
     #[doc = "Application Gateway global configuration."]
     #[serde(rename = "globalConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1685,13 +1905,28 @@ pub struct ApplicationGatewayRedirectConfigurationPropertiesFormat {
     #[serde(rename = "includeQueryString", default, skip_serializing_if = "Option::is_none")]
     pub include_query_string: Option<bool>,
     #[doc = "Request routing specifying redirect configuration."]
-    #[serde(rename = "requestRoutingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestRoutingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_routing_rules: Vec<SubResource>,
     #[doc = "Url path maps specifying default redirect configuration."]
-    #[serde(rename = "urlPathMaps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "urlPathMaps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub url_path_maps: Vec<SubResource>,
     #[doc = "Path rules specifying redirect configuration."]
-    #[serde(rename = "pathRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pathRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path_rules: Vec<SubResource>,
 }
 impl ApplicationGatewayRedirectConfigurationPropertiesFormat {
@@ -1811,7 +2046,11 @@ pub struct ApplicationGatewayRewriteRule {
     #[serde(rename = "ruleSequence", default, skip_serializing_if = "Option::is_none")]
     pub rule_sequence: Option<i64>,
     #[doc = "Conditions based on which the action set execution will be evaluated."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub conditions: Vec<ApplicationGatewayRewriteRuleCondition>,
     #[doc = "Set of actions in the Rewrite Rule in Application Gateway."]
     #[serde(rename = "actionSet", default, skip_serializing_if = "Option::is_none")]
@@ -1826,10 +2065,20 @@ impl ApplicationGatewayRewriteRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRuleActionSet {
     #[doc = "Request Header Actions in the Action Set."]
-    #[serde(rename = "requestHeaderConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestHeaderConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_header_configurations: Vec<ApplicationGatewayHeaderConfiguration>,
     #[doc = "Response Header Actions in the Action Set."]
-    #[serde(rename = "responseHeaderConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "responseHeaderConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub response_header_configurations: Vec<ApplicationGatewayHeaderConfiguration>,
     #[doc = "Url configuration of the Actions set in Application Gateway."]
     #[serde(rename = "urlConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1885,7 +2134,12 @@ impl ApplicationGatewayRewriteRuleSet {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRewriteRuleSetPropertiesFormat {
     #[doc = "Rewrite rules in the rewrite rule set."]
-    #[serde(rename = "rewriteRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "rewriteRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rewrite_rules: Vec<ApplicationGatewayRewriteRule>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2066,7 +2320,12 @@ impl ApplicationGatewaySslCertificatePropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslPolicy {
     #[doc = "Ssl protocols to be disabled on application gateway."]
-    #[serde(rename = "disabledSslProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disabledSslProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disabled_ssl_protocols: Vec<ProtocolsEnum>,
     #[doc = "Type of Ssl Policy."]
     #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
@@ -2075,7 +2334,12 @@ pub struct ApplicationGatewaySslPolicy {
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<PolicyNameEnum>,
     #[doc = "Ssl cipher suites to be enabled in the specified order to application gateway."]
-    #[serde(rename = "cipherSuites", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cipherSuites",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cipher_suites: Vec<CipherSuitesEnum>,
     #[doc = "Ssl protocol enums."]
     #[serde(rename = "minProtocolVersion", default, skip_serializing_if = "Option::is_none")]
@@ -2147,7 +2411,12 @@ impl ApplicationGatewaySslPredefinedPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslPredefinedPolicyPropertiesFormat {
     #[doc = "Ssl cipher suites to be enabled in the specified order for application gateway."]
-    #[serde(rename = "cipherSuites", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cipherSuites",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cipher_suites: Vec<CipherSuitesEnum>,
     #[doc = "Ssl protocol enums."]
     #[serde(rename = "minProtocolVersion", default, skip_serializing_if = "Option::is_none")]
@@ -2185,7 +2454,12 @@ impl ApplicationGatewaySslProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslProfilePropertiesFormat {
     #[doc = "Array of references to application gateway trusted client certificates."]
-    #[serde(rename = "trustedClientCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trustedClientCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub trusted_client_certificates: Vec<SubResource>,
     #[doc = "Application Gateway Ssl policy."]
     #[serde(rename = "sslPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -2347,7 +2621,12 @@ pub struct ApplicationGatewayUrlPathMapPropertiesFormat {
     #[serde(rename = "defaultLoadDistributionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub default_load_distribution_policy: Option<SubResource>,
     #[doc = "Path rule of URL path map resource."]
-    #[serde(rename = "pathRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pathRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path_rules: Vec<ApplicationGatewayPathRule>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2373,7 +2652,12 @@ pub struct ApplicationGatewayWebApplicationFirewallConfiguration {
     #[serde(rename = "ruleSetVersion")]
     pub rule_set_version: String,
     #[doc = "The disabled rule groups."]
-    #[serde(rename = "disabledRuleGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disabledRuleGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disabled_rule_groups: Vec<ApplicationGatewayFirewallDisabledRuleGroup>,
     #[doc = "Whether allow WAF to check request Body."]
     #[serde(rename = "requestBodyCheck", default, skip_serializing_if = "Option::is_none")]
@@ -2388,7 +2672,11 @@ pub struct ApplicationGatewayWebApplicationFirewallConfiguration {
     #[serde(rename = "fileUploadLimitInMb", default, skip_serializing_if = "Option::is_none")]
     pub file_upload_limit_in_mb: Option<i32>,
     #[doc = "The exclusion list."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclusions: Vec<ApplicationGatewayFirewallExclusion>,
 }
 impl ApplicationGatewayWebApplicationFirewallConfiguration {
@@ -2458,31 +2746,70 @@ pub struct ApplicationRule {
     #[serde(flatten)]
     pub firewall_policy_rule: FirewallPolicyRule,
     #[doc = "List of source IP addresses for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "List of destination IP addresses or Service Tags."]
-    #[serde(rename = "destinationAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_addresses: Vec<String>,
     #[doc = "Array of Application Protocols."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protocols: Vec<FirewallPolicyRuleApplicationProtocol>,
     #[doc = "List of FQDNs for this rule."]
-    #[serde(rename = "targetFqdns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetFqdns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_fqdns: Vec<String>,
     #[doc = "List of Urls for this rule condition."]
-    #[serde(rename = "targetUrls", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetUrls",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_urls: Vec<String>,
     #[doc = "List of FQDN Tags for this rule."]
-    #[serde(rename = "fqdnTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fqdnTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdn_tags: Vec<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
     #[doc = "Terminate TLS connections for this rule."]
     #[serde(rename = "terminateTLS", default, skip_serializing_if = "Option::is_none")]
     pub terminate_tls: Option<bool>,
     #[doc = "List of destination azure web categories."]
-    #[serde(rename = "webCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "webCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub web_categories: Vec<String>,
 }
 impl ApplicationRule {
@@ -2522,7 +2849,11 @@ impl ApplicationSecurityGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationSecurityGroupListResult {
     #[doc = "A list of application security groups."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ApplicationSecurityGroup>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2597,7 +2928,11 @@ impl Serialize for AuthenticationMethod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationListResult {
     #[doc = "The authorizations in an ExpressRoute Circuit."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuitAuthorization>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2688,7 +3023,11 @@ impl AutoApprovedPrivateLinkService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoApprovedPrivateLinkServicesResult {
     #[doc = "An array of auto approved private link service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AutoApprovedPrivateLinkService>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2739,7 +3078,11 @@ pub struct AvailableDelegation {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[doc = "The actions permitted to the service upon delegation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
 }
 impl AvailableDelegation {
@@ -2751,7 +3094,11 @@ impl AvailableDelegation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableDelegationsResult {
     #[doc = "An array of available delegations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailableDelegation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2796,7 +3143,11 @@ impl AvailablePrivateEndpointType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailablePrivateEndpointTypesResult {
     #[doc = "An array of available privateEndpoint type."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailablePrivateEndpointType>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2831,7 +3182,11 @@ pub struct AvailableProvidersListCity {
     #[serde(rename = "cityName", default, skip_serializing_if = "Option::is_none")]
     pub city_name: Option<String>,
     #[doc = "A list of Internet service providers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub providers: Vec<String>,
 }
 impl AvailableProvidersListCity {
@@ -2846,10 +3201,18 @@ pub struct AvailableProvidersListCountry {
     #[serde(rename = "countryName", default, skip_serializing_if = "Option::is_none")]
     pub country_name: Option<String>,
     #[doc = "A list of Internet service providers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub providers: Vec<String>,
     #[doc = "List of available states in the country."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub states: Vec<AvailableProvidersListState>,
 }
 impl AvailableProvidersListCountry {
@@ -2861,7 +3224,12 @@ impl AvailableProvidersListCountry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProvidersListParameters {
     #[doc = "A list of Azure regions."]
-    #[serde(rename = "azureLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_locations: Vec<String>,
     #[doc = "The country for available providers list."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2885,10 +3253,18 @@ pub struct AvailableProvidersListState {
     #[serde(rename = "stateName", default, skip_serializing_if = "Option::is_none")]
     pub state_name: Option<String>,
     #[doc = "A list of Internet service providers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub providers: Vec<String>,
     #[doc = "List of available cities or towns in the state."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cities: Vec<AvailableProvidersListCity>,
 }
 impl AvailableProvidersListState {
@@ -2921,7 +3297,11 @@ impl AvailableServiceAlias {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableServiceAliasesResult {
     #[doc = "An array of available service aliases."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AvailableServiceAlias>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3004,7 +3384,11 @@ pub struct AzureFirewall {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFirewallPropertiesFormat>,
     #[doc = "A list of availability zones denoting where the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3033,19 +3417,43 @@ pub struct AzureFirewallApplicationRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of source IP addresses for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "Array of ApplicationRuleProtocols."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protocols: Vec<AzureFirewallApplicationRuleProtocol>,
     #[doc = "List of FQDNs for this rule."]
-    #[serde(rename = "targetFqdns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "targetFqdns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub target_fqdns: Vec<String>,
     #[doc = "List of FQDN Tags for this rule."]
-    #[serde(rename = "fqdnTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "fqdnTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdn_tags: Vec<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
 }
 impl AzureFirewallApplicationRule {
@@ -3083,7 +3491,11 @@ pub struct AzureFirewallApplicationRuleCollectionPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<AzureFirewallRcAction>,
     #[doc = "Collection of rules used by a application rule collection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<AzureFirewallApplicationRule>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3169,7 +3581,11 @@ impl AzureFirewallFqdnTag {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallFqdnTagListResult {
     #[doc = "List of Azure Firewall FQDN Tags in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureFirewallFqdnTag>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3264,7 +3680,11 @@ impl AzureFirewallIpGroups {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallListResult {
     #[doc = "List of Azure Firewalls in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureFirewall>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3340,16 +3760,35 @@ pub struct AzureFirewallNatRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "List of source IP addresses for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "List of destination IP addresses for this rule. Supports IP ranges, prefixes, and service tags."]
-    #[serde(rename = "destinationAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_addresses: Vec<String>,
     #[doc = "List of destination ports."]
-    #[serde(rename = "destinationPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ports: Vec<String>,
     #[doc = "Array of AzureFirewallNetworkRuleProtocols applicable to this NAT rule."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protocols: Vec<AzureFirewallNetworkRuleProtocol>,
     #[doc = "The translated address for this NAT rule."]
     #[serde(rename = "translatedAddress", default, skip_serializing_if = "Option::is_none")]
@@ -3361,7 +3800,12 @@ pub struct AzureFirewallNatRule {
     #[serde(rename = "translatedFqdn", default, skip_serializing_if = "Option::is_none")]
     pub translated_fqdn: Option<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
 }
 impl AzureFirewallNatRule {
@@ -3399,7 +3843,11 @@ pub struct AzureFirewallNatRuleCollectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<AzureFirewallNatRcAction>,
     #[doc = "Collection of rules used by a NAT rule collection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<AzureFirewallNatRule>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3420,25 +3868,59 @@ pub struct AzureFirewallNetworkRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Array of AzureFirewallNetworkRuleProtocols."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protocols: Vec<AzureFirewallNetworkRuleProtocol>,
     #[doc = "List of source IP addresses for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "List of destination IP addresses."]
-    #[serde(rename = "destinationAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_addresses: Vec<String>,
     #[doc = "List of destination ports."]
-    #[serde(rename = "destinationPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ports: Vec<String>,
     #[doc = "List of destination FQDNs."]
-    #[serde(rename = "destinationFqdns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationFqdns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_fqdns: Vec<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
     #[doc = "List of destination IpGroups for this rule."]
-    #[serde(rename = "destinationIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ip_groups: Vec<String>,
 }
 impl AzureFirewallNetworkRule {
@@ -3476,7 +3958,11 @@ pub struct AzureFirewallNetworkRuleCollectionPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<AzureFirewallRcAction>,
     #[doc = "Collection of rules used by a network rule collection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<AzureFirewallNetworkRule>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3535,16 +4021,36 @@ impl Serialize for AzureFirewallNetworkRuleProtocol {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallPropertiesFormat {
     #[doc = "Collection of application rule collections used by Azure Firewall."]
-    #[serde(rename = "applicationRuleCollections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationRuleCollections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_rule_collections: Vec<AzureFirewallApplicationRuleCollection>,
     #[doc = "Collection of NAT rule collections used by Azure Firewall."]
-    #[serde(rename = "natRuleCollections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "natRuleCollections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nat_rule_collections: Vec<AzureFirewallNatRuleCollection>,
     #[doc = "Collection of network rule collections used by Azure Firewall."]
-    #[serde(rename = "networkRuleCollections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkRuleCollections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_rule_collections: Vec<AzureFirewallNetworkRuleCollection>,
     #[doc = "IP configuration of the Azure Firewall resource."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<AzureFirewallIpConfiguration>,
     #[doc = "IP configuration of an Azure Firewall."]
     #[serde(rename = "managementIpConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -3811,7 +4317,11 @@ pub struct AzureReachabilityReportItem {
     #[serde(rename = "azureLocation", default, skip_serializing_if = "Option::is_none")]
     pub azure_location: Option<String>,
     #[doc = "List of latency details for each of the time series."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub latencies: Vec<AzureReachabilityReportLatencyInfo>,
 }
 impl AzureReachabilityReportItem {
@@ -3862,10 +4372,19 @@ pub struct AzureReachabilityReportParameters {
     #[serde(rename = "providerLocation")]
     pub provider_location: AzureReachabilityReportLocation,
     #[doc = "List of Internet service providers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub providers: Vec<String>,
     #[doc = "Optional Azure regions to scope the query to."]
-    #[serde(rename = "azureLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "azureLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub azure_locations: Vec<String>,
     #[doc = "The start time for the Azure reachability report."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
@@ -3917,7 +4436,11 @@ impl AzureWebCategory {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWebCategoryListResult {
     #[doc = "List of Azure Web Categories for a given Subscription."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<AzureWebCategory>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -3959,7 +4482,12 @@ pub struct BgpCommunity {
     #[serde(rename = "communityValue", default, skip_serializing_if = "Option::is_none")]
     pub community_value: Option<String>,
     #[doc = "The prefixes that the bgp community contains."]
-    #[serde(rename = "communityPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "communityPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub community_prefixes: Vec<String>,
     #[doc = "Customer is authorized to use bgp community or not."]
     #[serde(rename = "isAuthorizedToUse", default, skip_serializing_if = "Option::is_none")]
@@ -3977,7 +4505,12 @@ impl BgpCommunity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendAddressInboundNatRulePortMappings {
     #[doc = "Collection of inbound NAT rule port mappings."]
-    #[serde(rename = "inboundNatRulePortMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatRulePortMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_rule_port_mappings: Vec<InboundNatRulePortMapping>,
 }
 impl BackendAddressInboundNatRulePortMappings {
@@ -4015,25 +4548,55 @@ pub struct BackendAddressPoolPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "An array of gateway load balancer tunnel interfaces."]
-    #[serde(rename = "tunnelInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tunnelInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tunnel_interfaces: Vec<GatewayLoadBalancerTunnelInterface>,
     #[doc = "An array of backend addresses."]
-    #[serde(rename = "loadBalancerBackendAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancerBackendAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancer_backend_addresses: Vec<LoadBalancerBackendAddress>,
     #[doc = "An array of references to IP addresses defined in network interfaces."]
-    #[serde(rename = "backendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendIPConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
     #[doc = "An array of references to load balancing rules that use this backend address pool."]
-    #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancing_rules: Vec<SubResource>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "outboundRule", default, skip_serializing_if = "Option::is_none")]
     pub outbound_rule: Option<SubResource>,
     #[doc = "An array of references to outbound rules that use this backend address pool."]
-    #[serde(rename = "outboundRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outboundRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outbound_rules: Vec<SubResource>,
     #[doc = "An array of references to inbound NAT rules that use this backend address pool."]
-    #[serde(rename = "inboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_rules: Vec<SubResource>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -4132,7 +4695,11 @@ pub mod bastion_active_session {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionActiveSessionListResult {
     #[doc = "List of active sessions on the bastion."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BastionActiveSession>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4221,7 +4788,11 @@ impl BastionHostIpConfigurationPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionHostListResult {
     #[doc = "List of Bastion Hosts in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BastionHost>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4242,7 +4813,12 @@ impl BastionHostListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionHostPropertiesFormat {
     #[doc = "IP configuration of the Bastion Host resource."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<BastionHostIpConfiguration>,
     #[doc = "FQDN for the endpoint on which bastion host is accessible."]
     #[serde(rename = "dnsName", default, skip_serializing_if = "Option::is_none")]
@@ -4278,7 +4854,11 @@ impl BastionHostPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionSessionDeleteResult {
     #[doc = "List of sessions with their corresponding state."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BastionSessionState>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4342,7 +4922,11 @@ impl BastionShareableLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionShareableLinkListRequest {
     #[doc = "List of VM references."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vms: Vec<BastionShareableLink>,
 }
 impl BastionShareableLinkListRequest {
@@ -4354,7 +4938,11 @@ impl BastionShareableLinkListRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionShareableLinkListResult {
     #[doc = "List of Bastion Shareable Links for the request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BastionShareableLink>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4545,7 +5133,11 @@ pub mod bgp_peer_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpPeerStatusListResult {
     #[doc = "List of BGP peers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BgpPeerStatus>,
 }
 impl BgpPeerStatusListResult {
@@ -4571,7 +5163,11 @@ impl BgpServiceCommunity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BgpServiceCommunityListResult {
     #[doc = "A list of service community resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BgpServiceCommunity>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -4595,7 +5191,12 @@ pub struct BgpServiceCommunityPropertiesFormat {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[doc = "A list of bgp communities."]
-    #[serde(rename = "bgpCommunities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bgpCommunities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bgp_communities: Vec<BgpCommunity>,
 }
 impl BgpServiceCommunityPropertiesFormat {
@@ -4616,7 +5217,12 @@ pub struct BgpSettings {
     #[serde(rename = "peerWeight", default, skip_serializing_if = "Option::is_none")]
     pub peer_weight: Option<i32>,
     #[doc = "BGP peering address with IP configuration ID for virtual network gateway."]
-    #[serde(rename = "bgpPeeringAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bgpPeeringAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bgp_peering_addresses: Vec<IpConfigurationBgpPeeringAddress>,
 }
 impl BgpSettings {
@@ -4891,7 +5497,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -5078,7 +5688,11 @@ pub struct ConnectionMonitorEndpointFilter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_endpoint_filter::Type>,
     #[doc = "List of items in the filter."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub items: Vec<ConnectionMonitorEndpointFilterItem>,
 }
 impl ConnectionMonitorEndpointFilter {
@@ -5181,10 +5795,18 @@ pub mod connection_monitor_endpoint_filter_item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointScope {
     #[doc = "List of items which needs to be included to the endpoint scope."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub include: Vec<ConnectionMonitorEndpointScopeItem>,
     #[doc = "List of items which needs to be excluded from the endpoint scope."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclude: Vec<ConnectionMonitorEndpointScopeItem>,
 }
 impl ConnectionMonitorEndpointScope {
@@ -5217,10 +5839,20 @@ pub struct ConnectionMonitorHttpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "The HTTP headers to transmit with the request."]
-    #[serde(rename = "requestHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requestHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request_headers: Vec<HttpHeader>,
     #[doc = "HTTP status codes to consider successful. For instance, \"2xx,301-304,418\"."]
-    #[serde(rename = "validStatusCodeRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "validStatusCodeRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub valid_status_code_ranges: Vec<String>,
     #[doc = "Value indicating whether HTTPS is preferred over HTTP in cases where the choice is not explicit."]
     #[serde(rename = "preferHTTPS", default, skip_serializing_if = "Option::is_none")]
@@ -5287,7 +5919,11 @@ impl ConnectionMonitorIcmpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorListResult {
     #[doc = "Information about connection monitors."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConnectionMonitorResult>,
 }
 impl azure_core::Continuable for ConnectionMonitorListResult {
@@ -5370,16 +6006,34 @@ pub struct ConnectionMonitorParameters {
     #[serde(rename = "monitoringIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_interval_in_seconds: Option<i32>,
     #[doc = "List of connection monitor endpoints."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<ConnectionMonitorEndpoint>,
     #[doc = "List of connection monitor test configurations."]
-    #[serde(rename = "testConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "testConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub test_configurations: Vec<ConnectionMonitorTestConfiguration>,
     #[doc = "List of connection monitor test groups."]
-    #[serde(rename = "testGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "testGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub test_groups: Vec<ConnectionMonitorTestGroup>,
     #[doc = "List of connection monitor outputs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outputs: Vec<ConnectionMonitorOutput>,
     #[doc = "Optional notes to be associated with the connection monitor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5397,7 +6051,11 @@ pub struct ConnectionMonitorQueryResult {
     #[serde(rename = "sourceStatus", default, skip_serializing_if = "Option::is_none")]
     pub source_status: Option<connection_monitor_query_result::SourceStatus>,
     #[doc = "Information about connection states."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub states: Vec<ConnectionStateSnapshot>,
 }
 impl ConnectionMonitorQueryResult {
@@ -5886,7 +6544,11 @@ pub struct ConnectionStateSnapshot {
     #[serde(rename = "probesFailed", default, skip_serializing_if = "Option::is_none")]
     pub probes_failed: Option<i64>,
     #[doc = "List of hops between the source and the destination."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hops: Vec<ConnectivityHop>,
 }
 impl ConnectionStateSnapshot {
@@ -6009,19 +6671,42 @@ pub struct ConnectivityHop {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "List of next hop identifiers."]
-    #[serde(rename = "nextHopIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nextHopIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub next_hop_ids: Vec<String>,
     #[doc = "List of previous hop identifiers."]
-    #[serde(rename = "previousHopIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "previousHopIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub previous_hop_ids: Vec<String>,
     #[doc = "List of hop links."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub links: Vec<HopLink>,
     #[doc = "List of previous hop links."]
-    #[serde(rename = "previousLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "previousLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub previous_links: Vec<HopLink>,
     #[doc = "List of issues."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub issues: Vec<ConnectivityIssue>,
 }
 impl ConnectivityHop {
@@ -6033,7 +6718,11 @@ impl ConnectivityHop {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityInformation {
     #[doc = "List of hops between the source and the destination."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hops: Vec<ConnectivityHop>,
     #[doc = "The connection status."]
     #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
@@ -6116,7 +6805,11 @@ pub struct ConnectivityIssue {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connectivity_issue::Type>,
     #[doc = "Provides additional context on the issue."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub context: Vec<IssueContext>,
 }
 impl ConnectivityIssue {
@@ -6402,10 +7095,20 @@ impl ContainerNetworkInterfaceConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfaceConfigurationPropertiesFormat {
     #[doc = "A list of ip configurations of the container network interface configuration."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<IpConfigurationProfile>,
     #[doc = "A list of container network interfaces created from this container network interface configuration."]
-    #[serde(rename = "containerNetworkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containerNetworkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub container_network_interfaces: Vec<SubResource>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -6463,7 +7166,12 @@ pub struct ContainerNetworkInterfacePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub container: Option<Container>,
     #[doc = "Reference to the ip configuration on this container nic."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<ContainerNetworkInterfaceIpConfiguration>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -6481,7 +7189,12 @@ pub struct CustomDnsConfigPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
     #[doc = "A list of private ip addresses of the private endpoint."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
 }
 impl CustomDnsConfigPropertiesFormat {
@@ -6504,7 +7217,11 @@ pub struct CustomIpPrefix {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "A list of availability zones denoting the IP allocated for the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl CustomIpPrefix {
@@ -6516,7 +7233,11 @@ impl CustomIpPrefix {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomIpPrefixListResult {
     #[doc = "A list of Custom IP prefixes that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomIpPrefix>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6549,13 +7270,23 @@ pub struct CustomIpPrefixPropertiesFormat {
     #[serde(rename = "customIpPrefixParent", default, skip_serializing_if = "Option::is_none")]
     pub custom_ip_prefix_parent: Option<SubResource>,
     #[doc = "The list of all Children for IPv6 /48 CustomIpPrefix."]
-    #[serde(rename = "childCustomIpPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "childCustomIpPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub child_custom_ip_prefixes: Vec<SubResource>,
     #[doc = "The commissioned state of the Custom IP Prefix."]
     #[serde(rename = "commissionedState", default, skip_serializing_if = "Option::is_none")]
     pub commissioned_state: Option<custom_ip_prefix_properties_format::CommissionedState>,
     #[doc = "The list of all referenced PublicIpPrefixes."]
-    #[serde(rename = "publicIpPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIpPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_ip_prefixes: Vec<SubResource>,
     #[doc = "The resource GUID property of the custom IP prefix resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -6647,10 +7378,20 @@ pub struct DdosCustomPolicyPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The list of public IPs associated with the DDoS custom policy resource. This list is read-only."]
-    #[serde(rename = "publicIPAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIPAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_ip_addresses: Vec<SubResource>,
     #[doc = "The protocol-specific DDoS policy customization parameters."]
-    #[serde(rename = "protocolCustomSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "protocolCustomSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub protocol_custom_settings: Vec<ProtocolCustomSettingsFormat>,
 }
 impl DdosCustomPolicyPropertiesFormat {
@@ -6692,7 +7433,11 @@ impl DdosProtectionPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DdosProtectionPlanListResult {
     #[doc = "A list of DDoS protection plans."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DdosProtectionPlan>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -6719,7 +7464,12 @@ pub struct DdosProtectionPlanPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The list of virtual networks associated with the DDoS protection plan resource. This list is read-only."]
-    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_networks: Vec<SubResource>,
 }
 impl DdosProtectionPlanPropertiesFormat {
@@ -6886,7 +7636,12 @@ impl Serialize for DhGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DhcpOptions {
     #[doc = "The list of DNS servers IP addresses."]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
 }
 impl DhcpOptions {
@@ -6965,7 +7720,11 @@ impl DnsNameAvailabilityResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsSettings {
     #[doc = "List of Custom DNS Servers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub servers: Vec<String>,
     #[doc = "Enable DNS Proxy on Firewalls attached to the Firewall Policy."]
     #[serde(rename = "enableProxy", default, skip_serializing_if = "Option::is_none")]
@@ -7000,7 +7759,11 @@ impl DscpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscpConfigurationListResult {
     #[doc = "A list of dscp configurations in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DscpConfiguration>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7021,31 +7784,65 @@ impl DscpConfigurationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscpConfigurationPropertiesFormat {
     #[doc = "List of markings to be used in the configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub markings: Vec<i32>,
     #[doc = "Source IP ranges."]
-    #[serde(rename = "sourceIpRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_ranges: Vec<QosIpRange>,
     #[doc = "Destination IP ranges."]
-    #[serde(rename = "destinationIpRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationIpRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ip_ranges: Vec<QosIpRange>,
     #[doc = "Sources port ranges."]
-    #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_port_ranges: Vec<QosPortRange>,
     #[doc = "Destination port ranges."]
-    #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_port_ranges: Vec<QosPortRange>,
     #[doc = "RNM supported protocol types."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<dscp_configuration_properties_format::Protocol>,
     #[doc = "QoS object definitions"]
-    #[serde(rename = "qosDefinitionCollection", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "qosDefinitionCollection",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub qos_definition_collection: Vec<QosDefinition>,
     #[doc = "Qos Collection ID generated by RNM."]
     #[serde(rename = "qosCollectionId", default, skip_serializing_if = "Option::is_none")]
     pub qos_collection_id: Option<String>,
     #[doc = "Associated Network Interfaces to the DSCP Configuration."]
-    #[serde(rename = "associatedNetworkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "associatedNetworkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub associated_network_interfaces: Vec<NetworkInterface>,
     #[doc = "The resource GUID property of the DSCP Configuration resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -7123,7 +7920,12 @@ pub struct EffectiveNetworkSecurityGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub association: Option<EffectiveNetworkSecurityGroupAssociation>,
     #[doc = "A collection of effective security rules."]
-    #[serde(rename = "effectiveSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "effectiveSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub effective_security_rules: Vec<EffectiveNetworkSecurityRule>,
     #[doc = "Mapping of tags to list of IP Addresses included within the tag."]
     #[serde(rename = "tagMap", default, skip_serializing_if = "Option::is_none")]
@@ -7156,7 +7958,11 @@ impl EffectiveNetworkSecurityGroupAssociation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveNetworkSecurityGroupListResult {
     #[doc = "A list of effective network security groups."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EffectiveNetworkSecurityGroup>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7183,10 +7989,20 @@ pub struct EffectiveNetworkSecurityRule {
     #[serde(rename = "destinationPortRange", default, skip_serializing_if = "Option::is_none")]
     pub destination_port_range: Option<String>,
     #[doc = "The source port ranges. Expected values include a single integer between 0 and 65535, a range using '-' as separator (e.g. 100-400), or an asterisk (*)."]
-    #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_port_ranges: Vec<String>,
     #[doc = "The destination port ranges. Expected values include a single integer between 0 and 65535, a range using '-' as separator (e.g. 100-400), or an asterisk (*)."]
-    #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_port_ranges: Vec<String>,
     #[doc = "The source address prefix."]
     #[serde(rename = "sourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -7195,16 +8011,36 @@ pub struct EffectiveNetworkSecurityRule {
     #[serde(rename = "destinationAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub destination_address_prefix: Option<String>,
     #[doc = "The source address prefixes. Expected values include CIDR IP ranges, Default Tags (VirtualNetwork, AzureLoadBalancer, Internet), System Tags, and the asterisk (*)."]
-    #[serde(rename = "sourceAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_address_prefixes: Vec<String>,
     #[doc = "The destination address prefixes. Expected values include CIDR IP ranges, Default Tags (VirtualNetwork, AzureLoadBalancer, Internet), System Tags, and the asterisk (*)."]
-    #[serde(rename = "destinationAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_address_prefixes: Vec<String>,
     #[doc = "The expanded source address prefix."]
-    #[serde(rename = "expandedSourceAddressPrefix", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "expandedSourceAddressPrefix",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub expanded_source_address_prefix: Vec<String>,
     #[doc = "Expanded destination address prefix."]
-    #[serde(rename = "expandedDestinationAddressPrefix", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "expandedDestinationAddressPrefix",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub expanded_destination_address_prefix: Vec<String>,
     #[doc = "Whether network traffic is allowed or denied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7279,10 +8115,20 @@ pub struct EffectiveRoute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<effective_route::State>,
     #[doc = "The address prefixes of the effective routes in CIDR notation."]
-    #[serde(rename = "addressPrefix", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefix",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefix: Vec<String>,
     #[doc = "The IP address of the next hop of the effective route."]
-    #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nextHopIpAddress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub next_hop_ip_address: Vec<String>,
     #[doc = "The type of Azure hop the packet should be sent to."]
     #[serde(rename = "nextHopType", default, skip_serializing_if = "Option::is_none")]
@@ -7378,7 +8224,11 @@ pub mod effective_route {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveRouteListResult {
     #[doc = "A list of effective routes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EffectiveRoute>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7425,7 +8275,11 @@ impl EndpointServiceResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointServicesListResult {
     #[doc = "List of available endpoint services in a region."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EndpointServiceResult>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7455,7 +8309,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetails>,
     #[doc = "Inner error message."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
@@ -7521,7 +8379,12 @@ pub struct EvaluatedNetworkSecurityGroup {
     #[serde(rename = "matchedRule", default, skip_serializing_if = "Option::is_none")]
     pub matched_rule: Option<MatchedRule>,
     #[doc = "List of network security rules evaluation results."]
-    #[serde(rename = "rulesEvaluationResult", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "rulesEvaluationResult",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules_evaluation_result: Vec<NetworkSecurityRulesEvaluationResult>,
 }
 impl EvaluatedNetworkSecurityGroup {
@@ -7548,7 +8411,11 @@ pub struct ExclusionManagedRuleGroup {
     #[serde(rename = "ruleGroupName")]
     pub rule_group_name: String,
     #[doc = "List of rules that will be excluded. If none specified, all rules in the group will be excluded."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<ExclusionManagedRule>,
 }
 impl ExclusionManagedRuleGroup {
@@ -7569,7 +8436,12 @@ pub struct ExclusionManagedRuleSet {
     #[serde(rename = "ruleSetVersion")]
     pub rule_set_version: String,
     #[doc = "Defines the rule groups to apply to the rule set."]
-    #[serde(rename = "ruleGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ruleGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rule_groups: Vec<ExclusionManagedRuleGroup>,
 }
 impl ExclusionManagedRuleSet {
@@ -7696,7 +8568,11 @@ impl ExpressRouteCircuitConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitConnectionListResult {
     #[doc = "The global reach connection associated with Private Peering in an ExpressRoute Circuit."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuitConnection>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7747,7 +8623,11 @@ impl ExpressRouteCircuitConnectionPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitListResult {
     #[doc = "A list of ExpressRouteCircuits in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuit>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7791,10 +8671,20 @@ impl ExpressRouteCircuitPeering {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringConfig {
     #[doc = "The reference to AdvertisedPublicPrefixes."]
-    #[serde(rename = "advertisedPublicPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "advertisedPublicPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub advertised_public_prefixes: Vec<String>,
     #[doc = "The communities of bgp peering. Specified for microsoft peering."]
-    #[serde(rename = "advertisedCommunities", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "advertisedCommunities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub advertised_communities: Vec<String>,
     #[doc = "The advertised public prefix state of the Peering resource."]
     #[serde(rename = "advertisedPublicPrefixesState", default, skip_serializing_if = "Option::is_none")]
@@ -7874,7 +8764,11 @@ impl ExpressRouteCircuitPeeringId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringListResult {
     #[doc = "The peerings in an express route circuit."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuitPeering>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -7949,10 +8843,19 @@ pub struct ExpressRouteCircuitPeeringPropertiesFormat {
     #[serde(rename = "expressRouteConnection", default, skip_serializing_if = "Option::is_none")]
     pub express_route_connection: Option<ExpressRouteConnectionId>,
     #[doc = "The list of circuit connections associated with Azure Private Peering for this circuit."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connections: Vec<ExpressRouteCircuitConnection>,
     #[doc = "The list of peered circuit connections associated with Azure Private Peering for this circuit."]
-    #[serde(rename = "peeredConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "peeredConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peered_connections: Vec<PeerExpressRouteCircuitConnection>,
 }
 impl ExpressRouteCircuitPeeringPropertiesFormat {
@@ -7973,10 +8876,18 @@ pub struct ExpressRouteCircuitPropertiesFormat {
     #[serde(rename = "serviceProviderProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_provisioning_state: Option<ServiceProviderProvisioningState>,
     #[doc = "The list of authorizations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorizations: Vec<ExpressRouteCircuitAuthorization>,
     #[doc = "The list of peerings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peerings: Vec<ExpressRouteCircuitPeering>,
     #[doc = "The ServiceKey."]
     #[serde(rename = "serviceKey", default, skip_serializing_if = "Option::is_none")]
@@ -8213,7 +9124,11 @@ impl ExpressRouteCircuitStats {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsArpTableListResult {
     #[doc = "A list of the ARP tables."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuitArpTable>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8228,7 +9143,11 @@ impl ExpressRouteCircuitsArpTableListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsRoutesTableListResult {
     #[doc = "The list of routes table."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuitRoutesTable>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8243,7 +9162,11 @@ impl ExpressRouteCircuitsRoutesTableListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsRoutesTableSummaryListResult {
     #[doc = "A list of the routes table."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCircuitRoutesTableSummary>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8290,7 +9213,11 @@ impl ExpressRouteConnectionId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteConnectionList {
     #[doc = "The list of ExpressRoute connections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteConnection>,
 }
 impl ExpressRouteConnectionList {
@@ -8357,7 +9284,11 @@ impl ExpressRouteCrossConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionListResult {
     #[doc = "A list of ExpressRouteCrossConnection resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCrossConnection>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8398,7 +9329,11 @@ impl ExpressRouteCrossConnectionPeering {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionPeeringList {
     #[doc = "The peerings in an express route cross connection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCrossConnectionPeering>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8500,7 +9435,11 @@ pub struct ExpressRouteCrossConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The list of peerings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peerings: Vec<ExpressRouteCrossConnectionPeering>,
 }
 impl ExpressRouteCrossConnectionProperties {
@@ -8533,7 +9472,11 @@ impl ExpressRouteCrossConnectionRoutesTableSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionsRoutesTableSummaryListResult {
     #[doc = "A list of the routes table."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteCrossConnectionRoutesTableSummary>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8565,7 +9508,11 @@ impl ExpressRouteGateway {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteGatewayList {
     #[doc = "List of ExpressRoute gateways."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteGateway>,
 }
 impl ExpressRouteGatewayList {
@@ -8580,7 +9527,12 @@ pub struct ExpressRouteGatewayProperties {
     #[serde(rename = "autoScaleConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_configuration: Option<express_route_gateway_properties::AutoScaleConfiguration>,
     #[doc = "List of ExpressRoute connections to the ExpressRoute gateway."]
-    #[serde(rename = "expressRouteConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "expressRouteConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub express_route_connections: Vec<ExpressRouteConnection>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -8656,7 +9608,11 @@ impl ExpressRouteLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteLinkListResult {
     #[doc = "The list of ExpressRouteLink sub-resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteLink>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -8987,7 +9943,11 @@ impl ExpressRoutePort {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortListResult {
     #[doc = "A list of ExpressRoutePort resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRoutePort>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -9029,10 +9989,18 @@ pub struct ExpressRoutePortPropertiesFormat {
     #[serde(rename = "allocationDate", default, skip_serializing_if = "Option::is_none")]
     pub allocation_date: Option<String>,
     #[doc = "The set of physical links of the ExpressRoutePort resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub links: Vec<ExpressRouteLink>,
     #[doc = "Reference the ExpressRoute circuit(s) that are provisioned on this ExpressRoutePort resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub circuits: Vec<SubResource>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -9119,7 +10087,11 @@ impl ExpressRoutePortsLocationBandwidths {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRoutePortsLocationListResult {
     #[doc = "The list of all ExpressRoutePort peering locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRoutePortsLocation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -9146,7 +10118,12 @@ pub struct ExpressRoutePortsLocationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub contact: Option<String>,
     #[doc = "The inventory of available ExpressRoutePort bandwidths."]
-    #[serde(rename = "availableBandwidths", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableBandwidths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_bandwidths: Vec<ExpressRoutePortsLocationBandwidths>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -9190,7 +10167,11 @@ impl ExpressRouteServiceProviderBandwidthsOffered {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderListResult {
     #[doc = "A list of ExpressRouteResourceProvider resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteServiceProvider>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -9211,10 +10192,20 @@ impl ExpressRouteServiceProviderListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderPropertiesFormat {
     #[doc = "A list of peering locations."]
-    #[serde(rename = "peeringLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "peeringLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peering_locations: Vec<String>,
     #[doc = "A list of bandwidths offered."]
-    #[serde(rename = "bandwidthsOffered", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bandwidthsOffered",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bandwidths_offered: Vec<ExpressRouteServiceProviderBandwidthsOffered>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -9282,7 +10273,11 @@ pub struct FilterItems {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
     #[doc = "List of values to filter the current field by"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<String>,
 }
 impl FilterItems {
@@ -9335,7 +10330,11 @@ pub struct FirewallPolicyFilterRuleCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<FirewallPolicyFilterRuleCollectionAction>,
     #[doc = "List of rules included in a rule collection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<FirewallPolicyRule>,
 }
 impl FirewallPolicyFilterRuleCollection {
@@ -9487,19 +10486,44 @@ pub struct FirewallPolicyIntrusionDetectionBypassTrafficSpecifications {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<FirewallPolicyIntrusionDetectionBypassTrafficProtocol>,
     #[doc = "List of source IP addresses or ranges for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "List of destination IP addresses or ranges for this rule."]
-    #[serde(rename = "destinationAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_addresses: Vec<String>,
     #[doc = "List of destination ports or ranges."]
-    #[serde(rename = "destinationPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ports: Vec<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
     #[doc = "List of destination IpGroups for this rule."]
-    #[serde(rename = "destinationIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ip_groups: Vec<String>,
 }
 impl FirewallPolicyIntrusionDetectionBypassTrafficSpecifications {
@@ -9511,10 +10535,20 @@ impl FirewallPolicyIntrusionDetectionBypassTrafficSpecifications {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyIntrusionDetectionConfiguration {
     #[doc = "List of specific signatures states."]
-    #[serde(rename = "signatureOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "signatureOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub signature_overrides: Vec<FirewallPolicyIntrusionDetectionSignatureSpecification>,
     #[doc = "List of rules for traffic to bypass."]
-    #[serde(rename = "bypassTrafficSettings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bypassTrafficSettings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bypass_traffic_settings: Vec<FirewallPolicyIntrusionDetectionBypassTrafficSpecifications>,
 }
 impl FirewallPolicyIntrusionDetectionConfiguration {
@@ -9580,7 +10614,11 @@ impl Serialize for FirewallPolicyIntrusionDetectionStateOptions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyListResult {
     #[doc = "List of Firewall Policies in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallPolicy>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -9601,7 +10639,11 @@ impl FirewallPolicyListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyLogAnalyticsResources {
     #[doc = "List of workspaces for Firewall Policy Insights."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub workspaces: Vec<FirewallPolicyLogAnalyticsWorkspace>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "defaultWorkspaceId", default, skip_serializing_if = "Option::is_none")]
@@ -9636,7 +10678,11 @@ pub struct FirewallPolicyNatRuleCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<FirewallPolicyNatRuleCollectionAction>,
     #[doc = "List of rules included in a rule collection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<FirewallPolicyRule>,
 }
 impl FirewallPolicyNatRuleCollection {
@@ -9700,7 +10746,12 @@ impl Serialize for FirewallPolicyNatRuleCollectionActionType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyPropertiesFormat {
     #[doc = "List of references to FirewallPolicyRuleCollectionGroups."]
-    #[serde(rename = "ruleCollectionGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ruleCollectionGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rule_collection_groups: Vec<SubResource>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -9709,10 +10760,19 @@ pub struct FirewallPolicyPropertiesFormat {
     #[serde(rename = "basePolicy", default, skip_serializing_if = "Option::is_none")]
     pub base_policy: Option<SubResource>,
     #[doc = "List of references to Azure Firewalls that this Firewall Policy is associated with."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewalls: Vec<SubResource>,
     #[doc = "List of references to Child Firewall Policies."]
-    #[serde(rename = "childPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "childPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub child_policies: Vec<SubResource>,
     #[doc = "The operation mode for Threat Intel."]
     #[serde(rename = "threatIntelMode", default, skip_serializing_if = "Option::is_none")]
@@ -9959,7 +11019,11 @@ impl FirewallPolicyRuleCollectionGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleCollectionGroupListResult {
     #[doc = "List of FirewallPolicyRuleCollectionGroups in a FirewallPolicy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FirewallPolicyRuleCollectionGroup>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -9983,7 +11047,12 @@ pub struct FirewallPolicyRuleCollectionGroupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "Group of Firewall Policy rule collections."]
-    #[serde(rename = "ruleCollections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ruleCollections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rule_collections: Vec<FirewallPolicyRuleCollection>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -10042,7 +11111,12 @@ impl Serialize for FirewallPolicyRuleNetworkProtocol {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicySnat {
     #[doc = "List of private IP addresses/IP address ranges to not be SNAT."]
-    #[serde(rename = "privateRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_ranges: Vec<String>,
 }
 impl FirewallPolicySnat {
@@ -10120,10 +11194,19 @@ pub mod firewall_policy_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyThreatIntelWhitelist {
     #[doc = "List of IP addresses for the ThreatIntel Whitelist."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "List of FQDNs for the ThreatIntel Whitelist."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdns: Vec<String>,
 }
 impl FirewallPolicyThreatIntelWhitelist {
@@ -10239,7 +11322,11 @@ impl FlowLogInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowLogListResult {
     #[doc = "Information about flow log resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FlowLog>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -10353,7 +11440,11 @@ pub struct FrontendIpConfiguration {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "A list of availability zones denoting the IP allocated for the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl FrontendIpConfiguration {
@@ -10365,16 +11456,36 @@ impl FrontendIpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendIpConfigurationPropertiesFormat {
     #[doc = "An array of references to inbound rules that use this frontend IP."]
-    #[serde(rename = "inboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_rules: Vec<SubResource>,
     #[doc = "An array of references to inbound pools that use this frontend IP."]
-    #[serde(rename = "inboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_pools: Vec<SubResource>,
     #[doc = "An array of references to outbound rules that use this frontend IP."]
-    #[serde(rename = "outboundRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outboundRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outbound_rules: Vec<SubResource>,
     #[doc = "An array of references to load balancing rules that use this frontend IP."]
-    #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancing_rules: Vec<SubResource>,
     #[doc = "The private IP address of the IP configuration."]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
@@ -10543,7 +11654,11 @@ impl GatewayRoute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayRouteListResult {
     #[doc = "List of gateway routes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<GatewayRoute>,
 }
 impl GatewayRouteListResult {
@@ -10579,7 +11694,12 @@ impl GenerateExpressRoutePortsLoaResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetVpnSitesConfigurationRequest {
     #[doc = "List of resource-ids of the vpn-sites for which config is to be downloaded."]
-    #[serde(rename = "vpnSites", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnSites",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_sites: Vec<String>,
     #[doc = "The sas-url to download the configurations for vpn-sites."]
     #[serde(rename = "outputBlobSasUrl")]
@@ -10600,10 +11720,19 @@ pub struct HttpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<http_configuration::Method>,
     #[doc = "List of HTTP headers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub headers: Vec<HttpHeader>,
     #[doc = "Valid status codes."]
-    #[serde(rename = "validStatusCodes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "validStatusCodes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub valid_status_codes: Vec<i32>,
 }
 impl HttpConfiguration {
@@ -10677,7 +11806,11 @@ pub struct HopLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HopLinkProperties>,
     #[doc = "List of issues."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub issues: Vec<ConnectivityIssue>,
     #[doc = "Provides additional context on links."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10775,7 +11908,11 @@ impl HubIpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubPublicIpAddresses {
     #[doc = "The list of Public IP addresses associated with azure firewall or IP addresses to be retained."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub addresses: Vec<AzureFirewallPublicIpAddress>,
     #[doc = "The number of Public IP addresses associated with azure firewall."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10841,16 +11978,34 @@ impl HubRouteTable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubRouteTableProperties {
     #[doc = "List of all routes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routes: Vec<HubRoute>,
     #[doc = "List of labels associated with this route table."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "List of all connections associated with this route table."]
-    #[serde(rename = "associatedConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "associatedConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub associated_connections: Vec<String>,
     #[doc = "List of all connections that advertise to this route table."]
-    #[serde(rename = "propagatingConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "propagatingConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub propagating_connections: Vec<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -10980,7 +12135,12 @@ pub struct IpAddressAvailabilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
     #[doc = "Contains other available private IP addresses if the asked for address is taken."]
-    #[serde(rename = "availableIPAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableIPAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_ip_addresses: Vec<String>,
     #[doc = "Private IP address platform reserved."]
     #[serde(rename = "isPlatformReserved", default, skip_serializing_if = "Option::is_none")]
@@ -11055,13 +12215,28 @@ pub struct IpConfigurationBgpPeeringAddress {
     #[serde(rename = "ipconfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub ipconfiguration_id: Option<String>,
     #[doc = "The list of default BGP peering addresses which belong to IP configuration."]
-    #[serde(rename = "defaultBgpIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultBgpIpAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_bgp_ip_addresses: Vec<String>,
     #[doc = "The list of custom BGP peering addresses which belong to IP configuration."]
-    #[serde(rename = "customBgpIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customBgpIpAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_bgp_ip_addresses: Vec<String>,
     #[doc = "The list of tunnel public IP addresses which belong to IP configuration."]
-    #[serde(rename = "tunnelIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tunnelIpAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tunnel_ip_addresses: Vec<String>,
 }
 impl IpConfigurationBgpPeeringAddress {
@@ -11368,7 +12543,11 @@ impl InboundNatRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRuleListResult {
     #[doc = "A list of inbound NAT rules in a load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<InboundNatRule>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -11478,7 +12657,11 @@ impl InboundSecurityRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundSecurityRuleProperties {
     #[doc = "List of allowed rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<InboundSecurityRules>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -11570,7 +12753,11 @@ impl IpAllocation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAllocationListResult {
     #[doc = "A list of IpAllocation resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IpAllocation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -11678,7 +12865,11 @@ impl IpGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpGroupListResult {
     #[doc = "The list of IpGroups information resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<IpGroup>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -11702,13 +12893,27 @@ pub struct IpGroupPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "IpAddresses/IpAddressPrefixes in the IpGroups resource."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
     #[doc = "List of references to Firewall resources that this IpGroups is associated with."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewalls: Vec<SubResource>,
     #[doc = "List of references to Firewall Policies resources that this IpGroups is associated with."]
-    #[serde(rename = "firewallPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "firewallPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub firewall_policies: Vec<SubResource>,
 }
 impl IpGroupPropertiesFormat {
@@ -11984,7 +13189,11 @@ impl IssueContext {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListHubRouteTablesResult {
     #[doc = "List of RouteTables."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HubRouteTable>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12005,7 +13214,11 @@ impl ListHubRouteTablesResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListHubVirtualNetworkConnectionsResult {
     #[doc = "List of HubVirtualNetworkConnections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HubVirtualNetworkConnection>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12026,7 +13239,11 @@ impl ListHubVirtualNetworkConnectionsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListP2sVpnGatewaysResult {
     #[doc = "List of P2SVpnGateways."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<P2sVpnGateway>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12047,7 +13264,11 @@ impl ListP2sVpnGatewaysResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListRoutingIntentResult {
     #[doc = "List of RoutingIntent resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RoutingIntent>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12068,7 +13289,11 @@ impl ListRoutingIntentResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubBgpConnectionResults {
     #[doc = "The list of VirtualHubBgpConnections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BgpConnection>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12089,7 +13314,11 @@ impl ListVirtualHubBgpConnectionResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubIpConfigurationResults {
     #[doc = "The list of VirtualHubIpConfigurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HubIpConfiguration>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12110,7 +13339,11 @@ impl ListVirtualHubIpConfigurationResults {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubRouteTableV2sResult {
     #[doc = "List of VirtualHubRouteTableV2s."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualHubRouteTableV2>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12131,7 +13364,11 @@ impl ListVirtualHubRouteTableV2sResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualHubsResult {
     #[doc = "List of VirtualHubs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualHub>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12152,7 +13389,11 @@ impl ListVirtualHubsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualNetworkGatewayNatRulesResult {
     #[doc = "List of Nat Rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkGatewayNatRule>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12173,7 +13414,11 @@ impl ListVirtualNetworkGatewayNatRulesResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVirtualWaNsResult {
     #[doc = "List of VirtualWANs."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualWan>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12194,7 +13439,11 @@ impl ListVirtualWaNsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnConnectionsResult {
     #[doc = "List of Vpn Connections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnConnection>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12215,7 +13464,11 @@ impl ListVpnConnectionsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnGatewayNatRulesResult {
     #[doc = "List of Nat Rules."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnGatewayNatRule>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12236,7 +13489,11 @@ impl ListVpnGatewayNatRulesResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnGatewaysResult {
     #[doc = "List of VpnGateways."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnGateway>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12257,7 +13514,11 @@ impl ListVpnGatewaysResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnServerConfigurationsResult {
     #[doc = "List of VpnServerConfigurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnServerConfiguration>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12278,7 +13539,11 @@ impl ListVpnServerConfigurationsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnSiteLinkConnectionsResult {
     #[doc = "List of VpnSiteLinkConnections."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnSiteLinkConnection>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12299,7 +13564,11 @@ impl ListVpnSiteLinkConnectionsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnSiteLinksResult {
     #[doc = "List of VpnSitesLinks."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnSiteLink>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12320,7 +13589,11 @@ impl ListVpnSiteLinksResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListVpnSitesResult {
     #[doc = "List of VpnSites."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnSite>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12379,7 +13652,11 @@ impl LoadBalancerBackendAddress {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerBackendAddressPoolListResult {
     #[doc = "A list of backend address pools in a load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BackendAddressPool>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12415,7 +13692,12 @@ pub struct LoadBalancerBackendAddressPropertiesFormat {
     #[serde(rename = "loadBalancerFrontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub load_balancer_frontend_ip_configuration: Option<SubResource>,
     #[doc = "Collection of inbound NAT rule port mappings."]
-    #[serde(rename = "inboundNatRulesPortMapping", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatRulesPortMapping",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_rules_port_mapping: Vec<NatRulePortMapping>,
 }
 impl LoadBalancerBackendAddressPropertiesFormat {
@@ -12427,7 +13709,11 @@ impl LoadBalancerBackendAddressPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerFrontendIpConfigurationListResult {
     #[doc = "A list of frontend IP configurations in a load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<FrontendIpConfiguration>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12448,7 +13734,11 @@ impl LoadBalancerFrontendIpConfigurationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerListResult {
     #[doc = "A list of load balancers in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LoadBalancer>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12469,7 +13759,11 @@ impl LoadBalancerListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerLoadBalancingRuleListResult {
     #[doc = "A list of load balancing rules in a load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LoadBalancingRule>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12490,7 +13784,11 @@ impl LoadBalancerLoadBalancingRuleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerOutboundRuleListResult {
     #[doc = "A list of outbound rules in a load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OutboundRule>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12511,7 +13809,11 @@ impl LoadBalancerOutboundRuleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerProbeListResult {
     #[doc = "A list of probes in a load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Probe>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12532,25 +13834,59 @@ impl LoadBalancerProbeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerPropertiesFormat {
     #[doc = "Object representing the frontend IPs to be used for the load balancer."]
-    #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendIPConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_ip_configurations: Vec<FrontendIpConfiguration>,
     #[doc = "Collection of backend address pools used by a load balancer."]
-    #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendAddressPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_address_pools: Vec<BackendAddressPool>,
     #[doc = "Object collection representing the load balancing rules Gets the provisioning."]
-    #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancing_rules: Vec<LoadBalancingRule>,
     #[doc = "Collection of probe objects used in the load balancer."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub probes: Vec<Probe>,
     #[doc = "Collection of inbound NAT Rules used by a load balancer. Defining inbound NAT rules on your load balancer is mutually exclusive with defining an inbound NAT pool. Inbound NAT pools are referenced from virtual machine scale sets. NICs that are associated with individual virtual machines cannot reference an Inbound NAT pool. They have to reference individual inbound NAT rules."]
-    #[serde(rename = "inboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_rules: Vec<InboundNatRule>,
     #[doc = "Defines an external port range for inbound NAT to a single backend port on NICs associated with a load balancer. Inbound NAT rules are created automatically for each NIC associated with the Load Balancer using an external port from this range. Defining an Inbound NAT pool on your Load Balancer is mutually exclusive with defining inbound NAT rules. Inbound NAT pools are referenced from virtual machine scale sets. NICs that are associated with individual virtual machines cannot reference an inbound NAT pool. They have to reference individual inbound NAT rules."]
-    #[serde(rename = "inboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundNatPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_nat_pools: Vec<InboundNatPool>,
     #[doc = "The outbound rules."]
-    #[serde(rename = "outboundRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "outboundRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub outbound_rules: Vec<OutboundRule>,
     #[doc = "The resource GUID property of the load balancer resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -12662,7 +13998,12 @@ pub mod load_balancer_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerVipSwapRequest {
     #[doc = "A list of frontend IP configuration resources that should swap VIPs."]
-    #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "frontendIPConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub frontend_ip_configurations: Vec<LoadBalancerVipSwapRequestFrontendIpConfiguration>,
 }
 impl LoadBalancerVipSwapRequest {
@@ -12730,7 +14071,12 @@ pub struct LoadBalancingRulePropertiesFormat {
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub backend_address_pool: Option<SubResource>,
     #[doc = "An array of references to pool of DIPs."]
-    #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "backendAddressPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub backend_address_pools: Vec<SubResource>,
     #[doc = "Reference to another subresource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12849,7 +14195,11 @@ impl LocalNetworkGateway {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalNetworkGatewayListResult {
     #[doc = "A list of local network gateways that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LocalNetworkGateway>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -12918,7 +14268,11 @@ pub struct ManagedRuleGroupOverride {
     #[serde(rename = "ruleGroupName")]
     pub rule_group_name: String,
     #[doc = "List of rules that will be disabled. If none specified, all rules in the group will be disabled."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<ManagedRuleOverride>,
 }
 impl ManagedRuleGroupOverride {
@@ -12992,7 +14346,12 @@ pub struct ManagedRuleSet {
     #[serde(rename = "ruleSetVersion")]
     pub rule_set_version: String,
     #[doc = "Defines the rule group overrides to apply to the rule set."]
-    #[serde(rename = "ruleGroupOverrides", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ruleGroupOverrides",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rule_group_overrides: Vec<ManagedRuleGroupOverride>,
 }
 impl ManagedRuleSet {
@@ -13008,7 +14367,11 @@ impl ManagedRuleSet {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedRulesDefinition {
     #[doc = "The Exclusions that are applied on the policy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclusions: Vec<OwaspCrsExclusionEntry>,
     #[doc = "The managed rule sets that are associated with the policy."]
     #[serde(rename = "managedRuleSets")]
@@ -13070,7 +14433,11 @@ pub struct MatchCondition {
     #[serde(rename = "matchValues")]
     pub match_values: Vec<String>,
     #[doc = "List of transforms."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub transforms: Vec<Transform>,
 }
 impl MatchCondition {
@@ -13247,7 +14614,11 @@ pub struct MetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "List of availability."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub availabilities: Vec<Availability>,
     #[doc = "Whether regional MDM account enabled."]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
@@ -13259,7 +14630,11 @@ pub struct MetricSpecification {
     #[serde(rename = "metricFilterPattern", default, skip_serializing_if = "Option::is_none")]
     pub metric_filter_pattern: Option<String>,
     #[doc = "List of dimensions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<Dimension>,
     #[doc = "Whether the metric is internal."]
     #[serde(rename = "isInternal", default, skip_serializing_if = "Option::is_none")]
@@ -13291,7 +14666,11 @@ pub struct NatGateway {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NatGatewayPropertiesFormat>,
     #[doc = "A list of availability zones denoting the zone in which Nat Gateway should be deployed."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13306,7 +14685,11 @@ impl NatGateway {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatGatewayListResult {
     #[doc = "A list of Nat Gateways that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NatGateway>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -13330,13 +14713,27 @@ pub struct NatGatewayPropertiesFormat {
     #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub idle_timeout_in_minutes: Option<i32>,
     #[doc = "An array of public ip addresses associated with the nat gateway resource."]
-    #[serde(rename = "publicIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIpAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_ip_addresses: Vec<SubResource>,
     #[doc = "An array of public ip prefixes associated with the nat gateway resource."]
-    #[serde(rename = "publicIpPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIpPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_ip_prefixes: Vec<SubResource>,
     #[doc = "An array of references to the subnets using this nat gateway resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<SubResource>,
     #[doc = "The resource GUID property of the NAT gateway resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -13406,16 +14803,36 @@ pub struct NatRule {
     #[serde(flatten)]
     pub firewall_policy_rule: FirewallPolicyRule,
     #[doc = "Array of FirewallPolicyRuleNetworkProtocols."]
-    #[serde(rename = "ipProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_protocols: Vec<FirewallPolicyRuleNetworkProtocol>,
     #[doc = "List of source IP addresses for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "List of destination IP addresses or Service Tags."]
-    #[serde(rename = "destinationAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_addresses: Vec<String>,
     #[doc = "List of destination ports."]
-    #[serde(rename = "destinationPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ports: Vec<String>,
     #[doc = "The translated address for this NAT rule."]
     #[serde(rename = "translatedAddress", default, skip_serializing_if = "Option::is_none")]
@@ -13424,7 +14841,12 @@ pub struct NatRule {
     #[serde(rename = "translatedPort", default, skip_serializing_if = "Option::is_none")]
     pub translated_port: Option<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
     #[doc = "The translated FQDN for this NAT rule."]
     #[serde(rename = "translatedFqdn", default, skip_serializing_if = "Option::is_none")]
@@ -13556,7 +14978,11 @@ impl NetworkConfigurationDiagnosticProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfigurationDiagnosticResponse {
     #[doc = "List of network configuration diagnostic results."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub results: Vec<NetworkConfigurationDiagnosticResult>,
 }
 impl NetworkConfigurationDiagnosticResponse {
@@ -13635,7 +15061,12 @@ pub struct NetworkInterfaceAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Collection of custom security rules."]
-    #[serde(rename = "securityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "securityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub security_rules: Vec<SecurityRule>,
 }
 impl NetworkInterfaceAssociation {
@@ -13647,10 +15078,20 @@ impl NetworkInterfaceAssociation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceDnsSettings {
     #[doc = "List of DNS servers IP addresses. Use 'AzureProvidedDNS' to switch to azure provided DNS resolution. 'AzureProvidedDNS' value cannot be combined with other IPs, it must be the only value in dnsServers collection."]
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dns_servers: Vec<String>,
     #[doc = "If the VM that uses this NIC is part of an Availability Set, then this list will have the union of all DNS servers from all NICs that are part of the Availability Set. This property is what is configured on each of those VMs."]
-    #[serde(rename = "appliedDnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "appliedDnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applied_dns_servers: Vec<String>,
     #[doc = "Relative DNS name for this NIC used for internal communications between VMs in the same virtual network."]
     #[serde(rename = "internalDnsNameLabel", default, skip_serializing_if = "Option::is_none")]
@@ -13694,7 +15135,11 @@ impl NetworkInterfaceIpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfigurationListResult {
     #[doc = "A list of ip configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkInterfaceIpConfiguration>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -13721,7 +15166,11 @@ pub struct NetworkInterfaceIpConfigurationPrivateLinkConnectionProperties {
     #[serde(rename = "requiredMemberName", default, skip_serializing_if = "Option::is_none")]
     pub required_member_name: Option<String>,
     #[doc = "List of FQDNs for current private link connection."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdns: Vec<String>,
 }
 impl NetworkInterfaceIpConfigurationPrivateLinkConnectionProperties {
@@ -13736,16 +15185,36 @@ pub struct NetworkInterfaceIpConfigurationPropertiesFormat {
     #[serde(rename = "gatewayLoadBalancer", default, skip_serializing_if = "Option::is_none")]
     pub gateway_load_balancer: Option<SubResource>,
     #[doc = "The reference to Virtual Network Taps."]
-    #[serde(rename = "virtualNetworkTaps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkTaps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_taps: Vec<VirtualNetworkTap>,
     #[doc = "The reference to ApplicationGatewayBackendAddressPool resource."]
-    #[serde(rename = "applicationGatewayBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationGatewayBackendAddressPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_gateway_backend_address_pools: Vec<ApplicationGatewayBackendAddressPool>,
     #[doc = "The reference to LoadBalancerBackendAddressPool resource."]
-    #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancerBackendAddressPools",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancer_backend_address_pools: Vec<BackendAddressPool>,
     #[doc = "A list of references of LoadBalancerInboundNatRules."]
-    #[serde(rename = "loadBalancerInboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancerInboundNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancer_inbound_nat_rules: Vec<InboundNatRule>,
     #[doc = "Private IP address of the IP configuration."]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
@@ -13766,7 +15235,12 @@ pub struct NetworkInterfaceIpConfigurationPropertiesFormat {
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<PublicIpAddress>,
     #[doc = "Application security groups in which the IP configuration is included."]
-    #[serde(rename = "applicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationSecurityGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_security_groups: Vec<ApplicationSecurityGroup>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -13784,7 +15258,11 @@ impl NetworkInterfaceIpConfigurationPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceListResult {
     #[doc = "A list of network interfaces in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkInterface>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -13805,7 +15283,11 @@ impl NetworkInterfaceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceLoadBalancerListResult {
     #[doc = "A list of load balancers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<LoadBalancer>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -13835,10 +15317,20 @@ pub struct NetworkInterfacePropertiesFormat {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
     #[doc = "A list of IPConfigurations of the network interface."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
     #[doc = "A list of TapConfigurations of the network interface."]
-    #[serde(rename = "tapConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tapConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tap_configurations: Vec<NetworkInterfaceTapConfiguration>,
     #[doc = "DNS settings of a network interface."]
     #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
@@ -13859,7 +15351,12 @@ pub struct NetworkInterfacePropertiesFormat {
     #[serde(rename = "enableIPForwarding", default, skip_serializing_if = "Option::is_none")]
     pub enable_ip_forwarding: Option<bool>,
     #[doc = "A list of references to linked BareMetal resources."]
-    #[serde(rename = "hostedWorkloads", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hostedWorkloads",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hosted_workloads: Vec<String>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "dscpConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -13998,7 +15495,11 @@ impl NetworkInterfaceTapConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceTapConfigurationListResult {
     #[doc = "A list of tap configurations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkInterfaceTapConfiguration>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14051,7 +15552,11 @@ impl NetworkProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfileListResult {
     #[doc = "A list of network profiles that exist in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkProfile>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14072,10 +15577,20 @@ impl NetworkProfileListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfilePropertiesFormat {
     #[doc = "List of child container network interfaces."]
-    #[serde(rename = "containerNetworkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containerNetworkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub container_network_interfaces: Vec<ContainerNetworkInterface>,
     #[doc = "List of chid container network interface configurations."]
-    #[serde(rename = "containerNetworkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "containerNetworkInterfaceConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub container_network_interface_configurations: Vec<ContainerNetworkInterfaceConfiguration>,
     #[doc = "The resource GUID property of the network profile resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -14095,25 +15610,60 @@ pub struct NetworkRule {
     #[serde(flatten)]
     pub firewall_policy_rule: FirewallPolicyRule,
     #[doc = "Array of FirewallPolicyRuleNetworkProtocols."]
-    #[serde(rename = "ipProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_protocols: Vec<FirewallPolicyRuleNetworkProtocol>,
     #[doc = "List of source IP addresses for this rule."]
-    #[serde(rename = "sourceAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_addresses: Vec<String>,
     #[doc = "List of destination IP addresses or Service Tags."]
-    #[serde(rename = "destinationAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_addresses: Vec<String>,
     #[doc = "List of destination ports."]
-    #[serde(rename = "destinationPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ports: Vec<String>,
     #[doc = "List of source IpGroups for this rule."]
-    #[serde(rename = "sourceIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_groups: Vec<String>,
     #[doc = "List of destination IpGroups for this rule."]
-    #[serde(rename = "destinationIpGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationIpGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ip_groups: Vec<String>,
     #[doc = "List of destination FQDNs."]
-    #[serde(rename = "destinationFqdns", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationFqdns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_fqdns: Vec<String>,
 }
 impl NetworkRule {
@@ -14151,7 +15701,11 @@ impl NetworkSecurityGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupListResult {
     #[doc = "A list of NetworkSecurityGroup resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkSecurityGroup>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14172,19 +15726,43 @@ impl NetworkSecurityGroupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupPropertiesFormat {
     #[doc = "A collection of security rules of the network security group."]
-    #[serde(rename = "securityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "securityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub security_rules: Vec<SecurityRule>,
     #[doc = "The default security rules of network security group."]
-    #[serde(rename = "defaultSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_security_rules: Vec<SecurityRule>,
     #[doc = "A collection of references to network interfaces."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "A collection of references to subnets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<Subnet>,
     #[doc = "A collection of references to flow log resources."]
-    #[serde(rename = "flowLogs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "flowLogs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub flow_logs: Vec<FlowLog>,
     #[doc = "The resource GUID property of the network security group resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -14205,7 +15783,12 @@ pub struct NetworkSecurityGroupResult {
     #[serde(rename = "securityRuleAccessResult", default, skip_serializing_if = "Option::is_none")]
     pub security_rule_access_result: Option<SecurityRuleAccess>,
     #[doc = "List of results network security groups diagnostic."]
-    #[serde(rename = "evaluatedNetworkSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "evaluatedNetworkSecurityGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub evaluated_network_security_groups: Vec<EvaluatedNetworkSecurityGroup>,
 }
 impl NetworkSecurityGroupResult {
@@ -14264,7 +15847,11 @@ impl NetworkVirtualAppliance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceListResult {
     #[doc = "List of Network Virtual Appliances."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkVirtualAppliance>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14291,13 +15878,23 @@ pub struct NetworkVirtualAppliancePropertiesFormat {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
     #[doc = "BootStrapConfigurationBlobs storage URLs."]
-    #[serde(rename = "bootStrapConfigurationBlobs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bootStrapConfigurationBlobs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub boot_strap_configuration_blobs: Vec<String>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
     pub virtual_hub: Option<SubResource>,
     #[doc = "CloudInitConfigurationBlob storage URLs."]
-    #[serde(rename = "cloudInitConfigurationBlobs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "cloudInitConfigurationBlobs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub cloud_init_configuration_blobs: Vec<String>,
     #[doc = "CloudInitConfiguration string in plain text."]
     #[serde(rename = "cloudInitConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -14309,13 +15906,28 @@ pub struct NetworkVirtualAppliancePropertiesFormat {
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
     #[doc = "List of Virtual Appliance Network Interfaces."]
-    #[serde(rename = "virtualApplianceNics", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualApplianceNics",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_appliance_nics: Vec<VirtualApplianceNicProperties>,
     #[doc = "List of references to VirtualApplianceSite."]
-    #[serde(rename = "virtualApplianceSites", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualApplianceSites",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_appliance_sites: Vec<SubResource>,
     #[doc = "List of references to InboundSecurityRules."]
-    #[serde(rename = "inboundSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "inboundSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub inbound_security_rules: Vec<SubResource>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -14330,7 +15942,11 @@ impl NetworkVirtualAppliancePropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSiteListResult {
     #[doc = "List of Network Virtual Appliance sites."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualApplianceSite>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14383,7 +15999,11 @@ impl NetworkVirtualApplianceSkuInstances {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceSkuListResult {
     #[doc = "List of Network Virtual Appliance Skus that are available."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkVirtualApplianceSku>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14407,10 +16027,20 @@ pub struct NetworkVirtualApplianceSkuPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
     #[doc = "Available Network Virtual Appliance versions."]
-    #[serde(rename = "availableVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_versions: Vec<String>,
     #[doc = "The list of scale units available."]
-    #[serde(rename = "availableScaleUnits", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "availableScaleUnits",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub available_scale_units: Vec<NetworkVirtualApplianceSkuInstances>,
 }
 impl NetworkVirtualApplianceSkuPropertiesFormat {
@@ -14439,7 +16069,11 @@ impl NetworkWatcher {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkWatcherListResult {
     #[doc = "List of network watcher resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NetworkWatcher>,
 }
 impl azure_core::Continuable for NetworkWatcherListResult {
@@ -14689,7 +16323,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of Network operations supported by the Network resource provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -14724,10 +16362,20 @@ pub mod operation_properties_format {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ServiceSpecification {
         #[doc = "Operation service specification."]
-        #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "metricSpecifications",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub metric_specifications: Vec<MetricSpecification>,
         #[doc = "Operation log specification."]
-        #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "logSpecifications",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub log_specifications: Vec<LogSpecification>,
     }
     impl ServiceSpecification {
@@ -14878,7 +16526,12 @@ pub struct OwaspCrsExclusionEntry {
     #[doc = "When matchVariable is a collection, operator used to specify which elements in the collection this exclusion applies to."]
     pub selector: String,
     #[doc = "The managed rule sets that are associated with the exclusion."]
-    #[serde(rename = "exclusionManagedRuleSets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "exclusionManagedRuleSets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub exclusion_managed_rule_sets: Vec<ExclusionManagedRuleSet>,
 }
 impl OwaspCrsExclusionEntry {
@@ -15049,7 +16702,12 @@ impl P2sVpnConnectionHealth {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnConnectionHealthRequest {
     #[doc = "The list of p2s vpn user names whose p2s vpn connection detailed health to retrieve for."]
-    #[serde(rename = "vpnUserNamesFilter", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnUserNamesFilter",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_user_names_filter: Vec<String>,
     #[doc = "The sas-url to download the P2S Vpn connection health detail."]
     #[serde(rename = "outputBlobSasUrl", default, skip_serializing_if = "Option::is_none")]
@@ -15064,7 +16722,12 @@ impl P2sVpnConnectionHealthRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnConnectionRequest {
     #[doc = "List of p2s vpn connection Ids."]
-    #[serde(rename = "vpnConnectionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnConnectionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_connection_ids: Vec<String>,
 }
 impl P2sVpnConnectionRequest {
@@ -15100,7 +16763,12 @@ pub struct P2sVpnGatewayProperties {
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
     pub virtual_hub: Option<SubResource>,
     #[doc = "List of all p2s connection configurations of the gateway."]
-    #[serde(rename = "p2SConnectionConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "p2SConnectionConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub p2_s_connection_configurations: Vec<P2sConnectionConfiguration>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -15115,7 +16783,12 @@ pub struct P2sVpnGatewayProperties {
     #[serde(rename = "vpnClientConnectionHealth", default, skip_serializing_if = "Option::is_none")]
     pub vpn_client_connection_health: Option<VpnClientConnectionHealth>,
     #[doc = "List of all customer specified DNS servers IP addresses."]
-    #[serde(rename = "customDnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customDnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_dns_servers: Vec<String>,
     #[doc = "Enable Routing Preference property for the Public IP Interface of the P2SVpnGateway."]
     #[serde(rename = "isRoutingPreferenceInternet", default, skip_serializing_if = "Option::is_none")]
@@ -15226,7 +16899,11 @@ pub mod packet_capture_filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureListResult {
     #[doc = "Information about packet capture sessions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PacketCaptureResult>,
 }
 impl azure_core::Continuable for PacketCaptureListResult {
@@ -15258,7 +16935,11 @@ pub struct PacketCaptureParameters {
     #[serde(rename = "storageLocation")]
     pub storage_location: PacketCaptureStorageLocation,
     #[doc = "A list of packet capture filters."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filters: Vec<PacketCaptureFilter>,
 }
 impl PacketCaptureParameters {
@@ -15292,7 +16973,12 @@ pub struct PacketCaptureQueryStatusResult {
     #[serde(rename = "stopReason", default, skip_serializing_if = "Option::is_none")]
     pub stop_reason: Option<String>,
     #[doc = "List of errors of packet capture session."]
-    #[serde(rename = "packetCaptureError", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "packetCaptureError",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub packet_capture_error: Vec<String>,
 }
 impl PacketCaptureQueryStatusResult {
@@ -15475,7 +17161,11 @@ impl PeerExpressRouteCircuitConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerExpressRouteCircuitConnectionListResult {
     #[doc = "The global reach peer circuit connection associated with Private Peering in an ExpressRoute Circuit."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeerExpressRouteCircuitConnection>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -15556,7 +17246,11 @@ impl PeerRoute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PeerRouteList {
     #[doc = "List of peer routes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PeerRoute>,
 }
 impl PeerRouteList {
@@ -15810,7 +17504,12 @@ pub struct PrepareNetworkPoliciesRequest {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[doc = "A list of NetworkIntentPolicyConfiguration."]
-    #[serde(rename = "networkIntentPolicyConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkIntentPolicyConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_intent_policy_configurations: Vec<NetworkIntentPolicyConfiguration>,
 }
 impl PrepareNetworkPoliciesRequest {
@@ -15857,7 +17556,11 @@ impl PrivateDnsZoneGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZoneGroupListResult {
     #[doc = "A list of private dns zone group resources in a private endpoint."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateDnsZoneGroup>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -15881,7 +17584,12 @@ pub struct PrivateDnsZoneGroupPropertiesFormat {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A collection of private dns zone configurations of the private dns zone group."]
-    #[serde(rename = "privateDnsZoneConfigs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateDnsZoneConfigs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_dns_zone_configs: Vec<PrivateDnsZoneConfig>,
 }
 impl PrivateDnsZoneGroupPropertiesFormat {
@@ -15896,7 +17604,12 @@ pub struct PrivateDnsZonePropertiesFormat {
     #[serde(rename = "privateDnsZoneId", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_id: Option<String>,
     #[doc = "A collection of information regarding a recordSet, holding information to identify private resources."]
-    #[serde(rename = "recordSets", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "recordSets",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub record_sets: Vec<RecordSet>,
 }
 impl PrivateDnsZonePropertiesFormat {
@@ -15951,7 +17664,11 @@ impl PrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[doc = "A list of PrivateEndpointConnection resources for a specific private link service."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpointConnection>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -16032,7 +17749,11 @@ impl PrivateEndpointIpConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointListResult {
     #[doc = "A list of private endpoint resources in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateEndpoint>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -16056,25 +17777,55 @@ pub struct PrivateEndpointProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<Subnet>,
     #[doc = "An array of references to the network interfaces created for this private endpoint."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A grouping of information about the connection to the remote resource."]
-    #[serde(rename = "privateLinkServiceConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateLinkServiceConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_link_service_connections: Vec<PrivateLinkServiceConnection>,
     #[doc = "A grouping of information about the connection to the remote resource. Used when the network admin does not have access to approve connections to the remote resource."]
-    #[serde(rename = "manualPrivateLinkServiceConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "manualPrivateLinkServiceConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manual_private_link_service_connections: Vec<PrivateLinkServiceConnection>,
     #[doc = "An array of custom dns configurations."]
-    #[serde(rename = "customDnsConfigs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customDnsConfigs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_dns_configs: Vec<CustomDnsConfigPropertiesFormat>,
     #[doc = "Application security groups in which the private endpoint IP configuration is included."]
-    #[serde(rename = "applicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationSecurityGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_security_groups: Vec<ApplicationSecurityGroup>,
     #[doc = "A list of IP configurations of the private endpoint. This will be used to map to the First Party Service's endpoints."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<PrivateEndpointIpConfiguration>,
     #[doc = "The custom name of the network interface attached to the private endpoint."]
     #[serde(rename = "customNetworkInterfaceName", default, skip_serializing_if = "Option::is_none")]
@@ -16138,7 +17889,12 @@ pub struct PrivateLinkServiceConnectionProperties {
     #[serde(rename = "privateLinkServiceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_id: Option<String>,
     #[doc = "The ID(s) of the group(s) obtained from the remote resource that this private endpoint should connect to."]
-    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub group_ids: Vec<String>,
     #[doc = "A message passed to the owner of the remote resource with this connection request. Restricted to 140 chars."]
     #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]
@@ -16224,7 +17980,11 @@ impl PrivateLinkServiceIpConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceListResult {
     #[doc = "A list of PrivateLinkService resources in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateLinkService>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -16245,19 +18005,39 @@ impl PrivateLinkServiceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceProperties {
     #[doc = "An array of references to the load balancer IP configurations."]
-    #[serde(rename = "loadBalancerFrontendIpConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancerFrontendIpConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancer_frontend_ip_configurations: Vec<FrontendIpConfiguration>,
     #[doc = "An array of private link service IP configurations."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<PrivateLinkServiceIpConfiguration>,
     #[doc = "An array of references to the network interfaces created for this private link service."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An array of list about connections to the private endpoint."]
-    #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "The visibility list of the private link service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16266,7 +18046,11 @@ pub struct PrivateLinkServiceProperties {
     #[serde(rename = "autoApproval", default, skip_serializing_if = "Option::is_none")]
     pub auto_approval: Option<serde_json::Value>,
     #[doc = "The list of Fqdn."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub fqdns: Vec<String>,
     #[doc = "The alias of the private link service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16319,7 +18103,12 @@ impl Probe {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProbePropertiesFormat {
     #[doc = "The load balancer rules that use this probe."]
-    #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loadBalancingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub load_balancing_rules: Vec<SubResource>,
     #[doc = "The protocol of the end point. If 'Tcp' is specified, a received ACK is required for the probe to be successful. If 'Http' or 'Https' is specified, a 200 OK response from the specifies URI is required for the probe to be successful."]
     pub protocol: probe_properties_format::Protocol,
@@ -16397,10 +18186,18 @@ pub mod probe_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropagatedRouteTable {
     #[doc = "The list of labels."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub labels: Vec<String>,
     #[doc = "The list of resource ids of all the RouteTables."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ids: Vec<SubResource>,
 }
 impl PropagatedRouteTable {
@@ -16625,7 +18422,11 @@ pub struct PublicIpAddress {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "A list of availability zones denoting the IP allocated for the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl PublicIpAddress {
@@ -16655,7 +18456,11 @@ impl PublicIpAddressDnsSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressListResult {
     #[doc = "A list of public IP addresses that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PublicIpAddress>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -16691,7 +18496,12 @@ pub struct PublicIpAddressPropertiesFormat {
     #[serde(rename = "ddosSettings", default, skip_serializing_if = "Option::is_none")]
     pub ddos_settings: Option<DdosSettings>,
     #[doc = "The list of tags associated with the public IP address."]
-    #[serde(rename = "ipTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_tags: Vec<IpTag>,
     #[doc = "The IP address associated with the public IP address resource."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
@@ -16922,7 +18732,11 @@ pub struct PublicIpPrefix {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "A list of availability zones denoting the IP allocated for the resource needs to come from."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl PublicIpPrefix {
@@ -16934,7 +18748,11 @@ impl PublicIpPrefix {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefixListResult {
     #[doc = "A list of public IP prefixes that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PublicIpPrefix>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -16958,7 +18776,12 @@ pub struct PublicIpPrefixPropertiesFormat {
     #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address_version: Option<IpVersion>,
     #[doc = "The list of tags associated with the public IP prefix."]
-    #[serde(rename = "ipTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_tags: Vec<IpTag>,
     #[doc = "The Length of the Public IP Prefix."]
     #[serde(rename = "prefixLength", default, skip_serializing_if = "Option::is_none")]
@@ -16967,7 +18790,12 @@ pub struct PublicIpPrefixPropertiesFormat {
     #[serde(rename = "ipPrefix", default, skip_serializing_if = "Option::is_none")]
     pub ip_prefix: Option<String>,
     #[doc = "The list of all referenced PublicIPAddresses."]
-    #[serde(rename = "publicIPAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "publicIPAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub public_ip_addresses: Vec<ReferencedPublicIpAddress>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "loadBalancerFrontendIpConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -17084,19 +18912,43 @@ pub mod public_ip_prefix_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QosDefinition {
     #[doc = "List of markings to be used in the configuration."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub markings: Vec<i32>,
     #[doc = "Source IP ranges."]
-    #[serde(rename = "sourceIpRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceIpRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ip_ranges: Vec<QosIpRange>,
     #[doc = "Destination IP ranges."]
-    #[serde(rename = "destinationIpRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationIpRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ip_ranges: Vec<QosIpRange>,
     #[doc = "Sources port ranges."]
-    #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_port_ranges: Vec<QosPortRange>,
     #[doc = "Destination port ranges."]
-    #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_port_ranges: Vec<QosPortRange>,
     #[doc = "RNM supported protocol types."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -17213,7 +19065,11 @@ pub struct QueryResults {
     #[serde(rename = "matchingRecordsCount", default, skip_serializing_if = "Option::is_none")]
     pub matching_records_count: Option<i64>,
     #[doc = "Array containing the results of the query"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub signatures: Vec<SingleQueryResult>,
 }
 impl QueryResults {
@@ -17274,7 +19130,12 @@ pub struct RecordSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
     #[doc = "The private ip address of the private endpoint."]
-    #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_addresses: Vec<String>,
 }
 impl RecordSet {
@@ -17407,7 +19268,11 @@ impl ResourceNavigationLinkFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNavigationLinksListResult {
     #[doc = "The resource navigation links in a subnet."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceNavigationLink>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -17422,7 +19287,11 @@ impl ResourceNavigationLinksListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSet {
     #[doc = "The list of subscriptions."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscriptions: Vec<String>,
 }
 impl ResourceSet {
@@ -17493,7 +19362,11 @@ impl RouteFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterListResult {
     #[doc = "A list of route filters in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RouteFilter>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -17514,13 +19387,26 @@ impl RouteFilterListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterPropertiesFormat {
     #[doc = "Collection of RouteFilterRules contained within a route filter."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rules: Vec<RouteFilterRule>,
     #[doc = "A collection of references to express route circuit peerings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peerings: Vec<ExpressRouteCircuitPeering>,
     #[doc = "A collection of references to express route circuit ipv6 peerings."]
-    #[serde(rename = "ipv6Peerings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipv6Peerings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipv6_peerings: Vec<ExpressRouteCircuitPeering>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -17558,7 +19444,11 @@ impl RouteFilterRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteFilterRuleListResult {
     #[doc = "A list of RouteFilterRules in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RouteFilterRule>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -17645,7 +19535,11 @@ pub mod route_filter_rule_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteListResult {
     #[doc = "A list of routes in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Route>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -17756,7 +19650,11 @@ impl RouteTable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTableListResult {
     #[doc = "A list of route tables in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RouteTable>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -17777,10 +19675,18 @@ impl RouteTableListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTablePropertiesFormat {
     #[doc = "Collection of routes contained within a route table."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routes: Vec<Route>,
     #[doc = "A collection of references to subnets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<Subnet>,
     #[doc = "Whether to disable the routes learned by BGP on that route table. True means disable."]
     #[serde(rename = "disableBgpRoutePropagation", default, skip_serializing_if = "Option::is_none")]
@@ -17842,7 +19748,12 @@ impl RoutingIntent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutingIntentProperties {
     #[doc = "List of routing policies."]
-    #[serde(rename = "routingPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "routingPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routing_policies: Vec<RoutingPolicy>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -17945,7 +19856,12 @@ impl SecurityGroupViewParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityGroupViewResult {
     #[doc = "List of network interfaces on the specified VM."]
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interfaces: Vec<SecurityGroupNetworkInterface>,
 }
 impl SecurityGroupViewResult {
@@ -18017,7 +19933,11 @@ impl Serialize for SecurityPartnerProviderConnectionStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPartnerProviderListResult {
     #[doc = "List of Security Partner Providers in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SecurityPartnerProvider>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18164,10 +20084,20 @@ pub struct SecurityRuleAssociations {
     #[serde(rename = "subnetAssociation", default, skip_serializing_if = "Option::is_none")]
     pub subnet_association: Option<SubnetAssociation>,
     #[doc = "Collection of default security rules of the network security group."]
-    #[serde(rename = "defaultSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "defaultSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub default_security_rules: Vec<SecurityRule>,
     #[doc = "Collection of effective security rules."]
-    #[serde(rename = "effectiveSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "effectiveSecurityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub effective_security_rules: Vec<EffectiveNetworkSecurityRule>,
 }
 impl SecurityRuleAssociations {
@@ -18216,7 +20146,11 @@ impl Serialize for SecurityRuleDirection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityRuleListResult {
     #[doc = "The security rules in a network security group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SecurityRule>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18251,25 +20185,55 @@ pub struct SecurityRulePropertiesFormat {
     #[serde(rename = "sourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub source_address_prefix: Option<String>,
     #[doc = "The CIDR or source IP ranges."]
-    #[serde(rename = "sourceAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceAddressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_address_prefixes: Vec<String>,
     #[doc = "The application security group specified as source."]
-    #[serde(rename = "sourceApplicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourceApplicationSecurityGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_application_security_groups: Vec<ApplicationSecurityGroup>,
     #[doc = "The destination address prefix. CIDR or destination IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used."]
     #[serde(rename = "destinationAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub destination_address_prefix: Option<String>,
     #[doc = "The destination address prefixes. CIDR or destination IP ranges."]
-    #[serde(rename = "destinationAddressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationAddressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_address_prefixes: Vec<String>,
     #[doc = "The application security group specified as destination."]
-    #[serde(rename = "destinationApplicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationApplicationSecurityGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_application_security_groups: Vec<ApplicationSecurityGroup>,
     #[doc = "The source port ranges."]
-    #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_port_ranges: Vec<String>,
     #[doc = "The destination port ranges."]
-    #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPortRanges",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_port_ranges: Vec<String>,
     #[doc = "Whether network traffic is allowed or denied."]
     pub access: SecurityRuleAccess,
@@ -18392,7 +20356,11 @@ pub struct ServiceAssociationLinkPropertiesFormat {
     #[serde(rename = "allowDelete", default, skip_serializing_if = "Option::is_none")]
     pub allow_delete: Option<bool>,
     #[doc = "A list of locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
 }
 impl ServiceAssociationLinkPropertiesFormat {
@@ -18404,7 +20372,11 @@ impl ServiceAssociationLinkPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceAssociationLinksListResult {
     #[doc = "The service association links in a subnet."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceAssociationLink>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18422,7 +20394,11 @@ pub struct ServiceDelegationPropertiesFormat {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[doc = "The actions permitted to the service upon delegation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub actions: Vec<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -18480,7 +20456,11 @@ impl ServiceEndpointPolicyDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyDefinitionListResult {
     #[doc = "The service endpoint policy definition in a service endpoint policy."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceEndpointPolicyDefinition>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18507,7 +20487,12 @@ pub struct ServiceEndpointPolicyDefinitionPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub service: Option<String>,
     #[doc = "A list of service resources."]
-    #[serde(rename = "serviceResources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_resources: Vec<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -18522,7 +20507,11 @@ impl ServiceEndpointPolicyDefinitionPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyListResult {
     #[doc = "A list of ServiceEndpointPolicy resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceEndpointPolicy>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18543,10 +20532,19 @@ impl ServiceEndpointPolicyListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceEndpointPolicyPropertiesFormat {
     #[doc = "A collection of service endpoint policy definitions of the service endpoint policy."]
-    #[serde(rename = "serviceEndpointPolicyDefinitions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceEndpointPolicyDefinitions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_endpoint_policy_definitions: Vec<ServiceEndpointPolicyDefinition>,
     #[doc = "A collection of references to subnets."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<Subnet>,
     #[doc = "The resource GUID property of the service endpoint policy resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -18558,7 +20556,12 @@ pub struct ServiceEndpointPolicyPropertiesFormat {
     #[serde(rename = "serviceAlias", default, skip_serializing_if = "Option::is_none")]
     pub service_alias: Option<String>,
     #[doc = "A collection of contextual service endpoint policy."]
-    #[serde(rename = "contextualServiceEndpointPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "contextualServiceEndpointPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub contextual_service_endpoint_policies: Vec<String>,
 }
 impl ServiceEndpointPolicyPropertiesFormat {
@@ -18573,7 +20576,11 @@ pub struct ServiceEndpointPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub service: Option<String>,
     #[doc = "A list of locations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -18650,7 +20657,11 @@ impl ServiceTagInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTagInformationListResult {
     #[doc = "The list of service tag information resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServiceTagInformation>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18680,7 +20691,12 @@ pub struct ServiceTagInformationPropertiesFormat {
     #[serde(rename = "systemService", default, skip_serializing_if = "Option::is_none")]
     pub system_service: Option<String>,
     #[doc = "The list of IP address prefixes."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
     #[doc = "The state of the service tag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18710,7 +20726,11 @@ pub struct ServiceTagsListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cloud: Option<String>,
     #[doc = "The list of service tag information resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub values: Vec<ServiceTagInformation>,
     #[doc = "The URL to get next page of service tag information resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -18725,7 +20745,12 @@ impl ServiceTagsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SessionIds {
     #[doc = "List of session IDs."]
-    #[serde(rename = "sessionIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sessionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub session_ids: Vec<String>,
 }
 impl SessionIds {
@@ -18749,7 +20774,12 @@ impl SignatureOverridesFilterValuesQuery {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignatureOverridesFilterValuesResponse {
     #[doc = "Describes the possible values"]
-    #[serde(rename = "filterValues", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filterValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filter_values: Vec<String>,
 }
 impl SignatureOverridesFilterValuesResponse {
@@ -18803,7 +20833,11 @@ pub mod signatures_overrides {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignaturesOverridesList {
     #[doc = "Describes a list consisting exactly one item describing the policy's signature override status"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SignaturesOverrides>,
 }
 impl SignaturesOverridesList {
@@ -18835,10 +20869,20 @@ pub struct SingleQueryResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
     #[doc = "Describes the list of source ports related to this signature"]
-    #[serde(rename = "sourcePorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "sourcePorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub source_ports: Vec<PortsList>,
     #[doc = "Describes the list of destination ports related to this signature"]
-    #[serde(rename = "destinationPorts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "destinationPorts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destination_ports: Vec<PortsList>,
     #[doc = "Describes the last updated time of the signature (provided from 3rd party vendor)"]
     #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
@@ -18928,7 +20972,12 @@ pub struct StaticRoute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "List of all address prefixes."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
     #[doc = "The ip address of the next hop."]
     #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Option::is_none")]
@@ -18981,7 +21030,12 @@ pub struct SubnetAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Collection of custom security rules."]
-    #[serde(rename = "securityRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "securityRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub security_rules: Vec<SecurityRule>,
 }
 impl SubnetAssociation {
@@ -18993,7 +21047,11 @@ impl SubnetAssociation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetListResult {
     #[doc = "The subnets in a virtual network."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Subnet>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -19017,7 +21075,12 @@ pub struct SubnetPropertiesFormat {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
     #[doc = "List of address prefixes for the subnet."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
     #[doc = "NetworkSecurityGroup resource."]
     #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
@@ -19029,31 +21092,75 @@ pub struct SubnetPropertiesFormat {
     #[serde(rename = "natGateway", default, skip_serializing_if = "Option::is_none")]
     pub nat_gateway: Option<SubResource>,
     #[doc = "An array of service endpoints."]
-    #[serde(rename = "serviceEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_endpoints: Vec<ServiceEndpointPropertiesFormat>,
     #[doc = "An array of service endpoint policies."]
-    #[serde(rename = "serviceEndpointPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceEndpointPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_endpoint_policies: Vec<ServiceEndpointPolicy>,
     #[doc = "An array of references to private endpoints."]
-    #[serde(rename = "privateEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "privateEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub private_endpoints: Vec<PrivateEndpoint>,
     #[doc = "An array of references to the network interface IP configurations using subnet."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<IpConfiguration>,
     #[doc = "Array of IP configuration profiles which reference this subnet."]
-    #[serde(rename = "ipConfigurationProfiles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurationProfiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configuration_profiles: Vec<IpConfigurationProfile>,
     #[doc = "Array of IpAllocation which reference this subnet."]
-    #[serde(rename = "ipAllocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAllocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_allocations: Vec<SubResource>,
     #[doc = "An array of references to the external resources using subnet."]
-    #[serde(rename = "resourceNavigationLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceNavigationLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_navigation_links: Vec<ResourceNavigationLink>,
     #[doc = "An array of references to services injecting into this subnet."]
-    #[serde(rename = "serviceAssociationLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceAssociationLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_association_links: Vec<ServiceAssociationLink>,
     #[doc = "An array of references to the delegations on the subnet."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub delegations: Vec<Delegation>,
     #[doc = "A read-only string identifying the intention of use for this subnet based on delegations and other user-defined properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19068,7 +21175,12 @@ pub struct SubnetPropertiesFormat {
     #[serde(rename = "privateLinkServiceNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_network_policies: Option<subnet_properties_format::PrivateLinkServiceNetworkPolicies>,
     #[doc = "Application gateway IP configurations of virtual network resource."]
-    #[serde(rename = "applicationGatewayIpConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationGatewayIpConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_gateway_ip_configurations: Vec<ApplicationGatewayIpConfiguration>,
 }
 impl SubnetPropertiesFormat {
@@ -19188,7 +21300,11 @@ pub struct Topology {
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "A list of topology resources."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<TopologyResource>,
 }
 impl Topology {
@@ -19285,7 +21401,11 @@ pub struct TopologyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Holds the associations the resource has with other resources in the resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub associations: Vec<TopologyAssociation>,
 }
 impl TopologyResource {
@@ -19451,7 +21571,12 @@ pub struct TroubleshootingDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
     #[doc = "List of recommended actions."]
-    #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "recommendedActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub recommended_actions: Vec<TroubleshootingRecommendedActions>,
 }
 impl TroubleshootingDetails {
@@ -19525,7 +21650,11 @@ pub struct TroubleshootingResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[doc = "Information from troubleshooting."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub results: Vec<TroubleshootingDetails>,
 }
 impl TroubleshootingResult {
@@ -19694,7 +21823,11 @@ impl UsageName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesListResult {
     #[doc = "The list network resource usages."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Usage>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -19933,10 +22066,20 @@ impl VirtualHub {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubEffectiveRoute {
     #[doc = "The list of address prefixes."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
     #[doc = "The list of next hops."]
-    #[serde(rename = "nextHops", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nextHops",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub next_hops: Vec<String>,
     #[doc = "The type of the next hop."]
     #[serde(rename = "nextHopType", default, skip_serializing_if = "Option::is_none")]
@@ -19957,7 +22100,11 @@ impl VirtualHubEffectiveRoute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubEffectiveRouteList {
     #[doc = "The list of effective routes configured on the virtual hub or the specified resource."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualHubEffectiveRoute>,
 }
 impl VirtualHubEffectiveRouteList {
@@ -20011,7 +22158,12 @@ pub struct VirtualHubProperties {
     #[serde(rename = "securityProviderName", default, skip_serializing_if = "Option::is_none")]
     pub security_provider_name: Option<String>,
     #[doc = "List of all virtual hub route table v2s associated with this VirtualHub."]
-    #[serde(rename = "virtualHubRouteTableV2s", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualHubRouteTableV2s",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_hub_route_table_v2s: Vec<VirtualHubRouteTableV2>,
     #[doc = "The sku of this VirtualHub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -20020,16 +22172,31 @@ pub struct VirtualHubProperties {
     #[serde(rename = "routingState", default, skip_serializing_if = "Option::is_none")]
     pub routing_state: Option<RoutingState>,
     #[doc = "List of references to Bgp Connections."]
-    #[serde(rename = "bgpConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bgpConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bgp_connections: Vec<SubResource>,
     #[doc = "List of references to IpConfigurations."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<SubResource>,
     #[doc = "VirtualRouter ASN."]
     #[serde(rename = "virtualRouterAsn", default, skip_serializing_if = "Option::is_none")]
     pub virtual_router_asn: Option<i64>,
     #[doc = "VirtualRouter IPs."]
-    #[serde(rename = "virtualRouterIps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualRouterIps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_router_ips: Vec<String>,
     #[doc = "Flag to control transit for VirtualRouter hub."]
     #[serde(rename = "allowBranchToBranchTraffic", default, skip_serializing_if = "Option::is_none")]
@@ -20047,7 +22214,12 @@ impl VirtualHubProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRoute {
     #[doc = "List of all addressPrefixes."]
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "addressPrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub address_prefixes: Vec<String>,
     #[doc = "NextHop ip address."]
     #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Option::is_none")]
@@ -20062,7 +22234,11 @@ impl VirtualHubRoute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRouteTable {
     #[doc = "List of all routes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routes: Vec<VirtualHubRoute>,
 }
 impl VirtualHubRouteTable {
@@ -20094,10 +22270,19 @@ impl VirtualHubRouteTableV2 {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHubRouteTableV2Properties {
     #[doc = "List of all routes."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub routes: Vec<VirtualHubRouteV2>,
     #[doc = "List of all connections attached to this route table v2."]
-    #[serde(rename = "attachedConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "attachedConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub attached_connections: Vec<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -20115,13 +22300,22 @@ pub struct VirtualHubRouteV2 {
     #[serde(rename = "destinationType", default, skip_serializing_if = "Option::is_none")]
     pub destination_type: Option<String>,
     #[doc = "List of all destinations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub destinations: Vec<String>,
     #[doc = "The type of next hops."]
     #[serde(rename = "nextHopType", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_type: Option<String>,
     #[doc = "NextHops ip address."]
-    #[serde(rename = "nextHops", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "nextHops",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub next_hops: Vec<String>,
 }
 impl VirtualHubRouteV2 {
@@ -20333,7 +22527,12 @@ pub struct VirtualNetworkGatewayConnectionListEntityPropertiesFormat {
     #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VirtualNetworkGatewayConnectionStatus>,
     #[doc = "Collection of all tunnels' connection health status."]
-    #[serde(rename = "tunnelConnectionStatus", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tunnelConnectionStatus",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tunnel_connection_status: Vec<TunnelConnectionHealth>,
     #[doc = "The egress bytes transferred in this connection."]
     #[serde(rename = "egressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
@@ -20351,10 +22550,20 @@ pub struct VirtualNetworkGatewayConnectionListEntityPropertiesFormat {
     #[serde(rename = "usePolicyBasedTrafficSelectors", default, skip_serializing_if = "Option::is_none")]
     pub use_policy_based_traffic_selectors: Option<bool>,
     #[doc = "The IPSec Policies to be considered by this connection."]
-    #[serde(rename = "ipsecPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipsecPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipsec_policies: Vec<IpsecPolicy>,
     #[doc = "The Traffic Selector Policies to be considered by this connection."]
-    #[serde(rename = "trafficSelectorPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trafficSelectorPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub traffic_selector_policies: Vec<TrafficSelectorPolicy>,
     #[doc = "The resource GUID property of the virtual network gateway connection resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -20400,7 +22609,11 @@ impl VirtualNetworkGatewayConnectionListEntityPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayConnectionListResult {
     #[doc = "A list of VirtualNetworkGatewayConnection resources that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkGatewayConnection>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -20472,10 +22685,20 @@ pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
     #[serde(rename = "localNetworkGateway2", default, skip_serializing_if = "Option::is_none")]
     pub local_network_gateway2: Option<LocalNetworkGateway>,
     #[doc = "List of ingress NatRules."]
-    #[serde(rename = "ingressNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ingressNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ingress_nat_rules: Vec<SubResource>,
     #[doc = "List of egress NatRules."]
-    #[serde(rename = "egressNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "egressNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub egress_nat_rules: Vec<SubResource>,
     #[doc = "Gateway connection type."]
     #[serde(rename = "connectionType")]
@@ -20499,7 +22722,12 @@ pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
     #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VirtualNetworkGatewayConnectionStatus>,
     #[doc = "Collection of all tunnels' connection health status."]
-    #[serde(rename = "tunnelConnectionStatus", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tunnelConnectionStatus",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tunnel_connection_status: Vec<TunnelConnectionHealth>,
     #[doc = "The egress bytes transferred in this connection."]
     #[serde(rename = "egressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
@@ -20520,10 +22748,20 @@ pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
     #[serde(rename = "usePolicyBasedTrafficSelectors", default, skip_serializing_if = "Option::is_none")]
     pub use_policy_based_traffic_selectors: Option<bool>,
     #[doc = "The IPSec Policies to be considered by this connection."]
-    #[serde(rename = "ipsecPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipsecPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipsec_policies: Vec<IpsecPolicy>,
     #[doc = "The Traffic Selector Policies to be considered by this connection."]
-    #[serde(rename = "trafficSelectorPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trafficSelectorPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub traffic_selector_policies: Vec<TrafficSelectorPolicy>,
     #[doc = "The resource GUID property of the virtual network gateway connection resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -20697,7 +22935,11 @@ impl VirtualNetworkGatewayIpConfigurationPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayListConnectionsResult {
     #[doc = "A list of VirtualNetworkGatewayConnection resources that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkGatewayConnectionListEntity>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -20718,7 +22960,11 @@ impl VirtualNetworkGatewayListConnectionsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayListResult {
     #[doc = "A list of VirtualNetworkGateway resources that exists in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkGateway>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -20771,10 +23017,20 @@ pub struct VirtualNetworkGatewayNatRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<virtual_network_gateway_nat_rule_properties::Mode>,
     #[doc = "The private IP address internal mapping for NAT."]
-    #[serde(rename = "internalMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "internalMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub internal_mappings: Vec<VpnNatRuleMapping>,
     #[doc = "The private IP address external mapping for NAT."]
-    #[serde(rename = "externalMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "externalMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub external_mappings: Vec<VpnNatRuleMapping>,
     #[doc = "The IP Configuration ID this NAT rule applies to."]
     #[serde(rename = "ipConfigurationId", default, skip_serializing_if = "Option::is_none")]
@@ -20866,7 +23122,12 @@ pub mod virtual_network_gateway_nat_rule_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayPropertiesFormat {
     #[doc = "IP configurations for virtual network gateway."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<VirtualNetworkGatewayIpConfiguration>,
     #[doc = "The type of this virtual network gateway."]
     #[serde(rename = "gatewayType", default, skip_serializing_if = "Option::is_none")]
@@ -20920,7 +23181,12 @@ pub struct VirtualNetworkGatewayPropertiesFormat {
     #[serde(rename = "vNetExtendedLocationResourceId", default, skip_serializing_if = "Option::is_none")]
     pub v_net_extended_location_resource_id: Option<String>,
     #[doc = "NatRules for virtual network gateway."]
-    #[serde(rename = "natRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "natRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nat_rules: Vec<VirtualNetworkGatewayNatRule>,
     #[doc = "EnableBgpRouteTranslationForNat flag."]
     #[serde(rename = "enableBgpRouteTranslationForNat", default, skip_serializing_if = "Option::is_none")]
@@ -21224,7 +23490,11 @@ pub mod virtual_network_gateway_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkListResult {
     #[doc = "A list of VirtualNetwork resources in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetwork>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -21245,7 +23515,11 @@ impl VirtualNetworkListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkListUsageResult {
     #[doc = "VirtualNetwork usage stats."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkUsage>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -21289,7 +23563,11 @@ impl VirtualNetworkPeering {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPeeringListResult {
     #[doc = "The peerings in a virtual network."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkPeering>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -21453,10 +23731,19 @@ pub struct VirtualNetworkPropertiesFormat {
     #[serde(rename = "flowTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub flow_timeout_in_minutes: Option<i32>,
     #[doc = "A list of subnets in a Virtual Network."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subnets: Vec<Subnet>,
     #[doc = "A list of peerings in a Virtual Network."]
-    #[serde(rename = "virtualNetworkPeerings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualNetworkPeerings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_network_peerings: Vec<VirtualNetworkPeering>,
     #[doc = "The resourceGuid property of the Virtual Network resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -21480,7 +23767,12 @@ pub struct VirtualNetworkPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<VirtualNetworkEncryption>,
     #[doc = "Array of IpAllocation which reference this VNET."]
-    #[serde(rename = "ipAllocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipAllocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_allocations: Vec<SubResource>,
 }
 impl VirtualNetworkPropertiesFormat {
@@ -21509,7 +23801,11 @@ impl VirtualNetworkTap {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkTapListResult {
     #[doc = "A list of VirtualNetworkTaps in a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualNetworkTap>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -21530,7 +23826,12 @@ impl VirtualNetworkTapListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkTapPropertiesFormat {
     #[doc = "Specifies the list of resource IDs for the network interface IP configuration that needs to be tapped."]
-    #[serde(rename = "networkInterfaceTapConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "networkInterfaceTapConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub network_interface_tap_configurations: Vec<NetworkInterfaceTapConfiguration>,
     #[doc = "The resource GUID property of the virtual network tap resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -21621,7 +23922,11 @@ impl VirtualRouter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterListResult {
     #[doc = "List of Virtual Routers."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualRouter>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -21665,7 +23970,11 @@ impl VirtualRouterPeering {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualRouterPeeringListResult {
     #[doc = "List of VirtualRouterPeerings in a VirtualRouter."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VirtualRouterPeering>,
     #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -21707,7 +24016,12 @@ pub struct VirtualRouterPropertiesFormat {
     #[serde(rename = "virtualRouterAsn", default, skip_serializing_if = "Option::is_none")]
     pub virtual_router_asn: Option<i64>,
     #[doc = "VirtualRouter IPs."]
-    #[serde(rename = "virtualRouterIps", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualRouterIps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_router_ips: Vec<String>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "hostedSubnet", default, skip_serializing_if = "Option::is_none")]
@@ -21716,7 +24030,11 @@ pub struct VirtualRouterPropertiesFormat {
     #[serde(rename = "hostedGateway", default, skip_serializing_if = "Option::is_none")]
     pub hosted_gateway: Option<SubResource>,
     #[doc = "List of references to VirtualRouterPeerings."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub peerings: Vec<SubResource>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -21755,10 +24073,20 @@ pub struct VirtualWanProperties {
     #[serde(rename = "disableVpnEncryption", default, skip_serializing_if = "Option::is_none")]
     pub disable_vpn_encryption: Option<bool>,
     #[doc = "List of VirtualHubs in the VirtualWAN."]
-    #[serde(rename = "virtualHubs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "virtualHubs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub virtual_hubs: Vec<SubResource>,
     #[doc = "List of VpnSites in the VirtualWAN."]
-    #[serde(rename = "vpnSites", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnSites",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_sites: Vec<SubResource>,
     #[doc = "True if branch to branch traffic is allowed."]
     #[serde(rename = "allowBranchToBranchTraffic", default, skip_serializing_if = "Option::is_none")]
@@ -21840,7 +24168,12 @@ impl Serialize for VirtualWanSecurityProviderType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualWanSecurityProviders {
     #[doc = "List of VirtualWAN security providers."]
-    #[serde(rename = "supportedProviders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedProviders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_providers: Vec<VirtualWanSecurityProvider>,
 }
 impl VirtualWanSecurityProviders {
@@ -21867,10 +24200,20 @@ impl VirtualWanVpnProfileParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VnetRoute {
     #[doc = "List of all Static Routes."]
-    #[serde(rename = "staticRoutes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "staticRoutes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub static_routes: Vec<StaticRoute>,
     #[doc = "The list of references to HubBgpConnection objects."]
-    #[serde(rename = "bgpConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "bgpConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub bgp_connections: Vec<SubResource>,
 }
 impl VnetRoute {
@@ -21885,19 +24228,44 @@ pub struct VpnClientConfiguration {
     #[serde(rename = "vpnClientAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub vpn_client_address_pool: Option<AddressSpace>,
     #[doc = "VpnClientRootCertificate for virtual network gateway."]
-    #[serde(rename = "vpnClientRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_root_certificates: Vec<VpnClientRootCertificate>,
     #[doc = "VpnClientRevokedCertificate for Virtual network gateway."]
-    #[serde(rename = "vpnClientRevokedCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientRevokedCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_revoked_certificates: Vec<VpnClientRevokedCertificate>,
     #[doc = "VpnClientProtocols for Virtual network gateway."]
-    #[serde(rename = "vpnClientProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_protocols: Vec<String>,
     #[doc = "VPN authentication types for the virtual network gateway.."]
-    #[serde(rename = "vpnAuthenticationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnAuthenticationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_authentication_types: Vec<String>,
     #[doc = "VpnClientIpsecPolicies for virtual network gateway P2S client."]
-    #[serde(rename = "vpnClientIpsecPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientIpsecPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_ipsec_policies: Vec<IpsecPolicy>,
     #[doc = "The radius server address property of the VirtualNetworkGateway resource for vpn client connection."]
     #[serde(rename = "radiusServerAddress", default, skip_serializing_if = "Option::is_none")]
@@ -21906,7 +24274,12 @@ pub struct VpnClientConfiguration {
     #[serde(rename = "radiusServerSecret", default, skip_serializing_if = "Option::is_none")]
     pub radius_server_secret: Option<String>,
     #[doc = "The radiusServers property for multiple radius server configuration."]
-    #[serde(rename = "radiusServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "radiusServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub radius_servers: Vec<RadiusServer>,
     #[doc = "The AADTenant property of the VirtualNetworkGateway resource for vpn client connection used for AAD authentication."]
     #[serde(rename = "aadTenant", default, skip_serializing_if = "Option::is_none")]
@@ -21936,7 +24309,12 @@ pub struct VpnClientConnectionHealth {
     #[serde(rename = "vpnClientConnectionsCount", default, skip_serializing_if = "Option::is_none")]
     pub vpn_client_connections_count: Option<i32>,
     #[doc = "List of allocated ip addresses to the connected p2s vpn clients."]
-    #[serde(rename = "allocatedIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allocatedIpAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allocated_ip_addresses: Vec<String>,
 }
 impl VpnClientConnectionHealth {
@@ -21993,7 +24371,11 @@ impl VpnClientConnectionHealthDetail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientConnectionHealthDetailListResult {
     #[doc = "List of vpn client connection health."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VpnClientConnectionHealthDetail>,
 }
 impl VpnClientConnectionHealthDetailListResult {
@@ -22065,7 +24447,12 @@ pub struct VpnClientParameters {
     #[serde(rename = "radiusServerAuthCertificate", default, skip_serializing_if = "Option::is_none")]
     pub radius_server_auth_certificate: Option<String>,
     #[doc = "A list of client root certificates public certificate data encoded as Base-64 strings. Optional parameter for external radius based authentication with EAPTLS."]
-    #[serde(rename = "clientRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "clientRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub client_root_certificates: Vec<String>,
 }
 impl VpnClientParameters {
@@ -22217,7 +24604,12 @@ pub struct VpnConnectionPacketCaptureStartParameters {
     #[serde(rename = "filterData", default, skip_serializing_if = "Option::is_none")]
     pub filter_data: Option<String>,
     #[doc = "List of site link connection names."]
-    #[serde(rename = "linkConnectionNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkConnectionNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub link_connection_names: Vec<String>,
 }
 impl VpnConnectionPacketCaptureStartParameters {
@@ -22232,7 +24624,12 @@ pub struct VpnConnectionPacketCaptureStopParameters {
     #[serde(rename = "sasUrl", default, skip_serializing_if = "Option::is_none")]
     pub sas_url: Option<String>,
     #[doc = "List of site link connection names."]
-    #[serde(rename = "linkConnectionNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkConnectionNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub link_connection_names: Vec<String>,
 }
 impl VpnConnectionPacketCaptureStopParameters {
@@ -22277,10 +24674,20 @@ pub struct VpnConnectionProperties {
     #[serde(rename = "usePolicyBasedTrafficSelectors", default, skip_serializing_if = "Option::is_none")]
     pub use_policy_based_traffic_selectors: Option<bool>,
     #[doc = "The IPSec Policies to be considered by this connection."]
-    #[serde(rename = "ipsecPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipsecPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipsec_policies: Vec<IpsecPolicy>,
     #[doc = "The Traffic Selector Policies to be considered by this connection."]
-    #[serde(rename = "trafficSelectorPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "trafficSelectorPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub traffic_selector_policies: Vec<TrafficSelectorPolicy>,
     #[doc = "EnableBgp flag."]
     #[serde(rename = "enableRateLimiting", default, skip_serializing_if = "Option::is_none")]
@@ -22295,7 +24702,12 @@ pub struct VpnConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "List of all vpn site link connections to the gateway."]
-    #[serde(rename = "vpnLinkConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnLinkConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_link_connections: Vec<VpnSiteLinkConnection>,
     #[doc = "Routing Configuration indicating the associated and propagated route tables for this connection."]
     #[serde(rename = "routingConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -22440,19 +24852,39 @@ pub struct VpnGatewayNatRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<vpn_gateway_nat_rule_properties::Mode>,
     #[doc = "The private IP address internal mapping for NAT."]
-    #[serde(rename = "internalMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "internalMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub internal_mappings: Vec<VpnNatRuleMapping>,
     #[doc = "The private IP address external mapping for NAT."]
-    #[serde(rename = "externalMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "externalMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub external_mappings: Vec<VpnNatRuleMapping>,
     #[doc = "The IP Configuration ID this NAT rule applies to."]
     #[serde(rename = "ipConfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub ip_configuration_id: Option<String>,
     #[doc = "List of egress VpnSiteLinkConnections."]
-    #[serde(rename = "egressVpnSiteLinkConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "egressVpnSiteLinkConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub egress_vpn_site_link_connections: Vec<SubResource>,
     #[doc = "List of ingress VpnSiteLinkConnections."]
-    #[serde(rename = "ingressVpnSiteLinkConnections", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ingressVpnSiteLinkConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ingress_vpn_site_link_connections: Vec<SubResource>,
 }
 impl VpnGatewayNatRuleProperties {
@@ -22568,7 +25000,11 @@ pub struct VpnGatewayProperties {
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
     pub virtual_hub: Option<SubResource>,
     #[doc = "List of all vpn connections to the gateway."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub connections: Vec<VpnConnection>,
     #[doc = "BGP settings details."]
     #[serde(rename = "bgpSettings", default, skip_serializing_if = "Option::is_none")]
@@ -22580,7 +25016,12 @@ pub struct VpnGatewayProperties {
     #[serde(rename = "vpnGatewayScaleUnit", default, skip_serializing_if = "Option::is_none")]
     pub vpn_gateway_scale_unit: Option<i32>,
     #[doc = "List of all IPs configured on the gateway."]
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ip_configurations: Vec<VpnGatewayIpConfiguration>,
     #[doc = "Enable BGP routes translation for NAT on this VpnGateway."]
     #[serde(rename = "enableBgpRouteTranslationForNat", default, skip_serializing_if = "Option::is_none")]
@@ -22589,7 +25030,12 @@ pub struct VpnGatewayProperties {
     #[serde(rename = "isRoutingPreferenceInternet", default, skip_serializing_if = "Option::is_none")]
     pub is_routing_preference_internet: Option<bool>,
     #[doc = "List of all the nat Rules associated with the gateway."]
-    #[serde(rename = "natRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "natRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub nat_rules: Vec<VpnGatewayNatRule>,
 }
 impl VpnGatewayProperties {
@@ -22765,25 +25211,60 @@ pub struct VpnServerConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "VPN protocols for the VpnServerConfiguration."]
-    #[serde(rename = "vpnProtocols", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnProtocols",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_protocols: Vec<String>,
     #[doc = "VPN authentication types for the VpnServerConfiguration."]
-    #[serde(rename = "vpnAuthenticationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnAuthenticationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_authentication_types: Vec<String>,
     #[doc = "VPN client root certificate of VpnServerConfiguration."]
-    #[serde(rename = "vpnClientRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_root_certificates: Vec<VpnServerConfigVpnClientRootCertificate>,
     #[doc = "VPN client revoked certificate of VpnServerConfiguration."]
-    #[serde(rename = "vpnClientRevokedCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientRevokedCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_revoked_certificates: Vec<VpnServerConfigVpnClientRevokedCertificate>,
     #[doc = "Radius Server root certificate of VpnServerConfiguration."]
-    #[serde(rename = "radiusServerRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "radiusServerRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub radius_server_root_certificates: Vec<VpnServerConfigRadiusServerRootCertificate>,
     #[doc = "Radius client root certificate of VpnServerConfiguration."]
-    #[serde(rename = "radiusClientRootCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "radiusClientRootCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub radius_client_root_certificates: Vec<VpnServerConfigRadiusClientRootCertificate>,
     #[doc = "VpnClientIpsecPolicies for VpnServerConfiguration."]
-    #[serde(rename = "vpnClientIpsecPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnClientIpsecPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_client_ipsec_policies: Vec<IpsecPolicy>,
     #[doc = "The radius server address property of the VpnServerConfiguration resource for point to site client connection."]
     #[serde(rename = "radiusServerAddress", default, skip_serializing_if = "Option::is_none")]
@@ -22792,7 +25273,12 @@ pub struct VpnServerConfigurationProperties {
     #[serde(rename = "radiusServerSecret", default, skip_serializing_if = "Option::is_none")]
     pub radius_server_secret: Option<String>,
     #[doc = "Multiple Radius Server configuration for VpnServerConfiguration."]
-    #[serde(rename = "radiusServers", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "radiusServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub radius_servers: Vec<RadiusServer>,
     #[doc = "AAD Vpn authentication type related parameters."]
     #[serde(rename = "aadAuthenticationParameters", default, skip_serializing_if = "Option::is_none")]
@@ -22801,7 +25287,12 @@ pub struct VpnServerConfigurationProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "List of references to P2SVpnGateways."]
-    #[serde(rename = "p2SVpnGateways", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "p2SVpnGateways",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub p2_s_vpn_gateways: Vec<P2sVpnGateway>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22816,7 +25307,12 @@ impl VpnServerConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnServerConfigurationsResponse {
     #[doc = "List of VpnServerConfigurations associated with VirtualWan."]
-    #[serde(rename = "vpnServerConfigurationResourceIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnServerConfigurationResourceIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_server_configuration_resource_ids: Vec<String>,
 }
 impl VpnServerConfigurationsResponse {
@@ -22940,7 +25436,12 @@ pub struct VpnSiteLinkConnectionProperties {
     #[serde(rename = "usePolicyBasedTrafficSelectors", default, skip_serializing_if = "Option::is_none")]
     pub use_policy_based_traffic_selectors: Option<bool>,
     #[doc = "The IPSec Policies to be considered by this connection."]
-    #[serde(rename = "ipsecPolicies", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ipsecPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ipsec_policies: Vec<IpsecPolicy>,
     #[doc = "EnableBgp flag."]
     #[serde(rename = "enableRateLimiting", default, skip_serializing_if = "Option::is_none")]
@@ -22952,10 +25453,20 @@ pub struct VpnSiteLinkConnectionProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "List of ingress NatRules."]
-    #[serde(rename = "ingressNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "ingressNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ingress_nat_rules: Vec<SubResource>,
     #[doc = "List of egress NatRules."]
-    #[serde(rename = "egressNatRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "egressNatRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub egress_nat_rules: Vec<SubResource>,
 }
 impl VpnSiteLinkConnectionProperties {
@@ -23057,7 +25568,12 @@ pub struct VpnSiteProperties {
     #[serde(rename = "isSecuritySite", default, skip_serializing_if = "Option::is_none")]
     pub is_security_site: Option<bool>,
     #[doc = "List of all vpn site links."]
-    #[serde(rename = "vpnSiteLinks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "vpnSiteLinks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub vpn_site_links: Vec<VpnSiteLink>,
     #[doc = "The Office365 breakout policy."]
     #[serde(rename = "o365Policy", default, skip_serializing_if = "Option::is_none")]
@@ -23205,7 +25721,11 @@ impl WebApplicationFirewallPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebApplicationFirewallPolicyListResult {
     #[doc = "List of WebApplicationFirewallPolicies within a resource group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<WebApplicationFirewallPolicy>,
     #[doc = "URL to get the next set of WebApplicationFirewallPolicy objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -23229,10 +25749,20 @@ pub struct WebApplicationFirewallPolicyPropertiesFormat {
     #[serde(rename = "policySettings", default, skip_serializing_if = "Option::is_none")]
     pub policy_settings: Option<PolicySettings>,
     #[doc = "The custom rules inside the policy."]
-    #[serde(rename = "customRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "customRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub custom_rules: Vec<WebApplicationFirewallCustomRule>,
     #[doc = "A collection of references to application gateways."]
-    #[serde(rename = "applicationGateways", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "applicationGateways",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub application_gateways: Vec<ApplicationGateway>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -23244,10 +25774,20 @@ pub struct WebApplicationFirewallPolicyPropertiesFormat {
     #[serde(rename = "managedRules")]
     pub managed_rules: ManagedRulesDefinition,
     #[doc = "A collection of references to application gateway http listeners."]
-    #[serde(rename = "httpListeners", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "httpListeners",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub http_listeners: Vec<SubResource>,
     #[doc = "A collection of references to application gateway path rules."]
-    #[serde(rename = "pathBasedRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pathBasedRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub path_based_rules: Vec<SubResource>,
 }
 impl WebApplicationFirewallPolicyPropertiesFormat {

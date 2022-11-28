@@ -1,4 +1,4 @@
-use azure_storage::core::prelude::*;
+use azure_storage::ConnectionString;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 use std::num::NonZeroU32;
@@ -13,17 +13,21 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let storage_client = StorageClient::new_connection_string(&connection_string)?;
-    let container_client = storage_client.container_client(&container_name);
-    let blob_service = storage_client.blob_service_client();
+    let connection_string = ConnectionString::new(&connection_string)?;
+    let blob_service = BlobServiceClient::new(
+        connection_string.account_name.unwrap(),
+        connection_string.storage_credentials()?,
+    );
+    let container_client = blob_service.container_client(&container_name);
 
     let mut stream = blob_service.list_containers().into_stream();
     while let Some(result) = stream.next().await {
-        let result = result?;
-        for container in result.containers {
-            if container.name == container_name {
-                panic!("The specified container must not exists!");
-            }
+        if !result?
+            .containers
+            .iter()
+            .any(|container| container.name == container_name)
+        {
+            panic!("The specified container must not exists!");
         }
     }
 
@@ -31,7 +35,6 @@ async fn main() -> azure_core::Result<()> {
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await?;
     println!("Container {} created", container_name);
 
@@ -41,7 +44,6 @@ async fn main() -> azure_core::Result<()> {
             .blob_client(format!("blob{}.txt", i))
             .put_block_blob("somedata")
             .content_type("text/plain")
-            .into_future()
             .await?;
         println!("\tAdded blob {}", i);
     }
@@ -55,7 +57,7 @@ async fn main() -> azure_core::Result<()> {
 
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
-        let len = value?.blobs.blobs.len();
+        let len = value?.blobs.blobs().count();
         println!("received {} blobs", len);
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),
@@ -65,7 +67,7 @@ async fn main() -> azure_core::Result<()> {
         cnt += 1;
     }
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
     println!("Container {} deleted", container_name);
 
     Ok(())

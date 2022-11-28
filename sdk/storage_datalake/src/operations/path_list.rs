@@ -4,52 +4,22 @@ use crate::{
     request_options::*,
 };
 use azure_core::{error::Error, prelude::*, AppendToUrlQuery, Pageable, Request, Response};
-use azure_storage::core::headers::CommonStorageResponseHeaders;
+use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
-/// A future of a delete file response
-type ListPaths = Pageable<ListPathsResponse, Error>;
-
-#[derive(Debug, Clone)]
-pub struct ListPathsBuilder {
+operation! {
+    #[stream]
+    ListPaths,
     client: FileSystemClient,
-    recursive: Option<Recursive>,
-    continuation: Option<NextMarker>,
-    directory: Option<Directory>,
-    max_results: Option<MaxResults>,
-    timeout: Option<Timeout>,
-    upn: Option<Upn>,
-    client_request_id: Option<ClientRequestId>,
-    context: Context,
+    ?recursive: Recursive,
+    ?continuation: Option<NextMarker>,
+    ?directory: Directory,
+    ?max_results: MaxResults,
+    ?upn: Upn
 }
 
 impl ListPathsBuilder {
-    pub(crate) fn new(client: FileSystemClient, context: Context) -> Self {
-        Self {
-            client,
-            recursive: None,
-            continuation: None,
-            directory: None,
-            max_results: None,
-            timeout: None,
-            upn: None,
-            client_request_id: None,
-            context,
-        }
-    }
-
-    setters! {
-        recursive: Recursive => Some(recursive),
-        continuation: NextMarker => Some(continuation),
-        directory: Directory => Some(directory),
-        max_results: MaxResults => Some(max_results),
-        timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId => Some(client_request_id),
-        upn: Upn => Some(upn),
-        context: Context => context,
-    }
-
-    pub fn into_stream(self) -> ListPaths {
+    pub fn into_stream(self) -> Pageable<ListPathsResponse, Error> {
         let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let ctx = self.context.clone();
@@ -60,7 +30,6 @@ impl ListPathsBuilder {
                 this.recursive.append_to_url_query(&mut url);
                 this.directory.append_to_url_query(&mut url);
                 this.max_results.append_to_url_query(&mut url);
-                this.timeout.append_to_url_query(&mut url);
                 this.upn.append_to_url_query(&mut url);
 
                 if let Some(next_marker) = continuation {
@@ -71,13 +40,7 @@ impl ListPathsBuilder {
 
                 let mut request = Request::new(url, azure_core::Method::Get);
 
-                request.insert_headers(&this.client_request_id);
-
-                let response = this
-                    .client
-                    .pipeline()
-                    .send(&mut ctx.clone(), &mut request)
-                    .await?;
+                let response = this.client.send(&mut ctx.clone(), &mut request).await?;
 
                 ListPathsResponse::try_from(response).await
             }

@@ -4,6 +4,7 @@ use azure_core::{
     date,
     error::{Error, ErrorKind},
     headers::*,
+    prelude::*,
     Body, Context, Method, Pipeline, Request, Response,
 };
 use const_format::formatcp;
@@ -84,6 +85,9 @@ impl KeyvaultClient {
         request.insert_header(MS_DATE, time);
 
         if let Some(request_body) = request_body {
+            if request.headers().get_optional_str(&CONTENT_TYPE).is_none() {
+                request.insert_headers(&ContentType::APPLICATION_JSON);
+            }
             request.insert_header(CONTENT_LENGTH, request_body.len().to_string());
             request.set_body(request_body);
         } else {

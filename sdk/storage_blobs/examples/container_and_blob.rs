@@ -1,4 +1,4 @@
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use bytes::Bytes;
 use futures::StreamExt;
@@ -16,14 +16,14 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let storage_client = StorageClient::new_access_key(&account, &access_key);
-    let container_client = storage_client.container_client(&container_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let container_client =
+        BlobServiceClient::new(account, storage_credentials).container_client(container_name);
 
     // create container
     container_client
         .create()
         .public_access(PublicAccess::None)
-        .into_future()
         .await?;
 
     let data = Bytes::from_static(b"something");
@@ -37,7 +37,6 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -46,7 +45,6 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data.clone())
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("{:?}", res);
 
@@ -55,7 +53,6 @@ async fn main() -> azure_core::Result<()> {
         .put_block_blob(data)
         .content_type("text/plain")
         .hash(hash)
-        .into_future()
         .await?;
     println!("{:?}", res);
 

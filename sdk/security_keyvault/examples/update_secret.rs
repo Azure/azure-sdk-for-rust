@@ -1,6 +1,6 @@
 use azure_core::date;
 use azure_identity::DefaultAzureCredentialBuilder;
-use azure_security_keyvault::SecretClient;
+use azure_security_keyvault::prelude::*;
 use std::{env, sync::Arc};
 use time::OffsetDateTime;
 
@@ -27,7 +27,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .enabled(false)
         .recovery_level("Purgeable")
         .expiration(OffsetDateTime::now_utc() + date::duration_from_days(14))
-        .into_future()
         .await?;
 
     Ok(())

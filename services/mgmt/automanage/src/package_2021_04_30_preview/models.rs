@@ -28,7 +28,11 @@ pub struct AssignmentReportProperties {
     #[serde(rename = "configurationProfile", default, skip_serializing_if = "Option::is_none")]
     pub configuration_profile: Option<String>,
     #[doc = "List of resources processed by the configuration profile assignment."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<ReportResource>,
     #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -70,7 +74,11 @@ impl BestPractice {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BestPracticeList {
     #[doc = "Result of the list best practice operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<BestPractice>,
 }
 impl azure_core::Continuable for BestPracticeList {
@@ -134,7 +142,11 @@ impl ConfigurationProfileAssignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentList {
     #[doc = "Result of the list configuration profile assignment operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfigurationProfileAssignment>,
 }
 impl azure_core::Continuable for ConfigurationProfileAssignmentList {
@@ -181,7 +193,11 @@ impl ConfigurationProfileAssignmentProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileList {
     #[doc = "Result of the list ConfigurationProfile operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ConfigurationProfile>,
 }
 impl azure_core::Continuable for ConfigurationProfileList {
@@ -252,10 +268,19 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorDetail {
@@ -410,7 +435,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the resource provider"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next set of operation list results (if there are any)."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -460,7 +489,11 @@ impl Report {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportList {
     #[doc = "Result of the list report operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Report>,
 }
 impl azure_core::Continuable for ReportList {
@@ -537,7 +570,11 @@ impl ServicePrincipal {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipalListResult {
     #[doc = "The list of servicePrincipals."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ServicePrincipal>,
 }
 impl azure_core::Continuable for ServicePrincipalListResult {

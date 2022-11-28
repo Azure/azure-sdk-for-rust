@@ -9,13 +9,13 @@ use azure_core::{
     prelude::*,
     Body, Method, Request, Response, StatusCode,
 };
-use azure_storage::core::{
-    clients::StorageCredentials,
+use azure_storage::{
     prelude::*,
     shared_access_signature::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
+    StorageCredentials,
 };
 use futures::StreamExt;
 use time::OffsetDateTime;
@@ -35,6 +35,21 @@ impl BlobClient {
         Self {
             container_client,
             blob_name,
+        }
+    }
+
+    pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
+        let container_client = ContainerClient::from_sas_url(url)?;
+        // TODO: this currently only works for cloud locations Public and China
+        let path: Vec<_> = url.path().split_terminator('/').skip(2).collect();
+        if path.is_empty() {
+            Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::DataConversion,
+                || "unable to find blob path",
+            ))
+        } else {
+            let path = path.join("/");
+            Ok(container_client.blob_client(path))
         }
     }
 
@@ -93,7 +108,7 @@ impl BlobClient {
     /// This operation is only allowed on Hierarchical Namespace enabled
     /// accounts.
     ///
-    /// Ref: https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry
+    /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/set-blob-expiry>
     pub fn set_blob_expiry(&self, blob_expiry: BlobExpiry) -> SetBlobExpiryBuilder {
         SetBlobExpiryBuilder::new(self.clone(), blob_expiry)
     }
@@ -210,17 +225,18 @@ impl BlobClient {
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
+        match self.container_client.credentials() {
+            StorageCredentials::Key(account, ref key) => {
+
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
-            self.container_client.storage_client().account(),
+            account,
             self.container_client.container_name(),
             self.blob_name()
         );
-
-        match self.storage_client().storage_credentials() {
-            StorageCredentials::Key(ref _account, ref key) => Ok(
+                Ok(
                 BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
-            ),
+            )},
             _ => Err(Error::message(ErrorKind::Credential,
                 "Shared access signature generation - SAS can be generated only from key and account clients",
             )),
@@ -239,15 +255,18 @@ impl BlobClient {
 
     /// Check whether blob exists.
     pub async fn exists(&self) -> azure_core::Result<bool> {
-        let result = self.get_properties().into_future().await.map(|_| true);
-        if let Err(err) = result {
-            if let ErrorKind::HttpResponse { status, .. } = err.kind() {
-                return Ok(status != &StatusCode::NotFound);
-            } else {
-                return Err(err);
+        match self.get_properties().await {
+            Ok(_) => Ok(true),
+            Err(err)
+                if err
+                    .as_http_error()
+                    .map(|e| e.status() == StatusCode::NotFound)
+                    .unwrap_or_default() =>
+            {
+                Ok(false)
             }
+            Err(err) => Err(err),
         }
-        result
     }
 
     /// Create a blob snapshot
@@ -264,17 +283,18 @@ impl BlobClient {
         BlobLeaseClient::new(self.clone(), lease_id)
     }
 
-    pub fn storage_client(&self) -> &StorageClient {
-        self.container_client.storage_client()
-    }
-
     pub fn container_client(&self) -> &ContainerClient {
         &self.container_client
     }
 
     /// Full URL for the blob.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        StorageClient::url_with_segments(self.container_client.url()?, self.blob_name.split('/'))
+        let blob_name = self
+            .blob_name()
+            .strip_prefix('/')
+            .unwrap_or_else(|| self.blob_name());
+        let url = format!("{}/{}", self.container_client().url()?, blob_name);
+        Ok(url::Url::parse(&url)?)
     }
 
     pub(crate) fn finalize_request(
@@ -301,6 +321,42 @@ impl BlobClient {
 mod tests {
     use super::*;
 
+    #[test]
+    fn test_from_url() -> azure_core::Result<()> {
+        let path = "my/complex/nested/path/here";
+        let container = "mycontainer";
+        let account = "accountname";
+
+        let example = format!("https://{account}.blob.core.windows.net/{container}/{path}?token=1");
+        let url = Url::parse(&example)?;
+        let blob_client = BlobClient::from_sas_url(&url)?;
+
+        assert_eq!(blob_client.blob_name(), path);
+        assert_eq!(blob_client.container_client().container_name(), container);
+
+        let creds = blob_client.container_client.credentials();
+        assert!(matches!(creds, StorageCredentials::SASToken(_)));
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer/myblob")?;
+        assert!(BlobClient::from_sas_url(&url).is_err(), "missing token");
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer?token=1")?;
+        assert!(BlobClient::from_sas_url(&url).is_err(), "missing path");
+
+        let url = Url::parse("https://accountname.blob.core.windows.net/?token=1")?;
+        assert!(BlobClient::from_sas_url(&url).is_err(), "missing container");
+
+        let example =
+            format!("https://{account}.blob.core.chinacloudapi.cn/{container}/{path}?token=1");
+        let url = Url::parse(&example)?;
+        let blob_client = BlobClient::from_sas_url(&url)?;
+
+        assert_eq!(blob_client.blob_name(), path);
+        assert_eq!(blob_client.container_client().container_name(), container);
+
+        Ok(())
+    }
+
     struct FakeSas {
         token: String,
     }
@@ -311,10 +367,8 @@ mod tests {
     }
 
     fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
-        let storage_account = StorageClient::new_emulator_default();
-        storage_account
-            .container_client(container_name)
-            .blob_client(blob_name)
+        let blob_client = ClientBuilder::emulator().blob_client(container_name, blob_name);
+        blob_client
             .generate_signed_blob_url(sas)
             .expect("build url failed")
     }

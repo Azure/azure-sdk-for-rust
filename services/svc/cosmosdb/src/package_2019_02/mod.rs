@@ -119,18 +119,11 @@ pub mod service {
         #[doc = "Arguments:"]
         #[doc = "* `restype`: Required query string to set the service properties."]
         #[doc = "* `comp`: Required query string to set the service properties."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_properties(
-            &self,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_properties::RequestBuilder {
+        pub fn get_properties(&self, restype: impl Into<String>, comp: impl Into<String>) -> get_properties::RequestBuilder {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -141,20 +134,17 @@ pub mod service {
         #[doc = "* `restype`: Required query string to set the service properties."]
         #[doc = "* `comp`: Required query string to set the service properties."]
         #[doc = "* `table_service_properties`: The Table Service properties."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         pub fn set_properties(
             &self,
             restype: impl Into<String>,
             comp: impl Into<String>,
             table_service_properties: impl Into<models::TableServiceProperties>,
-            x_ms_version: impl Into<String>,
         ) -> set_properties::RequestBuilder {
             set_properties::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
                 table_service_properties: table_service_properties.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -164,18 +154,11 @@ pub mod service {
         #[doc = "Arguments:"]
         #[doc = "* `restype`: Required query string to get service stats."]
         #[doc = "* `comp`: Required query string to get service stats."]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
-        pub fn get_statistics(
-            &self,
-            restype: impl Into<String>,
-            comp: impl Into<String>,
-            x_ms_version: impl Into<String>,
-        ) -> get_statistics::RequestBuilder {
+        pub fn get_statistics(&self, restype: impl Into<String>, comp: impl Into<String>) -> get_statistics::RequestBuilder {
             get_statistics::RequestBuilder {
                 client: self.0.clone(),
                 restype: restype.into(),
                 comp: comp.into(),
-                x_ms_version: x_ms_version.into(),
                 timeout: None,
                 x_ms_client_request_id: None,
             }
@@ -183,13 +166,54 @@ pub mod service {
     }
     pub mod get_properties {
         use super::models;
-        type Response = models::TableServiceProperties;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableServiceProperties> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableServiceProperties = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -204,7 +228,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -216,6 +241,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let restype = &this.restype;
                         req.url_mut().query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
@@ -223,40 +249,30 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableServiceProperties = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableServiceProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod set_properties {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
             pub(crate) table_service_properties: models::TableServiceProperties,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -271,7 +287,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -283,6 +300,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let restype = &this.restype;
                         req.url_mut().query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
@@ -292,20 +310,11 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Accepted => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -313,13 +322,58 @@ pub mod service {
     }
     pub mod get_statistics {
         use super::models;
-        type Response = models::TableServiceStats;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableServiceStats> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableServiceStats = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) restype: String,
             pub(crate) comp: String,
-            pub(crate) x_ms_version: String,
             pub(crate) timeout: Option<i64>,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -334,7 +388,8 @@ pub mod service {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -346,6 +401,7 @@ pub mod service {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let restype = &this.restype;
                         req.url_mut().query_pairs_mut().append_pair("restype", restype);
                         let comp = &this.comp;
@@ -353,27 +409,18 @@ pub mod service {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableServiceStats = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableServiceStats>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -385,12 +432,10 @@ pub mod table {
         #[doc = "Queries tables under the given account."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
-        pub fn query(&self, x_ms_version: impl Into<String>, data_service_version: impl Into<String>) -> query::RequestBuilder {
+        pub fn query(&self, data_service_version: impl Into<String>) -> query::RequestBuilder {
             query::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 x_ms_client_request_id: None,
                 format: None,
@@ -403,18 +448,15 @@ pub mod table {
         #[doc = "Creates a new table under the given account."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table_properties`: The Table properties."]
         pub fn create(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table_properties: impl Into<models::TableProperties>,
         ) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table_properties: table_properties.into(),
                 x_ms_client_request_id: None,
@@ -425,12 +467,10 @@ pub mod table {
         #[doc = "Operation permanently deletes the specified table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
-        pub fn delete(&self, x_ms_version: impl Into<String>, table: impl Into<String>) -> delete::RequestBuilder {
+        pub fn delete(&self, table: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 table: table.into(),
                 x_ms_client_request_id: None,
             }
@@ -438,18 +478,11 @@ pub mod table {
         #[doc = "Queries entities in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
-        pub fn query_entities(
-            &self,
-            x_ms_version: impl Into<String>,
-            data_service_version: impl Into<String>,
-            table: impl Into<String>,
-        ) -> query_entities::RequestBuilder {
+        pub fn query_entities(&self, data_service_version: impl Into<String>, table: impl Into<String>) -> query_entities::RequestBuilder {
             query_entities::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 timeout: None,
@@ -465,14 +498,12 @@ pub mod table {
         #[doc = "Queries a single entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
         #[doc = "* `row_key`: The row key of the entity."]
         pub fn query_entity_with_partition_and_row_key(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -480,7 +511,6 @@ pub mod table {
         ) -> query_entity_with_partition_and_row_key::RequestBuilder {
             query_entity_with_partition_and_row_key::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -495,14 +525,12 @@ pub mod table {
         #[doc = "Update entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
         #[doc = "* `row_key`: The row key of the entity."]
         pub fn update_entity(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -510,7 +538,6 @@ pub mod table {
         ) -> update_entity::RequestBuilder {
             update_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -525,14 +552,12 @@ pub mod table {
         #[doc = "Merge entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
         #[doc = "* `row_key`: The row key of the entity."]
         pub fn merge_entity(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -540,7 +565,6 @@ pub mod table {
         ) -> merge_entity::RequestBuilder {
             merge_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -555,7 +579,6 @@ pub mod table {
         #[doc = "Deletes the specified entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `partition_key`: The partition key of the entity."]
@@ -563,7 +586,6 @@ pub mod table {
         #[doc = "* `if_match`: Match condition for an entity to be deleted. If specified and a matching entity is not found, an error will be raised. To force an unconditional delete, set to the wildcard character (*)."]
         pub fn delete_entity(
             &self,
-            x_ms_version: impl Into<String>,
             data_service_version: impl Into<String>,
             table: impl Into<String>,
             partition_key: impl Into<String>,
@@ -572,7 +594,6 @@ pub mod table {
         ) -> delete_entity::RequestBuilder {
             delete_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 partition_key: partition_key.into(),
@@ -586,18 +607,11 @@ pub mod table {
         #[doc = "Retrieves details about any stored access policies specified on the table that may be used with Shared Access Signatures."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
-        pub fn get_access_policy(
-            &self,
-            x_ms_version: impl Into<String>,
-            table: impl Into<String>,
-            comp: impl Into<String>,
-        ) -> get_access_policy::RequestBuilder {
+        pub fn get_access_policy(&self, table: impl Into<String>, comp: impl Into<String>) -> get_access_policy::RequestBuilder {
             get_access_policy::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 table: table.into(),
                 comp: comp.into(),
                 timeout: None,
@@ -607,18 +621,11 @@ pub mod table {
         #[doc = "Insert entity in a table."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `data_service_version`: Specifies the data service version."]
         #[doc = "* `table`: The name of the table."]
-        pub fn insert_entity(
-            &self,
-            x_ms_version: impl Into<String>,
-            data_service_version: impl Into<String>,
-            table: impl Into<String>,
-        ) -> insert_entity::RequestBuilder {
+        pub fn insert_entity(&self, data_service_version: impl Into<String>, table: impl Into<String>) -> insert_entity::RequestBuilder {
             insert_entity::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 data_service_version: data_service_version.into(),
                 table: table.into(),
                 timeout: None,
@@ -631,18 +638,11 @@ pub mod table {
         #[doc = "Sets stored access policies for the table that may be used with Shared Access Signatures."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `x_ms_version`: Specifies the version of the operation to use for this request."]
         #[doc = "* `table`: The name of the table."]
         #[doc = "* `comp`: Required query string to handle stored access policies for the table that may be used with Shared Access Signatures."]
-        pub fn set_access_policy(
-            &self,
-            x_ms_version: impl Into<String>,
-            table: impl Into<String>,
-            comp: impl Into<String>,
-        ) -> set_access_policy::RequestBuilder {
+        pub fn set_access_policy(&self, table: impl Into<String>, comp: impl Into<String>) -> set_access_policy::RequestBuilder {
             set_access_policy::RequestBuilder {
                 client: self.0.clone(),
-                x_ms_version: x_ms_version.into(),
                 table: table.into(),
                 comp: comp.into(),
                 table_acl: None,
@@ -653,11 +653,61 @@ pub mod table {
     }
     pub mod query {
         use super::models;
-        type Response = models::TableQueryResponse;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableQueryResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableQueryResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "This header contains the continuation token value."]
+            pub fn x_ms_continuation_next_table_name(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation-nexttablename"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) x_ms_client_request_id: Option<String>,
             pub(crate) format: Option<String>,
@@ -697,7 +747,8 @@ pub mod table {
                 self.next_table_name = Some(next_table_name.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -709,7 +760,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -731,35 +782,72 @@ pub mod table {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableQueryResponse = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableQueryResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod create {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Created201(models::TableResponse),
-            NoContent204,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "Indicates whether the Prefer request header was honored. If the response does not include this header, then the Prefer header was not honored. If this header is returned, its value will either be return-content or return-no-content."]
+            pub fn preference_applied(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("preference-applied"))
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table_properties: models::TableProperties,
             pub(crate) x_ms_client_request_id: Option<String>,
@@ -782,7 +870,8 @@ pub mod table {
                 self.prefer = Some(prefer.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -794,7 +883,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -808,32 +897,22 @@ pub mod table {
                             req.insert_header("prefer", prefer);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableResponse = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod delete {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) x_ms_client_request_id: Option<String>,
         }
@@ -843,7 +922,8 @@ pub mod table {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -855,21 +935,13 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.insert_header("x-ms-version", &this.x_ms_version);
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -877,11 +949,66 @@ pub mod table {
     }
     pub mod query_entities {
         use super::models;
-        type Response = models::TableEntityQueryResponse;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableEntityQueryResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableEntityQueryResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "This header contains the continuation token value for partition key."]
+            pub fn x_ms_continuation_next_partition_key(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation-nextpartitionkey"))
+            }
+            #[doc = "This header contains the continuation token value for row key."]
+            pub fn x_ms_continuation_next_row_key(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation-nextrowkey"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) timeout: Option<i64>,
@@ -934,7 +1061,8 @@ pub mod table {
                 self.next_row_key = Some(next_row_key.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -946,10 +1074,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -974,31 +1102,82 @@ pub mod table {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableEntityQueryResponse = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableEntityQueryResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod query_entity_with_partition_and_row_key {
         use super::models;
-        type Response = models::TableEntityProperties;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableEntityProperties> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableEntityProperties = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated"]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "This header contains the continuation token value for partition key."]
+            pub fn x_ms_continuation_next_partition_key(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation-nextpartitionkey"))
+            }
+            #[doc = "This header contains the continuation token value for row key."]
+            pub fn x_ms_continuation_next_row_key(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-continuation-nextrowkey"))
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1035,7 +1214,8 @@ pub mod table {
                 self.filter = Some(filter.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1053,10 +1233,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1072,31 +1252,22 @@ pub mod table {
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableEntityProperties = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableEntityProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod update_entity {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1133,7 +1304,8 @@ pub mod table {
                 self.if_match = Some(if_match.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1151,10 +1323,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1172,15 +1344,7 @@ pub mod table {
                             req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1188,11 +1352,10 @@ pub mod table {
     }
     pub mod merge_entity {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1229,7 +1392,8 @@ pub mod table {
                 self.if_match = Some(if_match.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1247,10 +1411,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1268,15 +1432,7 @@ pub mod table {
                             req.insert_header("if-match", if_match);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1284,11 +1440,10 @@ pub mod table {
     }
     pub mod delete_entity {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) partition_key: String,
@@ -1314,7 +1469,8 @@ pub mod table {
                 self.format = Some(format.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1332,10 +1488,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1346,15 +1502,7 @@ pub mod table {
                         req.insert_header("if-match", &this.if_match);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
@@ -1362,11 +1510,56 @@ pub mod table {
     }
     pub mod get_access_policy {
         use super::models;
-        type Response = models::SignedIdentifiers;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SignedIdentifiers> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SignedIdentifiers = azure_core::xml::read_xml(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+        }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) comp: String,
             pub(crate) timeout: Option<i64>,
@@ -1383,7 +1576,8 @@ pub mod table {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1395,10 +1589,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1406,35 +1600,80 @@ pub mod table {
                         req.url_mut().query_pairs_mut().append_pair("comp", comp);
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Ok => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::SignedIdentifiers = serde_json::from_slice(&rsp_body)?;
-                                Ok(rsp_value)
-                            }
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SignedIdentifiers>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod insert_entity {
         use super::models;
-        #[derive(Debug)]
-        pub enum Response {
-            Created201(models::TableEntityProperties),
-            NoContent204,
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::TableEntityProperties> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::TableEntityProperties = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "If a client request id header is sent in the request, this header will be present in the response with the same value."]
+            pub fn x_ms_client_request_id(&self) -> azure_core::Result<&str> {
+                self.0
+                    .get_str(&azure_core::headers::HeaderName::from_static("x-ms-client-request-id"))
+            }
+            #[doc = "This header uniquely identifies the request that was made and can be used for troubleshooting the request."]
+            pub fn x_ms_request_id(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-request-id"))
+            }
+            #[doc = "Indicates the version of the Table service used to execute the request. This header is returned for requests made against version 2009-09-19 and above."]
+            pub fn x_ms_version(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-version"))
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the response was initiated."]
+            pub fn date(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("date"))?)
+            }
+            #[doc = "UTC date/time value generated by the service that indicates the time at which the entity was last updated."]
+            pub fn e_tag(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+            }
+            #[doc = "Indicates whether the Prefer request header was honored. If the response does not include this header, then the Prefer header was not honored. If this header is returned, its value will either be return-content or return-no-content."]
+            pub fn preference_applied(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("preference-applied"))
+            }
+            #[doc = "Indicates the content type of the payload. The value depends on the value specified for the Accept request header."]
+            pub fn content_type(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("content-type"))
+            }
         }
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) data_service_version: String,
             pub(crate) table: String,
             pub(crate) timeout: Option<i64>,
@@ -1469,7 +1708,8 @@ pub mod table {
                 self.prefer = Some(prefer.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1481,10 +1721,10 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
@@ -1502,32 +1742,22 @@ pub mod table {
                             req.insert_header("prefer", prefer);
                         }
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::Created => {
-                                let rsp_body = rsp_stream.collect().await?;
-                                let rsp_value: models::TableEntityProperties = serde_json::from_slice(&rsp_body)?;
-                                Ok(Response::Created201(rsp_value))
-                            }
-                            azure_core::StatusCode::NoContent => Ok(Response::NoContent204),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::TableEntityProperties>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
     pub mod set_access_policy {
         use super::models;
-        type Response = ();
+        pub struct Response(azure_core::Response);
         #[derive(Clone)]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) x_ms_version: String,
             pub(crate) table: String,
             pub(crate) comp: String,
             pub(crate) table_acl: Option<models::SignedIdentifiers>,
@@ -1550,7 +1780,8 @@ pub mod table {
                 self.x_ms_client_request_id = Some(x_ms_client_request_id.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1562,6 +1793,7 @@ pub mod table {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
+                        req.insert_header(azure_core::headers::VERSION, "2019-02-02");
                         let req_body = if let Some(table_acl) = &this.table_acl {
                             req.insert_header("content-type", "application/xml");
                             azure_core::to_json(table_acl)?
@@ -1571,22 +1803,13 @@ pub mod table {
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
-                        req.insert_header("x-ms-version", &this.x_ms_version);
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }
                         let comp = &this.comp;
                         req.url_mut().query_pairs_mut().append_pair("comp", comp);
                         req.set_body(req_body);
-                        let rsp = this.client.send(&mut req).await?;
-                        let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                        match rsp_status {
-                            azure_core::StatusCode::NoContent => Ok(()),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        }
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }

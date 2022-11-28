@@ -86,7 +86,11 @@ impl Cluster {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Cluster>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -233,10 +237,19 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponse>,
     #[doc = "The error additional info."]
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 impl ErrorResponse {
@@ -262,7 +275,11 @@ impl ExpressRouteAuthorization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteAuthorizationList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ExpressRouteAuthorization>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -357,7 +374,11 @@ impl HcxEnterpriseSite {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HcxEnterpriseSiteList {
     #[doc = "The items on a page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<HcxEnterpriseSite>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -542,7 +563,11 @@ pub struct ManagementCluster {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<i32>,
     #[doc = "The hosts"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hosts: Vec<String>,
 }
 impl ManagementCluster {
@@ -598,16 +623,30 @@ pub struct MetricSpecification {
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
     #[doc = "Supported aggregation types"]
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "Supported time grain types"]
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "supportedTimeGrainTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub supported_time_grain_types: Vec<String>,
     #[doc = "Optional. If set to true, then zero will be returned for time duration where no metric is emitted/published."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
     #[doc = "Dimensions of the metric"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dimensions: Vec<MetricDimension>,
     #[doc = "Whether or not the service is using regional MDM accounts."]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
@@ -676,7 +715,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[doc = "List of operations"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -728,7 +771,11 @@ impl PrivateCloud {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateCloudList {
     #[doc = "The items on the page"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<PrivateCloud>,
     #[doc = "URL to get the next page if any"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -877,7 +924,12 @@ pub struct PrivateCloudUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub internet: Option<private_cloud_update_properties::Internet>,
     #[doc = "vCenter Single Sign On Identity Sources"]
-    #[serde(rename = "identitySources", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "identitySources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub identity_sources: Vec<IdentitySource>,
 }
 impl PrivateCloudUpdateProperties {
@@ -1007,10 +1059,20 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[doc = "Specifications of the Log for Azure Monitoring"]
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub log_specifications: Vec<LogSpecification>,
     #[doc = "Specifications of the Metrics for Azure Monitoring"]
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "metricSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub metric_specifications: Vec<MetricSpecification>,
 }
 impl ServiceSpecification {

@@ -299,7 +299,11 @@ pub struct AclList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the access control list (ACL)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Acl>,
 }
 impl azure_core::Continuable for AclList {
@@ -490,10 +494,18 @@ pub struct USqlAssembly {
     #[serde(rename = "isUserDefined", default, skip_serializing_if = "Option::is_none")]
     pub is_user_defined: Option<bool>,
     #[doc = "the list of files associated with the assembly"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub files: Vec<USqlAssemblyFileInfo>,
     #[doc = "the list of dependencies associated with the assembly"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub dependencies: Vec<USqlAssemblyDependencyInfo>,
 }
 impl USqlAssembly {
@@ -599,7 +611,11 @@ pub struct USqlAssemblyList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of assemblies in the database"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlAssemblyClr>,
 }
 impl azure_core::Continuable for USqlAssemblyList {
@@ -633,7 +649,11 @@ pub struct USqlCredentialList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of credentials in the database"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlCredential>,
 }
 impl azure_core::Continuable for USqlCredentialList {
@@ -667,7 +687,11 @@ pub struct USqlDatabaseList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of databases"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlDatabase>,
 }
 impl azure_core::Continuable for USqlDatabaseList {
@@ -703,7 +727,11 @@ pub struct USqlDistributionInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<i32>,
     #[doc = "the list of directed columns in the distribution"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub keys: Vec<USqlDirectedColumn>,
     #[doc = "the count of indices using this distribution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -735,7 +763,12 @@ pub struct USqlExternalDataSource {
     #[serde(rename = "providerString", default, skip_serializing_if = "Option::is_none")]
     pub provider_string: Option<String>,
     #[doc = "the list of types to push down from the external data source."]
-    #[serde(rename = "pushdownTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "pushdownTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub pushdown_types: Vec<String>,
 }
 impl USqlExternalDataSource {
@@ -749,7 +782,11 @@ pub struct USqlExternalDataSourceList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of external data sources in the database"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlExternalDataSource>,
 }
 impl azure_core::Continuable for USqlExternalDataSourceList {
@@ -770,10 +807,19 @@ pub struct USqlIndex {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "the list of directed columns in the index"]
-    #[serde(rename = "indexKeys", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "indexKeys",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub index_keys: Vec<USqlDirectedColumn>,
     #[doc = "the list of columns in the index"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<String>,
     #[doc = "A Data Lake Analytics catalog U-SQL distribution information object."]
     #[serde(rename = "distributionInfo", default, skip_serializing_if = "Option::is_none")]
@@ -782,10 +828,20 @@ pub struct USqlIndex {
     #[serde(rename = "partitionFunction", default, skip_serializing_if = "Option::is_none")]
     pub partition_function: Option<String>,
     #[doc = "the list of partition keys in the index"]
-    #[serde(rename = "partitionKeyList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "partitionKeyList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub partition_key_list: Vec<String>,
     #[doc = "the list of full paths to the streams that contain this index in the DataLake account."]
-    #[serde(rename = "streamNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "streamNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub stream_names: Vec<String>,
     #[doc = "the switch indicating if this index is a columnstore index."]
     #[serde(rename = "isColumnstore", default, skip_serializing_if = "Option::is_none")]
@@ -831,7 +887,11 @@ pub struct USqlPackageList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of packages in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlPackage>,
 }
 impl azure_core::Continuable for USqlPackageList {
@@ -874,7 +934,11 @@ pub struct USqlProcedureList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of procedure in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlProcedure>,
 }
 impl azure_core::Continuable for USqlProcedureList {
@@ -911,7 +975,11 @@ pub struct USqlSchemaList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of schemas in the database"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlSchema>,
 }
 impl azure_core::Continuable for USqlSchemaList {
@@ -966,13 +1034,28 @@ pub struct USqlTable {
     #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<String>,
     #[doc = "the list of columns in this table"]
-    #[serde(rename = "columnList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "columnList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub column_list: Vec<USqlTableColumn>,
     #[doc = "the list of indices in this table"]
-    #[serde(rename = "indexList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "indexList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub index_list: Vec<USqlIndex>,
     #[doc = "the list of partition keys in the table"]
-    #[serde(rename = "partitionKeyList", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "partitionKeyList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub partition_key_list: Vec<String>,
     #[doc = "A Data Lake Analytics catalog external table item."]
     #[serde(rename = "externalTable", default, skip_serializing_if = "Option::is_none")]
@@ -1037,7 +1120,11 @@ pub struct USqlTableFragmentList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of table fragments in the database, schema and table combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlTableFragment>,
 }
 impl azure_core::Continuable for USqlTableFragmentList {
@@ -1057,7 +1144,11 @@ pub struct USqlTableList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of tables in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlTable>,
 }
 impl azure_core::Continuable for USqlTableList {
@@ -1092,7 +1183,11 @@ pub struct USqlTablePartition {
     #[serde(rename = "indexId", default, skip_serializing_if = "Option::is_none")]
     pub index_id: Option<i32>,
     #[doc = "the list of labels associated with this partition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub label: Vec<String>,
     #[doc = "the creation time of the partition"]
     #[serde(rename = "createDate", default, with = "azure_core::date::rfc3339::option")]
@@ -1109,7 +1204,11 @@ pub struct USqlTablePartitionList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of table partitions in the database, schema and table combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlTablePartition>,
 }
 impl azure_core::Continuable for USqlTablePartitionList {
@@ -1133,13 +1232,21 @@ pub struct USqlTablePreview {
     #[serde(rename = "totalColumnCount", default, skip_serializing_if = "Option::is_none")]
     pub total_column_count: Option<i64>,
     #[doc = "the rows of the table or partition preview, where each row is an array of string representations the row's values. Note: Byte arrays will appear as base-64 encoded values, SqlMap and SqlArray objects will appear as escaped JSON objects, and DateTime objects will appear as ISO formatted UTC date-times."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub rows: Vec<Vec<String>>,
     #[doc = "true if the amount of data in the response is less than expected due to the preview operation's size limitations. This can occur if the requested rows or row counts are too large."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub truncated: Option<bool>,
     #[doc = "the schema of the table or partition."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schema: Vec<USqlTableColumn>,
 }
 impl USqlTablePreview {
@@ -1189,7 +1296,12 @@ pub struct USqlTableStatistics {
     #[serde(rename = "filterDefinition", default, skip_serializing_if = "Option::is_none")]
     pub filter_definition: Option<String>,
     #[doc = "the list of column names associated with these statistics."]
-    #[serde(rename = "colNames", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "colNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub col_names: Vec<String>,
 }
 impl USqlTableStatistics {
@@ -1203,7 +1315,11 @@ pub struct USqlTableStatisticsList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of table statistics in the database, schema and table combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlTableStatistics>,
 }
 impl azure_core::Continuable for USqlTableStatisticsList {
@@ -1223,7 +1339,11 @@ pub struct USqlTableType {
     #[serde(flatten)]
     pub u_sql_type: USqlType,
     #[doc = "the type field information associated with this table type."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<TypeFieldInfo>,
 }
 impl USqlTableType {
@@ -1237,7 +1357,11 @@ pub struct USqlTableTypeList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of table types in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlTableType>,
 }
 impl azure_core::Continuable for USqlTableTypeList {
@@ -1280,7 +1404,11 @@ pub struct USqlTableValuedFunctionList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of table valued functions in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlTableValuedFunction>,
 }
 impl azure_core::Continuable for USqlTableValuedFunctionList {
@@ -1356,7 +1484,11 @@ pub struct USqlTypeList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of types in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlType>,
 }
 impl azure_core::Continuable for USqlTypeList {
@@ -1399,7 +1531,11 @@ pub struct USqlViewList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[doc = "the list of view in the database and schema combination"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<USqlView>,
 }
 impl azure_core::Continuable for USqlViewList {

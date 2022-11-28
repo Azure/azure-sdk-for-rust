@@ -1,4 +1,4 @@
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 use uuid::Uuid;
@@ -14,18 +14,16 @@ async fn main() -> azure_core::Result<()> {
     let container_name = format!("range-example-{}", Uuid::new_v4());
     let blob_name = format!("blob-{}.txt", Uuid::new_v4());
 
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let container_client =
-        StorageClient::new_access_key(&account, &access_key).container_client(&container_name);
-    container_client.create().into_future().await?;
+        BlobServiceClient::new(account, storage_credentials).container_client(container_name);
+    container_client.create().await?;
 
     let blob_client = container_client.blob_client(&blob_name);
 
     let buf = b"0123456789".repeat(1000);
 
-    blob_client
-        .put_block_blob(buf.clone())
-        .into_future()
-        .await?;
+    blob_client.put_block_blob(buf.clone()).await?;
 
     // if we get the entire content, it should match
     let blob = blob_client.get_content().await?;
@@ -99,7 +97,7 @@ async fn main() -> azure_core::Result<()> {
         "streamed blob content should match original buf"
     );
 
-    container_client.delete().into_future().await?;
+    container_client.delete().await?;
 
     Ok(())
 }

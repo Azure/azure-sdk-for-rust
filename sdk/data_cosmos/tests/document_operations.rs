@@ -29,11 +29,7 @@ async fn document_operations() {
 
     let client = setup_mock::initialize("document_operations").unwrap();
 
-    client
-        .create_database(DATABASE_NAME)
-        .into_future()
-        .await
-        .unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
@@ -49,7 +45,6 @@ async fn document_operations() {
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy)
-        .into_future()
         .await
         .unwrap();
 
@@ -62,7 +57,6 @@ async fn document_operations() {
     };
     collection
         .create_document(document_data.clone())
-        .into_future()
         .await
         .unwrap();
 
@@ -97,11 +91,7 @@ async fn document_operations() {
         .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
 
-    let document_after_get = document
-        .get_document::<MyDocument>()
-        .into_future()
-        .await
-        .unwrap();
+    let document_after_get = document.get_document::<MyDocument>().await.unwrap();
 
     if let GetDocumentResponse::Found(document) = document_after_get {
         assert_eq!(document.document.document, document_data);
@@ -122,7 +112,6 @@ async fn document_operations() {
                 .etag()
                 .to_string(),
         ))
-        .into_future()
         .await
         .unwrap();
 
@@ -130,11 +119,7 @@ async fn document_operations() {
     let document = collection
         .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
-    let document_after_get = document
-        .get_document::<MyDocument>()
-        .into_future()
-        .await
-        .unwrap();
+    let document_after_get = document.get_document::<MyDocument>().await.unwrap();
 
     if let GetDocumentResponse::Found(document) = document_after_get {
         assert!(document.document.document.hello == 190);
@@ -143,18 +128,18 @@ async fn document_operations() {
     }
 
     // delete document
-    document.delete_document().into_future().await.unwrap();
+    document.delete_document().await.unwrap();
 
     let mut documents = collection.list_documents().into_stream::<MyDocument>();
 
     // Ensure that the documents stream can be sent to a task
     let result = tokio::spawn(async move {
         let documents = documents.next().await.unwrap().unwrap().documents;
-        documents.len() == 0
+        documents.is_empty()
     })
     .await
     .unwrap();
     assert!(result, "Documents length was not 0");
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }

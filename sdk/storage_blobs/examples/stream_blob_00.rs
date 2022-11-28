@@ -1,5 +1,5 @@
 use azure_core::error::{ErrorKind, ResultExt};
-use azure_storage::core::prelude::*;
+use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
 
@@ -23,16 +23,15 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let blob_client = StorageClient::new_access_key(&account, &access_key)
-        .container_client(&container_name)
-        .blob_client(file_name);
+    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let blob_client =
+        ClientBuilder::new(account, storage_credentials).blob_client(&container_name, file_name);
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 
     let _response = blob_client
         .put_block_blob(string)
         .content_type("text/plain")
-        .into_future()
         .await?;
 
     println!("{}/{} blob created!", container_name, file_name);
@@ -86,7 +85,6 @@ async fn main() -> azure_core::Result<()> {
     blob_client
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
-        .into_future()
         .await?;
 
     Ok(())

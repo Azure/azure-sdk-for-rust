@@ -1,4 +1,5 @@
-pub(crate) mod models;
+mod models;
 mod operations;
+
 pub use models::*;
-pub(crate) use operations::*;
+pub use operations::*;

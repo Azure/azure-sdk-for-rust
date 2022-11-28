@@ -79,7 +79,6 @@ impl<T: DeserializeOwned + Send> GetDocumentBuilder<T> {
 
 azure_core::future!(GetDocument<T>);
 
-#[cfg(feature = "into_future")]
 impl<T: DeserializeOwned + Send> std::future::IntoFuture for GetDocumentBuilder<T> {
     type IntoFuture = GetDocument<T>;
     type Output = <GetDocument<T> as std::future::Future>::Output;

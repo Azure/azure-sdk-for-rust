@@ -31,10 +31,10 @@ async fn main() -> azure_core::Result<()> {
     let collection = database.collection_client(args.collection_name.clone());
     let user = database.user_client(args.user_name);
 
-    let get_collection_response = collection.get_collection().into_future().await?;
+    let get_collection_response = collection.get_collection().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let create_user_response = user.create_user().into_future().await?;
+    let create_user_response = user.create_user().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // test list documents
@@ -57,7 +57,6 @@ async fn main() -> azure_core::Result<()> {
     let create_permission_response = permission
         .create_permission(permission_mode)
         .expiry_seconds(18000u64) // 5 hours, max!
-        .into_future()
         .await
         .unwrap();
     println!(
@@ -113,21 +112,19 @@ async fn main() -> azure_core::Result<()> {
         .create_document(document.clone())
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
-        .into_future()
         .await
     {
         Ok(_) => panic!("this should not happen!"),
         Err(error) => println!("Insert failed: {:#?}", error),
     }
 
-    permission.delete_permission().into_future().await?;
+    permission.delete_permission().await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission
         .create_permission(permission_mode)
         .expiry_seconds(18000u64)
-        .into_future()
         .await
         .unwrap();
     println!(
@@ -154,7 +151,6 @@ async fn main() -> azure_core::Result<()> {
         .create_document(document)
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
-        .into_future()
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -162,7 +158,7 @@ async fn main() -> azure_core::Result<()> {
     );
 
     println!("Cleaning up user.");
-    let delete_user_response = user.delete_user().into_future().await?;
+    let delete_user_response = user.delete_user().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

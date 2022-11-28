@@ -1,5 +1,5 @@
 use azure_core::headers::{self, Header, CONTENT_MD5};
-use azure_storage::core::headers::CONTENT_CRC64;
+use azure_storage::headers::CONTENT_CRC64;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub enum Hash {

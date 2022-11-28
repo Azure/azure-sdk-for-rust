@@ -32,7 +32,11 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Indicates resources which were responsible for the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resources: Vec<String>,
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
@@ -56,7 +60,11 @@ pub struct ErrorInfo {
     #[doc = "A human readable error message."]
     pub message: String,
     #[doc = "error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<ErrorInfo>>,
@@ -504,7 +512,12 @@ pub struct EventsExceptionDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The parsed stack"]
-    #[serde(rename = "parsedStack", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "parsedStack",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub parsed_stack: Vec<EventsExceptionDetailsParsedStack>,
 }
 impl EventsExceptionDetail {
@@ -582,7 +595,11 @@ pub struct EventsExceptionInfo {
     #[serde(rename = "innermostAssembly", default, skip_serializing_if = "Option::is_none")]
     pub innermost_assembly: Option<String>,
     #[doc = "The details of the exception"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<EventsExceptionDetail>,
 }
 impl EventsExceptionInfo {
@@ -767,7 +784,12 @@ impl EventsRequestResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsResult {
     #[doc = "OData messages for this response."]
-    #[serde(rename = "@ai.messages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "@ai.messages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ai_messages: Vec<ErrorInfo>,
     #[doc = "Events query result data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -872,10 +894,19 @@ pub struct EventsResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
     pub odata_context: Option<String>,
     #[doc = "OData messages for this response."]
-    #[serde(rename = "@ai.messages", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "@ai.messages",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ai_messages: Vec<ErrorInfo>,
     #[doc = "Contents of the events query result."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<EventsResultData>,
 }
 impl EventsResults {
@@ -963,13 +994,26 @@ pub struct MetadataApplication {
     #[doc = "The Azure region of the Application Insights app."]
     pub region: String,
     #[doc = "The list of custom tables for the Application Insights app."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tables: Vec<String>,
     #[doc = "The list of stored functions on the Application Insights app"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub functions: Vec<String>,
     #[doc = "The list of table groups on the Application Insights app"]
-    #[serde(rename = "tableGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tableGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub table_groups: Vec<String>,
 }
 impl MetadataApplication {
@@ -1020,16 +1064,33 @@ impl MetadataFunction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataResults {
     #[doc = "The list of groups of tables on the app."]
-    #[serde(rename = "tableGroups", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "tableGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub table_groups: Vec<MetadataTableGroup>,
     #[doc = "The list of tables and columns that comprise the schema of the app."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tables: Vec<MetadataTable>,
     #[doc = "The list of functions stored on the app."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub functions: Vec<MetadataFunction>,
     #[doc = "The list of Application Insights apps that were referenced in the metadata request."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub applications: Vec<MetadataApplication>,
 }
 impl MetadataResults {
@@ -1051,7 +1112,11 @@ pub struct MetadataTable {
     #[serde(rename = "timespanColumn", default, skip_serializing_if = "Option::is_none")]
     pub timespan_column: Option<String>,
     #[doc = "The list of columns defined on the table"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub columns: Vec<serde_json::Value>,
 }
 impl MetadataTable {
@@ -1082,7 +1147,11 @@ pub struct MetadataTableGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The list of tables contained in the table group"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub tables: Vec<String>,
 }
 impl MetadataTableGroup {
@@ -1334,7 +1403,11 @@ pub struct MetricsResultInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
     #[doc = "Segmented metric data (if segmented)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub segments: Vec<MetricsSegmentInfo>,
 }
 impl MetricsResultInfo {
@@ -1354,7 +1427,11 @@ pub struct MetricsSegmentInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub end: Option<String>,
     #[doc = "Segmented metric data (if further segmented)."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub segments: Vec<MetricsSegmentInfo>,
 }
 impl MetricsSegmentInfo {

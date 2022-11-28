@@ -3,7 +3,7 @@ use crate::{
     prelude::*,
 };
 use azure_core::{headers::*, prelude::*, RequestId};
-use azure_storage::core::{copy_id_from_headers, CopyId};
+use azure_storage::{copy_id_from_headers, CopyId};
 use std::convert::{TryFrom, TryInto};
 use time::OffsetDateTime;
 use url::Url;
@@ -74,7 +74,7 @@ pub struct CopyBlobResponse {
 }
 
 impl TryFrom<&Headers> for CopyBlobResponse {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {

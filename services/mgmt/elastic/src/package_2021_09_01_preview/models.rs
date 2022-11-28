@@ -182,7 +182,11 @@ impl ElasticMonitorResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticMonitorResourceListResponse {
     #[doc = "Results of a list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ElasticMonitorResource>,
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -239,7 +243,11 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Error details."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ErrorResponseBody>,
 }
 impl ErrorResponseBody {
@@ -275,7 +283,11 @@ pub struct ExternalUserInfo {
     #[serde(rename = "emailId", default, skip_serializing_if = "Option::is_none")]
     pub email_id: Option<String>,
     #[doc = "Roles to be assigned for  created or updated user"]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub roles: Vec<String>,
 }
 impl ExternalUserInfo {
@@ -368,7 +380,12 @@ pub struct LogRules {
     #[serde(rename = "sendActivityLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_activity_logs: Option<bool>,
     #[doc = "List of filtering tags to be used for capturing logs. This only takes effect if SendActivityLogs flag is enabled. If empty, all resources will be captured. If only Exclude action is specified, the rules will apply to the list of all available resources. If Include actions are specified, the rules will only include resources with the associated tags."]
-    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "filteringTags",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub filtering_tags: Vec<FilteringTag>,
 }
 impl LogRules {
@@ -459,7 +476,11 @@ impl MonitoredResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoredResourceListResponse {
     #[doc = "Results of a list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MonitoredResource>,
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -541,7 +562,11 @@ impl MonitoringTagRules {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRulesListResponse {
     #[doc = "Results of a list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<MonitoringTagRules>,
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -598,7 +623,11 @@ impl OperationDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "List of operations supported by the Microsoft.Elastic provider."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationResult>,
     #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -870,7 +899,11 @@ impl VmCollectionUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmHostListResponse {
     #[doc = "Results of a list operation."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<VmResources>,
     #[doc = "Link to the next Vm resource Id, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

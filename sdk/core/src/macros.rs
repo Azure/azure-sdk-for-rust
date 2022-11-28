@@ -103,7 +103,6 @@ macro_rules! setters {
 ///     }
 /// }
 ///
-/// #[cfg(feature = "into_future")]
 /// impl std::future::IntoFuture for CreateCollectionBuilder {
 ///     type IntoFuture = CreateCollection;
 ///     type Output = <CreateCollection as std::future::Future>::Output;
@@ -232,7 +231,6 @@ macro_rules! operation {
         }
         $crate::future!($name);
         azure_core::__private::paste! {
-        #[cfg(feature = "into_future")]
         impl <$($generic: $first_constraint $(+ $constraint)*)* $(+ $lt)*> std::future::IntoFuture for [<$name Builder>]<$($generic),*> {
             type IntoFuture = $name;
             type Output = <$name as std::future::Future>::Output;

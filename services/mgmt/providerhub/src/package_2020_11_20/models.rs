@@ -17,9 +17,18 @@ impl AuthorizationActionMapping {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanaryTrafficRegionRolloutConfiguration {
-    #[serde(rename = "skipRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "skipRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub skip_regions: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub regions: Vec<String>,
 }
 impl CanaryTrafficRegionRolloutConfiguration {
@@ -31,7 +40,12 @@ impl CanaryTrafficRegionRolloutConfiguration {
 pub struct CheckNameAvailabilitySpecifications {
     #[serde(rename = "enableDefaultValidation", default, skip_serializing_if = "Option::is_none")]
     pub enable_default_validation: Option<bool>,
-    #[serde(rename = "resourceTypesWithCustomValidation", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypesWithCustomValidation",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_types_with_custom_validation: Vec<String>,
 }
 impl CheckNameAvailabilitySpecifications {
@@ -94,7 +108,11 @@ impl CustomRollout {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRolloutArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CustomRollout>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -194,7 +212,12 @@ pub struct CustomRolloutSpecification {
     pub canary: serde_json::Value,
     #[serde(rename = "providerRegistration", default, skip_serializing_if = "Option::is_none")]
     pub provider_registration: Option<serde_json::Value>,
-    #[serde(rename = "resourceTypeRegistrations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypeRegistrations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_type_registrations: Vec<ResourceTypeRegistration>,
 }
 impl CustomRolloutSpecification {
@@ -208,7 +231,12 @@ impl CustomRolloutSpecification {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRolloutStatus {
-    #[serde(rename = "completedRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "completedRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub completed_regions: Vec<String>,
     #[serde(rename = "failedOrSkippedRegions", default, skip_serializing_if = "Option::is_none")]
     pub failed_or_skipped_regions: Option<serde_json::Value>,
@@ -234,7 +262,11 @@ impl DefaultRollout {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRolloutArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<DefaultRollout>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -342,7 +374,12 @@ pub struct DefaultRolloutSpecification {
     pub rest_of_the_world_group_two: Option<serde_json::Value>,
     #[serde(rename = "providerRegistration", default, skip_serializing_if = "Option::is_none")]
     pub provider_registration: Option<serde_json::Value>,
-    #[serde(rename = "resourceTypeRegistrations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypeRegistrations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_type_registrations: Vec<ResourceTypeRegistration>,
 }
 impl DefaultRolloutSpecification {
@@ -470,7 +507,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "Array of details about specific errors that led to this reported error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<Error>,
     #[doc = "Object containing more specific information than  the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
@@ -507,9 +548,18 @@ pub struct ExtendedErrorInfo {
     pub target: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<ExtendedErrorInfo>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub additional_info: Vec<TypedErrorInfo>,
 }
 impl ExtendedErrorInfo {
@@ -531,9 +581,17 @@ impl ExtendedLocationOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionOptions {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub request: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub response: Vec<String>,
 }
 impl ExtensionOptions {
@@ -852,9 +910,19 @@ pub mod linked_operation_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoggingHiddenPropertyPath {
-    #[serde(rename = "hiddenPathsOnRequest", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hiddenPathsOnRequest",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hidden_paths_on_request: Vec<String>,
-    #[serde(rename = "hiddenPathsOnResponse", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "hiddenPathsOnResponse",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub hidden_paths_on_response: Vec<String>,
 }
 impl LoggingHiddenPropertyPath {
@@ -962,7 +1030,11 @@ pub mod logging_rule {
 pub struct NotificationEndpoint {
     #[serde(rename = "notificationDestination", default, skip_serializing_if = "Option::is_none")]
     pub notification_destination: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
 }
 impl NotificationEndpoint {
@@ -985,7 +1057,11 @@ impl NotificationRegistration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistrationArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<NotificationRegistration>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1008,9 +1084,19 @@ pub struct NotificationRegistrationProperties {
     pub notification_mode: Option<notification_registration_properties::NotificationMode>,
     #[serde(rename = "messageScope", default, skip_serializing_if = "Option::is_none")]
     pub message_scope: Option<notification_registration_properties::MessageScope>,
-    #[serde(rename = "includedEvents", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "includedEvents",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub included_events: Vec<String>,
-    #[serde(rename = "notificationEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "notificationEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub notification_endpoints: Vec<NotificationEndpoint>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<notification_registration_properties::ProvisioningState>,
@@ -1213,7 +1299,11 @@ pub mod operations_definition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDefinitionArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<OperationsDefinition>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1258,7 +1348,12 @@ impl OperationsPutContent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderHubMetadata {
-    #[serde(rename = "providerAuthorizations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "providerAuthorizations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub provider_authorizations: Vec<ResourceProviderAuthorization>,
     #[serde(rename = "providerAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub provider_authentication: Option<serde_json::Value>,
@@ -1284,7 +1379,11 @@ impl ProviderRegistration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderRegistrationArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ProviderRegistration>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1525,7 +1624,12 @@ pub struct ResourceProviderCapabilities {
     #[serde(rename = "quotaId")]
     pub quota_id: String,
     pub effect: resource_provider_capabilities::Effect,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
 }
 impl ResourceProviderCapabilities {
@@ -1582,13 +1686,27 @@ pub mod resource_provider_capabilities {
 pub struct ResourceProviderEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "apiVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub api_versions: Vec<String>,
     #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(rename = "featuresRule", default, skip_serializing_if = "Option::is_none")]
     pub features_rule: Option<serde_json::Value>,
@@ -1602,9 +1720,19 @@ impl ResourceProviderEndpoint {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderManagement {
-    #[serde(rename = "schemaOwners", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "schemaOwners",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub schema_owners: Vec<String>,
-    #[serde(rename = "manifestOwners", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "manifestOwners",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub manifest_owners: Vec<String>,
     #[serde(rename = "incidentRoutingService", default, skip_serializing_if = "Option::is_none")]
     pub incident_routing_service: Option<String>,
@@ -1612,11 +1740,21 @@ pub struct ResourceProviderManagement {
     pub incident_routing_team: Option<String>,
     #[serde(rename = "incidentContactEmail", default, skip_serializing_if = "Option::is_none")]
     pub incident_contact_email: Option<String>,
-    #[serde(rename = "serviceTreeInfos", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceTreeInfos",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_tree_infos: Vec<ServiceTreeInfo>,
     #[serde(rename = "resourceAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_access_policy: Option<resource_provider_management::ResourceAccessPolicy>,
-    #[serde(rename = "resourceAccessRoles", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceAccessRoles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_access_roles: Vec<serde_json::Value>,
 }
 impl ResourceProviderManagement {
@@ -1637,7 +1775,12 @@ pub mod resource_provider_management {
 pub struct ResourceProviderManifest {
     #[serde(rename = "providerAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub provider_authentication: Option<serde_json::Value>,
-    #[serde(rename = "providerAuthorizations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "providerAuthorizations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub provider_authorizations: Vec<ResourceProviderAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
@@ -1645,21 +1788,40 @@ pub struct ResourceProviderManifest {
     pub provider_version: Option<String>,
     #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<resource_provider_manifest::ProviderType>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(rename = "featuresRule", default, skip_serializing_if = "Option::is_none")]
     pub features_rule: Option<serde_json::Value>,
     #[serde(rename = "requestHeaderOptions", default, skip_serializing_if = "Option::is_none")]
     pub request_header_options: Option<serde_json::Value>,
-    #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "resourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub resource_types: Vec<ResourceType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub management: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<ResourceProviderCapabilities>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
-    #[serde(rename = "globalNotificationEndpoints", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "globalNotificationEndpoints",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub global_notification_endpoints: Vec<ResourceProviderEndpoint>,
     #[serde(rename = "reRegisterSubscriptionMetadata", default, skip_serializing_if = "Option::is_none")]
     pub re_register_subscription_metadata: Option<serde_json::Value>,
@@ -1724,7 +1886,12 @@ pub mod resource_provider_manifest {
 pub struct ResourceProviderManifestProperties {
     #[serde(rename = "providerAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub provider_authentication: Option<serde_json::Value>,
-    #[serde(rename = "providerAuthorizations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "providerAuthorizations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub provider_authorizations: Vec<ResourceProviderAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
@@ -1732,7 +1899,12 @@ pub struct ResourceProviderManifestProperties {
     pub provider_version: Option<String>,
     #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<resource_provider_manifest_properties::ProviderType>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(rename = "featuresRule", default, skip_serializing_if = "Option::is_none")]
     pub features_rule: Option<serde_json::Value>,
@@ -1740,7 +1912,11 @@ pub struct ResourceProviderManifestProperties {
     pub request_header_options: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub management: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<ResourceProviderCapabilities>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
@@ -1811,19 +1987,48 @@ pub struct ResourceType {
     pub routing_type: Option<resource_type::RoutingType>,
     #[serde(rename = "resourceValidation", default, skip_serializing_if = "Option::is_none")]
     pub resource_validation: Option<resource_type::ResourceValidation>,
-    #[serde(rename = "allowedUnauthorizedActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedUnauthorizedActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_unauthorized_actions: Vec<String>,
-    #[serde(rename = "authorizationActionMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "authorizationActionMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorization_action_mappings: Vec<AuthorizationActionMapping>,
-    #[serde(rename = "linkedAccessChecks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedAccessChecks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_access_checks: Vec<LinkedAccessCheck>,
     #[serde(rename = "defaultApiVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_api_version: Option<String>,
-    #[serde(rename = "loggingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loggingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub logging_rules: Vec<LoggingRule>,
-    #[serde(rename = "throttlingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "throttlingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub throttling_rules: Vec<ThrottlingRule>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<ResourceProviderEndpoint>,
     #[serde(rename = "marketplaceType", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_type: Option<resource_type::MarketplaceType>,
@@ -1831,25 +2036,55 @@ pub struct ResourceType {
     pub identity_management: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(rename = "featuresRule", default, skip_serializing_if = "Option::is_none")]
     pub features_rule: Option<serde_json::Value>,
-    #[serde(rename = "subscriptionStateRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subscriptionStateRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscription_state_rules: Vec<SubscriptionStateRule>,
-    #[serde(rename = "serviceTreeInfos", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceTreeInfos",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_tree_infos: Vec<ServiceTreeInfo>,
     #[serde(rename = "requestHeaderOptions", default, skip_serializing_if = "Option::is_none")]
     pub request_header_options: Option<serde_json::Value>,
     #[serde(rename = "skuLink", default, skip_serializing_if = "Option::is_none")]
     pub sku_link: Option<String>,
-    #[serde(rename = "disallowedActionVerbs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disallowedActionVerbs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disallowed_action_verbs: Vec<String>,
     #[serde(rename = "templateDeploymentPolicy", default, skip_serializing_if = "Option::is_none")]
     pub template_deployment_policy: Option<serde_json::Value>,
-    #[serde(rename = "extendedLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extendedLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extended_locations: Vec<ExtendedLocationOptions>,
-    #[serde(rename = "linkedOperationRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedOperationRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_operation_rules: Vec<LinkedOperationRule>,
     #[serde(rename = "resourceDeletionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_deletion_policy: Option<resource_type::ResourceDeletionPolicy>,
@@ -1999,15 +2234,33 @@ pub mod resource_type {
 pub struct ResourceTypeEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "apiVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub api_versions: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(rename = "featuresRule", default, skip_serializing_if = "Option::is_none")]
     pub features_rule: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extensions: Vec<ResourceTypeExtension>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
@@ -2021,7 +2274,12 @@ impl ResourceTypeEndpoint {
 pub struct ResourceTypeExtension {
     #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_uri: Option<String>,
-    #[serde(rename = "extensionCategories", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extensionCategories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extension_categories: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
@@ -2055,7 +2313,11 @@ impl ResourceTypeRegistration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<ResourceTypeRegistration>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2078,27 +2340,66 @@ pub struct ResourceTypeRegistrationProperties {
     pub routing_type: Option<resource_type_registration_properties::RoutingType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub regionality: Option<resource_type_registration_properties::Regionality>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub endpoints: Vec<ResourceTypeEndpoint>,
     #[serde(rename = "extensionOptions", default, skip_serializing_if = "Option::is_none")]
     pub extension_options: Option<serde_json::Value>,
     #[serde(rename = "marketplaceType", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_type: Option<resource_type_registration_properties::MarketplaceType>,
-    #[serde(rename = "swaggerSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "swaggerSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub swagger_specifications: Vec<SwaggerSpecification>,
-    #[serde(rename = "allowedUnauthorizedActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedUnauthorizedActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_unauthorized_actions: Vec<String>,
-    #[serde(rename = "authorizationActionMappings", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "authorizationActionMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorization_action_mappings: Vec<AuthorizationActionMapping>,
-    #[serde(rename = "linkedAccessChecks", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "linkedAccessChecks",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub linked_access_checks: Vec<LinkedAccessCheck>,
     #[serde(rename = "defaultApiVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_api_version: Option<String>,
-    #[serde(rename = "loggingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "loggingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub logging_rules: Vec<LoggingRule>,
-    #[serde(rename = "throttlingRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "throttlingRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub throttling_rules: Vec<ThrottlingRule>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(rename = "featuresRule", default, skip_serializing_if = "Option::is_none")]
     pub features_rule: Option<serde_json::Value>,
@@ -2120,17 +2421,37 @@ pub struct ResourceTypeRegistrationProperties {
     pub identity_management: Option<serde_json::Value>,
     #[serde(rename = "checkNameAvailabilitySpecifications", default, skip_serializing_if = "Option::is_none")]
     pub check_name_availability_specifications: Option<serde_json::Value>,
-    #[serde(rename = "disallowedActionVerbs", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "disallowedActionVerbs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub disallowed_action_verbs: Vec<String>,
-    #[serde(rename = "serviceTreeInfos", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "serviceTreeInfos",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub service_tree_infos: Vec<ServiceTreeInfo>,
     #[serde(rename = "requestHeaderOptions", default, skip_serializing_if = "Option::is_none")]
     pub request_header_options: Option<serde_json::Value>,
-    #[serde(rename = "subscriptionStateRules", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subscriptionStateRules",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscription_state_rules: Vec<SubscriptionStateRule>,
     #[serde(rename = "templateDeploymentOptions", default, skip_serializing_if = "Option::is_none")]
     pub template_deployment_options: Option<serde_json::Value>,
-    #[serde(rename = "extendedLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extendedLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extended_locations: Vec<ExtendedLocationOptions>,
     #[serde(rename = "resourceMovePolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_move_policy: Option<serde_json::Value>,
@@ -2416,7 +2737,12 @@ pub mod resource_type_sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RolloutStatusBase {
-    #[serde(rename = "completedRegions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "completedRegions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub completed_regions: Vec<String>,
     #[serde(rename = "failedOrSkippedRegions", default, skip_serializing_if = "Option::is_none")]
     pub failed_or_skipped_regions: Option<serde_json::Value>,
@@ -2530,11 +2856,25 @@ impl SkuCost {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuLocationInfo {
     pub location: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
-    #[serde(rename = "zoneDetails", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "zoneDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zone_details: Vec<SkuZoneDetail>,
-    #[serde(rename = "extendedLocations", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "extendedLocations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub extended_locations: Vec<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_location_info::Type>,
@@ -2573,7 +2913,11 @@ impl SkuResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuResourceArrayResponseWithContinuation {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<SkuResource>,
     #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -2601,19 +2945,46 @@ pub struct SkuSetting {
     pub family: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub locations: Vec<String>,
-    #[serde(rename = "locationInfo", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "locationInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub location_info: Vec<SkuLocationInfo>,
-    #[serde(rename = "requiredQuotaIds", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredQuotaIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_quota_ids: Vec<String>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub costs: Vec<SkuCost>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<SkuCapability>,
 }
 impl SkuSetting {
@@ -2636,9 +3007,17 @@ impl SkuSetting {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuZoneDetail {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub name: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub capabilities: Vec<SkuCapability>,
 }
 impl SkuZoneDetail {
@@ -2648,7 +3027,12 @@ impl SkuZoneDetail {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionLifecycleNotificationSpecifications {
-    #[serde(rename = "subscriptionStateOverrideActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "subscriptionStateOverrideActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub subscription_state_override_actions: Vec<SubscriptionStateOverrideAction>,
     #[serde(rename = "softDeleteTTL", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_ttl: Option<String>,
@@ -2777,7 +3161,12 @@ pub mod subscription_state_override_action {
 pub struct SubscriptionStateRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription_state_rule::State>,
-    #[serde(rename = "allowedActions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "allowedActions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub allowed_actions: Vec<String>,
 }
 impl SubscriptionStateRule {
@@ -2834,7 +3223,12 @@ pub mod subscription_state_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerSpecification {
-    #[serde(rename = "apiVersions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "apiVersions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub api_versions: Vec<String>,
     #[serde(rename = "swaggerSpecFolderUri", default, skip_serializing_if = "Option::is_none")]
     pub swagger_spec_folder_uri: Option<String>,
@@ -2848,7 +3242,12 @@ impl SwaggerSpecification {
 pub struct TemplateDeploymentOptions {
     #[serde(rename = "preflightSupported", default, skip_serializing_if = "Option::is_none")]
     pub preflight_supported: Option<bool>,
-    #[serde(rename = "preflightOptions", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "preflightOptions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub preflight_options: Vec<String>,
 }
 impl TemplateDeploymentOptions {
@@ -2956,7 +3355,11 @@ pub mod template_deployment_policy {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThirdPartyProviderAuthorization {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub authorizations: Vec<LightHouseAuthorization>,
     #[serde(rename = "managedByTenantId", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_tenant_id: Option<String>,
@@ -3028,7 +3431,12 @@ pub mod throttling_metric {
 pub struct ThrottlingRule {
     pub action: String,
     pub metrics: Vec<ThrottlingMetric>,
-    #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "requiredFeatures",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub required_features: Vec<String>,
 }
 impl ThrottlingRule {
@@ -3054,7 +3462,11 @@ impl TrafficRegionRolloutConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficRegions {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub regions: Vec<String>,
 }
 impl TrafficRegions {

@@ -6,8 +6,8 @@
 #[cfg(feature = "package-2021-03-15-preview")]
 pub mod package_2021_03_15_preview;
 #[cfg(all(feature = "package-2021-03-15-preview", not(feature = "no-default-tag")))]
-pub use package_2021_03_15_preview::{models, Client, ClientBuilder};
+pub use package_2021_03_15_preview::*;
 #[cfg(feature = "package-2021-03-15")]
 pub mod package_2021_03_15;
 #[cfg(all(feature = "package-2021-03-15", not(feature = "no-default-tag")))]
-pub use package_2021_03_15::{models, Client, ClientBuilder};
+pub use package_2021_03_15::*;

@@ -33,7 +33,11 @@ impl AzureFileVolume {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CachedImagesListResult {
     #[doc = "The list of cached images."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<CachedImages>,
     #[doc = "The URI to fetch the next page of cached images."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -102,7 +106,11 @@ pub mod capabilities {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
     #[doc = "The list of capabilities."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Capabilities>,
     #[doc = "The URI to fetch the next page of capabilities."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -150,7 +158,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "A list of additional details about the error."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<CloudErrorBody>,
 }
 impl CloudErrorBody {
@@ -190,7 +202,11 @@ impl ContainerAttachResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerExec {
     #[doc = "The commands to execute within the container."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub command: Vec<String>,
 }
 impl ContainerExec {
@@ -247,23 +263,109 @@ impl ContainerExecResponse {
     }
 }
 #[doc = "A container group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerGroup {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Identity for the container group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ContainerGroupIdentity>,
-    #[doc = "The container group properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<container_group::Properties>,
+    #[serde(flatten)]
+    pub container_group_properties: ContainerGroupProperties,
 }
 impl ContainerGroup {
+    pub fn new(container_group_properties: ContainerGroupProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            container_group_properties,
+        }
+    }
+}
+#[doc = "Container group diagnostic information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerGroupDiagnostics {
+    #[doc = "Container group log analytics information."]
+    #[serde(rename = "logAnalytics", default, skip_serializing_if = "Option::is_none")]
+    pub log_analytics: Option<LogAnalytics>,
+}
+impl ContainerGroupDiagnostics {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod container_group {
+#[doc = "Identity for the container group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerGroupIdentity {
+    #[doc = "The principal id of the container group identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the container group. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<container_group_identity::Type>,
+    #[doc = "The list of user identities associated with the container group."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ContainerGroupIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod container_group_identity {
+    use super::*;
+    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
+}
+#[doc = "The container group list response that contains the container group properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerGroupListResult {
+    #[doc = "The list of container groups."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ContainerGroup>,
+    #[doc = "The URI to fetch the next page of container groups."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ContainerGroupListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ContainerGroupListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The container group properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerGroupProperties {
+    #[doc = "Identity for the container group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ContainerGroupIdentity>,
+    #[doc = "The container group properties"]
+    pub properties: container_group_properties::Properties,
+}
+impl ContainerGroupProperties {
+    pub fn new(properties: container_group_properties::Properties) -> Self {
+        Self {
+            identity: None,
+            properties,
+        }
+    }
+}
+pub mod container_group_properties {
     use super::*;
     #[doc = "The container group properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -274,7 +376,12 @@ pub mod container_group {
         #[doc = "The containers within the container group."]
         pub containers: Vec<Container>,
         #[doc = "The image registry credentials by which the container group is created from."]
-        #[serde(rename = "imageRegistryCredentials", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "imageRegistryCredentials",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub image_registry_credentials: Vec<ImageRegistryCredential>,
         #[doc = "Restart policy for all containers within the container group. \n- `Always` Always restart\n- `OnFailure` Restart on failure\n- `Never` Never restart\n"]
         #[serde(rename = "restartPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -286,7 +393,11 @@ pub mod container_group {
         #[serde(rename = "osType")]
         pub os_type: properties::OsType,
         #[doc = "The list of volumes that can be mounted by containers in this container group."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub volumes: Vec<Volume>,
         #[doc = "The instance view of the container group. Only valid in response."]
         #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
@@ -295,7 +406,12 @@ pub mod container_group {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub diagnostics: Option<ContainerGroupDiagnostics>,
         #[doc = "The subnet resource IDs for a container group."]
-        #[serde(rename = "subnetIds", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "subnetIds",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub subnet_ids: Vec<ContainerGroupSubnetId>,
         #[doc = "DNS configuration for the container group."]
         #[serde(rename = "dnsConfig", default, skip_serializing_if = "Option::is_none")]
@@ -307,7 +423,12 @@ pub mod container_group {
         #[serde(rename = "encryptionProperties", default, skip_serializing_if = "Option::is_none")]
         pub encryption_properties: Option<EncryptionProperties>,
         #[doc = "The init containers for a container group."]
-        #[serde(rename = "initContainers", default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            rename = "initContainers",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub init_containers: Vec<InitContainerDefinition>,
     }
     impl Properties {
@@ -412,7 +533,11 @@ pub mod container_group {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct InstanceView {
             #[doc = "The events of this container group."]
-            #[serde(default, skip_serializing_if = "Vec::is_empty")]
+            #[serde(
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
             pub events: Vec<Event>,
             #[doc = "The state of the container group. Only valid in response."]
             #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -423,72 +548,6 @@ pub mod container_group {
                 Self::default()
             }
         }
-    }
-}
-#[doc = "Container group diagnostic information."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupDiagnostics {
-    #[doc = "Container group log analytics information."]
-    #[serde(rename = "logAnalytics", default, skip_serializing_if = "Option::is_none")]
-    pub log_analytics: Option<LogAnalytics>,
-}
-impl ContainerGroupDiagnostics {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Identity for the container group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupIdentity {
-    #[doc = "The principal id of the container group identity. This property will only be provided for a system assigned identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The tenant id associated with the container group. This property will only be provided for a system assigned identity."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<container_group_identity::Type>,
-    #[doc = "The list of user identities associated with the container group. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-impl ContainerGroupIdentity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod container_group_identity {
-    use super::*;
-    #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
-}
-#[doc = "The container group list response that contains the container group properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContainerGroupListResult {
-    #[doc = "The list of container groups."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ContainerGroup>,
-    #[doc = "The URI to fetch the next page of container groups."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for ContainerGroupListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
-    }
-}
-impl ContainerGroupListResult {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The container group SKU."]
@@ -554,7 +613,12 @@ pub struct ContainerHttpGet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scheme: Option<container_http_get::Scheme>,
     #[doc = "The HTTP headers."]
-    #[serde(rename = "httpHeaders", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "httpHeaders",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub http_headers: Vec<HttpHeader>,
 }
 impl ContainerHttpGet {
@@ -701,13 +765,26 @@ pub struct ContainerProperties {
     #[doc = "The name of the image used to create the container instance."]
     pub image: String,
     #[doc = "The commands to execute within the container instance in exec form."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub command: Vec<String>,
     #[doc = "The exposed ports on the container instance."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub ports: Vec<ContainerPort>,
     #[doc = "The environment variables to set in the container instance."]
-    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentVariables",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_variables: Vec<EnvironmentVariable>,
     #[doc = "The instance view of the container instance. Only valid in response."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
@@ -715,7 +792,12 @@ pub struct ContainerProperties {
     #[doc = "The resource requirements."]
     pub resources: ResourceRequirements,
     #[doc = "The volume mounts available to the container instance."]
-    #[serde(rename = "volumeMounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "volumeMounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub volume_mounts: Vec<VolumeMount>,
     #[doc = "The container probe, for liveness or readiness"]
     #[serde(rename = "livenessProbe", default, skip_serializing_if = "Option::is_none")]
@@ -754,7 +836,11 @@ pub mod container_properties {
         #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
         pub previous_state: Option<ContainerState>,
         #[doc = "The events of the container instance."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub events: Vec<Event>,
     }
     impl InstanceView {
@@ -984,7 +1070,8 @@ pub struct ImageRegistryCredential {
     #[doc = "The Docker image registry server without a protocol such as \"http\" and \"https\"."]
     pub server: String,
     #[doc = "The username for the private registry."]
-    pub username: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
     #[doc = "The password for the private registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -996,10 +1083,10 @@ pub struct ImageRegistryCredential {
     pub identity_url: Option<String>,
 }
 impl ImageRegistryCredential {
-    pub fn new(server: String, username: String) -> Self {
+    pub fn new(server: String) -> Self {
         Self {
             server,
-            username,
+            username: None,
             password: None,
             identity: None,
             identity_url: None,
@@ -1026,16 +1113,30 @@ pub struct InitContainerPropertiesDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
     #[doc = "The command to execute within the init container in exec form."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub command: Vec<String>,
     #[doc = "The environment variables to set in the init container."]
-    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "environmentVariables",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub environment_variables: Vec<EnvironmentVariable>,
     #[doc = "The instance view of the init container. Only valid in response."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<init_container_properties_definition::InstanceView>,
     #[doc = "The volume mounts available to the init container."]
-    #[serde(rename = "volumeMounts", default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        rename = "volumeMounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub volume_mounts: Vec<VolumeMount>,
 }
 impl InitContainerPropertiesDefinition {
@@ -1058,7 +1159,11 @@ pub mod init_container_properties_definition {
         #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
         pub previous_state: Option<ContainerState>,
         #[doc = "The events of the init container."]
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
         pub events: Vec<Event>,
     }
     impl InstanceView {
@@ -1308,7 +1413,11 @@ pub mod operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Operation>,
     #[doc = "The URI to fetch the next page of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1400,7 +1509,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "The zones for the container group."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub zones: Vec<String>,
 }
 impl Resource {
@@ -1472,6 +1585,9 @@ impl SecretVolume {
 #[doc = "A single usage result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Id of the usage result"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "Unit of the usage result"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
@@ -1512,7 +1628,11 @@ pub mod usage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
     #[doc = "The usage data."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<Usage>,
 }
 impl azure_core::Continuable for UsageListResult {
@@ -1522,6 +1642,21 @@ impl azure_core::Continuable for UsageListResult {
     }
 }
 impl UsageListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of user identities associated with the container group. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentities {
+    #[doc = "The principal id of user assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The client id of user assigned identity."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserAssignedIdentities {
     pub fn new() -> Self {
         Self::default()
     }

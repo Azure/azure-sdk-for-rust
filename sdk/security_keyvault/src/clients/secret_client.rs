@@ -36,7 +36,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     let secret = client.get("SECRET_NAME").into_future().await.unwrap();
+    ///     let secret = client.get("SECRET_NAME").await.unwrap();
     ///     dbg!(&secret);
     /// }
     ///
@@ -65,7 +65,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     client.set("SECRET_NAME", "NEW_VALUE").into_future().await.unwrap();
+    ///     client.set("SECRET_NAME", "NEW_VALUE").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -94,7 +94,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     client.update("SECRET_NAME").enabled(false).into_future().await.unwrap();
+    ///     client.update("SECRET_NAME").enabled(false).await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -153,7 +153,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     client.backup("SECRET_NAME").into_future().await.unwrap();
+    ///     client.backup("SECRET_NAME").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -181,7 +181,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     client.delete("SECRET_NAME").into_future().await.unwrap();
+    ///     client.delete("SECRET_NAME").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
@@ -233,7 +233,7 @@ impl SecretClient {
     ///     &"KEYVAULT_URL",
     ///     std::sync::Arc::new(creds),
     ///     ).unwrap().secret_client();
-    ///     client.restore_secret("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").into_future().await.unwrap();
+    ///     client.restore_secret("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());

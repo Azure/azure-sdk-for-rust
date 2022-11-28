@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage"
-version = "0.5.0"
+version = "0.7.0"
 description = "Azure Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -11,10 +11,11 @@ documentation = "https://docs.rs/azure_storage"
 keywords = ["sdk", "azure", "storage"]
 categories = ["api-bindings"]
 edition = "2021"
+rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.4" }
+azure_core = { path = "../core", version = "0.6", features = ["xml"] }
 base64 = "0.13"
 time = "0.3.10"
 futures = "0.3"
@@ -22,7 +23,7 @@ log = "0.4"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-serde-xml-rs = "0.5"
+serde-xml-rs = "0.6"
 url = "2.2"
 uuid = { version = "1.0", features = ["v4"] }
 bytes = "1.0"
@@ -33,9 +34,11 @@ sha2 = "0.10"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-env_logger = "0.9"
+env_logger = "0.10"
 reqwest = "0.11"
 mock_transport = { path = "../../eng/test/mock_transport" }
+azure_identity = { path = "../identity", default-features = false }
+
 
 [features]
 default = ["enable_reqwest"]
