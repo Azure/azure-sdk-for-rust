@@ -36,6 +36,14 @@ where
         &self.identifier
     }
 
+    pub fn prefetch_count(&self) -> u32 {
+        self.inner.prefetch_count()
+    }
+
+    pub fn receive_mode(&self) -> ServiceBusReceiveMode {
+        self.inner.receive_mode()
+    }
+
     pub async fn dispose(self) -> Result<(), R::CloseError> {
         self.inner.close().await
     }

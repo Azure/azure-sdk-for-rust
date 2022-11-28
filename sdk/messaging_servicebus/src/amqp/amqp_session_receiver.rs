@@ -14,7 +14,7 @@ use crate::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
         service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
-    },
+    }, ServiceBusReceiveMode,
 };
 
 use super::{
@@ -44,6 +44,14 @@ where
     type ReceiveError = <AmqpReceiver<RP> as TransportReceiver>::ReceiveError;
     type DispositionError = <AmqpReceiver<RP> as TransportReceiver>::DispositionError;
     type CloseError = <AmqpReceiver<RP> as TransportReceiver>::CloseError;
+
+    fn prefetch_count(&self) -> u32 {
+        self.inner.prefetch_count()
+    }
+
+    fn receive_mode(&self) -> ServiceBusReceiveMode {
+        self.inner.receive_mode()
+    }
 
     async fn receive_messages(
         &mut self,

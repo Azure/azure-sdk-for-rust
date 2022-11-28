@@ -65,6 +65,14 @@ where
     type DispositionError = RetryError<AmqpDispositionError>;
     type CloseError = DetachError;
 
+    fn prefetch_count(&self) -> u32 {
+        self.prefetch_count
+    }
+
+    fn receive_mode(&self) -> ServiceBusReceiveMode {
+        self.receive_mode
+    }
+
     /// <summary>
     /// Receives a set of <see cref="ServiceBusReceivedMessage" /> from the entity using <see cref="ServiceBusReceiveMode"/> mode.
     /// </summary>

@@ -16,6 +16,14 @@ where
     S: TransportSender + Send + Sync,
     S::MessageBatch: TransportMessageBatch,
 {
+    pub fn entity_path(&self) -> &str {
+        &self.entity_path
+    }
+
+    pub fn identifier(&self) -> &str {
+        &self.identifier
+    }
+
     pub fn create_message_batch(
         &self,
         options: CreateMessageBatchOptions,

@@ -53,6 +53,22 @@ impl<R> ServiceBusSessionReceiver<R>
 where
     R: TransportSessionReceiver,
 {
+    pub fn entity_path(&self) -> &str {
+        &self.entity_path
+    }
+
+    pub fn identifier(&self) -> &str {
+        &self.identifier
+    }
+
+    pub fn prefetch_count(&self) -> u32 {
+        self.inner.prefetch_count()
+    }
+
+    pub fn receive_mode(&self) -> ServiceBusReceiveMode {
+        self.inner.receive_mode()
+    }
+
     pub async fn dispose(self) -> Result<(), R::CloseError> {
         self.inner.close().await
     }

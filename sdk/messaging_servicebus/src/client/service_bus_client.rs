@@ -82,6 +82,11 @@ where
         self.connection.fully_qualified_namespace()
     }
 
+    /// The name used to identify this <see cref="ServiceBusClient"/>.
+    pub fn identifier(&self) -> &str {
+        &self.identifier
+    }
+
     /// Indicates whether or not this [`ServiceBusClient`] has been closed.
     ///
     /// # Value
@@ -89,11 +94,6 @@ where
     /// `true` if the client is closed; otherwise, `false`.
     pub fn is_closed(&self) -> bool {
         self.closed
-    }
-
-    /// The name used to identify this <see cref="ServiceBusClient"/>.
-    pub fn identifier(&self) -> &str {
-        &self.identifier
     }
 
     /// The transport type used for this [`ServiceBusClient`].
