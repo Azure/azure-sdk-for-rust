@@ -2,6 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration as StdDuration;
 
+use async_trait::async_trait;
 use azure_core::Url;
 use tokio_util::sync::CancellationToken;
 
@@ -19,27 +20,11 @@ use super::{
     transport_sender::TransportSender, TransportSessionReceiver,
 };
 
-// pub(crate) trait CreateTransportClient<TC>
-// where
-//     TC: TokenCredential,
-// {
-//     type Ok;
-//     type Error;
-
-//     fn create_transport_client(
-//         host: &str,
-//         credential: ServiceBusTokenCredential<TC>,
-//         transport_type: ServiceBusTransportType,
-//         custom_endpoint: Option<Url>,
-//         retry_timeout: StdDuration,
-//     ) -> Pin<Box<dyn Future<Output = Result<Self::Ok, Self::Error>>>>;
-// }
-
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
 /// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended
 /// that the public [ServiceBusConnection] employ a transport client via containment and delegate
 /// operations to it rather than understanding protocol-specific details for different transports.
-// #[async_trait]
+#[async_trait]
 pub trait TransportClient: Sized {
     type CreateClientError: Send;
     type CreateSenderError: Send;
@@ -52,13 +37,13 @@ pub trait TransportClient: Sized {
     type SessionReceiver: TransportSessionReceiver;
     type RuleManager: TransportRuleManager;
 
-    fn create_transport_client<'a>(
+    async fn create_transport_client<'a>(
         host: &'a str,
         credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
         custom_endpoint: Option<Url>,
         retry_timeout: StdDuration,
-    ) -> Pin<Box<dyn Future<Output = Result<Self, Self::CreateClientError>> + 'a>>;
+    ) -> Result<Self, Self::CreateClientError>;
 
     /// Get the transport type
     fn transport_type(&self) -> &ServiceBusTransportType;
@@ -83,14 +68,14 @@ pub trait TransportClient: Sized {
     /// # Returns
     ///
     /// A [TransportSender] configured in the requested manner.
-    fn create_sender(
+    async fn create_sender(
         &mut self,
         entity_path: String,
         identifier: String,
         retry_policy: ServiceBusRetryOptions,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Sender, Self::CreateSenderError>> + '_>>;
+    ) -> Result<Self::Sender, Self::CreateSenderError>;
 
-    fn create_receiver(
+    async fn create_receiver(
         &mut self,
         entity_path: String,
         identifier: String,
@@ -98,9 +83,9 @@ pub trait TransportClient: Sized {
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         is_processor: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>>;
+    ) -> Result<Self::Receiver, Self::CreateReceiverError>;
 
-    fn create_session_receiver(
+    async fn create_session_receiver(
         &mut self,
         entity_path: String,
         identifier: String,
@@ -109,7 +94,7 @@ pub trait TransportClient: Sized {
         session_id: String,
         prefetch_count: u32,
         is_processor: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::SessionReceiver, Self::CreateReceiverError>> + '_>>;
+    ) -> Result<Self::SessionReceiver, Self::CreateReceiverError>;
 
     /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
     /// for adding, removing and getting rules from the Service Bus subscription.
@@ -124,11 +109,11 @@ pub trait TransportClient: Sized {
     /// # Returns
     ///
     /// A [TransportRuleManager] configured in the requested manner.
-    fn create_rule_manager(
+    async fn create_rule_manager(
         &mut self,
-        subscription_path: impl Into<String>,
+        subscription_path: String,
         retry_policy: ServiceBusRetryOptions,
-        identifier: impl Into<String>,
+        identifier: String,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError>;
 
     /// Closes the connection to the transport client instance.
@@ -136,17 +121,15 @@ pub trait TransportClient: Sized {
     /// # Arguments
     ///
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
-    fn close(
+    async fn close(
         &mut self,
         cancellation_token: Option<CancellationToken>,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Self::DisposeError>> + '_>>;
+    ) -> Result<(), Self::DisposeError>;
 
     /// Performs the task needed to clean up resources used by the client,
     /// including ensuring that the client itself has been closed.
-    fn dispose(&mut self) -> Pin<Box<dyn Future<Output = Result<(), Self::DisposeError>> + '_>> {
-        Box::pin(async move {
-            self.close(None).await?;
-            Ok(())
-        })
+    async fn dispose(&mut self) -> Result<(), Self::DisposeError> {
+        self.close(None).await?;
+        Ok(())
     }
 }

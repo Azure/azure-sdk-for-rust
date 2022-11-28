@@ -3,7 +3,7 @@ use azure_messaging_servicebus::{
     client::{
         service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
     },
-    ServiceBusMessage,
+    ServiceBusMessage, ServiceBusReceiverOptions, primitives::sub_queue::SubQueue,
 };
 use common::setup_dotenv;
 
@@ -14,9 +14,11 @@ async fn drain_queue() {
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
     let max_messages = 100;
 
+    let mut client_options = ServiceBusClientOptions::default();
+    client_options.retry_options = common::zero_retry_options();
     common::drain_queue(
         connection_string,
-        Default::default(),
+        client_options,
         queue_name,
         Default::default(),
         max_messages,
@@ -144,6 +146,44 @@ async fn send_and_receive_multiple_messages_separately() {
 }
 
 #[tokio::test]
+async fn send_and_receive_multiple_messages_separately_with_prefetch() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = vec![
+        ServiceBusMessage::new(expected[0]),
+        ServiceBusMessage::new(expected[1]),
+        ServiceBusMessage::new(expected[2]),
+    ];
+    let max_messages = messages.len() as u32;
+
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages.into_iter(),
+    )
+    .await
+    .unwrap();
+
+    let mut receiver_options = ServiceBusReceiverOptions::default();
+    receiver_options.prefetch_count = max_messages;
+    common::create_client_and_receive_messages_from_queue(
+        connection_string,
+        Default::default(),
+        queue_name,
+        receiver_options,
+        max_messages,
+        None,
+    )
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
 async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -225,6 +265,209 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
     // delay, the same message may be received more than once.
     assert_eq!(received.len(), total);
     for i in 0..total {
+        let received_message_body = received[i].body().unwrap();
+        assert_eq!(received_message_body, expected[i].as_bytes());
+    }
+}
+
+#[tokio::test]
+async fn send_and_receive_sessionful_messages() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
+
+    let expected_for_session_id_1 = ["test message 1", "test message 2", "test message 3"];
+    let expected_for_session_id_2 = ["test message 4", "test message 5", "test message 6"];
+    let session_id_1 = "test_session_1";
+    let session_id_2 = "test_session_2";
+
+    let connection_string_clone = connection_string.clone();
+    let queue_name_clone = queue_name.clone();
+    let handle_1 = tokio::spawn(async move {
+        common::create_client_and_receive_sessionful_messages_from_queue(
+            connection_string_clone,
+            Default::default(),
+            queue_name_clone,
+            Default::default(),
+            session_id_1.to_string(),
+            expected_for_session_id_1.len() as u32,
+            None,
+        )
+        .await
+    });
+
+    let connection_string_clone = connection_string.clone();
+    let queue_name_clone = queue_name.clone();
+    let handle_2 = tokio::spawn(async move {
+        common::create_client_and_receive_sessionful_messages_from_queue(
+            connection_string_clone,
+            Default::default(),
+            queue_name_clone,
+            Default::default(),
+            session_id_2.to_string(),
+            expected_for_session_id_2.len() as u32,
+            None,
+        )
+        .await
+    });
+
+    // Send 2nd session id first
+    let messages = expected_for_session_id_2.iter().map(|message| {
+        let mut message = ServiceBusMessage::new(message.as_bytes());
+        message.set_session_id(session_id_2).unwrap();
+        message
+    });
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    // Send 1st session id last
+    let messages = expected_for_session_id_1.iter().map(|message| {
+        let mut message = ServiceBusMessage::new(*message);
+        message.set_session_id(session_id_1).unwrap(); // length must not exceed max length
+        message
+    });
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string,
+        Default::default(),
+        queue_name,
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    let received_from_session_1 = handle_1.await.unwrap().unwrap();
+    let received_from_session_2 = handle_2.await.unwrap().unwrap();
+
+    assert_eq!(
+        received_from_session_1.len(),
+        expected_for_session_id_1.len()
+    );
+    for i in 0..expected_for_session_id_1.len() {
+        let received_message_body = received_from_session_1[i].body().unwrap();
+        assert_eq!(
+            received_message_body,
+            expected_for_session_id_1[i].as_bytes()
+        );
+    }
+
+    assert_eq!(
+        received_from_session_2.len(),
+        expected_for_session_id_2.len()
+    );
+    for i in 0..expected_for_session_id_2.len() {
+        let received_message_body = received_from_session_2[i].body().unwrap();
+        assert_eq!(
+            received_message_body,
+            expected_for_session_id_2[i].as_bytes()
+        );
+    }
+}
+
+#[tokio::test]
+async fn send_and_abandon_messages_then_receive_messages() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = expected
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    common::create_client_and_abandon_messages_from_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    let received = common::create_client_and_receive_messages_from_queue(
+        connection_string,
+        Default::default(),
+        queue_name,
+        Default::default(),
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(received.len(), expected.len());
+    for i in 0..expected.len() {
+        let received_message_body = received[i].body().unwrap();
+        assert_eq!(received_message_body, expected[i].as_bytes());
+    }
+}
+
+#[tokio::test]
+async fn send_and_deadletter_then_receive_from_deadletter_queue() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = expected
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    common::create_client_and_deadletter_messages_from_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    let mut receiver_options = ServiceBusReceiverOptions::default();
+    receiver_options.sub_queue = SubQueue::DeadLetter;
+    let received = common::create_client_and_receive_messages_from_queue(
+        connection_string,
+        Default::default(),
+        queue_name,
+        receiver_options,
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(received.len(), expected.len());
+    for i in 0..expected.len() {
         let received_message_body = received[i].body().unwrap();
         assert_eq!(received_message_body, expected[i].as_bytes());
     }

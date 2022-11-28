@@ -26,6 +26,16 @@ impl<R> ServiceBusReceiver<R>
 where
     R: TransportReceiver,
 {
+    /// The entity path that the receiver is connected to, specific to the Service Bus
+    /// namespace that contains it.
+    pub fn entity_path(&self) -> &str {
+        &self.entity_path
+    }
+
+    pub fn identifier(&self) -> &str {
+        &self.identifier
+    }
+
     pub async fn dispose(self) -> Result<(), R::CloseError> {
         self.inner.close().await
     }

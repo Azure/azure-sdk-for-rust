@@ -1,5 +1,6 @@
 use std::{future::Future, marker::PhantomData, pin::Pin, time::Duration};
 
+use async_trait::async_trait;
 use azure_core::{auth::AccessToken, Url};
 use fe2o3_amqp::{
     connection::OpenError,
@@ -134,6 +135,7 @@ where
     }
 }
 
+#[async_trait]
 impl<RP> TransportClient for AmqpClient<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
@@ -149,68 +151,65 @@ where
     type SessionReceiver = AmqpSessionReceiver<RP>;
     type RuleManager = AmqpRuleManager;
 
-    fn create_transport_client<'a>(
-        host: &'a str,
+    async fn create_transport_client(
+        host: &str,
         credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
         custom_endpoint: Option<Url>,
         retry_timeout: Duration,
-    ) -> Pin<Box<dyn Future<Output = Result<Self, Self::CreateClientError>> + 'a>> {
-        Box::pin(async move {
-            let service_endpoint = match transport_type {
+    ) -> Result<Self, Self::CreateClientError> {
+        let service_endpoint = match transport_type {
+            ServiceBusTransportType::AmqpTcp => {
+                let addr = format!("{}://{}", transport_type.url_scheme(), host);
+                Url::parse(&addr)?
+            }
+            ServiceBusTransportType::AmqpWebSockets => {
+                let addr = format!(
+                    "{}://{}{}",
+                    transport_type.url_scheme(),
+                    host,
+                    AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
+                );
+                Url::parse(&addr)?
+            }
+        };
+
+        let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str()) {
+            Some(custom_host) => match transport_type {
                 ServiceBusTransportType::AmqpTcp => {
-                    let addr = format!("{}://{}", transport_type.url_scheme(), host);
+                    let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
                     Url::parse(&addr)?
                 }
                 ServiceBusTransportType::AmqpWebSockets => {
                     let addr = format!(
                         "{}://{}{}",
-                        transport_type.url_scheme(),
-                        host,
+                        service_endpoint.scheme(),
+                        custom_host,
                         AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
                     );
                     Url::parse(&addr)?
                 }
-            };
+            },
+            None => service_endpoint.clone(),
+        };
 
-            let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str())
-            {
-                Some(custom_host) => match transport_type {
-                    ServiceBusTransportType::AmqpTcp => {
-                        let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
-                        Url::parse(&addr)?
-                    }
-                    ServiceBusTransportType::AmqpWebSockets => {
-                        let addr = format!(
-                            "{}://{}{}",
-                            service_endpoint.scheme(),
-                            custom_host,
-                            AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
-                        );
-                        Url::parse(&addr)?
-                    }
-                },
-                None => service_endpoint.clone(),
-            };
+        // Create AmqpConnectionScope
+        let connection_scope = AmqpConnectionScope::new(
+            service_endpoint,
+            connection_endpoint,
+            credential,
+            transport_type.clone(),
+            retry_timeout,
+        )
+        .await?;
 
-            // Create AmqpConnectionScope
-            let connection_scope = AmqpConnectionScope::new(
-                service_endpoint,
-                connection_endpoint,
-                credential,
-                transport_type.clone(),
-                retry_timeout,
-            )
-            .await?;
-
-            Ok(Self {
-                credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
-                closed: false,
-                access_token: None,
-                connection_scope,
-                retry_policy: PhantomData,
-                transport_type,
-            })
+        Ok(Self {
+            credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
+            closed: false,
+            access_token: None,
+            connection_scope,
+            retry_policy: PhantomData,
+            transport_type,
         })
     }
 
@@ -242,34 +241,32 @@ where
     /// # Returns
     ///
     /// A [TransportSender] configured in the requested manner.
-    fn create_sender(
+    async fn create_sender(
         &mut self,
         entity_path: String,
         identifier: String,
         retry_options: ServiceBusRetryOptions,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Sender, Self::CreateSenderError>> + '_>> {
-        Box::pin(async move {
-            // TODO: this will be updated once GAT is stablized
-            let (link_identifier, link_name, sender) = self
-                .connection_scope
-                .open_sender_link(&entity_path, &identifier)
-                .await?;
-            let management_client = self
-                .connection_scope
-                .open_management_link(&entity_path, &identifier)
-                .await?;
-            let retry_policy = RP::new(retry_options);
-            Ok(AmqpSender {
-                identifier: link_identifier,
-                name: link_name,
-                retry_policy,
-                sender,
-                management_client,
-            })
+    ) -> Result<Self::Sender, Self::CreateSenderError> {
+        // TODO: this will be updated once GAT is stablized
+        let (link_identifier, link_name, sender) = self
+            .connection_scope
+            .open_sender_link(&entity_path, &identifier)
+            .await?;
+        let management_client = self
+            .connection_scope
+            .open_management_link(&entity_path, &identifier)
+            .await?;
+        let retry_policy = RP::new(retry_options);
+        Ok(AmqpSender {
+            identifier: link_identifier,
+            name: link_name,
+            retry_policy,
+            sender,
+            management_client,
         })
     }
 
-    fn create_receiver(
+    async fn create_receiver(
         &mut self,
         entity_path: String,
         identifier: String,
@@ -277,38 +274,36 @@ where
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         is_processor: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Receiver, Self::CreateReceiverError>> + '_>> {
-        Box::pin(async move {
-            let (link_identifier, receiver) = self
-                .connection_scope
-                .open_receiver_link(
-                    &entity_path,
-                    &identifier,
-                    &receive_mode,
-                    None,
-                    prefetch_count,
-                )
-                .await?;
-            let management_client = self
-                .connection_scope
-                .open_management_link(&entity_path, &identifier)
-                .await?;
-            let retry_policy = RP::new(retry_options);
-            Ok(AmqpReceiver {
-                identifier: link_identifier,
-                retry_policy,
-                receiver,
-                receive_mode,
-                is_processor,
+    ) -> Result<Self::Receiver, Self::CreateReceiverError> {
+        let (link_identifier, receiver) = self
+            .connection_scope
+            .open_receiver_link(
+                &entity_path,
+                &identifier,
+                &receive_mode,
+                None,
                 prefetch_count,
-                management_client,
-                request_response_locked_messages: Default::default(),
-                last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
-            })
+            )
+            .await?;
+        let management_client = self
+            .connection_scope
+            .open_management_link(&entity_path, &identifier)
+            .await?;
+        let retry_policy = RP::new(retry_options);
+        Ok(AmqpReceiver {
+            identifier: link_identifier,
+            retry_policy,
+            receiver,
+            receive_mode,
+            is_processor,
+            prefetch_count,
+            management_client,
+            request_response_locked_messages: Default::default(),
+            last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
         })
     }
 
-    fn create_session_receiver(
+    async fn create_session_receiver(
         &mut self,
         entity_path: String,
         identifier: String,
@@ -317,37 +312,34 @@ where
         session_id: String,
         prefetch_count: u32,
         is_processor: bool,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::SessionReceiver, Self::CreateReceiverError>> + '_>>
-    {
-        Box::pin(async move {
-            let (link_identifier, receiver) = self
-                .connection_scope
-                .open_receiver_link(
-                    &entity_path,
-                    &identifier,
-                    &receive_mode,
-                    Some(session_id),
-                    prefetch_count,
-                )
-                .await?;
-            let management_client = self
-                .connection_scope
-                .open_management_link(&entity_path, &identifier)
-                .await?;
-            let retry_policy = RP::new(retry_options);
-            let inner = AmqpReceiver {
-                identifier: link_identifier,
-                retry_policy,
-                receiver,
-                receive_mode,
-                is_processor,
+    ) -> Result<Self::SessionReceiver, Self::CreateReceiverError> {
+        let (link_identifier, receiver) = self
+            .connection_scope
+            .open_receiver_link(
+                &entity_path,
+                &identifier,
+                &receive_mode,
+                Some(session_id),
                 prefetch_count,
-                management_client,
-                request_response_locked_messages: Default::default(),
-                last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
-            };
-            Ok(AmqpSessionReceiver { inner })
-        })
+            )
+            .await?;
+        let management_client = self
+            .connection_scope
+            .open_management_link(&entity_path, &identifier)
+            .await?;
+        let retry_policy = RP::new(retry_options);
+        let inner = AmqpReceiver {
+            identifier: link_identifier,
+            retry_policy,
+            receiver,
+            receive_mode,
+            is_processor,
+            prefetch_count,
+            management_client,
+            request_response_locked_messages: Default::default(),
+            last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
+        };
+        Ok(AmqpSessionReceiver { inner })
     }
 
     /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
@@ -363,11 +355,11 @@ where
     /// # Returns
     ///
     /// A [TransportRuleManager] configured in the requested manner.
-    fn create_rule_manager(
+    async fn create_rule_manager(
         &mut self,
-        _subscription_path: impl Into<String>,
+        _subscription_path: String,
         _retry_options: ServiceBusRetryOptions,
-        _identifier: impl Into<String>,
+        _identifier: String,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
         todo!()
     }
@@ -377,36 +369,34 @@ where
     /// # Arguments
     ///
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
-    fn close(
+    async fn close(
         &mut self,
         cancellation_token: Option<CancellationToken>,
-    ) -> Pin<Box<dyn Future<Output = Result<(), Self::DisposeError>> + '_>> {
-        Box::pin(async move {
-            if self.closed {
-                Ok(())
-            } else {
-                match cancellation_token {
-                    Some(token) => {
-                        tokio::select! {
-                            _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
-                            result = self.connection_scope.dispose() => {
-                                self.closed = true;
-                                result.map_err(Into::into)
-                            }
+    ) -> Result<(), Self::DisposeError> {
+        if self.closed {
+            Ok(())
+        } else {
+            match cancellation_token {
+                Some(token) => {
+                    tokio::select! {
+                        _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
+                        result = self.connection_scope.dispose() => {
+                            self.closed = true;
+                            result.map_err(Into::into)
                         }
                     }
-                    None => self
-                        .connection_scope
-                        .dispose()
-                        .await
-                        .and_then(|_| {
-                            self.closed = true;
-                            Ok(())
-                        })
-                        .map_err(Into::into),
                 }
+                None => self
+                    .connection_scope
+                    .dispose()
+                    .await
+                    .and_then(|_| {
+                        self.closed = true;
+                        Ok(())
+                    })
+                    .map_err(Into::into),
             }
-        })
+        }
     }
 }
 
