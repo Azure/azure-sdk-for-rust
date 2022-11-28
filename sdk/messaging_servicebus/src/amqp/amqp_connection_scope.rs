@@ -154,7 +154,7 @@ impl AmqpConnectionScope {
     const CBS_SASL_HANDLER_NAME: &'static str = "MSSBCBS";
 
     /// The suffix to attach to the resource path when using web sockets for service communication.
-    const WEB_SOCKETS_PATH_SUFFIX: &'static str = "/$servicebus/websocket/";
+    pub(crate) const WEB_SOCKETS_PATH_SUFFIX: &'static str = "/$servicebus/websocket/";
 
     /// The URI scheme to apply when using web sockets for service communication.
     const WEB_SOCKETS_URI_SCHEME: &'static str = "wss";
@@ -212,10 +212,6 @@ impl AmqpConnectionScope {
     }
 
     async fn negotiate_claim(&mut self) -> Result<(), ()> {
-        todo!()
-    }
-
-    async fn begin_amqp_session(&mut self) -> Result<SessionHandle<()>, ()> {
         todo!()
     }
 
@@ -315,6 +311,7 @@ impl AmqpConnectionScope {
 
         let connection_builder = Connection::builder()
             .container_id(container_id)
+            .hostname(connection_endpoint.host_str())
             .alt_tls_establishment(true)
             .sasl_profile(SaslProfile::Anonymous)
             .max_frame_size(max_frame_size)

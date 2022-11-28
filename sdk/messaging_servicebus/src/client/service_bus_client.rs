@@ -48,11 +48,11 @@ pub struct ServiceBusClient<C> {
 }
 
 impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
-    pub async fn new<'a>(connection_string: impl Into<Cow<'a, str>>) -> Result<Self, super::Error> {
-        Self::new_with_options(connection_string, ServiceBusClientOptions::default()).await
-    }
+    // pub async fn new<'a>(connection_string: impl Into<Cow<'a, str>>) -> Result<Self, super::Error> {
+    //     Self::new_with_options(connection_string, ServiceBusClientOptions::default()).await
+    // }
 
-    pub async fn new_with_options<'a>(
+    pub async fn new<'a>(
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {

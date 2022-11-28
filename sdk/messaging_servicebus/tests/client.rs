@@ -18,7 +18,7 @@ async fn client_send_single_message(options: ServiceBusSenderOptions) {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client.create_sender(queue, options).await.unwrap();
     sender.send_message("hello world").await.unwrap();
 
@@ -31,7 +31,7 @@ async fn client_send_multiple_messages(total: u32, options: ServiceBusSenderOpti
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client.create_sender(queue, options).await.unwrap();
 
     let messages = (0..total)
@@ -50,7 +50,7 @@ async fn client_send_message_batch(total: u32, options: ServiceBusSenderOptions)
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client.create_sender(queue, options).await.unwrap();
 
     let mut batch = sender
@@ -73,7 +73,7 @@ async fn client_receive_messages(total: u32, options: ServiceBusReceiverOptions)
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, options)
         .await
@@ -99,7 +99,7 @@ async fn client_recv_from_session(
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let session_enabled_queue = env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .accept_next_session_for_queue(session_enabled_queue, session_id, options)
         .await
@@ -121,7 +121,7 @@ async fn client_send_to_session(total: u32, options: ServiceBusSenderOptions, se
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let session_enabled_queue = env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client
         .create_sender(session_enabled_queue, options)
         .await
@@ -145,7 +145,7 @@ async fn abandon_one_message() {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -166,7 +166,7 @@ async fn dead_letter_one_message() {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -190,7 +190,7 @@ async fn recv_from_dead_letter_queue() -> usize {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let options = ServiceBusReceiverOptions {
         sub_queue: SubQueue::DeadLetter,
         ..Default::default()
@@ -223,7 +223,7 @@ async fn client_schedule_single_message_via_service_bus_sender(delay: TimeSpan) 
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client
         .create_sender(queue, Default::default())
         .await
@@ -248,7 +248,7 @@ async fn client_cancel_single_scheduled_message(seq: i64) {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client
         .create_sender(queue, Default::default())
         .await
@@ -266,7 +266,7 @@ async fn peek_one_message() -> Option<ServiceBusPeekedMessage> {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -286,7 +286,7 @@ async fn defer_one_message() -> i64 {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -308,7 +308,7 @@ async fn receive_one_deferred_message(seq: i64) {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -331,7 +331,7 @@ async fn receive_then_renew_lock() {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -359,7 +359,7 @@ fn hello_world() {
 async fn client_can_connect_with_connection_string() {
     setup_dotenv();
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
 
     client.dispose().await.unwrap();
 }
@@ -370,7 +370,7 @@ async fn client_can_create_sender() {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let sender = client
         .create_sender(queue, Default::default())
         .await
@@ -386,7 +386,7 @@ async fn client_can_create_receiver() {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let receiver = client
         .create_receiver_for_queue(queue, Default::default())
         .await
@@ -444,7 +444,7 @@ async fn client_schedule_message_via_service_bus_message() {
     let connection_string = env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue = env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
     let mut sender = client
         .create_sender(queue, Default::default())
         .await

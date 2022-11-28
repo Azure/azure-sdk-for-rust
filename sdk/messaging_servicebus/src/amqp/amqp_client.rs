@@ -157,17 +157,38 @@ where
         retry_timeout: Duration,
     ) -> Pin<Box<dyn Future<Output = Result<Self, Self::CreateClientError>> + 'a>> {
         Box::pin(async move {
-            let service_endpoint = {
-                let scheme = transport_type.url_scheme();
-                let addr = format!("{scheme}://{host}");
-                Url::parse(&addr)?
+            let service_endpoint = match transport_type {
+                ServiceBusTransportType::AmqpTcp => {
+                    let addr = format!("{}://{}", transport_type.url_scheme(), host);
+                    Url::parse(&addr)?
+                }
+                ServiceBusTransportType::AmqpWebSockets => {
+                    let addr = format!(
+                        "{}://{}{}",
+                        transport_type.url_scheme(),
+                        host,
+                        AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
+                    );
+                    Url::parse(&addr)?
+                }
             };
 
             let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str())
             {
-                Some(custom_host) => {
-                    let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
-                    Url::parse(&addr)?
+                Some(custom_host) => match transport_type {
+                    ServiceBusTransportType::AmqpTcp => {
+                        let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
+                        Url::parse(&addr)?
+                    },
+                    ServiceBusTransportType::AmqpWebSockets => {
+                        let addr = format!(
+                            "{}://{}{}",
+                            service_endpoint.scheme(),
+                            custom_host,
+                            AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
+                        );
+                        Url::parse(&addr)?
+                    },
                 }
                 None => service_endpoint.clone(),
             };
@@ -181,6 +202,7 @@ where
                 retry_timeout,
             )
             .await?;
+
             Ok(Self {
                 credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
                 closed: false,
