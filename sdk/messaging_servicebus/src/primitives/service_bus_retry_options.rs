@@ -21,20 +21,20 @@ pub struct ServiceBusRetryOptions {
     /// # Value
     ///
     /// The default retry mode is [`ServiceBusRetryMode::Exponential`]
-    pub(crate) mode: ServiceBusRetryMode,
+    pub mode: ServiceBusRetryMode,
 
     /// The maximum number of retry attempts before considering the associated operation to have
     /// failed.
-    pub(crate) max_retries: u32,
+    pub max_retries: u32,
 
     /// The delay or backoff factor to apply between retry attempts.
-    pub(crate) delay: Duration,
+    pub delay: Duration,
 
     /// The maximum delay to allow between retry attempts.
-    pub(crate) max_delay: Duration,
+    pub max_delay: Duration,
 
     /// The maximum duration to wait for an operation, per attempt.
-    pub(crate) try_timeout: Duration,
+    pub try_timeout: Duration,
     //
     // /// A custom retry policy to be used in place of the individual option values.
     // ///
@@ -58,10 +58,10 @@ impl Default for ServiceBusRetryOptions {
 }
 
 impl ServiceBusRetryOptions {
-    const DEFAULT_MAX_RETRIES: u32 = 3;
-    const DEFAULT_DELAY: Duration = Duration::from_millis(800);
-    const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
-    const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
+    pub const DEFAULT_MAX_RETRIES: u32 = 3;
+    pub const DEFAULT_DELAY: Duration = Duration::from_millis(800);
+    pub const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
+    pub const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
 
     /// The approach to use for calculating retry delays.
     ///

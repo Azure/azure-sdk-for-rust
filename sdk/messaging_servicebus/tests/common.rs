@@ -4,8 +4,18 @@ use azure_messaging_servicebus::{
     client::{
         service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
     },
-    ServiceBusMessage, ServiceBusSenderOptions, ServiceBusSender, core::{TransportSender, TransportMessageBatch}, ServiceBusMessageBatch, primitives::service_bus_received_message::ServiceBusReceivedMessage, ServiceBusReceiverOptions, CreateMessageBatchOptions,
+    ServiceBusMessage, ServiceBusSenderOptions, ServiceBusSender, core::{TransportSender, TransportMessageBatch}, ServiceBusMessageBatch, primitives::{service_bus_received_message::ServiceBusReceivedMessage, service_bus_retry_options::ServiceBusRetryOptions}, ServiceBusReceiverOptions, CreateMessageBatchOptions,
 };
+
+pub fn zero_retry_options() -> ServiceBusRetryOptions {
+    ServiceBusRetryOptions {
+        max_retries: 0,
+        mode: Default::default(),
+        delay: ServiceBusRetryOptions::DEFAULT_DELAY,
+        max_delay: StdDuration::from_secs(10),
+        try_timeout: StdDuration::from_secs(10),
+    }
+}
 
 pub fn setup_dotenv() {
     dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
@@ -18,7 +28,7 @@ pub async fn drain_queue(
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32
 ) {
-    let mut client = ServiceBusClient::new(connection_string, client_options).await.unwrap();
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await.unwrap();
     let mut receiver = client.create_receiver_for_queue(queue_name, receiver_options).await.unwrap();
     let messages = receiver.receive_messages(max_messages, None).await.unwrap();
 
@@ -37,7 +47,7 @@ pub async fn create_client_and_send_messages_separately_to_queue(
     sender_options: ServiceBusSenderOptions,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
 ) -> Result<(), anyhow::Error> {
-    let mut client = ServiceBusClient::new(connection_string, client_options).await?;
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
     let mut sender = client.create_sender(queue_name, sender_options).await?;
 
     send_messages_separately(&mut sender, messages).await?;
@@ -70,7 +80,7 @@ pub async fn create_client_and_receive_messages_from_queue(
     max_messages: u32,
     max_wait_time: Option<StdDuration>
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new(connection_string, client_options).await?;
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
     let mut receiver = client.create_receiver_for_queue(queue_name, receiver_options).await?;
 
     let messages = receiver.receive_messages(max_messages, max_wait_time).await?;

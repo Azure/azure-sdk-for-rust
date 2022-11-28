@@ -1,5 +1,5 @@
 mod common;
-use azure_messaging_servicebus::{ServiceBusMessage, client::service_bus_client::ServiceBusClient};
+use azure_messaging_servicebus::{ServiceBusMessage, client::{service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions}};
 use common::setup_dotenv;
 
 #[tokio::test]
@@ -69,9 +69,12 @@ async fn send_one_message_and_try_receiver_more_than_one_on_queue() {
     .await
     .unwrap();
 
+    let mut receiver_client_options = ServiceBusClientOptions::default();
+    receiver_client_options.retry_options = common::zero_retry_options();
+
     let received = common::create_client_and_receive_messages_from_queue(
         connection_string,
-        Default::default(),
+        receiver_client_options,
         queue_name,
         Default::default(),
         total as u32 + 1,
@@ -133,7 +136,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
 
     let expected = ["test message 1", "test message 2", "test message 3"];
 
-    let mut client = ServiceBusClient::new(&connection_string, Default::default()).await.unwrap();
+    let mut client = ServiceBusClient::new_with_options(&connection_string, Default::default()).await.unwrap();
     let mut sender = client.create_sender(queue_name.clone(), Default::default()).await.unwrap();
     let mut message_batch = sender.create_message_batch(Default::default()).unwrap();
 
@@ -168,7 +171,7 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
 
     let expected = ["test message 1", "test message 2", "test message 3"];
 
-    let mut client = ServiceBusClient::new(&connection_string, Default::default()).await.unwrap();
+    let mut client = ServiceBusClient::new_with_options(&connection_string, Default::default()).await.unwrap();
     let mut sender = client.create_sender(queue_name.clone(), Default::default()).await.unwrap();
     let mut message_batch = sender.create_message_batch(Default::default()).unwrap();
 
@@ -178,9 +181,12 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
     }
     sender.send_message_batch(message_batch).await.unwrap();
 
+    let mut receiving_client_options = ServiceBusClientOptions::default();
+    receiving_client_options.retry_options = common::zero_retry_options();
+
     let received = common::create_client_and_receive_messages_from_queue(
         connection_string,
-        Default::default(),
+        receiving_client_options,
         queue_name,
         Default::default(),
         total as u32 + 1,
