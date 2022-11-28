@@ -150,8 +150,8 @@ impl std::fmt::Debug for AmqpConnectionScope {
 }
 
 impl AmqpConnectionScope {
-    /// The name to assign to the SASL handler to specify that CBS tokens are in use.
-    const CBS_SASL_HANDLER_NAME: &'static str = "MSSBCBS";
+    // /// The name to assign to the SASL handler to specify that CBS tokens are in use.
+    // const CBS_SASL_HANDLER_NAME: &'static str = "MSSBCBS";
 
     /// The suffix to attach to the resource path when using web sockets for service communication.
     pub(crate) const WEB_SOCKETS_PATH_SUFFIX: &'static str = "/$servicebus/websocket/";
@@ -160,32 +160,32 @@ impl AmqpConnectionScope {
     /// it to be timed out.
     const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(1 * 60);
 
-    /// The amount of buffer to apply to account for clock skew when
-    /// refreshing authorization.  Authorization will be refreshed earlier
-    /// than the expected expiration by this amount.
-    const AUTHORIZATION_REFRESH_BUFFER: StdDuration =
-        StdDuration::from_secs(AUTHORIZATION_REFRESH_BUFFER_SECONDS); // 7 mins
+    // /// The amount of buffer to apply to account for clock skew when
+    // /// refreshing authorization.  Authorization will be refreshed earlier
+    // /// than the expected expiration by this amount.
+    // const AUTHORIZATION_REFRESH_BUFFER: StdDuration =
+    //     StdDuration::from_secs(AUTHORIZATION_REFRESH_BUFFER_SECONDS); // 7 mins
 
-    /// The amount of seconds to use as the basis for calculating a random jitter amount
-    /// when refreshing token authorization.  This is intended to ensure that multiple
-    /// resources using the authorization do not all attempt to refresh at the same moment.
-    const AUTHORIZATION_BASE_JITTER_SECONDS: u64 = 30;
+    // /// The amount of seconds to use as the basis for calculating a random jitter amount
+    // /// when refreshing token authorization.  This is intended to ensure that multiple
+    // /// resources using the authorization do not all attempt to refresh at the same moment.
+    // const AUTHORIZATION_BASE_JITTER_SECONDS: u64 = 30;
 
-    /// The minimum amount of time for authorization to be refreshed; any calculations that
-    /// call for refreshing more frequently will be substituted with this value.
-    const MINIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(3 * 60);
+    // /// The minimum amount of time for authorization to be refreshed; any calculations that
+    // /// call for refreshing more frequently will be substituted with this value.
+    // const MINIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(3 * 60);
 
-    /// The maximum amount of time to allow before authorization is refreshed; any calculations
-    /// that call for refreshing less frequently will be substituted with this value.
-    ///
-    /// # Remarks
-    ///
-    /// This value must be less than 49 days, 17 hours, 2 minutes, 47 seconds, 294 milliseconds
-    /// in order to not overflow the Timer used to track authorization refresh.
-    const MAXIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(49 * 24 * 60 * 60); // 49 days
+    // /// The maximum amount of time to allow before authorization is refreshed; any calculations
+    // /// that call for refreshing less frequently will be substituted with this value.
+    // ///
+    // /// # Remarks
+    // ///
+    // /// This value must be less than 49 days, 17 hours, 2 minutes, 47 seconds, 294 milliseconds
+    // /// in order to not overflow the Timer used to track authorization refresh.
+    // const MAXIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(49 * 24 * 60 * 60); // 49 days
 
-    /// The amount time to allow to refresh authorization of an AMQP link.
-    const AUTHORIZATION_REFRESH_TIMEOUT: StdDuration = StdDuration::from_secs(3 * 60); // 3 mins
+    // /// The amount time to allow to refresh authorization of an AMQP link.
+    // const AUTHORIZATION_REFRESH_TIMEOUT: StdDuration = StdDuration::from_secs(3 * 60); // 3 mins
 
     /// The amount of buffer to apply when considering an authorization token
     /// to be expired.  The token's actual expiration will be decreased by this
@@ -201,10 +201,6 @@ impl AmqpConnectionScope {
 impl AmqpConnectionScope {
     pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
         &self.transport_type
-    }
-
-    async fn negotiate_claim(&mut self) -> Result<(), ()> {
-        todo!()
     }
 
     /// Initializes a new instance of the <see cref="AmqpConnectionScope"/> class.

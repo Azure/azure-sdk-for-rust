@@ -35,11 +35,6 @@ use super::{service_bus_client_options::ServiceBusClientOptions, Error};
 /// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
 pub struct ServiceBusClient<C> {
-    /// Indicates whether or not this instance has been closed.
-    ///
-    /// TODO: use `ServiceBusConnection::is_closed`?
-    closed: bool,
-
     /// The name used to identify this [`ServiceBusClient`]
     identifier: String,
 
@@ -63,7 +58,7 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
             connection.fully_qualified_namespace(),
         ));
         Ok(Self {
-            closed: false,
+            // closed: false,
             identifier,
             connection,
         })
@@ -93,7 +88,7 @@ where
     ///
     /// `true` if the client is closed; otherwise, `false`.
     pub fn is_closed(&self) -> bool {
-        self.closed
+        self.connection.is_closed()
     }
 
     /// The transport type used for this [`ServiceBusClient`].
@@ -139,7 +134,7 @@ impl ServiceBusClient<()> {
         )
         .await?;
         Ok(ServiceBusClient {
-            closed: false,
+            // closed: false,
             identifier,
             connection,
         })
@@ -162,7 +157,7 @@ where
     ///
     /// <returns>A task to be resolved on when the operation has completed.</returns>
     pub async fn dispose(&mut self) -> Result<(), Error> {
-        self.closed = true;
+        // self.closed = true;
 
         self.connection.dispose().await?;
         Ok(())

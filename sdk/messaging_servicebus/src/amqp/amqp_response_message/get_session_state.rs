@@ -9,16 +9,6 @@ pub(crate) struct GetSessionStateResponse {
     pub session_state: Binary,
 }
 
-impl GetSessionStateResponse {
-    pub fn session_state(&self) -> &[u8] {
-        &self.session_state
-    }
-
-    pub fn into_session_state(self) -> Binary {
-        self.session_state
-    }
-}
-
 impl Response for GetSessionStateResponse {
     const STATUS_CODE: u16 = 200;
 

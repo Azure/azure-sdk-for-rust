@@ -1,15 +1,15 @@
 pub const MICROSOFT: &str = "com.microsoft";
 
 pub mod request {
-    pub const OPERATION: &str = "operation";
+    // pub const OPERATION: &str = "operation";
     pub const ASSOCIATED_LINK_NAME: &str = "associated-link-name";
 }
 
-pub mod response {
-    pub const STATUS_CODE: &str = "statusCode";
-    pub const STATUS_DESCRIPTION: &str = "statusDescription";
-    pub const ERROR_CONDITION: &str = "errorCondition";
-}
+// pub mod response {
+//     pub const STATUS_CODE: &str = "statusCode";
+//     pub const STATUS_DESCRIPTION: &str = "statusDescription";
+//     pub const ERROR_CONDITION: &str = "errorCondition";
+// }
 
 pub mod operations {
     use super::MICROSOFT;
@@ -36,7 +36,7 @@ pub mod properties {
     use const_format::concatcp;
 
     pub const SERVER_TIMEOUT: &str = concatcp!(MICROSOFT, ":server-timeout");
-    pub const TRACKING_ID: &str = concatcp!(MICROSOFT, ":tracking-id");
+    // pub const TRACKING_ID: &str = concatcp!(MICROSOFT, ":tracking-id");
 
     pub const SESSION_STATE: &str = "session-state";
     pub const LOCK_TOKEN: &str = "lock-token";

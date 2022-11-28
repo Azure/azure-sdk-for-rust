@@ -4,10 +4,13 @@ use serde_amqp::Value;
 use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 
-use crate::{primitives::{
-    service_bus_peeked_message::ServiceBusPeekedMessage,
-    service_bus_received_message::ServiceBusReceivedMessage,
-}, ServiceBusReceiveMode};
+use crate::{
+    primitives::{
+        service_bus_peeked_message::ServiceBusPeekedMessage,
+        service_bus_received_message::ServiceBusReceivedMessage,
+    },
+    ServiceBusReceiveMode,
+};
 
 #[async_trait]
 pub trait TransportSessionReceiver: TransportReceiver {

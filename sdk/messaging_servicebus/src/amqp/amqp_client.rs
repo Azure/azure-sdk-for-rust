@@ -31,7 +31,7 @@ use super::{
     error::{DisposeError, OpenReceiverError, OpenSenderError},
 };
 
-const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
+// const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
 
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpClientError {

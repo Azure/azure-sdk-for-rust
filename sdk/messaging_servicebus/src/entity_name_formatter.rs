@@ -1,12 +1,13 @@
 use crate::primitives::sub_queue::SubQueue;
 
+// const RULES_SUB_PATH: &str = "Rules";
+// const SUB_QUEUE_PREFIX: &str = "$";
+// const DEAD_LETTER_QUEUE_SUFFIX: &str = "DeadLetterQueue";
+// const TRANSFER: &str = "Transfer";
+
 const PATH_DELIMITER: &str = "/";
 const SUBSCRIPTIONS_SUB_PATH: &str = "Subscriptions";
-const RULES_SUB_PATH: &str = "Rules";
-const SUB_QUEUE_PREFIX: &str = "$";
-const DEAD_LETTER_QUEUE_SUFFIX: &str = "DeadLetterQueue";
 const DEAD_LETTER_QUEUE_NAME: &str = "$DeadLetterQueue"; // SubQueuePrefix + DeadLetterQueueSuffix;
-const TRANSFER: &str = "Transfer";
 const TRANSFER_DEAD_LETTER_QUEUE_NAME: &str = "$Transfer/$DeadLetterQueue"; // SubQueuePrefix + Transfer + PathDelimiter + DeadLetterQueueName;
 
 pub(crate) fn format_subscription_path(topic_name: &str, subscription_name: &str) -> String {

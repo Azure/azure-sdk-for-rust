@@ -14,7 +14,8 @@ use crate::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
         service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
-    }, ServiceBusReceiveMode,
+    },
+    ServiceBusReceiveMode,
 };
 
 use super::{
