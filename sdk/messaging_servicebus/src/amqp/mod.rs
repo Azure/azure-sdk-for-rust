@@ -26,7 +26,7 @@ pub(crate) mod token_type;
 
 use std::sync::atomic::AtomicU32;
 
-pub use error::Error;
+// pub use error::Error;
 
 static CONNECTION_IDENTIFIER: AtomicU32 = AtomicU32::new(0);
 static SESSION_IDENTIFIER: AtomicU32 = AtomicU32::new(0);

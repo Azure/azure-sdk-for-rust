@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
 use std::time::Duration as StdDuration;
-use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     messaging::{
@@ -18,7 +17,7 @@ use crate::amqp::{
         LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
     },
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
-    error::{Error, MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError},
+    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError},
 };
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;

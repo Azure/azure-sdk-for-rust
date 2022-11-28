@@ -19,8 +19,7 @@ use crate::{
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
             LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
-        amqp_message_extensions::AmqpMessageExt,
-        error::Error,
+        amqp_message_extensions::AmqpMessageExt, error::RawAmqpMessageError,
     },
     constants::{DEFAULT_OFFSET_DATE_TIME, MAX_OFFSET_DATE_TIME},
 };
@@ -49,11 +48,11 @@ pub(crate) enum ReceivedMessageLockToken {
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 #[derive(Debug)]
 pub struct ServiceBusReceivedMessage {
-    // /// Indicates whether the user has settled the message as part of their callback.
-    // /// If they have done so, we will not autocomplete.
-    // ///
-    // /// TODO: This seems reserved for the Processor API
-    // pub(crate) is_settled: bool,
+    /// Indicates whether the user has settled the message as part of their callback.
+    /// If they have done so, we will not autocomplete.
+    ///
+    /// TODO: This seems reserved for the Processor API
+    pub(crate) is_settled: bool,
 
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
@@ -89,13 +88,13 @@ impl ServiceBusReceivedMessage {
     }
 
     /// Gets the body of the message.
-    pub fn body(&self) -> Result<&[u8], Error> {
+    pub fn body(&self) -> Result<&[u8], RawAmqpMessageError> {
         match &self.raw_amqp_message.body {
             Body::Data(batch) => match batch.len() {
                 1 => Ok(batch[0].0.as_ref()),
-                _ => Err(Error::RawAmqpMessage),
+                _ => Err(RawAmqpMessageError {  }),
             },
-            _ => Err(Error::RawAmqpMessage),
+            _ => Err(RawAmqpMessageError {  }),
         }
     }
 

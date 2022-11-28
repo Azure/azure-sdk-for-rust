@@ -52,15 +52,16 @@ impl std::fmt::Display for MaxAllowedTtlExceededError {
 
 impl std::error::Error for MaxAllowedTtlExceededError {}
 
-// TODO: Re-work error types
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    // #[error("PartitionKey cannot be set to a different value than SessionId")]
-    // PartitionKeyAndSessionIdAreDifferent,
+#[derive(Debug, Clone)]
+pub struct RawAmqpMessageError { }
 
-    #[error("The message is a raw AMQP message")]
-    RawAmqpMessage,
+impl std::fmt::Display for RawAmqpMessageError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "RawAmqpMessageError: The message is a raw AMQP message")
+    }
 }
+
+impl std::error::Error for RawAmqpMessageError {}
 
 #[derive(Debug, thiserror::Error)]
 pub enum NotAcceptedError {
