@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Duration as StdDuration};
 
 use time::Duration as TimeSpan; // To avoid confusion with std::time::Duration
 
@@ -10,11 +10,14 @@ use fe2o3_amqp_types::{
 };
 use time::OffsetDateTime;
 
-use crate::constants::DEFAULT_OFFSET_DATE_TIME;
+use crate::constants::{
+    DEFAULT_OFFSET_DATE_TIME, MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH,
+    MAX_SESSION_ID_LENGTH,
+};
 
 use super::{
     amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
-    error::Error,
+    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError},
 };
 
 pub(crate) trait AmqpMessageExt {
@@ -28,7 +31,7 @@ pub(crate) trait AmqpMessageExt {
 
     fn reply_to_session_id(&self) -> Option<&str>;
 
-    fn time_to_live(&self) -> Option<TimeSpan>;
+    fn time_to_live(&self) -> Option<StdDuration>;
 
     fn correlation_id(&self) -> Option<Cow<'_, str>>;
 
@@ -46,25 +49,40 @@ pub(crate) trait AmqpMessageExt {
 pub(crate) trait AmqpMessageMutExt {
     fn message_id_mut(&mut self) -> Option<&mut MessageId>;
 
-    fn set_message_id(&mut self, message_id: impl Into<String>);
+    fn set_message_id(
+        &mut self,
+        message_id: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError>;
 
     fn partition_key_mut(&mut self) -> Option<&mut String>;
 
-    fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), Error>;
+    fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), SetPartitionKeyError>;
 
     fn via_partition_key_mut(&mut self) -> Option<&mut String>;
 
-    fn set_via_partition_key(&mut self, key: impl Into<String>);
+    fn set_via_partition_key(
+        &mut self,
+        key: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError>;
 
     fn session_id_mut(&mut self) -> Option<&mut String>;
 
-    fn set_session_id(&mut self, session_id: impl Into<String>);
+    fn set_session_id(
+        &mut self,
+        session_id: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError>;
 
     fn reply_to_session_id_mut(&mut self) -> Option<&mut String>;
 
-    fn set_reply_to_session_id(&mut self, session_id: Option<impl Into<String>>);
+    fn set_reply_to_session_id(
+        &mut self,
+        session_id: Option<impl Into<String>>,
+    ) -> Result<(), MaxLengthExceededError>;
 
-    fn set_time_to_live(&mut self, ttl: Option<TimeSpan>);
+    fn set_time_to_live(
+        &mut self,
+        ttl: Option<StdDuration>,
+    ) -> Result<(), MaxAllowedTtlExceededError>;
 
     fn correlation_id_mut(&mut self) -> Option<&mut MessageId>;
 
@@ -142,11 +160,11 @@ impl<B> AmqpMessageExt for Message<B> {
     }
 
     #[inline]
-    fn time_to_live(&self) -> Option<TimeSpan> {
+    fn time_to_live(&self) -> Option<StdDuration> {
         self.header
             .as_ref()?
             .ttl
-            .map(|millis| TimeSpan::milliseconds(millis as i64))
+            .map(|millis| StdDuration::from_millis(millis as u64))
     }
 
     #[inline]
@@ -220,16 +238,26 @@ impl<B> AmqpMessageMutExt for Message<B> {
         self.properties.as_mut()?.message_id.as_mut()
     }
 
-    /// # Panic
+    /// # Returns
     ///
-    /// Panics if message_id length exceeds [`MAX_MESSAGE_ID_LENGTH`]
+    /// `Err(_)` if message_id length exceeds [`MAX_MESSAGE_ID_LENGTH`]
     #[inline]
-    fn set_message_id(&mut self, message_id: impl Into<String>) {
+    fn set_message_id(
+        &mut self,
+        message_id: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError> {
         let message_id = message_id.into();
-        // assert!(message_id.len() < MAX_MESSAGE_ID_LENGTH); // TODO: why is there a length limit?
+        if message_id.len() > MAX_MESSAGE_ID_LENGTH {
+            return Err(MaxLengthExceededError::new(
+                message_id.len(),
+                MAX_MESSAGE_ID_LENGTH,
+            ));
+        }
+
         self.properties
             .get_or_insert(Properties::default())
             .message_id = Some(MessageId::String(message_id));
+        Ok(())
     }
 
     #[inline]
@@ -247,16 +275,18 @@ impl<B> AmqpMessageMutExt for Message<B> {
     ///
     /// Panics if key length exceeds [`MAX_PARTITION_KEY_LENGTH`]
     #[inline]
-    fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), Error> {
+    fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), SetPartitionKeyError> {
         let key = key.into();
-        // assert!(key.len() < MAX_PARTITION_KEY_LENGTH); // TODO: why is there a length limit?
+        if key.len() > MAX_PARTITION_KEY_LENGTH {
+            return Err(MaxLengthExceededError::new(key.len(), MAX_PARTITION_KEY_LENGTH).into());
+        }
 
         if key
             != self
                 .session_id()
-                .ok_or(Error::PartitionKeyAndSessionIdAreDifferent)?
+                .ok_or(SetPartitionKeyError::PartitionKeyAndSessionIdAreDifferent)?
         {
-            return Err(Error::PartitionKeyAndSessionIdAreDifferent);
+            return Err(SetPartitionKeyError::PartitionKeyAndSessionIdAreDifferent);
         }
 
         self.message_annotations
@@ -322,10 +352,18 @@ impl<B> AmqpMessageMutExt for Message<B> {
     ///
     /// Panics if key length exceeds [`MAX_PARTITION_KEY_LENGTH`]
     #[inline]
-    fn set_via_partition_key(&mut self, key: impl Into<String>) {
+    fn set_via_partition_key(
+        &mut self,
+        key: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError> {
         let key = key.into();
 
-        // assert!(key.len() < MAX_PARTITION_KEY_LENGTH); // TODO: why is there a length limit?
+        if key.len() > MAX_PARTITION_KEY_LENGTH {
+            return Err(MaxLengthExceededError::new(
+                key.len(),
+                MAX_PARTITION_KEY_LENGTH,
+            ));
+        }
 
         self.message_annotations
             .get_or_insert(MessageAnnotations::default())
@@ -333,15 +371,24 @@ impl<B> AmqpMessageMutExt for Message<B> {
                 amqp_message_constants::VIA_PARTITION_KEY_NAME.into(),
                 key.into(),
             );
+        Ok(())
     }
 
     /// # Panic
     ///
     /// Panics if key length exceeds [`MAX_SESSION_ID_LENGTH`]
     #[inline]
-    fn set_session_id(&mut self, session_id: impl Into<String>) {
+    fn set_session_id(
+        &mut self,
+        session_id: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError> {
         let session_id = session_id.into();
-        // assert!(session_id.len() < MAX_SESSION_ID_LENGTH); // TODO: why is there a length limit?
+        if session_id.len() > MAX_SESSION_ID_LENGTH {
+            return Err(MaxLengthExceededError::new(
+                session_id.len(),
+                MAX_SESSION_ID_LENGTH,
+            ));
+        }
 
         // If the PartitionKey was already set to a different value, override it with the SessionId,
         if let Some(partition_key) = self.partition_key_mut() {
@@ -351,35 +398,58 @@ impl<B> AmqpMessageMutExt for Message<B> {
         self.properties
             .get_or_insert(Properties::default())
             .group_id = Some(session_id);
+        Ok(())
     }
 
     /// # Panic
     ///
     /// Panics if key length exceeds [`MAX_SESSION_ID_LENGTH`]
     #[inline]
-    fn set_reply_to_session_id(&mut self, session_id: Option<impl Into<String>>) {
-        let session_id = session_id.map(Into::into).map(|s| {
-            // assert!(s.len() < MAX_SESSION_ID_LENGTH); // TODO: why is there a length limit?
-            s
-        });
+    fn set_reply_to_session_id(
+        &mut self,
+        session_id: Option<impl Into<String>>,
+    ) -> Result<(), MaxLengthExceededError> {
+        let session_id = session_id
+            .map(Into::into)
+            .map(|s| {
+                if s.len() > MAX_SESSION_ID_LENGTH {
+                    Result::<String, _>::Err(MaxLengthExceededError::new(
+                        s.len(),
+                        MAX_SESSION_ID_LENGTH,
+                    ))
+                } else {
+                    Ok(s)
+                }
+            })
+            .transpose()?;
         self.properties
             .get_or_insert(Properties::default())
             .reply_to_group_id = session_id;
+        Ok(())
     }
 
     /// # Panic
     ///
     /// Panics if `ttl.whole_milliseconds()` exceeds valid range of u32
     ///
-    /// TODO: use std::time::Duration instead?
+    /// TODO: use std::time::StdDuration instead?
     #[inline]
-    fn set_time_to_live(&mut self, ttl: Option<TimeSpan>) {
-        let millis = ttl.map(|t| {
-            let millis = t.whole_milliseconds();
-            assert!(millis <= u32::MAX as i128 && millis >= u32::MIN as i128);
-            millis as u32
-        });
+    fn set_time_to_live(
+        &mut self,
+        ttl: Option<StdDuration>,
+    ) -> Result<(), MaxAllowedTtlExceededError> {
+        let millis = ttl
+            .map(|t| {
+                let millis = t.as_millis();
+                if millis > u32::MAX as u128 {
+                    Result::<u32, _>::Err(MaxAllowedTtlExceededError {})
+                } else {
+                    Ok(millis as u32)
+                }
+            })
+            .transpose()?;
         self.header.get_or_insert(Header::default()).ttl = millis;
+        Ok(())
     }
 
     #[inline]

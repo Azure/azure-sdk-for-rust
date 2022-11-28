@@ -11,10 +11,52 @@ use tokio::time::error::Elapsed;
 
 use crate::{primitives::service_bus_retry_policy::ServiceBusRetryPolicyError, ServiceBusMessage};
 
+#[derive(Debug)]
+pub struct MaxLengthExceededError {
+    pub(crate) message: String
+}
+
+impl MaxLengthExceededError {
+    pub(crate) fn new(actual_length: usize, max_length: usize) -> Self {
+        Self {
+            message: format!("The actual length {} exceeds the maximum length {}", actual_length, max_length)
+        }
+    }
+}
+
+impl std::fmt::Display for MaxLengthExceededError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MaxLengthExceededError: {}", self.message)
+    }
+}
+
+impl std::error::Error for MaxLengthExceededError {}
+
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum SetPartitionKeyError {
+    #[error(transparent)]
+    MaxLengthExceeded(#[from] MaxLengthExceededError),
+
     #[error("PartitionKey cannot be set to a different value than SessionId")]
     PartitionKeyAndSessionIdAreDifferent,
+}
+
+#[derive(Debug)]
+pub struct MaxAllowedTtlExceededError { }
+
+impl std::fmt::Display for MaxAllowedTtlExceededError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MaxAllowedTtlExceededError: The maximum allowed TTL is u32::MAX milliseconds")
+    }
+}
+
+impl std::error::Error for MaxAllowedTtlExceededError {}
+
+// TODO: Re-work error types
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    // #[error("PartitionKey cannot be set to a different value than SessionId")]
+    // PartitionKeyAndSessionIdAreDifferent,
 
     #[error("The message is a raw AMQP message")]
     RawAmqpMessage,

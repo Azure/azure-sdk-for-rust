@@ -1,7 +1,8 @@
 use std::borrow::Cow;
+use std::time::Duration as StdDuration;
+use time::Duration as TimeSpan;
 
 use fe2o3_amqp::link::delivery::DeliveryInfo;
-use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
     messaging::{
@@ -48,11 +49,11 @@ pub(crate) enum ReceivedMessageLockToken {
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 #[derive(Debug)]
 pub struct ServiceBusReceivedMessage {
-    /// Indicates whether the user has settled the message as part of their callback.
-    /// If they have done so, we will not autocomplete.
-    ///
-    /// TODO: This seems reserved for the Processor API
-    pub(crate) is_settled: bool,
+    // /// Indicates whether the user has settled the message as part of their callback.
+    // /// If they have done so, we will not autocomplete.
+    // ///
+    // /// TODO: This seems reserved for the Processor API
+    // pub(crate) is_settled: bool,
 
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation
@@ -193,11 +194,8 @@ impl ServiceBusReceivedMessage {
     /// for the respective queue or topic. A message-level <see cref="TimeToLive"/> value cannot be
     /// longer than the entity's DefaultTimeToLive setting and it is silently adjusted if it does.
     /// See [Expiration](https://docs.microsoft.com/azure/service-bus-messaging/message-expiration)
-    pub fn time_to_live(&self) -> TimeSpan {
-        match self.raw_amqp_message.time_to_live() {
-            Some(ttl) => ttl,
-            None => TimeSpan::MAX, // TODO: is this the same as in dotnet sdk?
-        }
+    pub fn time_to_live(&self) -> Option<StdDuration> {
+        self.raw_amqp_message.time_to_live()
     }
 
     /// Gets the correlation identifier.
@@ -541,7 +539,9 @@ impl ServiceBusReceivedMessage {
                 OffsetDateTime::UNIX_EPOCH + duration
             }
             None => {
-                let ttl = self.time_to_live();
+                let ttl = self.time_to_live()
+                    .map(|ttl| TimeSpan::try_from(ttl).unwrap_or(TimeSpan::MAX))
+                    .unwrap_or(TimeSpan::MAX);
                 let enqueue_time = self.enqueued_time();
                 if ttl >= MAX_OFFSET_DATE_TIME - enqueue_time {
                     MAX_OFFSET_DATE_TIME

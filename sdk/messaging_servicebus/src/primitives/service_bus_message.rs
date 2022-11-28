@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use std::time::Duration as StdDuration;
 use time::Duration as TimeSpan;
 
 use fe2o3_amqp_types::{
@@ -17,7 +18,7 @@ use crate::amqp::{
         LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
     },
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
-    error::Error,
+    error::{Error, MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError},
 };
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
@@ -191,7 +192,10 @@ impl ServiceBusMessage {
     /// Sets the MessageId
     ///
     /// TODO: check if message_id is empty?
-    pub fn set_message_id(&mut self, message_id: impl Into<String>) {
+    pub fn set_message_id(
+        &mut self,
+        message_id: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_message_id(message_id)
     }
 
@@ -213,7 +217,10 @@ impl ServiceBusMessage {
         self.amqp_message.partition_key()
     }
 
-    pub fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), Error> {
+    pub fn set_partition_key(
+        &mut self,
+        key: impl Into<String>,
+    ) -> Result<(), SetPartitionKeyError> {
         self.amqp_message.set_partition_key(key)
     }
 
@@ -235,7 +242,10 @@ impl ServiceBusMessage {
         self.amqp_message.via_partition_key()
     }
 
-    pub fn set_transaction_partition_key(&mut self, key: impl Into<String>) {
+    pub fn set_transaction_partition_key(
+        &mut self,
+        key: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_via_partition_key(key)
     }
 
@@ -256,7 +266,10 @@ impl ServiceBusMessage {
         self.amqp_message.session_id()
     }
 
-    pub fn set_session_id(&mut self, session_id: impl Into<String>) {
+    pub fn set_session_id(
+        &mut self,
+        session_id: impl Into<String>,
+    ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_session_id(session_id)
     }
 
@@ -275,7 +288,10 @@ impl ServiceBusMessage {
         self.amqp_message.reply_to_session_id()
     }
 
-    pub fn set_reply_to_session_id(&mut self, session_id: Option<impl Into<String>>) {
+    pub fn set_reply_to_session_id(
+        &mut self,
+        session_id: Option<impl Into<String>>,
+    ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_reply_to_session_id(session_id)
     }
 
@@ -292,11 +308,14 @@ impl ServiceBusMessage {
     /// message-level [time_to_live](#method.time_to_live) value cannot be longer than the entity's
     /// DefaultTimeToLive setting and it is silently adjusted if it does. See
     /// [Expiration](https://docs.microsoft.com/azure/service-bus-messaging/message-expiration).
-    pub fn time_to_live(&self) -> Option<TimeSpan> {
+    pub fn time_to_live(&self) -> Option<StdDuration> {
         self.amqp_message.time_to_live()
     }
 
-    pub fn set_time_to_live(&mut self, ttl: Option<TimeSpan>) {
+    pub fn set_time_to_live(
+        &mut self,
+        ttl: Option<StdDuration>,
+    ) -> Result<(), MaxAllowedTtlExceededError> {
         self.amqp_message.set_time_to_live(ttl)
     }
 
