@@ -6,8 +6,9 @@ use azure_messaging_servicebus::{
     },
     core::{TransportMessageBatch, TransportSender},
     primitives::{
+        service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_options::ServiceBusRetryOptions, service_bus_peeked_message::ServiceBusPeekedMessage,
+        service_bus_retry_options::ServiceBusRetryOptions,
     },
     receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions,
     ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
@@ -276,4 +277,3 @@ pub async fn create_client_and_receive_deferred_messages(
     client.dispose().await?;
     Ok(messages)
 }
-

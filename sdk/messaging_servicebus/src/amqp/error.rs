@@ -13,13 +13,16 @@ use crate::{primitives::service_bus_retry_policy::ServiceBusRetryPolicyError, Se
 
 #[derive(Debug)]
 pub struct MaxLengthExceededError {
-    pub(crate) message: String
+    pub(crate) message: String,
 }
 
 impl MaxLengthExceededError {
     pub(crate) fn new(actual_length: usize, max_length: usize) -> Self {
         Self {
-            message: format!("The actual length {} exceeds the maximum length {}", actual_length, max_length)
+            message: format!(
+                "The actual length {} exceeds the maximum length {}",
+                actual_length, max_length
+            ),
         }
     }
 }
@@ -42,18 +45,21 @@ pub enum SetPartitionKeyError {
 }
 
 #[derive(Debug)]
-pub struct MaxAllowedTtlExceededError { }
+pub struct MaxAllowedTtlExceededError {}
 
 impl std::fmt::Display for MaxAllowedTtlExceededError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "MaxAllowedTtlExceededError: The maximum allowed TTL is u32::MAX milliseconds")
+        write!(
+            f,
+            "MaxAllowedTtlExceededError: The maximum allowed TTL is u32::MAX milliseconds"
+        )
     }
 }
 
 impl std::error::Error for MaxAllowedTtlExceededError {}
 
 #[derive(Debug, Clone)]
-pub struct RawAmqpMessageError { }
+pub struct RawAmqpMessageError {}
 
 impl std::fmt::Display for RawAmqpMessageError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

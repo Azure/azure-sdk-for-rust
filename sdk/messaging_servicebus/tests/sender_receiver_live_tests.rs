@@ -7,7 +7,7 @@ use azure_messaging_servicebus::{
 };
 use common::setup_dotenv;
 use std::time::Duration as StdDuration;
-use time::Duration as TimeSpan;
+
 use time::OffsetDateTime;
 
 mod common;
@@ -693,14 +693,20 @@ async fn receive_and_renew_lock() {
     .await
     .unwrap();
 
-    let mut client = ServiceBusClient::new_with_options(connection_string.clone(), Default::default())
-        .await
-        .unwrap();
-    let mut receiver = client.create_receiver_for_queue(queue_name, Default::default())
+    let mut client =
+        ServiceBusClient::new_with_options(connection_string.clone(), Default::default())
+            .await
+            .unwrap();
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, Default::default())
         .await
         .unwrap();
 
-    let mut message = receiver.receive_message().await.unwrap().expect("Expected a message");
+    let mut message = receiver
+        .receive_message()
+        .await
+        .unwrap()
+        .expect("Expected a message");
     let old_locked_until = message.locked_until();
 
     receiver.renew_message_lock(&mut message).await.unwrap();

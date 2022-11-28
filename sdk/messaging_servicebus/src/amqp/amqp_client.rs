@@ -1,4 +1,4 @@
-use std::{future::Future, marker::PhantomData, pin::Pin, time::Duration};
+use std::{marker::PhantomData, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::{auth::AccessToken, Url};

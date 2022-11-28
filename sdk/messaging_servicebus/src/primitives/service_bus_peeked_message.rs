@@ -15,7 +15,8 @@ use crate::{
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
             MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
-        amqp_message_extensions::AmqpMessageExt, error::RawAmqpMessageError,
+        amqp_message_extensions::AmqpMessageExt,
+        error::RawAmqpMessageError,
     },
     constants::{DEFAULT_OFFSET_DATE_TIME, MAX_OFFSET_DATE_TIME},
 };

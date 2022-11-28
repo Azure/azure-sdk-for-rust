@@ -19,7 +19,8 @@ use crate::{
             DEAD_LETTER_SOURCE_NAME, ENQUEUED_TIME_UTC_NAME, ENQUEUE_SEQUENCE_NUMBER_NAME,
             LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
         },
-        amqp_message_extensions::AmqpMessageExt, error::RawAmqpMessageError,
+        amqp_message_extensions::AmqpMessageExt,
+        error::RawAmqpMessageError,
     },
     constants::{DEFAULT_OFFSET_DATE_TIME, MAX_OFFSET_DATE_TIME},
 };
@@ -92,9 +93,9 @@ impl ServiceBusReceivedMessage {
         match &self.raw_amqp_message.body {
             Body::Data(batch) => match batch.len() {
                 1 => Ok(batch[0].0.as_ref()),
-                _ => Err(RawAmqpMessageError {  }),
+                _ => Err(RawAmqpMessageError {}),
             },
-            _ => Err(RawAmqpMessageError {  }),
+            _ => Err(RawAmqpMessageError {}),
         }
     }
 
@@ -538,7 +539,8 @@ impl ServiceBusReceivedMessage {
                 OffsetDateTime::UNIX_EPOCH + duration
             }
             None => {
-                let ttl = self.time_to_live()
+                let ttl = self
+                    .time_to_live()
                     .map(|ttl| TimeSpan::try_from(ttl).unwrap_or(TimeSpan::MAX))
                     .unwrap_or(TimeSpan::MAX);
                 let enqueue_time = self.enqueued_time();

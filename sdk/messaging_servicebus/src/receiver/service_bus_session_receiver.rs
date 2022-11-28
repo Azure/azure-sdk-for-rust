@@ -2,7 +2,7 @@ use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
 use crate::{
-    core::{TransportSessionReceiver},
+    core::TransportSessionReceiver,
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
