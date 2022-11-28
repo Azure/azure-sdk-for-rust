@@ -571,3 +571,146 @@ async fn schedule_and_cancel_scheduled_messages() {
     .unwrap();
     assert!(received.is_empty());
 }
+
+#[tokio::test]
+async fn send_and_peek_messages() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = expected
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    let peeked = common::create_client_and_peek_messages(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        expected.len() as u32,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(peeked.len(), expected.len());
+    for i in 0..expected.len() {
+        let peeked_message_body = peeked[i].body().unwrap();
+        assert_eq!(peeked_message_body, expected[i].as_bytes());
+    }
+
+    // drain the queue
+    let mut client_options = ServiceBusClientOptions::default();
+    client_options.retry_options = common::zero_retry_options();
+    common::drain_queue(
+        connection_string,
+        client_options,
+        queue_name,
+        Default::default(),
+        expected.len() as u32,
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn defer_and_receive_deferred_messages() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = expected
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    let seq_nums = common::create_client_and_defer_messages(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(seq_nums.len(), expected.len());
+
+    let received = common::create_client_and_receive_deferred_messages(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        seq_nums,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(received.len(), expected.len());
+    for i in 0..expected.len() {
+        let received_message_body = received[i].body().unwrap();
+        assert_eq!(received_message_body, expected[i].as_bytes());
+    }
+}
+
+#[tokio::test]
+async fn receive_and_renew_lock() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let message = ["test message 1"];
+    let messages = message
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+    common::create_client_and_send_messages_separately_to_queue(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    let mut client = ServiceBusClient::new_with_options(connection_string.clone(), Default::default())
+        .await
+        .unwrap();
+    let mut receiver = client.create_receiver_for_queue(queue_name, Default::default())
+        .await
+        .unwrap();
+
+    let mut message = receiver.receive_message().await.unwrap().expect("Expected a message");
+    let old_locked_until = message.locked_until();
+
+    receiver.renew_message_lock(&mut message).await.unwrap();
+    receiver.complete_message(&message).await.unwrap();
+
+    let new_locked_until = message.locked_until();
+    match (old_locked_until, new_locked_until) {
+        (Some(old), Some(new)) => {
+            assert!(new > old);
+        }
+        _ => panic!("Expected locked_until to be set"),
+    }
+}

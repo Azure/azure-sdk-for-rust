@@ -131,12 +131,16 @@ where
             .map(|mut v| v.drain(..).next())
     }
 
-    pub async fn receive_deferred_messages(
+    pub async fn receive_deferred_messages<Seq>(
         &mut self,
-        sequence_numbers: impl Iterator<Item = i64> + Send,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, R::RequestResponseError> {
+        sequence_numbers: Seq,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, R::RequestResponseError>
+    where
+        Seq: IntoIterator<Item = i64> + Send,
+        Seq::IntoIter: Send,
+    {
         self.inner
-            .receive_deferred_messages(sequence_numbers, None)
+            .receive_deferred_messages(sequence_numbers.into_iter(), None)
             .await
     }
 

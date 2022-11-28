@@ -7,7 +7,7 @@ use azure_messaging_servicebus::{
     core::{TransportMessageBatch, TransportSender},
     primitives::{
         service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_retry_options::ServiceBusRetryOptions, service_bus_peeked_message::ServiceBusPeekedMessage,
     },
     receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions,
     ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
@@ -208,3 +208,72 @@ pub async fn create_client_and_schedule_messages(
     client.dispose().await?;
     Ok(sequence_numbers)
 }
+
+pub async fn create_client_and_peek_messages(
+    connection_string: String,
+    client_options: ServiceBusClientOptions,
+    queue_name: String,
+    receiver_options: ServiceBusReceiverOptions,
+    max_messages: u32,
+) -> Result<Vec<ServiceBusPeekedMessage>, anyhow::Error> {
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, receiver_options)
+        .await?;
+
+    let messages = receiver.peek_messages(max_messages, None).await?;
+
+    receiver.dispose().await?;
+    client.dispose().await?;
+    Ok(messages)
+}
+
+pub async fn create_client_and_defer_messages(
+    connection_string: String,
+    client_options: ServiceBusClientOptions,
+    queue_name: String,
+    receiver_options: ServiceBusReceiverOptions,
+    max_messages: u32,
+    max_wait_time: Option<StdDuration>,
+) -> Result<Vec<i64>, anyhow::Error> {
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, receiver_options)
+        .await?;
+
+    let messages = receiver
+        .receive_messages(max_messages, max_wait_time)
+        .await?;
+
+    for message in &messages {
+        receiver.defer_message(message, None).await?;
+    }
+
+    receiver.dispose().await?;
+    client.dispose().await?;
+    Ok(messages.into_iter().map(|m| m.sequence_number()).collect())
+}
+
+pub async fn create_client_and_receive_deferred_messages(
+    connection_string: String,
+    client_options: ServiceBusClientOptions,
+    queue_name: String,
+    receiver_options: ServiceBusReceiverOptions,
+    sequence_numbers: Vec<i64>,
+) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, receiver_options)
+        .await?;
+
+    let messages = receiver.receive_deferred_messages(sequence_numbers).await?;
+
+    for message in &messages {
+        receiver.complete_message(message).await?;
+    }
+
+    receiver.dispose().await?;
+    client.dispose().await?;
+    Ok(messages)
+}
+
