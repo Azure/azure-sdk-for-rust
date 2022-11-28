@@ -4,7 +4,12 @@ use azure_messaging_servicebus::{
     client::{
         service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
     },
-    ServiceBusMessage, ServiceBusSenderOptions, ServiceBusSender, core::{TransportSender, TransportMessageBatch}, ServiceBusMessageBatch, primitives::{service_bus_received_message::ServiceBusReceivedMessage, service_bus_retry_options::ServiceBusRetryOptions}, ServiceBusReceiverOptions, CreateMessageBatchOptions,
+    core::{TransportMessageBatch, TransportSender},
+    primitives::{
+        service_bus_received_message::ServiceBusReceivedMessage,
+        service_bus_retry_options::ServiceBusRetryOptions,
+    },
+    ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
 
 pub fn zero_retry_options() -> ServiceBusRetryOptions {
@@ -26,10 +31,15 @@ pub async fn drain_queue(
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
-    max_messages: u32
+    max_messages: u32,
 ) {
-    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await.unwrap();
-    let mut receiver = client.create_receiver_for_queue(queue_name, receiver_options).await.unwrap();
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options)
+        .await
+        .unwrap();
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, receiver_options)
+        .await
+        .unwrap();
     let messages = receiver.receive_messages(max_messages, None).await.unwrap();
 
     for message in messages {
@@ -78,12 +88,16 @@ pub async fn create_client_and_receive_messages_from_queue(
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
-    max_wait_time: Option<StdDuration>
+    max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
     let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
-    let mut receiver = client.create_receiver_for_queue(queue_name, receiver_options).await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, receiver_options)
+        .await?;
 
-    let messages = receiver.receive_messages(max_messages, max_wait_time).await?;
+    let messages = receiver
+        .receive_messages(max_messages, max_wait_time)
+        .await?;
 
     for message in &messages {
         receiver.complete_message(message).await?;

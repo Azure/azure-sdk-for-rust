@@ -179,7 +179,7 @@ where
                     ServiceBusTransportType::AmqpTcp => {
                         let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
                         Url::parse(&addr)?
-                    },
+                    }
                     ServiceBusTransportType::AmqpWebSockets => {
                         let addr = format!(
                             "{}://{}{}",
@@ -188,8 +188,8 @@ where
                             AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
                         );
                         Url::parse(&addr)?
-                    },
-                }
+                    }
+                },
                 None => service_endpoint.clone(),
             };
 

@@ -143,7 +143,11 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
         // The connection string may contain a precomputed shared access signature OR a shared key name and value,
         // but not both.
-        match (self.shared_access_signature, self.shared_access_key_name, self.shared_access_key) {
+        match (
+            self.shared_access_signature,
+            self.shared_access_key_name,
+            self.shared_access_key,
+        ) {
             (Some(signature), None, None) => {
                 if !signature.is_empty() {
                     s.push_str(Self::SHARED_ACCESS_SIGNATURE_TOKEN);
@@ -231,8 +235,9 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
                 Self::ENDPOINT_TOKEN => {
                     // TODO: What about the port?
                     let mut url =
-                    Url::parse(value).map_err(|_| FormatError::InvalidConnectionString)?;
-                    url.set_scheme(Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME).map_err(|_| FormatError::InvalidConnectionString)?;
+                        Url::parse(value).map_err(|_| FormatError::InvalidConnectionString)?;
+                    url.set_scheme(Self::SERVICE_BUS_ENDPOINT_SCHEME_NAME)
+                        .map_err(|_| FormatError::InvalidConnectionString)?;
                     endpoint = Some(url);
                 }
                 Self::ENTITY_PATH_TOKEN => entity_path = Some(value),
@@ -495,11 +500,11 @@ mod tests {
     ///   Provides the invalid properties argument cases for the <see cref="ServiceBusConnectionStringProperties.Create" /> tests.
     /// </summary>
     ///
-    fn to_connection_string_validates_properties_cases() -> Vec<ServiceBusConnectionStringProperties<'static>> {
+    fn to_connection_string_validates_properties_cases(
+    ) -> Vec<ServiceBusConnectionStringProperties<'static>> {
         let mut cases = Vec::new();
         // "missing endpoint"
-        let case = ServiceBusConnectionStringProperties
-        {
+        let case = ServiceBusConnectionStringProperties {
             endpoint: None,
             entity_path: Some("fake"),
             shared_access_signature: Some("fake"),
@@ -859,11 +864,9 @@ mod tests {
     #[test]
     fn to_connection_string_returns_err_with_non_servicebus_endpoint_scheme() {
         let schemes = vec![
-            "amqps://",
-            "amqp://",
+            "amqps://", "amqp://",
             "http://", // TODO: `url::Url` does not allow changing the scheme away from `http` or `https`
-            "https://",
-            "fake://",
+            "https://", "fake://",
         ];
 
         for scheme in schemes {
@@ -911,10 +914,10 @@ mod tests {
 
     #[test]
     fn to_connection_string_allows_shared_access_signature_authorization() {
-        let fake_connection = "Endpoint=sb://not-real.servicebus.windows.net/;SharedAccessSignature=[not_real]";
+        let fake_connection =
+            "Endpoint=sb://not-real.servicebus.windows.net/;SharedAccessSignature=[not_real]";
         let properties = ServiceBusConnectionStringProperties::parse(fake_connection).unwrap();
 
         assert!(properties.to_connection_string().is_ok());
     }
-
 }

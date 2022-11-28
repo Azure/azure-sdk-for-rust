@@ -43,7 +43,6 @@ pub struct ServiceBusClientOptions {
     /// `true`, when cross-entity transactions are enabled; `false` when transactions are not being
     /// used or should be limited to a single entity.
     pub enable_cross_entity_transactions: bool,
-
     // TODO:
     // /// Gets or sets whether or not to enable metrics for the associated [`ServiceBusClient`]
     // /// instance. If set to `true`, [ServiceBusClient::get_transport_metrics`] can be called.
