@@ -1,9 +1,12 @@
-use super::{AzureCliCredential, ImdsManagedIdentityCredential};
+use crate::{
+    timeout::TimeoutExt,
+    {AzureCliCredential, ImdsManagedIdentityCredential},
+};
 use azure_core::{
     auth::{TokenCredential, TokenResponse},
     error::{Error, ErrorKind, ResultExt},
 };
-use futures_time::{future::FutureExt, time::Duration};
+use std::time::Duration;
 
 #[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
