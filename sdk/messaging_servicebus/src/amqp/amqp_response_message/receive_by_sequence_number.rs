@@ -29,7 +29,7 @@ impl ReceiveBySequenceNumberResponse {
             let raw_amqp_message: Deserializable<Message<Body<Value>>> =
                 serde_amqp::from_slice(&buf)?;
             let message = ServiceBusReceivedMessage {
-                is_settled: false,
+                _is_settled: false,
                 raw_amqp_message: raw_amqp_message.0,
                 lock_token: ReceivedMessageLockToken::LockToken(lock_token),
             };

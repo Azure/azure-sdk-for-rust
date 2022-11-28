@@ -472,7 +472,7 @@ mod tests {
 
         for case in cases {
             let mut message = ServiceBusMessage::default();
-            message.set_message_id(case);
+            message.set_message_id(case).unwrap();
             assert_eq!(message.to_string(), format!("{{MessageId:{}}}", case));
         }
     }

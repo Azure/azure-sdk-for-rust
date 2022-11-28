@@ -585,7 +585,7 @@ async fn receive_messages(
             lock_token,
         };
         let message = ServiceBusReceivedMessage {
-            is_settled,
+            _is_settled: is_settled,
             raw_amqp_message,
             lock_token,
         };

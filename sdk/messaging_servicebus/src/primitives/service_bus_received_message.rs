@@ -52,7 +52,7 @@ pub struct ServiceBusReceivedMessage {
     /// If they have done so, we will not autocomplete.
     ///
     /// TODO: This seems reserved for the Processor API
-    pub(crate) is_settled: bool,
+    pub(crate) _is_settled: bool,
 
     /// Gets the raw Amqp message data that was transmitted over the wire.
     /// This can be used to enable scenarios that require reading AMQP header, footer, property, or annotation

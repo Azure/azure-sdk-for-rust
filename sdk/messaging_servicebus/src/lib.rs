@@ -28,10 +28,3 @@ pub use sender::{
 
 pub(crate) mod authorization;
 pub(crate) mod entity_name_formatter;
-
-#[cfg(test)]
-pub(crate) mod test_utils {
-    pub(crate) fn setup_dotenv() {
-        dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
-    }
-}
