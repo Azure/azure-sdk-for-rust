@@ -12,6 +12,7 @@ use azure_messaging_servicebus::{
     receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions,
     ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
+use time::OffsetDateTime;
 
 pub fn zero_retry_options() -> ServiceBusRetryOptions {
     ServiceBusRetryOptions {
@@ -188,4 +189,22 @@ pub async fn create_client_and_deadletter_messages_from_queue(
     receiver.dispose().await?;
     client.dispose().await?;
     Ok(messages)
+}
+
+pub async fn create_client_and_schedule_messages(
+    connection_string: String,
+    client_options: ServiceBusClientOptions,
+    queue_name: String,
+    sender_options: ServiceBusSenderOptions,
+    messages: impl Iterator<Item = impl Into<ServiceBusMessage>> + ExactSizeIterator + Send,
+    enqueue_time: OffsetDateTime,
+) -> Result<Vec<i64>, anyhow::Error> {
+    let mut client = ServiceBusClient::new_with_options(connection_string, client_options).await?;
+    let mut sender = client.create_sender(queue_name, sender_options).await?;
+
+    let sequence_numbers = sender.schedule_messages(messages, enqueue_time).await?;
+
+    sender.dispose().await?;
+    client.dispose().await?;
+    Ok(sequence_numbers)
 }

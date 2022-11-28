@@ -1,11 +1,16 @@
-mod common;
 use azure_messaging_servicebus::{
     client::{
         service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
     },
-    ServiceBusMessage, ServiceBusReceiverOptions, primitives::sub_queue::SubQueue,
+    primitives::sub_queue::SubQueue,
+    ServiceBusMessage, ServiceBusReceiverOptions,
 };
 use common::setup_dotenv;
+use std::time::Duration as StdDuration;
+use time::Duration as TimeSpan;
+use time::OffsetDateTime;
+
+mod common;
 
 #[tokio::test]
 async fn drain_queue() {
@@ -471,4 +476,98 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
         let received_message_body = received[i].body().unwrap();
         assert_eq!(received_message_body, expected[i].as_bytes());
     }
+}
+
+#[tokio::test]
+async fn schedule_and_receive_messages() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = expected
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+
+    let wait_time = StdDuration::from_secs(30);
+    let enqueue_time = OffsetDateTime::now_utc() + wait_time;
+    let sequence_numbers = common::create_client_and_schedule_messages(
+        connection_string.clone(),
+        Default::default(),
+        queue_name.clone(),
+        Default::default(),
+        messages,
+        enqueue_time,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(sequence_numbers.len(), expected.len());
+
+    tokio::time::sleep(wait_time).await;
+
+    let received = common::create_client_and_receive_messages_from_queue(
+        connection_string,
+        Default::default(),
+        queue_name,
+        Default::default(),
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(received.len(), expected.len());
+    for i in 0..expected.len() {
+        let received_message_body = received[i].body().unwrap();
+        assert_eq!(received_message_body, expected[i].as_bytes());
+    }
+}
+
+#[tokio::test]
+async fn schedule_and_cancel_scheduled_messages() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let messages = expected
+        .iter()
+        .map(|message| ServiceBusMessage::new(*message));
+
+    let mut client =
+        ServiceBusClient::new_with_options(connection_string.clone(), Default::default())
+            .await
+            .unwrap();
+    let mut sender = client
+        .create_sender(queue_name.clone(), Default::default())
+        .await
+        .unwrap();
+
+    let wait_time = StdDuration::from_secs(30);
+    let enqueue_time = OffsetDateTime::now_utc() + wait_time;
+    let sequence_numbers = sender
+        .schedule_messages(messages, enqueue_time)
+        .await
+        .unwrap();
+
+    for seq in sequence_numbers {
+        sender.cancel_scheduled_message(seq).await.unwrap();
+    }
+
+    tokio::time::sleep(wait_time).await;
+    let mut client_options = ServiceBusClientOptions::default();
+    client_options.retry_options = common::zero_retry_options();
+
+    let received = common::create_client_and_receive_messages_from_queue(
+        connection_string,
+        client_options,
+        queue_name,
+        Default::default(),
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+    assert!(received.is_empty());
 }
