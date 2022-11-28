@@ -156,14 +156,6 @@ impl AmqpConnectionScope {
     /// The suffix to attach to the resource path when using web sockets for service communication.
     pub(crate) const WEB_SOCKETS_PATH_SUFFIX: &'static str = "/$servicebus/websocket/";
 
-    /// The URI scheme to apply when using web sockets for service communication.
-    const WEB_SOCKETS_URI_SCHEME: &'static str = "wss";
-
-    /// The version of AMQP to use within the scope.
-    const AMQP_VERSION_MAJOR: u8 = MAJOR;
-    const AMQP_VERSION_MINOR: u8 = MINOR;
-    const AMQP_VERSION_REVISION: u8 = REVISION;
-
     /// The amount of time to allow an AMQP connection to be idle before considering
     /// it to be timed out.
     const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(1 * 60);
