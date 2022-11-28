@@ -14,7 +14,7 @@ use fe2o3_amqp::{
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
-    definitions::{ReceiverSettleMode, SenderSettleMode, MAJOR, MINOR, REVISION},
+    definitions::{ReceiverSettleMode, SenderSettleMode},
     messaging::{FilterSet, Source},
     primitives::Symbol,
 };
@@ -534,15 +534,13 @@ impl TransportConnectionScope for AmqpConnectionScope {
         self.is_disposed
     }
 
-    fn set_is_disposed(&mut self, value: bool) {
-        self.is_disposed = value;
-    }
-
     async fn dispose(&mut self) -> Result<(), Self::Error> {
         // TODO: handle link close?
 
         self.session.handle.close().await?;
         self.connection.handle.close().await?;
+
+        self.is_disposed = true;
         Ok(())
     }
 }

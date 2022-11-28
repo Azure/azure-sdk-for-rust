@@ -55,7 +55,6 @@ async fn client_send_message_batch(total: u32, options: ServiceBusSenderOptions)
 
     let mut batch = sender
         .create_message_batch(Default::default())
-        .await
         .unwrap();
     (0..total)
         .map(|i| format!("message {}", i).into_bytes())

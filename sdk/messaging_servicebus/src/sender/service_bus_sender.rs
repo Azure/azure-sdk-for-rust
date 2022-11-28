@@ -16,11 +16,11 @@ where
     S: TransportSender + Send + Sync,
     S::MessageBatch: TransportMessageBatch,
 {
-    pub async fn create_message_batch(
+    pub fn create_message_batch(
         &self,
         options: CreateMessageBatchOptions,
     ) -> Result<ServiceBusMessageBatch<S::MessageBatch>, S::CreateMessageBatchError> {
-        let inner = self.inner.create_message_batch(options).await?;
+        let inner = self.inner.create_message_batch(options)?;
         Ok(ServiceBusMessageBatch { inner })
     }
 

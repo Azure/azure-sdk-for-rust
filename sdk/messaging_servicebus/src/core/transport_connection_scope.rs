@@ -3,7 +3,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 
 #[async_trait]
-pub(crate) trait TransportConnectionScope {
+pub trait TransportConnectionScope {
     type Error;
 
     /// Indicates whether this <see cref="TransportConnectionScope"/> has been disposed.
@@ -12,8 +12,6 @@ pub(crate) trait TransportConnectionScope {
     ///
     /// `true` if disposed; otherwise, `false`
     fn is_disposed(&self) -> bool;
-
-    fn set_is_disposed(&mut self, value: bool);
 
     /// The recommended timeout to associate with the session.
     fn session_timeout(&self) -> Duration {
