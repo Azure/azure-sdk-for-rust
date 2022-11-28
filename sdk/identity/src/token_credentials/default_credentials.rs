@@ -1,6 +1,9 @@
 use super::{AzureCliCredential, ImdsManagedIdentityCredential};
-use azure_core::auth::{TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::{
+    auth::{TokenCredential, TokenResponse},
+    error::{Error, ErrorKind, ResultExt},
+};
+use futures_time::{future::FutureExt, time::Duration};
 
 #[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
@@ -55,15 +58,15 @@ impl DefaultAzureCredentialBuilder {
                 super::EnvironmentCredential::default(),
             ));
         }
-        if self.include_azure_cli_credential {
-            sources.push(DefaultAzureCredentialEnum::AzureCli(
-                AzureCliCredential::new(),
-            ));
-        }
         if self.include_managed_identity_credential {
             sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
                 ImdsManagedIdentityCredential::default(),
             ))
+        }
+        if self.include_azure_cli_credential {
+            sources.push(DefaultAzureCredentialEnum::AzureCli(
+                AzureCliCredential::new(),
+            ));
         }
         DefaultAzureCredential::with_sources(sources)
     }
@@ -91,10 +94,19 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                 )
             }
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
-                credential.get_token(resource).await.context(
-                    ErrorKind::Credential,
-                    "error getting managed identity credential",
-                )
+                // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
+                credential
+                    .get_token(resource)
+                    .timeout(Duration::from_secs(1))
+                    .await
+                    .context(
+                        ErrorKind::Credential,
+                        "getting managed identity credential timed out",
+                    )?
+                    .context(
+                        ErrorKind::Credential,
+                        "error getting managed identity credential",
+                    )
             }
             DefaultAzureCredentialEnum::AzureCli(credential) => {
                 credential.get_token(resource).await.context(
@@ -110,8 +122,8 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 ///
 /// The following credential types if enabled will be tried, in order:
 /// - EnvironmentCredential
-/// - AzureCliCredential
 /// - ManagedIdentityCredential
+/// - AzureCliCredential
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialEnum>,
