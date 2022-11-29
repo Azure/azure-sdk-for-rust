@@ -3,36 +3,126 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Action to be applied."]
+#[doc = "Action rule with action group configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {
-    #[doc = "Action that should be applied."]
-    #[serde(rename = "actionType")]
-    pub action_type: action::ActionType,
+pub struct ActionGroup {
+    #[serde(flatten)]
+    pub action_rule_properties: ActionRuleProperties,
+    #[doc = "Action group to trigger if action rule matches"]
+    #[serde(rename = "actionGroupId")]
+    pub action_group_id: String,
 }
-impl Action {
-    pub fn new(action_type: action::ActionType) -> Self {
-        Self { action_type }
+impl ActionGroup {
+    pub fn new(action_rule_properties: ActionRuleProperties, action_group_id: String) -> Self {
+        Self {
+            action_rule_properties,
+            action_group_id,
+        }
     }
 }
-pub mod action {
+#[doc = "The Action Groups information, used by the alert rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionGroupsInformation {
+    #[doc = "An optional custom email subject to use in email notifications."]
+    #[serde(rename = "customEmailSubject", default, skip_serializing_if = "Option::is_none")]
+    pub custom_email_subject: Option<String>,
+    #[doc = "An optional custom web-hook payload to use in web-hook notifications."]
+    #[serde(rename = "customWebhookPayload", default, skip_serializing_if = "Option::is_none")]
+    pub custom_webhook_payload: Option<String>,
+    #[doc = "The Action Group resource IDs."]
+    #[serde(rename = "groupIds")]
+    pub group_ids: Vec<String>,
+}
+impl ActionGroupsInformation {
+    pub fn new(group_ids: Vec<String>) -> Self {
+        Self {
+            custom_email_subject: None,
+            custom_webhook_payload: None,
+            group_ids,
+        }
+    }
+}
+#[doc = "Action rule object containing target scope, conditions and suppression logic"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionRule {
+    #[serde(flatten)]
+    pub managed_resource: ManagedResource,
+    #[doc = "Action rule properties defining scope, conditions, suppression logic for action rule"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActionRuleProperties>,
+}
+impl ActionRule {
+    pub fn new(managed_resource: ManagedResource) -> Self {
+        Self {
+            managed_resource,
+            properties: None,
+        }
+    }
+}
+#[doc = "Action rule properties defining scope, conditions, suppression logic for action rule"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActionRuleProperties {
+    #[doc = "Target scope for a given action rule. By default scope will be the subscription. User can also provide list of resource groups or list of resources from the scope subscription as well."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<Scope>,
+    #[doc = "Conditions in alert instance to be matched for a given action rule. Default value is all. Multiple values could be provided with comma separation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conditions: Option<Conditions>,
+    #[doc = "Description of action rule"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "Creation time of action rule. Date-Time in ISO-8601 format."]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
+    pub created_at: Option<time::OffsetDateTime>,
+    #[doc = "Last updated time of action rule. Date-Time in ISO-8601 format."]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
+    pub last_modified_at: Option<time::OffsetDateTime>,
+    #[doc = "Created by user name."]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "Last modified by user name."]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[doc = "Indicates if the given action rule is enabled or disabled"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<action_rule_properties::Status>,
+    #[doc = "Indicates type of action rule"]
+    #[serde(rename = "type")]
+    pub type_: action_rule_properties::Type,
+}
+impl ActionRuleProperties {
+    pub fn new(type_: action_rule_properties::Type) -> Self {
+        Self {
+            scope: None,
+            conditions: None,
+            description: None,
+            created_at: None,
+            last_modified_at: None,
+            created_by: None,
+            last_modified_by: None,
+            status: None,
+            type_,
+        }
+    }
+}
+pub mod action_rule_properties {
     use super::*;
-    #[doc = "Action that should be applied."]
+    #[doc = "Indicates if the given action rule is enabled or disabled"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ActionType")]
-    pub enum ActionType {
-        AddActionGroups,
-        RemoveAllActionGroups,
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Enabled,
+        Disabled,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
-    impl FromStr for ActionType {
+    impl FromStr for Status {
         type Err = value::Error;
         fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
             Self::deserialize(s.into_deserializer())
         }
     }
-    impl<'de> Deserialize<'de> for ActionType {
+    impl<'de> Deserialize<'de> for Status {
         fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -42,121 +132,414 @@ pub mod action {
             Ok(deserialized)
         }
     }
-    impl Serialize for ActionType {
+    impl Serialize for Status {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
             match self {
-                Self::AddActionGroups => serializer.serialize_unit_variant("ActionType", 0u32, "AddActionGroups"),
-                Self::RemoveAllActionGroups => serializer.serialize_unit_variant("ActionType", 1u32, "RemoveAllActionGroups"),
+                Self::Enabled => serializer.serialize_unit_variant("Status", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("Status", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Indicates type of action rule"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        Suppression,
+        ActionGroup,
+        Diagnostics,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Suppression => serializer.serialize_unit_variant("Type", 0u32, "Suppression"),
+                Self::ActionGroup => serializer.serialize_unit_variant("Type", 1u32, "ActionGroup"),
+                Self::Diagnostics => serializer.serialize_unit_variant("Type", 2u32, "Diagnostics"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
 }
-#[doc = "Add action groups to alert processing rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AddActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
-    #[doc = "List of action group Ids to add to alert processing rule."]
-    #[serde(rename = "actionGroupIds")]
-    pub action_group_ids: Vec<String>,
-}
-impl AddActionGroups {
-    pub fn new(action: Action, action_group_ids: Vec<String>) -> Self {
-        Self { action, action_group_ids }
-    }
-}
-#[doc = "Alert processing rule object containing target scopes, conditions and scheduling logic."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertProcessingRule {
-    #[serde(flatten)]
-    pub managed_resource: ManagedResource,
-    #[doc = "Alert processing rule properties defining scopes, conditions and scheduling logic for alert processing rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertProcessingRuleProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-impl AlertProcessingRule {
-    pub fn new(managed_resource: ManagedResource) -> Self {
-        Self {
-            managed_resource,
-            properties: None,
-            system_data: None,
-        }
-    }
-}
-#[doc = "Alert processing rule properties defining scopes, conditions and scheduling logic for alert processing rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertProcessingRuleProperties {
-    #[doc = "List of ARM IDs which will be the target of the given alert processing rule."]
-    pub scopes: Scopes,
-    #[doc = "Conditions in alert instance to be matched for a given alert processing rule. Default value is all. Multiple values could be provided with comma separation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub conditions: Option<Conditions>,
-    #[doc = "Scheduling configuration for a given alert processing rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schedule: Option<Schedule>,
-    #[doc = "Actions to be applied."]
-    pub actions: Vec<Action>,
-    #[doc = "Description of alert processing rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "Indicates if the given alert processing rule is enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-}
-impl AlertProcessingRuleProperties {
-    pub fn new(scopes: Scopes, actions: Vec<Action>) -> Self {
-        Self {
-            scopes,
-            conditions: None,
-            schedule: None,
-            actions,
-            description: None,
-            enabled: None,
-        }
-    }
-}
-#[doc = "List of alert processing rules."]
+#[doc = "List of action rules"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AlertProcessingRulesList {
-    #[doc = "URL to fetch the next set of alert processing rules."]
+pub struct ActionRulesList {
+    #[doc = "URL to fetch the next set of action rules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-    #[doc = "List of alert processing rules."]
+    #[doc = "List of action rules"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<AlertProcessingRule>,
+    pub value: Vec<ActionRule>,
 }
-impl azure_core::Continuable for AlertProcessingRulesList {
+impl azure_core::Continuable for ActionRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         self.next_link.clone()
     }
 }
-impl AlertProcessingRulesList {
+impl ActionRulesList {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "Condition to trigger an alert processing rule."]
+#[doc = "The alert rule information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRule {
+    #[serde(flatten)]
+    pub azure_resource: AzureResource,
+    #[doc = "The alert rule properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AlertRuleProperties>,
+}
+impl AlertRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The alert rule patch information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRulePatchObject {
+    #[doc = "The resource ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The resource name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The alert rule properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AlertRulePatchProperties>,
+}
+impl AlertRulePatchObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The alert rule properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRulePatchProperties {
+    #[doc = "The alert rule description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The alert rule state."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<alert_rule_patch_properties::State>,
+    #[doc = "The alert rule severity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<alert_rule_patch_properties::Severity>,
+    #[doc = "The alert rule frequency in ISO8601 format. The time granularity must be in minutes and minimum value is 5 minutes."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<String>,
+    #[doc = "The Action Groups information, used by the alert rule."]
+    #[serde(rename = "actionGroups", default, skip_serializing_if = "Option::is_none")]
+    pub action_groups: Option<ActionGroupsInformation>,
+    #[doc = "Optional throttling information for the alert rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub throttling: Option<ThrottlingInformation>,
+}
+impl AlertRulePatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod alert_rule_patch_properties {
+    use super::*;
+    #[doc = "The alert rule state."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("State", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("State", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The alert rule severity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Severity")]
+    pub enum Severity {
+        Sev0,
+        Sev1,
+        Sev2,
+        Sev3,
+        Sev4,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Severity {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Severity {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Severity {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sev0 => serializer.serialize_unit_variant("Severity", 0u32, "Sev0"),
+                Self::Sev1 => serializer.serialize_unit_variant("Severity", 1u32, "Sev1"),
+                Self::Sev2 => serializer.serialize_unit_variant("Severity", 2u32, "Sev2"),
+                Self::Sev3 => serializer.serialize_unit_variant("Severity", 3u32, "Sev3"),
+                Self::Sev4 => serializer.serialize_unit_variant("Severity", 4u32, "Sev4"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The alert rule properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertRuleProperties {
+    #[doc = "The alert rule description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The alert rule state."]
+    pub state: alert_rule_properties::State,
+    #[doc = "The alert rule severity."]
+    pub severity: alert_rule_properties::Severity,
+    #[doc = "The alert rule frequency in ISO8601 format. The time granularity must be in minutes and minimum value is 5 minutes."]
+    pub frequency: String,
+    #[doc = "The detector information. By default this is not populated, unless it's specified in expandDetector"]
+    pub detector: Detector,
+    #[doc = "The alert rule resources scope."]
+    pub scope: Vec<String>,
+    #[doc = "The Action Groups information, used by the alert rule."]
+    #[serde(rename = "actionGroups")]
+    pub action_groups: ActionGroupsInformation,
+    #[doc = "Optional throttling information for the alert rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub throttling: Option<ThrottlingInformation>,
+}
+impl AlertRuleProperties {
+    pub fn new(
+        state: alert_rule_properties::State,
+        severity: alert_rule_properties::Severity,
+        frequency: String,
+        detector: Detector,
+        scope: Vec<String>,
+        action_groups: ActionGroupsInformation,
+    ) -> Self {
+        Self {
+            description: None,
+            state,
+            severity,
+            frequency,
+            detector,
+            scope,
+            action_groups,
+            throttling: None,
+        }
+    }
+}
+pub mod alert_rule_properties {
+    use super::*;
+    #[doc = "The alert rule state."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("State", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("State", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The alert rule severity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Severity")]
+    pub enum Severity {
+        Sev0,
+        Sev1,
+        Sev2,
+        Sev3,
+        Sev4,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Severity {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Severity {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Severity {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sev0 => serializer.serialize_unit_variant("Severity", 0u32, "Sev0"),
+                Self::Sev1 => serializer.serialize_unit_variant("Severity", 1u32, "Sev1"),
+                Self::Sev2 => serializer.serialize_unit_variant("Severity", 2u32, "Sev2"),
+                Self::Sev3 => serializer.serialize_unit_variant("Severity", 3u32, "Sev3"),
+                Self::Sev4 => serializer.serialize_unit_variant("Severity", 4u32, "Sev4"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "List of Smart Detector alert rules."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRulesList {
+    #[doc = "List of Smart Detector alert rules."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AlertRule>,
+    #[doc = "The URL to get the next set of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AlertRulesList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl AlertRulesList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An Azure resource object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureResource {
+    #[doc = "The resource ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The resource name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource location."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "The resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AzureResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "condition to trigger an action rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
-    #[doc = "Field for a given condition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub field: Option<condition::Field>,
-    #[doc = "Operator for a given condition."]
+    #[doc = "operator for a given condition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<condition::Operator>,
-    #[doc = "List of values to match for a given condition."]
+    #[doc = "list of values to match for a given condition."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -171,62 +554,7 @@ impl Condition {
 }
 pub mod condition {
     use super::*;
-    #[doc = "Field for a given condition."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Field")]
-    pub enum Field {
-        Severity,
-        MonitorService,
-        MonitorCondition,
-        SignalType,
-        TargetResourceType,
-        TargetResource,
-        TargetResourceGroup,
-        AlertRuleId,
-        AlertRuleName,
-        Description,
-        AlertContext,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Field {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Field {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Field {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Severity => serializer.serialize_unit_variant("Field", 0u32, "Severity"),
-                Self::MonitorService => serializer.serialize_unit_variant("Field", 1u32, "MonitorService"),
-                Self::MonitorCondition => serializer.serialize_unit_variant("Field", 2u32, "MonitorCondition"),
-                Self::SignalType => serializer.serialize_unit_variant("Field", 3u32, "SignalType"),
-                Self::TargetResourceType => serializer.serialize_unit_variant("Field", 4u32, "TargetResourceType"),
-                Self::TargetResource => serializer.serialize_unit_variant("Field", 5u32, "TargetResource"),
-                Self::TargetResourceGroup => serializer.serialize_unit_variant("Field", 6u32, "TargetResourceGroup"),
-                Self::AlertRuleId => serializer.serialize_unit_variant("Field", 7u32, "AlertRuleId"),
-                Self::AlertRuleName => serializer.serialize_unit_variant("Field", 8u32, "AlertRuleName"),
-                Self::Description => serializer.serialize_unit_variant("Field", 9u32, "Description"),
-                Self::AlertContext => serializer.serialize_unit_variant("Field", 10u32, "AlertContext"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Operator for a given condition."]
+    #[doc = "operator for a given condition"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Operator")]
     pub enum Operator {
@@ -268,132 +596,94 @@ pub mod condition {
         }
     }
 }
-pub type Conditions = Vec<Condition>;
-#[doc = "Daily recurrence object."]
+#[doc = "Conditions in alert instance to be matched for a given action rule. Default value is all. Multiple values could be provided with comma separation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Conditions {
+    #[doc = "condition to trigger an action rule"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "monitorService", default, skip_serializing_if = "Option::is_none")]
+    pub monitor_service: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "monitorCondition", default, skip_serializing_if = "Option::is_none")]
+    pub monitor_condition: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "targetResourceType", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_type: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "alertRuleId", default, skip_serializing_if = "Option::is_none")]
+    pub alert_rule_id: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "alertRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub alert_rule_name: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<Condition>,
+    #[doc = "condition to trigger an action rule"]
+    #[serde(rename = "alertContext", default, skip_serializing_if = "Option::is_none")]
+    pub alert_context: Option<Condition>,
+}
+impl Conditions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The detector information. By default this is not populated, unless it's specified in expandDetector"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DailyRecurrence {
-    #[serde(flatten)]
-    pub recurrence: Recurrence,
+pub struct Detector {
+    #[doc = "The detector id."]
+    pub id: String,
+    #[doc = "The detector's parameters.'"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[doc = "The Smart Detector name. By default this is not populated, unless it's specified in expandDetector"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The Smart Detector description. By default this is not populated, unless it's specified in expandDetector"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The Smart Detector supported resource types. By default this is not populated, unless it's specified in expandDetector"]
+    #[serde(
+        rename = "supportedResourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub supported_resource_types: Vec<String>,
+    #[doc = "The Smart Detector image path. By default this is not populated, unless it's specified in expandDetector"]
+    #[serde(
+        rename = "imagePaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub image_paths: Vec<String>,
 }
-impl DailyRecurrence {
-    pub fn new(recurrence: Recurrence) -> Self {
-        Self { recurrence }
-    }
-}
-#[doc = "Days of week."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "DaysOfWeek")]
-pub enum DaysOfWeek {
-    Sunday,
-    Monday,
-    Tuesday,
-    Wednesday,
-    Thursday,
-    Friday,
-    Saturday,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for DaysOfWeek {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for DaysOfWeek {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for DaysOfWeek {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Sunday => serializer.serialize_unit_variant("DaysOfWeek", 0u32, "Sunday"),
-            Self::Monday => serializer.serialize_unit_variant("DaysOfWeek", 1u32, "Monday"),
-            Self::Tuesday => serializer.serialize_unit_variant("DaysOfWeek", 2u32, "Tuesday"),
-            Self::Wednesday => serializer.serialize_unit_variant("DaysOfWeek", 3u32, "Wednesday"),
-            Self::Thursday => serializer.serialize_unit_variant("DaysOfWeek", 4u32, "Thursday"),
-            Self::Friday => serializer.serialize_unit_variant("DaysOfWeek", 5u32, "Friday"),
-            Self::Saturday => serializer.serialize_unit_variant("DaysOfWeek", 6u32, "Saturday"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+impl Detector {
+    pub fn new(id: String) -> Self {
+        Self {
+            id,
+            parameters: None,
+            name: None,
+            description: None,
+            supported_resource_types: Vec::new(),
+            image_paths: Vec::new(),
         }
     }
 }
-#[doc = "The resource management error additional info."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorAdditionalInfo {
-    #[doc = "The additional info type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "The additional info."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
+#[doc = "Action rule with diagnostics configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Diagnostics {
+    #[serde(flatten)]
+    pub action_rule_properties: ActionRuleProperties,
 }
-impl ErrorAdditionalInfo {
-    pub fn new() -> Self {
-        Self::default()
+impl Diagnostics {
+    pub fn new(action_rule_properties: ActionRuleProperties) -> Self {
+        Self { action_rule_properties }
     }
 }
-#[doc = "The error detail."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorDetail {
-    #[doc = "The error code."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[doc = "The error message."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[doc = "The error target."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[doc = "The error details."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub details: Vec<ErrorDetail>,
-    #[doc = "The error additional info."]
-    #[serde(
-        rename = "additionalInfo",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-impl ErrorDetail {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorResponse {
-    #[doc = "The error detail."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-impl azure_core::Continuable for ErrorResponse {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl ErrorResponse {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "An azure managed resource object."]
+#[doc = "An azure managed resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedResource {
     #[serde(flatten)]
@@ -444,27 +734,13 @@ impl MonitorServiceList {
         }
     }
 }
-#[doc = "Monthly recurrence object."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonthlyRecurrence {
-    #[serde(flatten)]
-    pub recurrence: Recurrence,
-    #[doc = "Specifies the values for monthly recurrence pattern."]
-    #[serde(rename = "daysOfMonth")]
-    pub days_of_month: Vec<i32>,
-}
-impl MonthlyRecurrence {
-    pub fn new(recurrence: Recurrence, days_of_month: Vec<i32>) -> Self {
-        Self { recurrence, days_of_month }
-    }
-}
-#[doc = "Data contract for patch."]
+#[doc = "Data contract for patch"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchObject {
-    #[doc = "Alert processing rule properties supported by patch."]
+    #[doc = "Action rule properties supported by patch"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PatchProperties>,
-    #[doc = "Tags to be updated."]
+    #[doc = "tags to be updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -473,226 +749,201 @@ impl PatchObject {
         Self::default()
     }
 }
-#[doc = "Alert processing rule properties supported by patch."]
+#[doc = "Action rule properties supported by patch"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchProperties {
-    #[doc = "Indicates if the given alert processing rule is enabled or disabled."]
+    #[doc = "Indicates if the given action rule is enabled or disabled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
+    pub status: Option<patch_properties::Status>,
 }
 impl PatchProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrometheusRule {
-    #[doc = "the name of the recording rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub record: Option<String>,
-    #[doc = "the name of the alert rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub alert: Option<String>,
-    #[doc = "the flag that indicates whether the Prometheus rule is enabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[doc = "the expression to run for the rule."]
-    pub expression: String,
-    #[doc = "the severity of the alerts fired by the rule. Only relevant for alerts."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<i32>,
-    #[doc = "the amount of time alert must be active before firing. Only relevant for alerts."]
-    #[serde(rename = "for", default, skip_serializing_if = "Option::is_none")]
-    pub for_: Option<String>,
-    #[doc = "labels for rule group. Only relevant for alerts."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub labels: Option<serde_json::Value>,
-    #[doc = "annotations for rule group. Only relevant for alerts."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub annotations: Option<serde_json::Value>,
-    #[doc = "The array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved. Only relevant for alerts."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub actions: Vec<PrometheusRuleGroupAction>,
-    #[doc = "Specifies the Prometheus alert rule configuration."]
-    #[serde(rename = "resolveConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub resolve_configuration: Option<PrometheusRuleResolveConfiguration>,
-}
-impl PrometheusRule {
-    pub fn new(expression: String) -> Self {
-        Self {
-            record: None,
-            alert: None,
-            enabled: None,
-            expression,
-            severity: None,
-            for_: None,
-            labels: None,
-            annotations: None,
-            actions: Vec::new(),
-            resolve_configuration: None,
+pub mod patch_properties {
+    use super::*;
+    #[doc = "Indicates if the given action rule is enabled or disabled"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("Status", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("Status", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
-#[doc = "An alert action. Only relevant for alerts."]
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrometheusRuleGroupAction {
-    #[doc = "The resource id of the action group to use."]
-    #[serde(rename = "actionGroupId", default, skip_serializing_if = "Option::is_none")]
-    pub action_group_id: Option<String>,
-    #[doc = "The properties of an action group object."]
-    #[serde(rename = "actionProperties", default, skip_serializing_if = "Option::is_none")]
-    pub action_properties: Option<serde_json::Value>,
+pub struct Resource {
+    #[doc = "Azure resource Id"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Azure resource type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Azure resource name"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
-impl PrometheusRuleGroupAction {
+impl Resource {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "An alert rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrometheusRuleGroupProperties {
-    #[doc = "the description of the Prometheus rule group that will be included in the alert email."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "the flag that indicates whether the Prometheus rule group is enabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[doc = "the cluster name of the rule group evaluation."]
-    #[serde(rename = "clusterName", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_name: Option<String>,
-    #[doc = "the list of resource id's that this rule group is scoped to."]
-    pub scopes: Vec<String>,
-    #[doc = "the interval in which to run the Prometheus rule group represented in ISO 8601 duration format. Should be between 1 and 15 minutes"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<String>,
-    #[doc = "defines the rules in the Prometheus rule group."]
-    pub rules: Vec<PrometheusRule>,
-}
-impl PrometheusRuleGroupProperties {
-    pub fn new(scopes: Vec<String>, rules: Vec<PrometheusRule>) -> Self {
-        Self {
-            description: None,
-            enabled: None,
-            cluster_name: None,
-            scopes,
-            interval: None,
-            rules,
-        }
-    }
-}
-#[doc = "The Prometheus rule group resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrometheusRuleGroupResource {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[doc = "An alert rule."]
-    pub properties: PrometheusRuleGroupProperties,
-}
-impl PrometheusRuleGroupResource {
-    pub fn new(tracked_resource: TrackedResource, properties: PrometheusRuleGroupProperties) -> Self {
-        Self {
-            tracked_resource,
-            properties,
-        }
-    }
-}
-#[doc = "Represents a collection of alert rule resources."]
+#[doc = "Target scope for a given action rule. By default scope will be the subscription. User can also provide list of resource groups or list of resources from the scope subscription as well."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrometheusRuleGroupResourceCollection {
-    #[doc = "the values for the alert rule resources."]
+pub struct Scope {
+    #[doc = "type of target scope"]
+    #[serde(rename = "scopeType", default, skip_serializing_if = "Option::is_none")]
+    pub scope_type: Option<scope::ScopeType>,
+    #[doc = "list of ARM IDs of the given scope type which will be the target of the given action rule."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<PrometheusRuleGroupResource>,
+    pub values: Vec<String>,
 }
-impl azure_core::Continuable for PrometheusRuleGroupResourceCollection {
+impl Scope {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod scope {
+    use super::*;
+    #[doc = "type of target scope"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ScopeType")]
+    pub enum ScopeType {
+        ResourceGroup,
+        Resource,
+        Subscription,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ScopeType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ScopeType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ScopeType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ResourceGroup => serializer.serialize_unit_variant("ScopeType", 0u32, "ResourceGroup"),
+                Self::Resource => serializer.serialize_unit_variant("ScopeType", 1u32, "Resource"),
+                Self::Subscription => serializer.serialize_unit_variant("ScopeType", 2u32, "Subscription"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Describe the format of an Error response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SmartDetectorErrorResponse {
+    #[doc = "Error code"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl azure_core::Continuable for SmartDetectorErrorResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
         None
     }
 }
-impl PrometheusRuleGroupResourceCollection {
+impl SmartDetectorErrorResponse {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "The Prometheus rule group resource for patch operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrometheusRuleGroupResourcePatch {
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<prometheus_rule_group_resource_patch::Properties>,
+#[doc = "Action rule with suppression configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Suppression {
+    #[serde(flatten)]
+    pub action_rule_properties: ActionRuleProperties,
+    #[doc = "Suppression logic for a given action rule"]
+    #[serde(rename = "suppressionConfig")]
+    pub suppression_config: SuppressionConfig,
 }
-impl PrometheusRuleGroupResourcePatch {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod prometheus_rule_group_resource_patch {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Properties {
-        #[doc = "the flag that indicates whether the Prometheus rule group is enabled."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub enabled: Option<bool>,
-    }
-    impl Properties {
-        pub fn new() -> Self {
-            Self::default()
+impl Suppression {
+    pub fn new(action_rule_properties: ActionRuleProperties, suppression_config: SuppressionConfig) -> Self {
+        Self {
+            action_rule_properties,
+            suppression_config,
         }
     }
 }
-#[doc = "Specifies the Prometheus alert rule configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrometheusRuleResolveConfiguration {
-    #[doc = "the flag that indicates whether or not to auto resolve a fired alert."]
-    #[serde(rename = "autoResolved", default, skip_serializing_if = "Option::is_none")]
-    pub auto_resolved: Option<bool>,
-    #[doc = "the duration a rule must evaluate as healthy before the fired alert is automatically resolved represented in ISO 8601 duration format. Should be between 1 and 15 minutes"]
-    #[serde(rename = "timeToResolve", default, skip_serializing_if = "Option::is_none")]
-    pub time_to_resolve: Option<String>,
-}
-impl PrometheusRuleResolveConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Recurrence object."]
+#[doc = "Suppression logic for a given action rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Recurrence {
-    #[doc = "Specifies when the recurrence should be applied."]
+pub struct SuppressionConfig {
+    #[doc = "Specifies when the suppression should be applied"]
     #[serde(rename = "recurrenceType")]
-    pub recurrence_type: recurrence::RecurrenceType,
-    #[doc = "Start time for recurrence."]
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[doc = "End time for recurrence."]
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+    pub recurrence_type: suppression_config::RecurrenceType,
+    #[doc = "Schedule for a given suppression configuration."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule: Option<SuppressionSchedule>,
 }
-impl Recurrence {
-    pub fn new(recurrence_type: recurrence::RecurrenceType) -> Self {
+impl SuppressionConfig {
+    pub fn new(recurrence_type: suppression_config::RecurrenceType) -> Self {
         Self {
             recurrence_type,
-            start_time: None,
-            end_time: None,
+            schedule: None,
         }
     }
 }
-pub mod recurrence {
+pub mod suppression_config {
     use super::*;
-    #[doc = "Specifies when the recurrence should be applied."]
+    #[doc = "Specifies when the suppression should be applied"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "RecurrenceType")]
     pub enum RecurrenceType {
+        Always,
+        Once,
         Daily,
         Weekly,
         Monthly,
@@ -721,101 +972,55 @@ pub mod recurrence {
             S: Serializer,
         {
             match self {
-                Self::Daily => serializer.serialize_unit_variant("RecurrenceType", 0u32, "Daily"),
-                Self::Weekly => serializer.serialize_unit_variant("RecurrenceType", 1u32, "Weekly"),
-                Self::Monthly => serializer.serialize_unit_variant("RecurrenceType", 2u32, "Monthly"),
+                Self::Always => serializer.serialize_unit_variant("RecurrenceType", 0u32, "Always"),
+                Self::Once => serializer.serialize_unit_variant("RecurrenceType", 1u32, "Once"),
+                Self::Daily => serializer.serialize_unit_variant("RecurrenceType", 2u32, "Daily"),
+                Self::Weekly => serializer.serialize_unit_variant("RecurrenceType", 3u32, "Weekly"),
+                Self::Monthly => serializer.serialize_unit_variant("RecurrenceType", 4u32, "Monthly"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
 }
-#[doc = "Indicates if all action groups should be removed."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RemoveAllActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
-}
-impl RemoveAllActionGroups {
-    pub fn new(action: Action) -> Self {
-        Self { action }
-    }
-}
-#[doc = "An azure resource object"]
+#[doc = "Schedule for a given suppression configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Resource {
-    #[doc = "Azure resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Azure resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Azure resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-impl Resource {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Scheduling configuration for a given alert processing rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Schedule {
-    #[doc = "Scheduling effective from time. Date-Time in ISO-8601 format without timezone suffix."]
-    #[serde(rename = "effectiveFrom", default, skip_serializing_if = "Option::is_none")]
-    pub effective_from: Option<String>,
-    #[doc = "Scheduling effective until time. Date-Time in ISO-8601 format without timezone suffix."]
-    #[serde(rename = "effectiveUntil", default, skip_serializing_if = "Option::is_none")]
-    pub effective_until: Option<String>,
-    #[doc = "Scheduling time zone."]
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    #[doc = "List of recurrences."]
+pub struct SuppressionSchedule {
+    #[doc = "Start date for suppression"]
+    #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
+    pub start_date: Option<String>,
+    #[doc = "End date for suppression"]
+    #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_date: Option<String>,
+    #[doc = "Start time for suppression"]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[doc = "End date for suppression"]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[doc = "Specifies the values for recurrence pattern"]
     #[serde(
+        rename = "recurrenceValues",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub recurrences: Vec<Recurrence>,
+    pub recurrence_values: Vec<i64>,
 }
-impl Schedule {
+impl SuppressionSchedule {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub type Scopes = Vec<String>;
-#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[doc = "Resource tags."]
+#[doc = "Optional throttling information for the alert rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ThrottlingInformation {
+    #[doc = "The required duration (in ISO8601 format) to wait before notifying on the alert rule again. The time granularity must be in minutes and minimum value is 0 minutes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "The geo-location where the resource lives"]
-    pub location: String,
+    pub duration: Option<String>,
 }
-impl TrackedResource {
-    pub fn new(location: String) -> Self {
-        Self {
-            resource: Resource::default(),
-            tags: None,
-            location,
-        }
-    }
-}
-#[doc = "Weekly recurrence object."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WeeklyRecurrence {
-    #[serde(flatten)]
-    pub recurrence: Recurrence,
-    #[doc = "Specifies the values for weekly recurrence pattern."]
-    #[serde(rename = "daysOfWeek")]
-    pub days_of_week: Vec<DaysOfWeek>,
-}
-impl WeeklyRecurrence {
-    pub fn new(recurrence: Recurrence, days_of_week: Vec<DaysOfWeek>) -> Self {
-        Self { recurrence, days_of_week }
+impl ThrottlingInformation {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Action status"]
@@ -1820,117 +2025,5 @@ impl azure_core::Continuable for SmartGroupsList {
 impl SmartGroupsList {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Metadata pertaining to creation and last modification of the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SystemData {
-    #[doc = "The identity that created the resource."]
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
-    #[doc = "The identity that last modified the resource."]
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
-}
-impl SystemData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod system_data {
-    use super::*;
-    #[doc = "The type of identity that created the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CreatedByType")]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CreatedByType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CreatedByType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CreatedByType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
-                Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
-                Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
-                Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The type of identity that last modified the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LastModifiedByType")]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LastModifiedByType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LastModifiedByType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LastModifiedByType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("LastModifiedByType", 0u32, "User"),
-                Self::Application => serializer.serialize_unit_variant("LastModifiedByType", 1u32, "Application"),
-                Self::ManagedIdentity => serializer.serialize_unit_variant("LastModifiedByType", 2u32, "ManagedIdentity"),
-                Self::Key => serializer.serialize_unit_variant("LastModifiedByType", 3u32, "Key"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
