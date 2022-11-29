@@ -26,7 +26,7 @@ async fn main() -> azure_core::Result<()> {
 
     blob_client.put_block_blob("hello world").content_type("text/plain").await?;
 
-    let mut result = vec![];
+    let mut result: Vec<u8> = vec![];
 
     // The stream is composed of individual calls to the get blob endpoint
     let mut stream = blob_client.get().into_stream();

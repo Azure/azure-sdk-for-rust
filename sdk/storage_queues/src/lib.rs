@@ -5,7 +5,7 @@ This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-f
 It supports [Azure Queue Storage](https://docs.microsoft.com/azure/storage/queues/storage-queues-introduction).
 
 # Example
-```no_run,rust
+```no_run
 use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 
