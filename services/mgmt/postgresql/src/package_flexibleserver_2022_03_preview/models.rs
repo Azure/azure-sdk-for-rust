@@ -1237,61 +1237,6 @@ impl OperationListResult {
         Self::default()
     }
 }
-#[doc = "Sku information related properties of a server."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostgreSqlSku {
-    #[doc = "The name of the sku, typically, tier + family + cores, e.g. Standard_D4s_v3."]
-    pub name: String,
-    #[doc = "The tier of the particular SKU, e.g. Burstable."]
-    pub tier: postgre_sql_sku::Tier,
-}
-impl PostgreSqlSku {
-    pub fn new(name: String, tier: postgre_sql_sku::Tier) -> Self {
-        Self { name, tier }
-    }
-}
-pub mod postgre_sql_sku {
-    use super::*;
-    #[doc = "The tier of the particular SKU, e.g. Burstable."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Tier")]
-    pub enum Tier {
-        Burstable,
-        GeneralPurpose,
-        MemoryOptimized,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Tier {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Tier {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Tier {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Burstable => serializer.serialize_unit_variant("Tier", 0u32, "Burstable"),
-                Self::GeneralPurpose => serializer.serialize_unit_variant("Tier", 1u32, "GeneralPurpose"),
-                Self::MemoryOptimized => serializer.serialize_unit_variant("Tier", 2u32, "MemoryOptimized"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 pub type PrivateDnsZoneSuffix = String;
 #[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1308,6 +1253,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ReplicationRole")]
 pub enum ReplicationRole {
+    None,
     Primary,
     Secondary,
     WalReplica,
@@ -1340,13 +1286,14 @@ impl Serialize for ReplicationRole {
         S: Serializer,
     {
         match self {
-            Self::Primary => serializer.serialize_unit_variant("ReplicationRole", 0u32, "Primary"),
-            Self::Secondary => serializer.serialize_unit_variant("ReplicationRole", 1u32, "Secondary"),
-            Self::WalReplica => serializer.serialize_unit_variant("ReplicationRole", 2u32, "WalReplica"),
-            Self::SyncReplica => serializer.serialize_unit_variant("ReplicationRole", 3u32, "SyncReplica"),
-            Self::AsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 4u32, "AsyncReplica"),
-            Self::GeoSyncReplica => serializer.serialize_unit_variant("ReplicationRole", 5u32, "GeoSyncReplica"),
-            Self::GeoAsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 6u32, "GeoAsyncReplica"),
+            Self::None => serializer.serialize_unit_variant("ReplicationRole", 0u32, "None"),
+            Self::Primary => serializer.serialize_unit_variant("ReplicationRole", 1u32, "Primary"),
+            Self::Secondary => serializer.serialize_unit_variant("ReplicationRole", 2u32, "Secondary"),
+            Self::WalReplica => serializer.serialize_unit_variant("ReplicationRole", 3u32, "WalReplica"),
+            Self::SyncReplica => serializer.serialize_unit_variant("ReplicationRole", 4u32, "SyncReplica"),
+            Self::AsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 5u32, "AsyncReplica"),
+            Self::GeoSyncReplica => serializer.serialize_unit_variant("ReplicationRole", 6u32, "GeoSyncReplica"),
+            Self::GeoAsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 7u32, "GeoAsyncReplica"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -1438,7 +1385,7 @@ pub struct Server {
     pub tracked_resource: TrackedResource,
     #[doc = "Sku information related properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<PostgreSqlSku>,
+    pub sku: Option<Sku>,
     #[doc = "Information describing the identities associated with this application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<UserAssignedIdentity>,
@@ -1563,7 +1510,7 @@ pub mod server_backup_properties {
 pub struct ServerForUpdate {
     #[doc = "Sku information related properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<PostgreSqlSku>,
+    pub sku: Option<Sku>,
     #[doc = "Information describing the identities associated with this application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<UserAssignedIdentity>,
@@ -1793,6 +1740,9 @@ pub struct ServerPropertiesForUpdate {
     #[doc = "The mode to update a new PostgreSQL server."]
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties_for_update::CreateMode>,
+    #[doc = "Used to indicate role of the server in replication set."]
+    #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
+    pub replication_role: Option<ReplicationRole>,
 }
 impl ServerPropertiesForUpdate {
     pub fn new() -> Self {
@@ -1912,6 +1862,61 @@ pub struct ServerVersionCapability {
 impl ServerVersionCapability {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Sku information related properties of a server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[doc = "The name of the sku, typically, tier + family + cores, e.g. Standard_D4s_v3."]
+    pub name: String,
+    #[doc = "The tier of the particular SKU, e.g. Burstable."]
+    pub tier: sku::Tier,
+}
+impl Sku {
+    pub fn new(name: String, tier: sku::Tier) -> Self {
+        Self { name, tier }
+    }
+}
+pub mod sku {
+    use super::*;
+    #[doc = "The tier of the particular SKU, e.g. Burstable."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Tier")]
+    pub enum Tier {
+        Burstable,
+        GeneralPurpose,
+        MemoryOptimized,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Tier {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Tier {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Tier {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Burstable => serializer.serialize_unit_variant("Tier", 0u32, "Burstable"),
+                Self::GeneralPurpose => serializer.serialize_unit_variant("Tier", 1u32, "GeneralPurpose"),
+                Self::MemoryOptimized => serializer.serialize_unit_variant("Tier", 2u32, "MemoryOptimized"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Storage properties of a server"]

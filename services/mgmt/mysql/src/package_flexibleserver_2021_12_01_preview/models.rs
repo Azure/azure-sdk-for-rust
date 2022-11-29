@@ -1708,6 +1708,9 @@ pub struct Storage {
     #[doc = "The sku name of the server storage."]
     #[serde(rename = "storageSku", default, skip_serializing_if = "Option::is_none")]
     pub storage_sku: Option<String>,
+    #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
+    #[serde(rename = "autoIoScaling", default, skip_serializing_if = "Option::is_none")]
+    pub auto_io_scaling: Option<EnableStatusEnum>,
 }
 impl Storage {
     pub fn new() -> Self {

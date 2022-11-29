@@ -384,6 +384,9 @@ pub mod network_rule_set {
         #[doc = "Default Action for Network Rule Set"]
         #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
         pub default_action: Option<properties::DefaultAction>,
+        #[doc = "This determines if traffic is allowed over public network. By default it is enabled"]
+        #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+        pub public_network_access: Option<properties::PublicNetworkAccess>,
         #[doc = "List of IpRules"]
         #[serde(
             rename = "ipRules",
@@ -433,6 +436,45 @@ pub mod network_rule_set {
                 match self {
                     Self::Allow => serializer.serialize_unit_variant("DefaultAction", 0u32, "Allow"),
                     Self::Deny => serializer.serialize_unit_variant("DefaultAction", 1u32, "Deny"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+        #[doc = "This determines if traffic is allowed over public network. By default it is enabled"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "PublicNetworkAccess")]
+        pub enum PublicNetworkAccess {
+            Disabled,
+            Enabled,
+            SecuredByPerimeter,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for PublicNetworkAccess {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for PublicNetworkAccess {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for PublicNetworkAccess {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 0u32, "Disabled"),
+                    Self::Enabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Enabled"),
+                    Self::SecuredByPerimeter => serializer.serialize_unit_variant("PublicNetworkAccess", 2u32, "SecuredByPerimeter"),
                     Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
                 }
             }
@@ -487,7 +529,7 @@ impl OperationDisplay {
 #[doc = "Result of the request to list Relay operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
-    #[doc = "List of Relay operations supported by the Microsoft.EventHub resource provider."]
+    #[doc = "List of Relay operations supported by the Microsoft.Relay resource provider."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",

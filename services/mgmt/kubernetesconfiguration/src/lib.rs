@@ -19,7 +19,7 @@ pub use package_preview_2022_01::*;
 pub mod package_preview_2021_11;
 #[cfg(all(feature = "package-preview-2021-11", not(feature = "no-default-tag")))]
 pub use package_preview_2021_11::*;
-#[cfg(feature = "package-2022-07")]
-pub mod package_2022_07;
-#[cfg(all(feature = "package-2022-07", not(feature = "no-default-tag")))]
-pub use package_2022_07::*;
+#[cfg(feature = "package-2022-11")]
+pub mod package_2022_11;
+#[cfg(all(feature = "package-2022-11", not(feature = "no-default-tag")))]
+pub use package_2022_11::*;

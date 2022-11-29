@@ -132,7 +132,7 @@ pub mod extensions {
         #[doc = "Get installed extension details by extension id."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `extension_id`: Id of extension resource."]
@@ -151,54 +151,33 @@ pub mod extensions {
                 extension_id: extension_id.into(),
             }
         }
-        #[doc = "Install extension."]
+        #[doc = "Install or Update extension. AdditionalApiProperties are merged patch and if the extension is updated to a new version then the obsolete entries will be auto deleted from AdditionalApiProperties."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `extension_id`: Id of extension resource."]
-        pub fn create(
+        pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             farm_beats_resource_name: impl Into<String>,
             extension_id: impl Into<String>,
-        ) -> create::RequestBuilder {
-            create::RequestBuilder {
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 farm_beats_resource_name: farm_beats_resource_name.into(),
                 extension_id: extension_id.into(),
-            }
-        }
-        #[doc = "Upgrade to latest extension."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
-        #[doc = "* `extension_id`: Id of extension resource."]
-        pub fn update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            farm_beats_resource_name: impl Into<String>,
-            extension_id: impl Into<String>,
-        ) -> update::RequestBuilder {
-            update::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                farm_beats_resource_name: farm_beats_resource_name.into(),
-                extension_id: extension_id.into(),
+                request_body: None,
             }
         }
         #[doc = "Uninstall extension."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `extension_id`: Id of extension resource."]
@@ -220,7 +199,7 @@ pub mod extensions {
         #[doc = "Get installed extensions details."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn list_by_farm_beats(
@@ -311,7 +290,7 @@ pub mod extensions {
             }
         }
     }
-    pub mod create {
+    pub mod create_or_update {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -344,8 +323,14 @@ pub mod extensions {
             pub(crate) resource_group_name: String,
             pub(crate) farm_beats_resource_name: String,
             pub(crate) extension_id: String,
+            pub(crate) request_body: Option<models::ExtensionInstallationRequest>,
         }
         impl RequestBuilder {
+            #[doc = "Extension resource request body."]
+            pub fn request_body(mut self, request_body: impl Into<models::ExtensionInstallationRequest>) -> Self {
+                self.request_body = Some(request_body.into());
+                self
+            }
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -369,77 +354,12 @@ pub mod extensions {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Extension>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Extension> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::Extension = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) farm_beats_resource_name: String,
-            pub(crate) extension_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/extensions/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.farm_beats_resource_name,
-                            &this.extension_id
-                        ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
+                        let req_body = if let Some(request_body) = &this.request_body {
+                            req.insert_header("content-type", "application/json");
+                            azure_core::to_json(request_body)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
@@ -880,7 +800,7 @@ pub mod farm_beats_models {
         #[doc = "Get FarmBeats resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn get(
@@ -899,7 +819,7 @@ pub mod farm_beats_models {
         #[doc = "Create or update FarmBeats resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `body`: FarmBeats resource create or update request object."]
@@ -921,7 +841,7 @@ pub mod farm_beats_models {
         #[doc = "Update a FarmBeats resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `body`: Request object."]
@@ -943,7 +863,7 @@ pub mod farm_beats_models {
         #[doc = "Delete a FarmBeats resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn delete(
@@ -962,7 +882,7 @@ pub mod farm_beats_models {
         #[doc = "Lists the FarmBeats instances for a subscription."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
             list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
@@ -975,7 +895,7 @@ pub mod farm_beats_models {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -992,7 +912,7 @@ pub mod farm_beats_models {
         #[doc = "Get operationResults for a FarmBeats resource."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `operation_results_id`: The operation results id."]
@@ -1577,7 +1497,7 @@ pub mod locations {
         #[doc = "Checks the name availability of the resource with requested resource name."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `body`: NameAvailabilityRequest object."]
         pub fn check_name_availability(
             &self,
@@ -1764,7 +1684,7 @@ pub mod private_endpoint_connections {
         #[doc = "Get Private endpoint connection object."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `private_endpoint_connection_name`: Private endpoint connection name."]
@@ -1786,7 +1706,7 @@ pub mod private_endpoint_connections {
         #[doc = "Approves or Rejects a Private endpoint connection request."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `private_endpoint_connection_name`: Private endpoint connection name."]
@@ -1811,7 +1731,7 @@ pub mod private_endpoint_connections {
         #[doc = "Delete Private endpoint connection request."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `private_endpoint_connection_name`: Private endpoint connection name."]
@@ -1833,7 +1753,7 @@ pub mod private_endpoint_connections {
         #[doc = "Get list of Private endpoint connections."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn list_by_resource(
@@ -2088,7 +2008,7 @@ pub mod private_link_resources {
         #[doc = "Get list of Private link resources."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         pub fn list_by_resource(
@@ -2107,7 +2027,7 @@ pub mod private_link_resources {
         #[doc = "Get Private link resource object."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
         #[doc = "* `sub_resource_name`: Sub resource name."]

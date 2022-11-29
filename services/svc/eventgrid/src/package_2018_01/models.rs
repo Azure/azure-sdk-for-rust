@@ -1788,6 +1788,54 @@ impl EventHubCaptureFileCreatedEventData {
         Self::default()
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareDicomImageCreatedEventData {
+    #[doc = "Unique identifier for the Study"]
+    #[serde(rename = "imageStudyInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_study_instance_uid: Option<String>,
+    #[doc = "Unique identifier for the Series"]
+    #[serde(rename = "imageSeriesInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_series_instance_uid: Option<String>,
+    #[doc = "Unique identifier for the DICOM Image"]
+    #[serde(rename = "imageSopInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_sop_instance_uid: Option<String>,
+    #[doc = "Domain name of the DICOM account for this image."]
+    #[serde(rename = "serviceHostName", default, skip_serializing_if = "Option::is_none")]
+    pub service_host_name: Option<String>,
+    #[doc = "Sequence number of the DICOM Service within Azure Health Data Services. It is unique for every image creation and deletion within the service."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<i64>,
+}
+impl HealthcareDicomImageCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareDicomImageDeletedEventData {
+    #[doc = "Unique identifier for the Study"]
+    #[serde(rename = "imageStudyInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_study_instance_uid: Option<String>,
+    #[doc = "Unique identifier for the Series"]
+    #[serde(rename = "imageSeriesInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_series_instance_uid: Option<String>,
+    #[doc = "Unique identifier for the DICOM Image"]
+    #[serde(rename = "imageSopInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_sop_instance_uid: Option<String>,
+    #[doc = "Host name of the DICOM account for this image."]
+    #[serde(rename = "serviceHostName", default, skip_serializing_if = "Option::is_none")]
+    pub service_host_name: Option<String>,
+    #[doc = "Sequence number of the DICOM Service within Azure Health Data Services. It is unique for every image creation and deletion within the service."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<i64>,
+}
+impl HealthcareDicomImageDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.FhirResourceCreated event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareFhirResourceCreatedEventData {

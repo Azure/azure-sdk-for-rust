@@ -227,8 +227,8 @@ pub mod operations_status {
         #[doc = "Gets the status of operation."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `location`: The region the operation is in."]
-        #[doc = "* `operation_id`: The operation's unique identifier."]
+        #[doc = "* `location`: The name of Azure region."]
+        #[doc = "* `operation_id`: The ID of an ongoing async operation."]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,

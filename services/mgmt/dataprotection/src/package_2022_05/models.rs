@@ -3140,7 +3140,7 @@ pub mod storage_setting {
     #[serde(remote = "DatastoreType")]
     pub enum DatastoreType {
         ArchiveStore,
-        SnapshotStore,
+        OperationalStore,
         VaultStore,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -3168,7 +3168,7 @@ pub mod storage_setting {
         {
             match self {
                 Self::ArchiveStore => serializer.serialize_unit_variant("DatastoreType", 0u32, "ArchiveStore"),
-                Self::SnapshotStore => serializer.serialize_unit_variant("DatastoreType", 1u32, "SnapshotStore"),
+                Self::OperationalStore => serializer.serialize_unit_variant("DatastoreType", 1u32, "OperationalStore"),
                 Self::VaultStore => serializer.serialize_unit_variant("DatastoreType", 2u32, "VaultStore"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
