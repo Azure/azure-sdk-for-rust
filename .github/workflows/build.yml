@@ -40,6 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: rustup update --no-self-update ${{ matrix.build }}
+      - run: rustup target add --toolchain ${{ matrix.build }} wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
 
       - name: check core with --no-default-features
