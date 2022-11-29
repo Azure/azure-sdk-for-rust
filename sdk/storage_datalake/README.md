@@ -1,3 +1,9 @@
-# Azure Data Lake Storage Gen2 crate
+# azure_storage_datalake
 
-This crate is from the [Azure SDK for Rust](https://github.com/azure/azure-sdk-for-rust). It supports [Azure Data Lake Storage Gen2](https://docs.microsoft.com/azure/storage/blobs/data-lake-storage-introduction). Here are [examples](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/storage_datalake/examples).
+## The Storage Datalake crate
+
+`azure-storage-datalake` offers functionality needed to interact with an ADLS Gen2 storage account from Rust.
+As an abstraction over the [Azure Data Lake Store REST API](https://docs.microsoft.com/en-us/rest/api/storageservices/data-lake-storage-gen2), anything that is possible through that Rest API
+should also be possible with this crate.
+
+License: MIT
