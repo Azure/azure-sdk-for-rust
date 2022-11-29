@@ -1,6 +1,12 @@
-use super::{AzureCliCredential, ImdsManagedIdentityCredential};
-use azure_core::auth::{TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use crate::{
+    timeout::TimeoutExt,
+    {AzureCliCredential, ImdsManagedIdentityCredential},
+};
+use azure_core::{
+    auth::{TokenCredential, TokenResponse},
+    error::{Error, ErrorKind, ResultExt},
+};
+use std::time::Duration;
 
 #[derive(Debug)]
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
@@ -91,10 +97,19 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                 )
             }
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
-                credential.get_token(resource).await.context(
-                    ErrorKind::Credential,
-                    "error getting managed identity credential",
-                )
+                // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
+                credential
+                    .get_token(resource)
+                    .timeout(Duration::from_secs(1))
+                    .await
+                    .context(
+                        ErrorKind::Credential,
+                        "getting managed identity credential timed out",
+                    )?
+                    .context(
+                        ErrorKind::Credential,
+                        "error getting managed identity credential",
+                    )
             }
             DefaultAzureCredentialEnum::AzureCli(credential) => {
                 credential.get_token(resource).await.context(
@@ -128,15 +143,7 @@ impl DefaultAzureCredential {
 
 impl Default for DefaultAzureCredential {
     fn default() -> Self {
-        DefaultAzureCredential {
-            sources: vec![
-                DefaultAzureCredentialEnum::Environment(super::EnvironmentCredential::default()),
-                DefaultAzureCredentialEnum::ManagedIdentity(
-                    ImdsManagedIdentityCredential::default(),
-                ),
-                DefaultAzureCredentialEnum::AzureCli(AzureCliCredential::new()),
-            ],
-        }
+        DefaultAzureCredentialBuilder::new().build()
     }
 }
 
