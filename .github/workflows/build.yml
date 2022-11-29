@@ -25,7 +25,7 @@ jobs:
         run: |
           cargo install cargo-readme
           ./eng/scripts/cargo_readme.sh
-          if git status sdk | grep -q *.md; then
+          if git status sdk | grep -q '.md$'; then
             echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
           fi
 
