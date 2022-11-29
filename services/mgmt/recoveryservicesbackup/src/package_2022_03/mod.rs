@@ -7039,12 +7039,14 @@ pub mod resource_guard_proxy {
         #[doc = "* `vault_name`: The name of the recovery services vault."]
         #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
         #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `parameters`: Request body for operation"]
         pub fn put(
             &self,
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
             resource_guard_proxy_name: impl Into<String>,
+            parameters: impl Into<models::ResourceGuardProxyBaseResource>,
         ) -> put::RequestBuilder {
             put::RequestBuilder {
                 client: self.0.clone(),
@@ -7052,6 +7054,7 @@ pub mod resource_guard_proxy {
                 resource_group_name: resource_group_name.into(),
                 subscription_id: subscription_id.into(),
                 resource_guard_proxy_name: resource_guard_proxy_name.into(),
+                parameters: parameters.into(),
             }
         }
         #[doc = "Delete ResourceGuardProxy under vault"]
@@ -7196,6 +7199,7 @@ pub mod resource_guard_proxy {
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
             pub(crate) resource_guard_proxy_name: String,
+            pub(crate) parameters: models::ResourceGuardProxyBaseResource,
         }
         impl RequestBuilder {
             #[doc = "Send the request and returns the response."]
@@ -7214,7 +7218,8 @@ pub mod resource_guard_proxy {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
-                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }

@@ -106,6 +106,9 @@ impl Client {
     pub fn activity_runs_client(&self) -> activity_runs::Client {
         activity_runs::Client(self.clone())
     }
+    pub fn credential_operations_client(&self) -> credential_operations::Client {
+        credential_operations::Client(self.clone())
+    }
     pub fn data_flow_debug_session_client(&self) -> data_flow_debug_session::Client {
         data_flow_debug_session::Client(self.clone())
     }
@@ -7664,6 +7667,402 @@ pub mod managed_private_endpoints {
                     let this = self.clone();
                     async move {
                         let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/managedVirtualNetworks/{}/managedPrivateEndpoints/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . factory_name , & this . managed_virtual_network_name , & this . managed_private_endpoint_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod credential_operations {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "List credentials."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        pub fn list_by_factory(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+        ) -> list_by_factory::RequestBuilder {
+            list_by_factory::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+            }
+        }
+        #[doc = "Gets a credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `credential_name`: Credential name"]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+            credential_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+                credential_name: credential_name.into(),
+                if_none_match: None,
+            }
+        }
+        #[doc = "Creates or updates a credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `credential_name`: Credential name"]
+        #[doc = "* `credential`: Credential resource definition."]
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+            credential_name: impl Into<String>,
+            credential: impl Into<models::ManagedIdentityCredentialResource>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+                credential_name: credential_name.into(),
+                credential: credential.into(),
+                if_match: None,
+            }
+        }
+        #[doc = "Deletes a credential."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The subscription identifier."]
+        #[doc = "* `resource_group_name`: The resource group name."]
+        #[doc = "* `factory_name`: The factory name."]
+        #[doc = "* `credential_name`: Credential name"]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            factory_name: impl Into<String>,
+            credential_name: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                factory_name: factory_name.into(),
+                credential_name: credential_name.into(),
+            }
+        }
+    }
+    pub mod list_by_factory {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::CredentialListResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::CredentialListResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::CredentialListResponse, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/credentials",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ManagedIdentityCredentialResource> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ManagedIdentityCredentialResource = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+            pub(crate) credential_name: String,
+            pub(crate) if_none_match: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "ETag of the credential entity. Should only be specified for get. If the ETag matches the existing entity tag, or if * was provided, then no content will be returned."]
+            pub fn if_none_match(mut self, if_none_match: impl Into<String>) -> Self {
+                self.if_none_match = Some(if_none_match.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/credentials/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name,
+                            &this.credential_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
+                        if let Some(if_none_match) = &this.if_none_match {
+                            req.insert_header("if-none-match", if_none_match);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedIdentityCredentialResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ManagedIdentityCredentialResource> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ManagedIdentityCredentialResource = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+            pub(crate) credential_name: String,
+            pub(crate) credential: models::ManagedIdentityCredentialResource,
+            pub(crate) if_match: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "ETag of the credential entity. Should only be specified for update, for which it should match existing entity or can be * for unconditional update."]
+            pub fn if_match(mut self, if_match: impl Into<String>) -> Self {
+                self.if_match = Some(if_match.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/credentials/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name,
+                            &this.credential_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2018-06-01");
+                        if let Some(if_match) = &this.if_match {
+                            req.insert_header("if-match", if_match);
+                        }
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.credential)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedIdentityCredentialResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) factory_name: String,
+            pub(crate) credential_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DataFactory/factories/{}/credentials/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.factory_name,
+                            &this.credential_name
+                        ))?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;

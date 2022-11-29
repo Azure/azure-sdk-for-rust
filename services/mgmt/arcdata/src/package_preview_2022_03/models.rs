@@ -1455,6 +1455,21 @@ pub mod sql_server_instance_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "HostType")]
     pub enum HostType {
+        #[serde(rename = "Azure Virtual Machine")]
+        AzureVirtualMachine,
+        #[serde(rename = "Azure VMWare Virtual Machine")]
+        AzureVmWareVirtualMachine,
+        #[serde(rename = "Azure Kubernetes Service")]
+        AzureKubernetesService,
+        #[serde(rename = "AWS VMWare Virtual Machine")]
+        AwsVmWareVirtualMachine,
+        #[serde(rename = "AWS Kubernetes Service")]
+        AwsKubernetesService,
+        #[serde(rename = "GCP VMWare Virtual Machine")]
+        GcpVmWareVirtualMachine,
+        #[serde(rename = "GCP Kubernetes Service")]
+        GcpKubernetesService,
+        Container,
         #[serde(rename = "Virtual Machine")]
         VirtualMachine,
         #[serde(rename = "Physical Server")]
@@ -1489,11 +1504,19 @@ pub mod sql_server_instance_properties {
             S: Serializer,
         {
             match self {
-                Self::VirtualMachine => serializer.serialize_unit_variant("HostType", 0u32, "Virtual Machine"),
-                Self::PhysicalServer => serializer.serialize_unit_variant("HostType", 1u32, "Physical Server"),
-                Self::AwsVirtualMachine => serializer.serialize_unit_variant("HostType", 2u32, "AWS Virtual Machine"),
-                Self::GcpVirtualMachine => serializer.serialize_unit_variant("HostType", 3u32, "GCP Virtual Machine"),
-                Self::Other => serializer.serialize_unit_variant("HostType", 4u32, "Other"),
+                Self::AzureVirtualMachine => serializer.serialize_unit_variant("HostType", 0u32, "Azure Virtual Machine"),
+                Self::AzureVmWareVirtualMachine => serializer.serialize_unit_variant("HostType", 1u32, "Azure VMWare Virtual Machine"),
+                Self::AzureKubernetesService => serializer.serialize_unit_variant("HostType", 2u32, "Azure Kubernetes Service"),
+                Self::AwsVmWareVirtualMachine => serializer.serialize_unit_variant("HostType", 3u32, "AWS VMWare Virtual Machine"),
+                Self::AwsKubernetesService => serializer.serialize_unit_variant("HostType", 4u32, "AWS Kubernetes Service"),
+                Self::GcpVmWareVirtualMachine => serializer.serialize_unit_variant("HostType", 5u32, "GCP VMWare Virtual Machine"),
+                Self::GcpKubernetesService => serializer.serialize_unit_variant("HostType", 6u32, "GCP Kubernetes Service"),
+                Self::Container => serializer.serialize_unit_variant("HostType", 7u32, "Container"),
+                Self::VirtualMachine => serializer.serialize_unit_variant("HostType", 8u32, "Virtual Machine"),
+                Self::PhysicalServer => serializer.serialize_unit_variant("HostType", 9u32, "Physical Server"),
+                Self::AwsVirtualMachine => serializer.serialize_unit_variant("HostType", 10u32, "AWS Virtual Machine"),
+                Self::GcpVirtualMachine => serializer.serialize_unit_variant("HostType", 11u32, "GCP Virtual Machine"),
+                Self::Other => serializer.serialize_unit_variant("HostType", 12u32, "Other"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

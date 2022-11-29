@@ -1805,6 +1805,9 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "The usage date for looking back."]
     #[serde(rename = "firstUsageDate", default, with = "azure_core::date::rfc3339::option")]
     pub first_usage_date: Option<time::OffsetDateTime>,
+    #[doc = "Resource type."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
     #[doc = "Shared (corresponds to integer 2) or single (corresponds to integer 1) recommendation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<i32>,
@@ -1819,10 +1822,7 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "This is the ARM Sku name."]
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
-    #[doc = "The Azure resource type."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<String>,
-    #[doc = "The Azure subscription ID."]
+    #[doc = "Subscription ID"]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }

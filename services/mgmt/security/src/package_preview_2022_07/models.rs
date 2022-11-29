@@ -41,6 +41,7 @@ pub mod application_condition {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Operator")]
     pub enum Operator {
+        Contains,
         Equals,
         In,
         #[serde(skip_deserializing)]
@@ -68,8 +69,9 @@ pub mod application_condition {
             S: Serializer,
         {
             match self {
-                Self::Equals => serializer.serialize_unit_variant("Operator", 0u32, "Equals"),
-                Self::In => serializer.serialize_unit_variant("Operator", 1u32, "In"),
+                Self::Contains => serializer.serialize_unit_variant("Operator", 0u32, "Contains"),
+                Self::Equals => serializer.serialize_unit_variant("Operator", 1u32, "Equals"),
+                Self::In => serializer.serialize_unit_variant("Operator", 2u32, "In"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
