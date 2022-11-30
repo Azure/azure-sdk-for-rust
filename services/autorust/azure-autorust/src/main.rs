@@ -3,10 +3,7 @@
 // cargo run --release -p azure-autorust -- -p azure_svc_queuestorage
 
 use autorust_codegen::{
-    crates::{list_crate_names, list_dirs},
-    gen, get_mgmt_readmes, get_svc_readmes,
-    jinja::WorkspaceCargoToml,
-    Error, ErrorKind, Result, RunConfig,
+    crates::list_dirs, gen, get_mgmt_readmes, get_svc_readmes, jinja::WorkspaceCargoToml, Error, ErrorKind, Result, RunConfig,
 };
 use clap::Parser;
 
