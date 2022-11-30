@@ -1,7 +1,18 @@
 use crate::{clients::ServiceType, StorageCredentials};
 use once_cell::sync::Lazy;
-use std::convert::TryFrom;
+use std::{
+    convert::TryFrom,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::PathBuf,
+};
 use url::Url;
+
+const AZURE_CLOUD: &'static str = "AzureCloud";
+const AZURE_PUBLIC_CLOUD: &'static str = "AzurePublicCloud";
+const AZURE_CHINA_CLOUD: &'static str = "AzureChinaCloud";
+const AZURE_US_GOV: &'static str = "AzureUSGovernment";
+const AZURE_GERMAN_CLOUD: &'static str = "AzureGermanCloud";
 
 /// The cloud with which you want to interact.
 // TODO: Other govt clouds?
@@ -17,8 +28,25 @@ pub enum CloudLocation {
         account: String,
         credentials: StorageCredentials,
     },
+    /// Azure US Government
+    USGov {
+        account: String,
+        credentials: StorageCredentials,
+    },
+    /// Azure German Government
+    /// Note: This seems like it will be deprecated, but still shows up in `az cloud list --output table`, so adding it for
+    /// completeness
+    GermanCloud {
+        account: String,
+        credentials: StorageCredentials,
+    },
     /// Use the well-known emulator
     Emulator { address: String, port: u16 },
+    /// Auto-detect location based on AZURE_CLOUD_NAME variable,
+    AutoDetect {
+        account: String,
+        credentials: StorageCredentials,
+    },
     /// A custom base URL
     Custom {
         uri: String,
@@ -27,6 +55,26 @@ pub enum CloudLocation {
 }
 
 impl CloudLocation {
+    /// Returns a cloud location that will auto-detect the current cloud,
+    ///
+    /// This will auto detect first by checking the `AZURE_CLOUD_NAME` env variable, and then next
+    /// by parsing the current user's `$HOME/.azure/config` file.
+    ///
+    /// If either of these methods fail, this will default to public azure.
+    ///
+    /// Cloud names can be listed with, `az cloud list --output table`. Current public values are:
+    /// - AzureCloud - Public azure, in some cases may be AzurePublicCloud in env var form
+    /// - AzureChinaCloud
+    /// - AzureUSGovernment
+    /// - AzureGermanCloud - Might be deprecating based on public documentation but still shows up in `az cloud list`
+    ///
+    pub fn auto_detect(account: impl AsRef<str>, credentials: StorageCredentials) -> CloudLocation {
+        CloudLocation::AutoDetect {
+            account: account.as_ref().to_string(),
+            credentials,
+        }
+    }
+
     /// the base URL for a given cloud location
     pub fn url(&self, service_type: ServiceType) -> azure_core::Result<Url> {
         let url = match self {
@@ -44,20 +92,115 @@ impl CloudLocation {
                     service_type.subdomain()
                 )
             }
+            CloudLocation::USGov { account, .. } => {
+                format!(
+                    "https://{}.{}.core.usgovcloudapi.net",
+                    account,
+                    service_type.subdomain()
+                )
+            }
+            CloudLocation::GermanCloud { account, .. } => {
+                format!(
+                    "https://{}.{}.core.cloudapi.de",
+                    account,
+                    service_type.subdomain()
+                )
+            }
             CloudLocation::Custom { uri, .. } => uri.clone(),
             CloudLocation::Emulator { address, port } => {
                 format!("http://{address}:{port}/{EMULATOR_ACCOUNT}")
+            }
+            CloudLocation::AutoDetect {
+                account,
+                credentials,
+            } => {
+                if let Some(name) = Self::find_cloud_name() {
+                    // These names are from
+                    // `az cloud list --output table`
+                    return match name.as_str() {
+                        // Seems like "AzurePublicCloud" is used in some environments
+                        AZURE_CLOUD | AZURE_PUBLIC_CLOUD => CloudLocation::Public {
+                            account: account.clone(),
+                            credentials: credentials.clone(),
+                        }
+                        .url(service_type),
+                        AZURE_US_GOV => CloudLocation::USGov {
+                            account: account.clone(),
+                            credentials: credentials.clone(),
+                        }
+                        .url(service_type),
+                        AZURE_CHINA_CLOUD => CloudLocation::China {
+                            account: account.clone(),
+                            credentials: credentials.clone(),
+                        }
+                        .url(service_type),
+                        AZURE_GERMAN_CLOUD => CloudLocation::GermanCloud {
+                            account: account.clone(),
+                            credentials: credentials.clone(),
+                        }
+                        .url(service_type),
+                        _ => {
+                            todo!()
+                        }
+                    };
+                } else {
+                    // Default to PROD
+                    return CloudLocation::Public {
+                        account: account.clone(),
+                        credentials: credentials.clone(),
+                    }
+                    .url(service_type);
+                }
             }
         };
         Ok(url::Url::parse(&url)?)
     }
 
+    /// Returns the storage credentials for this cloud location,
+    ///
     pub fn credentials(&self) -> &StorageCredentials {
         match self {
-            CloudLocation::Public { credentials, .. } => credentials,
-            CloudLocation::China { credentials, .. } => credentials,
+            CloudLocation::Public { credentials, .. }
+            | CloudLocation::China { credentials, .. }
+            | CloudLocation::USGov { credentials, .. }
+            | CloudLocation::GermanCloud { credentials, .. }
+            | CloudLocation::Custom { credentials, .. }
+            | CloudLocation::AutoDetect { credentials, .. } => credentials,
             CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
-            CloudLocation::Custom { credentials, .. } => credentials,
+        }
+    }
+
+    /// Finds the cloud name, first by environment variable, then by parsing the current user's $HOME/.azure/config file
+    ///
+    fn find_cloud_name() -> Option<String> {
+        if let Some(name) = std::env::var("AZURE_CLOUD_NAME").ok() {
+            Some(name)
+        } else if let Some(home_dir) = std::env::var("HOME").ok() {
+            if let Some(config) = PathBuf::from(home_dir)
+                .join(".azure/config")
+                .canonicalize()
+                .ok()
+                .and_then(|config| File::open(config).ok())
+            {
+                let mut lines = BufReader::new(config).lines();
+
+                while let Some(Ok(line)) = lines.next() {
+                    // Alternatively, import serde_toml for parsing this file, but probably better off doing
+                    // that by creating a struct dedicated to managing the config file
+                    if line.trim() == "[cloud]" {
+                        if let Some(Ok(name)) = lines.next() {
+                            if let Some((name, value)) = name.split_once("=") {
+                                if name.trim() == "name" {
+                                    return Some(value.trim().to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            None
+        } else {
+            None
         }
     }
 }
@@ -170,5 +313,129 @@ mod tests {
         );
 
         Ok(())
+    }
+
+    #[test]
+    fn test_auto_detect() {
+        let cloud_location: CloudLocation =
+            CloudLocation::auto_detect("test_account", StorageCredentials::Anonymous);
+
+        std::env::set_var("AZURE_CLOUD_NAME", AZURE_US_GOV);
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.usgovcloudapi.net/"
+        );
+
+        std::env::set_var("AZURE_CLOUD_NAME", AZURE_CHINA_CLOUD);
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.chinacloudapi.cn/"
+        );
+
+        std::env::set_var("AZURE_CLOUD_NAME", AZURE_CLOUD);
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.windows.net/"
+        );
+
+        std::env::set_var("AZURE_CLOUD_NAME", AZURE_PUBLIC_CLOUD);
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.windows.net/"
+        );
+
+        std::env::set_var("AZURE_CLOUD_NAME", AZURE_GERMAN_CLOUD);
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.cloudapi.de/"
+        );
+
+        std::env::remove_var("AZURE_CLOUD_NAME");
+
+        std::env::set_var("HOME", ".test");
+        std::fs::create_dir_all(".test/.azure").expect("should be able to make test dir");
+        std::fs::write(
+            ".test/.azure/config",
+            r#"
+[cloud]
+name = AzureCloud
+            "#
+            .trim(),
+        )
+        .expect("should be able to write test config file");
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.windows.net/"
+        );
+
+        std::fs::write(
+            ".test/.azure/config",
+            r#"
+[cloud]
+name = AzureChinaCloud
+            "#
+            .trim(),
+        )
+        .expect("should be able to write test config file");
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.chinacloudapi.cn/"
+        );
+
+        std::fs::write(
+            ".test/.azure/config",
+            r#"
+[cloud]
+name = AzureUSGovernment
+            "#
+            .trim(),
+        )
+        .expect("should be able to write test config file");
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.usgovcloudapi.net/"
+        );
+
+        std::fs::write(
+            ".test/.azure/config",
+            r#"
+            "#
+            .trim(),
+        )
+        .expect("should be able to write test config file");
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should return a url")
+                .as_str(),
+            "https://test_account.blob.core.windows.net/"
+        );
+
+        // Clean-up test files
+        std::fs::remove_dir_all(".test").expect("should be able to remove test dir");
     }
 }
