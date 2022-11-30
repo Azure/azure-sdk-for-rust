@@ -38,6 +38,8 @@ stop-token = { version = "0.7.0", features = ["tokio"] }
 mock_transport = { path = "../../eng/test/mock_transport" }
 
 [features]
-default = ["azure_core/enable_reqwest"]
+default = ["enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 test_e2e = []
 into_future = []
