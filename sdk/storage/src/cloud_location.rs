@@ -8,11 +8,11 @@ use std::{
 };
 use url::Url;
 
-const AZURE_CLOUD: &'static str = "AzureCloud";
-const AZURE_PUBLIC_CLOUD: &'static str = "AzurePublicCloud";
-const AZURE_CHINA_CLOUD: &'static str = "AzureChinaCloud";
-const AZURE_US_GOV: &'static str = "AzureUSGovernment";
-const AZURE_GERMAN_CLOUD: &'static str = "AzureGermanCloud";
+const AZURE_CLOUD: &str = "AzureCloud";
+const AZURE_PUBLIC_CLOUD: &str = "AzurePublicCloud";
+const AZURE_CHINA_CLOUD: &str = "AzureChinaCloud";
+const AZURE_US_GOV: &str = "AzureUSGovernment";
+const AZURE_GERMAN_CLOUD: &str = "AzureGermanCloud";
 
 /// The cloud with which you want to interact.
 // TODO: Other govt clouds?
@@ -89,13 +89,7 @@ impl CloudLocation {
         CloudLocation::AutoDetect {
             account: account.as_ref().to_string(),
             credentials,
-            fallback: {
-                if let Some(fallback) = fallback {
-                    Some(Box::new(fallback))
-                } else {
-                    None
-                }
-            },
+            fallback: fallback.map(Box::new),
         }
     }
     /// the base URL for a given cloud location
@@ -199,9 +193,9 @@ impl CloudLocation {
     /// Finds the cloud name, first by environment variable, then by parsing the current user's $HOME/.azure/config file
     ///
     fn find_cloud_name() -> Option<String> {
-        if let Some(name) = std::env::var("AZURE_CLOUD_NAME").ok() {
+        if let Ok(name) = std::env::var("AZURE_CLOUD_NAME") {
             Some(name)
-        } else if let Some(home_dir) = std::env::var("HOME").ok() {
+        } else if let Ok(home_dir) = std::env::var("HOME") {
             if let Some(config) = PathBuf::from(home_dir)
                 .join(".azure/config")
                 .canonicalize()
@@ -215,7 +209,7 @@ impl CloudLocation {
                     // that by creating a struct dedicated to managing the config file
                     if line.trim() == "[cloud]" {
                         if let Some(Ok(name)) = lines.next() {
-                            if let Some((name, value)) = name.split_once("=") {
+                            if let Some((name, value)) = name.split_once('=') {
                                 if name.trim() == "name" {
                                     return Some(value.trim().to_string());
                                 }
@@ -463,12 +457,11 @@ name = AzureUSGovernment
 
         // Clean-up test files
         std::fs::remove_dir_all(".test").expect("should be able to remove test dir");
-    }
 
-    #[test]
-    fn test_auto_detect_fallback() {
         std::env::remove_var("HOME");
+        std::env::remove_var("AZURE_CLOUD_NAME");
 
+        // Test fallback
         let cloud_location: CloudLocation = CloudLocation::auto_detect_with_fallback(
             "test_account",
             StorageCredentials::Anonymous,
