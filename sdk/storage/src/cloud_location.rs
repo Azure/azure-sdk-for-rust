@@ -15,7 +15,6 @@ const AZURE_US_GOV: &str = "AzureUSGovernment";
 const AZURE_GERMAN_CLOUD: &str = "AzureGermanCloud";
 
 /// The cloud with which you want to interact.
-// TODO: Other govt clouds?
 #[derive(Debug, Clone)]
 pub enum CloudLocation {
     /// Azure public cloud
@@ -42,7 +41,7 @@ pub enum CloudLocation {
     },
     /// Use the well-known emulator
     Emulator { address: String, port: u16 },
-    /// Auto-detect location based on AZURE_CLOUD_NAME variable,
+    /// Auto-detect location based on `AZURE_CLOUD_NAME` variable or `$HOME/.azure/config`
     AutoDetect {
         account: String,
         credentials: StorageCredentials,
