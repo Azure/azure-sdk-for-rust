@@ -14,7 +14,7 @@ use azure_core::{error::Error, HttpClient};
 
 /// Client object that allows interaction with the ServiceBus API
 #[derive(Debug, Clone)]
-pub struct Client {
+pub struct QueueClient {
     http_client: Arc<dyn HttpClient>,
     namespace: String,
     queue: String,
@@ -22,15 +22,15 @@ pub struct Client {
     signing_key: Key,
 }
 
-impl Client {
-    /// Creates a new client instance
+impl QueueClient {
+    /// Creates a new queue client instance
     pub fn new<N, Q, P, K>(
         http_client: Arc<dyn HttpClient>,
         namespace: N,
         queue: Q,
         policy_name: P,
         policy_key: K,
-    ) -> Result<Client, Error>
+    ) -> Result<QueueClient, Error>
     where
         N: Into<String>,
         Q: Into<String>,
@@ -39,7 +39,7 @@ impl Client {
     {
         let signing_key = Key::new(ring::hmac::HMAC_SHA256, policy_key.as_ref().as_bytes());
 
-        Ok(Client {
+        Ok(QueueClient {
             http_client,
             namespace: namespace.into(),
             queue: queue.into(),
@@ -70,6 +70,7 @@ impl Client {
                 &self.queue,
                 &self.policy_name,
                 &self.signing_key,
+                None,
             )
             .await?
             .body(),
@@ -93,6 +94,7 @@ impl Client {
                 &self.policy_name,
                 &self.signing_key,
                 lock_expiry,
+                None,
             )
             .await?
             .body(),
@@ -114,6 +116,7 @@ impl Client {
             &self.policy_name,
             &self.signing_key,
             timeout,
+            None,
         )
         .await
     }

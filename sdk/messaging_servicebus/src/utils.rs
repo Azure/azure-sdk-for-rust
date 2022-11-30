@@ -4,14 +4,12 @@ use url::Url;
 
 pub fn craft_peek_lock_url(
     namespace: &str,
-    queue: &str,
+    queue_or_topic: &str,
     lock_expiry: Option<Duration>,
+    subscription: Option<&str>,
 ) -> Result<Url, Error> {
-    let mut url = Url::parse(&format!(
-        "https://{}.servicebus.windows.net/{}/messages/head",
-        namespace, queue
-    ))
-    .context(
+    let url_path = get_head_url(namespace, queue_or_topic, subscription);
+    let mut url = Url::parse(&url_path).context(
         ErrorKind::DataConversion,
         "failed to parse peek_lock_message URL",
     )?;
@@ -32,4 +30,17 @@ pub fn body_bytes_to_utf8(bytes: &[u8]) -> Result<String, Error> {
             "failed to convert body bytes to UTF8",
         )?
         .to_string())
+}
+
+pub fn get_head_url(namespace: &str, queue_or_topic: &str, subscription: Option<&str>) -> String {
+    match subscription {
+        Some(sub) => format!(
+            "https://{}.servicebus.windows.net/{}/subscriptions/{}/messages/head",
+            namespace, queue_or_topic, sub
+        ),
+        None => format!(
+            "https://{}.servicebus.windows.net/{}/messages/head",
+            namespace, queue_or_topic
+        ),
+    }
 }
