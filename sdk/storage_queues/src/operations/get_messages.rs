@@ -40,8 +40,8 @@ pub struct GetMessagesResponse {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Message {
-    message_id: String,
-    pop_receipt: String,
+    pub message_id: String,
+    pub pop_receipt: String,
     #[serde(with = "azure_core::date::rfc1123")]
     pub insertion_time: OffsetDateTime,
     #[serde(with = "azure_core::date::rfc1123")]
