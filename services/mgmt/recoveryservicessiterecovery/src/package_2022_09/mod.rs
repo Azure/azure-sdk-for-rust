@@ -6103,7 +6103,7 @@ pub mod replication_protected_items {
         #[doc = "* `subscription_id`: The subscription Id."]
         #[doc = "* `fabric_name`: The name of the fabric containing the protected item."]
         #[doc = "* `protection_container_name`: The name of the container containing the protected item."]
-        #[doc = "* `replication_protected_item_name`: The name of the protected item on which the agent is to be updated."]
+        #[doc = "* `replicated_protected_item_name`: The name of the protected item on which the agent is to be updated."]
         #[doc = "* `update_mobility_service_request`: Request to update the mobility service on the protected item."]
         pub fn update_mobility_service(
             &self,
@@ -6112,7 +6112,7 @@ pub mod replication_protected_items {
             subscription_id: impl Into<String>,
             fabric_name: impl Into<String>,
             protection_container_name: impl Into<String>,
-            replication_protected_item_name: impl Into<String>,
+            replicated_protected_item_name: impl Into<String>,
             update_mobility_service_request: impl Into<models::UpdateMobilityServiceRequest>,
         ) -> update_mobility_service::RequestBuilder {
             update_mobility_service::RequestBuilder {
@@ -6122,7 +6122,7 @@ pub mod replication_protected_items {
                 subscription_id: subscription_id.into(),
                 fabric_name: fabric_name.into(),
                 protection_container_name: protection_container_name.into(),
-                replication_protected_item_name: replication_protected_item_name.into(),
+                replicated_protected_item_name: replicated_protected_item_name.into(),
                 update_mobility_service_request: update_mobility_service_request.into(),
             }
         }
@@ -7506,7 +7506,7 @@ pub mod replication_protected_items {
             pub(crate) subscription_id: String,
             pub(crate) fabric_name: String,
             pub(crate) protection_container_name: String,
-            pub(crate) replication_protected_item_name: String,
+            pub(crate) replicated_protected_item_name: String,
             pub(crate) update_mobility_service_request: models::UpdateMobilityServiceRequest,
         }
         impl RequestBuilder {
@@ -7516,7 +7516,7 @@ pub mod replication_protected_items {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/updateMobilityService" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replication_protected_item_name)) ? ;
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/replicationFabrics/{}/replicationProtectionContainers/{}/replicationProtectedItems/{}/updateMobilityService" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . resource_name , & this . fabric_name , & this . protection_container_name , & this . replicated_protected_item_name)) ? ;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;

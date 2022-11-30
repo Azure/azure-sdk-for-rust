@@ -1018,6 +1018,7 @@ pub struct AzureIaaSvmProtectionPolicy {
     #[doc = "TimeZone optional input as string. For example: TimeZone = \"Pacific Standard Time\"."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
+    #[doc = "Type of backup policy type"]
     #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
     pub policy_type: Option<azure_iaa_svm_protection_policy::PolicyType>,
 }
@@ -1036,6 +1037,7 @@ impl AzureIaaSvmProtectionPolicy {
 }
 pub mod azure_iaa_svm_protection_policy {
     use super::*;
+    #[doc = "Type of backup policy type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "PolicyType")]
     pub enum PolicyType {

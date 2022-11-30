@@ -5797,6 +5797,26 @@ impl Credential {
         }
     }
 }
+#[doc = "A list of credential resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CredentialListResponse {
+    #[doc = "List of credentials."]
+    pub value: Vec<ManagedIdentityCredentialResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for CredentialListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl CredentialListResponse {
+    pub fn new(value: Vec<ManagedIdentityCredentialResource>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[doc = "Credential reference type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialReference {
@@ -13872,6 +13892,51 @@ impl MagentoSource {
             tabular_source,
             query: None,
         }
+    }
+}
+#[doc = "Managed identity credential."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedIdentityCredential {
+    #[serde(flatten)]
+    pub credential: Credential,
+    #[doc = "Managed identity type properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<ManagedIdentityTypeProperties>,
+}
+impl ManagedIdentityCredential {
+    pub fn new(credential: Credential) -> Self {
+        Self {
+            credential,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "Credential resource type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedIdentityCredentialResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[doc = "Managed identity credential."]
+    pub properties: ManagedIdentityCredential,
+}
+impl ManagedIdentityCredentialResource {
+    pub fn new(properties: ManagedIdentityCredential) -> Self {
+        Self {
+            sub_resource: SubResource::default(),
+            properties,
+        }
+    }
+}
+#[doc = "Managed identity type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedIdentityTypeProperties {
+    #[doc = "The resource id of user assigned managed identity"]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+}
+impl ManagedIdentityTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Managed integration runtime, including managed elastic and managed dedicated integration runtimes."]
@@ -22088,15 +22153,15 @@ pub struct SnowflakeSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<serde_json::Value>,
     #[doc = "Snowflake export command settings."]
-    #[serde(rename = "exportSettings", default, skip_serializing_if = "Option::is_none")]
-    pub export_settings: Option<SnowflakeExportCopyCommand>,
+    #[serde(rename = "exportSettings")]
+    pub export_settings: SnowflakeExportCopyCommand,
 }
 impl SnowflakeSource {
-    pub fn new(copy_source: CopySource) -> Self {
+    pub fn new(copy_source: CopySource, export_settings: SnowflakeExportCopyCommand) -> Self {
         Self {
             copy_source,
             query: None,
-            export_settings: None,
+            export_settings,
         }
     }
 }

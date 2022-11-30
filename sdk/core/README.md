@@ -1,3 +1,13 @@
-# azure_core crate
+# azure_core
 
-The azure_core crate is an [Azure SDK for Rust](https://github.com/Azure/azure-sdk-for-rust) crate. It is a library that provides cross-cutting services to other client libraries. Please see the [general guidelines](https://azure.github.io/azure-sdk/general_azurecore.html). For changes in this version, see the [CHANGELOG.md](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core/CHANGELOG.md). For open issues, filter with the [core label](https://github.com/Azure/azure-sdk-for-rust/issues?q=is%3Aopen+is%3Aissue+label%3Acore).
+Core types and traits for the Rust Azure SDK.
+
+This crate is part of the unofficial Azure SDK effort in Rust. For more
+information on the project and an overview of other crates, please refer to
+[our GitHub repository](https://github.com/azure/azure-sdk-for-rust).
+
+It is a library that provides cross-cutting services to other client
+libraries.  Please see the [general
+guidelines](https://azure.github.io/azure-sdk/general_azurecore.html).
+
+License: MIT

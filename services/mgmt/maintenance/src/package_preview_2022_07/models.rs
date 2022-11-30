@@ -128,7 +128,7 @@ impl ErrorDetails {
         Self::default()
     }
 }
-#[doc = "Input properties for patching a Linux machine."]
+#[doc = "Input properties for patching a Linux machine. This property only applies to Guest (InGuestPatch) scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputLinuxParameters {
     #[doc = "Package names to be excluded for patching."]
@@ -164,16 +164,16 @@ impl InputLinuxParameters {
 #[doc = "Input configuration for a patch run"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputPatchConfiguration {
-    #[doc = "Possible reboot preference as defined by the user based on which it would be decided to reboot the machine or not after the patch operation is completed."]
+    #[doc = "Possible reboot preference as defined by the user based on which it would be decided to reboot the machine or not after the patch operation is completed. This property only applies to Guest (InGuestPatch) scope."]
     #[serde(rename = "rebootSetting", default, skip_serializing_if = "Option::is_none")]
     pub reboot_setting: Option<input_patch_configuration::RebootSetting>,
-    #[doc = "Input properties for patching a Windows machine."]
+    #[doc = "Input properties for patching a Windows machine. This property only applies to Guest (InGuestPatch) scope."]
     #[serde(rename = "windowsParameters", default, skip_serializing_if = "Option::is_none")]
     pub windows_parameters: Option<InputWindowsParameters>,
-    #[doc = "Input properties for patching a Linux machine."]
+    #[doc = "Input properties for patching a Linux machine. This property only applies to Guest (InGuestPatch) scope."]
     #[serde(rename = "linuxParameters", default, skip_serializing_if = "Option::is_none")]
     pub linux_parameters: Option<InputLinuxParameters>,
-    #[doc = "Task properties of the software update configuration."]
+    #[doc = "[Not supported] Task properties of the software update configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tasks: Option<SoftwareUpdateConfigurationTasks>,
 }
@@ -184,7 +184,7 @@ impl InputPatchConfiguration {
 }
 pub mod input_patch_configuration {
     use super::*;
-    #[doc = "Possible reboot preference as defined by the user based on which it would be decided to reboot the machine or not after the patch operation is completed."]
+    #[doc = "Possible reboot preference as defined by the user based on which it would be decided to reboot the machine or not after the patch operation is completed. This property only applies to Guest (InGuestPatch) scope."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "RebootSetting")]
     pub enum RebootSetting {
@@ -229,7 +229,7 @@ pub mod input_patch_configuration {
         }
     }
 }
-#[doc = "Input properties for patching a Windows machine."]
+#[doc = "Input properties for patching a Windows machine. This property only applies to Guest (InGuestPatch) scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputWindowsParameters {
     #[doc = "Windows KBID to be excluded for patching."]
@@ -796,10 +796,10 @@ impl UpdateProperties {
         Self::default()
     }
 }
-#[doc = "Task properties of the software update configuration."]
+#[doc = "[Not supported] Task properties of the software update configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoftwareUpdateConfigurationTasks {
-    #[doc = "List of pre tasks. e.g. [{'source' :'runbook', 'taskScope': 'Global', 'parameters': { 'arg1': 'value1'}}]"]
+    #[doc = "[Not supported] List of pre tasks. e.g. [{'source' :'runbook', 'taskScope': 'Global', 'parameters': { 'arg1': 'value1'}}]"]
     #[serde(
         rename = "preTasks",
         default,
@@ -807,7 +807,7 @@ pub struct SoftwareUpdateConfigurationTasks {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub pre_tasks: Vec<TaskProperties>,
-    #[doc = "List of post tasks. e.g. [{'source' :'runbook', 'taskScope': 'Resource', 'parameters': { 'arg1': 'value1'}}]"]
+    #[doc = "[Not supported] List of post tasks. e.g. [{'source' :'runbook', 'taskScope': 'Resource', 'parameters': { 'arg1': 'value1'}}]"]
     #[serde(
         rename = "postTasks",
         default,
@@ -933,16 +933,16 @@ pub mod system_data {
         }
     }
 }
-#[doc = "Task properties of the software update configuration."]
+#[doc = "[Not supported] Task properties of the software update configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskProperties {
-    #[doc = "Gets or sets the parameters of the task."]
+    #[doc = "[Not supported] Gets or sets the parameters of the task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
-    #[doc = "Gets or sets the name of the runbook."]
+    #[doc = "[Not supported] Gets or sets the name of the runbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
-    #[doc = "Global Task execute once when schedule trigger. Resource task execute for each VM."]
+    #[doc = "[Not supported] Global Task execute once when schedule trigger. Resource task execute for each VM."]
     #[serde(rename = "taskScope", default, skip_serializing_if = "Option::is_none")]
     pub task_scope: Option<task_properties::TaskScope>,
 }
@@ -953,7 +953,7 @@ impl TaskProperties {
 }
 pub mod task_properties {
     use super::*;
-    #[doc = "Global Task execute once when schedule trigger. Resource task execute for each VM."]
+    #[doc = "[Not supported] Global Task execute once when schedule trigger. Resource task execute for each VM."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "TaskScope")]
     pub enum TaskScope {

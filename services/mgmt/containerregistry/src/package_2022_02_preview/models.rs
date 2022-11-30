@@ -4248,7 +4248,7 @@ pub struct RegistryProperties {
     #[doc = "Whether or not zone redundancy is enabled for this container registry"]
     #[serde(rename = "zoneRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundancy: Option<registry_properties::ZoneRedundancy>,
-    #[doc = "Enables registry-wide pull from unauthenticated clients."]
+    #[doc = "Enables registry-wide pull from unauthenticated clients. It's in preview and available in the Standard and Premium service tiers."]
     #[serde(rename = "anonymousPullEnabled", default, skip_serializing_if = "Option::is_none")]
     pub anonymous_pull_enabled: Option<bool>,
 }
@@ -4454,7 +4454,7 @@ pub struct RegistryPropertiesUpdateParameters {
     #[doc = "Whether to allow trusted Azure services to access a network restricted registry."]
     #[serde(rename = "networkRuleBypassOptions", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_bypass_options: Option<registry_properties_update_parameters::NetworkRuleBypassOptions>,
-    #[doc = "Enables registry-wide pull from unauthenticated clients."]
+    #[doc = "Enables registry-wide pull from unauthenticated clients. It's in preview and available in the Standard and Premium service tiers."]
     #[serde(rename = "anonymousPullEnabled", default, skip_serializing_if = "Option::is_none")]
     pub anonymous_pull_enabled: Option<bool>,
 }

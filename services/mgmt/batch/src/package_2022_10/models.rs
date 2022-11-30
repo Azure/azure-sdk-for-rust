@@ -286,8 +286,8 @@ pub struct AzureFileShareConfiguration {
     #[doc = "This is of the form 'https://{account}.file.core.windows.net/'."]
     #[serde(rename = "azureFileUrl")]
     pub azure_file_url: String,
-    #[serde(rename = "accountKey", default, skip_serializing_if = "Option::is_none")]
-    pub account_key: Option<String>,
+    #[serde(rename = "accountKey")]
+    pub account_key: String,
     #[doc = "All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable."]
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
@@ -296,11 +296,11 @@ pub struct AzureFileShareConfiguration {
     pub mount_options: Option<String>,
 }
 impl AzureFileShareConfiguration {
-    pub fn new(account_name: String, azure_file_url: String, relative_mount_path: String) -> Self {
+    pub fn new(account_name: String, azure_file_url: String, account_key: String, relative_mount_path: String) -> Self {
         Self {
             account_name,
             azure_file_url,
-            account_key: None,
+            account_key,
             relative_mount_path,
             mount_options: None,
         }
@@ -657,8 +657,8 @@ pub mod batch_pool_identity {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CifsMountConfiguration {
-    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
-    pub user_name: Option<String>,
+    #[serde(rename = "userName")]
+    pub user_name: String,
     pub source: String,
     #[doc = "All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable."]
     #[serde(rename = "relativeMountPath")]
@@ -669,9 +669,9 @@ pub struct CifsMountConfiguration {
     pub password: String,
 }
 impl CifsMountConfiguration {
-    pub fn new(source: String, relative_mount_path: String, password: String) -> Self {
+    pub fn new(user_name: String, source: String, relative_mount_path: String, password: String) -> Self {
         Self {
-            user_name: None,
+            user_name,
             source,
             relative_mount_path,
             mount_options: None,

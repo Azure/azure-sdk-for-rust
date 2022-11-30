@@ -3,6 +3,18 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "Api properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiProperties {
+    #[doc = "Interval in minutes for which the weather data for the api needs to be refreshed."]
+    #[serde(rename = "apiFreshnessWindowInMinutes", default, skip_serializing_if = "Option::is_none")]
+    pub api_freshness_window_in_minutes: Option<i32>,
+}
+impl ApiProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Arm async operation class.\r\nRef: https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/async-operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArmAsyncOperation {
@@ -213,6 +225,21 @@ impl Extension {
         Self::default()
     }
 }
+#[doc = "Extension Installation Request Body."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExtensionInstallationRequest {
+    #[doc = "Extension Version."]
+    #[serde(rename = "extensionVersion", default, skip_serializing_if = "Option::is_none")]
+    pub extension_version: Option<String>,
+    #[doc = "Additional Api Properties."]
+    #[serde(rename = "additionalApiProperties", default, skip_serializing_if = "Option::is_none")]
+    pub additional_api_properties: Option<serde_json::Value>,
+}
+impl ExtensionInstallationRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Paged response contains list of requested objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionListResponse {
@@ -256,6 +283,9 @@ pub struct ExtensionProperties {
     #[doc = "Extension api docs link."]
     #[serde(rename = "extensionApiDocsLink", default, skip_serializing_if = "Option::is_none")]
     pub extension_api_docs_link: Option<String>,
+    #[doc = "Additional api properties."]
+    #[serde(rename = "additionalApiProperties", default, skip_serializing_if = "Option::is_none")]
+    pub additional_api_properties: Option<serde_json::Value>,
 }
 impl ExtensionProperties {
     pub fn new() -> Self {
@@ -406,7 +436,7 @@ pub struct FarmBeatsProperties {
     #[doc = "Property to allow or block public traffic for an Azure FarmBeats resource."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccess>,
-    #[doc = "The Private Endpoint Connection resource."]
+    #[doc = "The private endpoint connection resource."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_connections: Option<PrivateEndpointConnection>,
 }
@@ -500,10 +530,10 @@ impl FarmBeatsUpdateRequestModel {
 #[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
-    #[doc = "The principal ID of resource identity."]
+    #[doc = "The principal ID of resource identity. The value must be an UUID."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
-    #[doc = "The tenant ID of resource."]
+    #[doc = "The tenant ID of resource. The value must be an UUID."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
@@ -673,10 +703,10 @@ impl OperationListResult {
         Self::default()
     }
 }
-#[doc = "The Private Endpoint resource."]
+#[doc = "The private endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
-    #[doc = "The ARM identifier for Private Endpoint"]
+    #[doc = "The ARM identifier for private endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -685,12 +715,12 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
-#[doc = "The Private Endpoint Connection resource."]
+#[doc = "The private endpoint connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Properties of the PrivateEndpointConnectProperties."]
+    #[doc = "Properties of the private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -699,10 +729,10 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
-#[doc = "List of private endpoint connection associated with the specified storage account"]
+#[doc = "List of private endpoint connections associated with the specified resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
-    #[doc = "Array of private endpoint connections"]
+    #[doc = "Array of private endpoint connections."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -721,10 +751,18 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
-#[doc = "Properties of the PrivateEndpointConnectProperties."]
+#[doc = "Properties of the private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
-    #[doc = "The Private Endpoint resource."]
+    #[doc = "The group ids for the private endpoint resource."]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub group_ids: Vec<String>,
+    #[doc = "The private endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
     #[doc = "A collection of information about the state of the connection between service consumer and provider."]
@@ -737,6 +775,7 @@ pub struct PrivateEndpointConnectionProperties {
 impl PrivateEndpointConnectionProperties {
     pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
         Self {
+            group_ids: Vec::new(),
             private_endpoint: None,
             private_link_service_connection_state,
             provisioning_state: None,
@@ -823,7 +862,7 @@ impl Serialize for PrivateEndpointServiceConnectionStatus {
         }
     }
 }
-#[doc = "A private link resource"]
+#[doc = "A private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
@@ -837,7 +876,7 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
-#[doc = "A list of private link resources"]
+#[doc = "A list of private link resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[doc = "Array of private link resources"]
@@ -873,7 +912,7 @@ pub struct PrivateLinkResourceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
-    #[doc = "The private link resource Private link DNS zone name."]
+    #[doc = "The private link resource private link DNS zone name."]
     #[serde(
         rename = "requiredZoneNames",
         default,
@@ -956,7 +995,7 @@ impl Serialize for PublicNetworkAccess {
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
-    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    #[doc = "Fully qualified resource ID for the resource. E.g. \"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The name of the resource"]

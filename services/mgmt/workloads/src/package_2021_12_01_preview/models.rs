@@ -177,6 +177,12 @@ pub struct Db2ProviderInstanceProperties {
     #[doc = "Gets or sets the SAP System Identifier"]
     #[serde(rename = "sapSid", default, skip_serializing_if = "Option::is_none")]
     pub sap_sid: Option<String>,
+    #[doc = "Gets or sets certificate preference if secure communication is enabled."]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_preference: Option<SslPreference>,
+    #[doc = "Gets or sets the blob URI to SSL certificate for the DB2 Database."]
+    #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate_uri: Option<String>,
 }
 impl Db2ProviderInstanceProperties {
     pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
@@ -189,6 +195,8 @@ impl Db2ProviderInstanceProperties {
             db_password: None,
             db_password_uri: None,
             sap_sid: None,
+            ssl_preference: None,
+            ssl_certificate_uri: None,
         }
     }
 }
@@ -650,6 +658,23 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The SAP Software configuration Input when the software is installed externally outside the service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExternalInstallationSoftwareConfiguration {
+    #[serde(flatten)]
+    pub software_configuration: SoftwareConfiguration,
+    #[doc = "The resource ID of the virtual machine containing the central server instance."]
+    #[serde(rename = "centralServerVmId", default, skip_serializing_if = "Option::is_none")]
+    pub central_server_vm_id: Option<String>,
+}
+impl ExternalInstallationSoftwareConfiguration {
+    pub fn new(software_configuration: SoftwareConfiguration) -> Self {
+        Self {
+            software_configuration,
+            central_server_vm_id: None,
+        }
+    }
+}
 #[doc = "Defines the SAP Gateway Server properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayServerProperties {
@@ -694,9 +719,15 @@ pub struct HanaDbProviderInstanceProperties {
     #[doc = "Gets or sets the blob URI to SSL certificate for the DB."]
     #[serde(rename = "dbSslCertificateUri", default, skip_serializing_if = "Option::is_none")]
     pub db_ssl_certificate_uri: Option<String>,
+    #[doc = "Gets or sets the blob URI to SSL certificate for the DB."]
+    #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate_uri: Option<String>,
     #[doc = "Gets or sets the hostname(s) in the SSL certificate."]
     #[serde(rename = "sslHostNameInCertificate", default, skip_serializing_if = "Option::is_none")]
     pub ssl_host_name_in_certificate: Option<String>,
+    #[doc = "Gets or sets certificate preference if secure communication is enabled."]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_preference: Option<SslPreference>,
 }
 impl HanaDbProviderInstanceProperties {
     pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
@@ -710,7 +741,9 @@ impl HanaDbProviderInstanceProperties {
             db_password: None,
             db_password_uri: None,
             db_ssl_certificate_uri: None,
+            ssl_certificate_uri: None,
             ssl_host_name_in_certificate: None,
+            ssl_preference: None,
         }
     }
 }
@@ -1047,6 +1080,9 @@ pub struct MonitorProperties {
     #[doc = "The ARM ID of the MSI used for SAP monitoring."]
     #[serde(rename = "msiArmId", default, skip_serializing_if = "Option::is_none")]
     pub msi_arm_id: Option<String>,
+    #[doc = "The ARM ID of the Storage account used for SAP monitoring."]
+    #[serde(rename = "storageAccountArmId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_arm_id: Option<String>,
 }
 impl MonitorProperties {
     pub fn new() -> Self {
@@ -1163,6 +1199,12 @@ pub struct MsSqlServerProviderInstanceProperties {
     #[doc = "Gets or sets the SAP System Identifier"]
     #[serde(rename = "sapSid", default, skip_serializing_if = "Option::is_none")]
     pub sap_sid: Option<String>,
+    #[doc = "Gets or sets certificate preference if secure communication is enabled."]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_preference: Option<SslPreference>,
+    #[doc = "Gets or sets the blob URI to SSL certificate for the SQL Database."]
+    #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate_uri: Option<String>,
 }
 impl MsSqlServerProviderInstanceProperties {
     pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
@@ -1174,6 +1216,8 @@ impl MsSqlServerProviderInstanceProperties {
             db_password: None,
             db_password_uri: None,
             sap_sid: None,
+            ssl_preference: None,
+            ssl_certificate_uri: None,
         }
     }
 }
@@ -1666,6 +1710,12 @@ pub struct PrometheusHaClusterProviderInstanceProperties {
     #[doc = "Gets or sets the clusterName."]
     #[serde(rename = "clusterName", default, skip_serializing_if = "Option::is_none")]
     pub cluster_name: Option<String>,
+    #[doc = "Gets or sets certificate preference if secure communication is enabled."]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_preference: Option<SslPreference>,
+    #[doc = "Gets or sets the blob URI to SSL certificate for the HA cluster exporter."]
+    #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate_uri: Option<String>,
 }
 impl PrometheusHaClusterProviderInstanceProperties {
     pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
@@ -1675,6 +1725,8 @@ impl PrometheusHaClusterProviderInstanceProperties {
             hostname: None,
             sid: None,
             cluster_name: None,
+            ssl_preference: None,
+            ssl_certificate_uri: None,
         }
     }
 }
@@ -1686,12 +1738,20 @@ pub struct PrometheusOsProviderInstanceProperties {
     #[doc = "URL of the Node Exporter endpoint"]
     #[serde(rename = "prometheusUrl", default, skip_serializing_if = "Option::is_none")]
     pub prometheus_url: Option<String>,
+    #[doc = "Gets or sets certificate preference if secure communication is enabled."]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_preference: Option<SslPreference>,
+    #[doc = "Gets or sets the blob URI to SSL certificate for the prometheus node exporter."]
+    #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate_uri: Option<String>,
 }
 impl PrometheusOsProviderInstanceProperties {
     pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
         Self {
             provider_specific_properties,
             prometheus_url: None,
+            ssl_preference: None,
+            ssl_certificate_uri: None,
         }
     }
 }
@@ -2521,6 +2581,7 @@ pub enum SapSoftwareInstallationType {
     ServiceInitiated,
     #[serde(rename = "SAPInstallWithoutOSConfig")]
     SapInstallWithoutOsConfig,
+    External,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -2550,6 +2611,7 @@ impl Serialize for SapSoftwareInstallationType {
             Self::SapInstallWithoutOsConfig => {
                 serializer.serialize_unit_variant("SapSoftwareInstallationType", 1u32, "SAPInstallWithoutOSConfig")
             }
+            Self::External => serializer.serialize_unit_variant("SapSoftwareInstallationType", 2u32, "External"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -2739,6 +2801,8 @@ pub enum SapVirtualInstanceState {
     SoftwareInstallationPending,
     SoftwareInstallationInProgress,
     SoftwareInstallationFailed,
+    SoftwareDetectionInProgress,
+    SoftwareDetectionFailed,
     DiscoveryPending,
     DiscoveryInProgress,
     DiscoveryFailed,
@@ -2786,10 +2850,14 @@ impl Serialize for SapVirtualInstanceState {
             Self::SoftwareInstallationFailed => {
                 serializer.serialize_unit_variant("SapVirtualInstanceState", 5u32, "SoftwareInstallationFailed")
             }
-            Self::DiscoveryPending => serializer.serialize_unit_variant("SapVirtualInstanceState", 6u32, "DiscoveryPending"),
-            Self::DiscoveryInProgress => serializer.serialize_unit_variant("SapVirtualInstanceState", 7u32, "DiscoveryInProgress"),
-            Self::DiscoveryFailed => serializer.serialize_unit_variant("SapVirtualInstanceState", 8u32, "DiscoveryFailed"),
-            Self::RegistrationComplete => serializer.serialize_unit_variant("SapVirtualInstanceState", 9u32, "RegistrationComplete"),
+            Self::SoftwareDetectionInProgress => {
+                serializer.serialize_unit_variant("SapVirtualInstanceState", 6u32, "SoftwareDetectionInProgress")
+            }
+            Self::SoftwareDetectionFailed => serializer.serialize_unit_variant("SapVirtualInstanceState", 7u32, "SoftwareDetectionFailed"),
+            Self::DiscoveryPending => serializer.serialize_unit_variant("SapVirtualInstanceState", 8u32, "DiscoveryPending"),
+            Self::DiscoveryInProgress => serializer.serialize_unit_variant("SapVirtualInstanceState", 9u32, "DiscoveryInProgress"),
+            Self::DiscoveryFailed => serializer.serialize_unit_variant("SapVirtualInstanceState", 10u32, "DiscoveryFailed"),
+            Self::RegistrationComplete => serializer.serialize_unit_variant("SapVirtualInstanceState", 11u32, "RegistrationComplete"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -2879,6 +2947,12 @@ pub struct SapNetWeaverProviderInstanceProperties {
     #[doc = "Gets or sets the blob URI to SSL certificate for the SAP system."]
     #[serde(rename = "sapSslCertificateUri", default, skip_serializing_if = "Option::is_none")]
     pub sap_ssl_certificate_uri: Option<String>,
+    #[doc = "Gets or sets the blob URI to SSL certificate for the SAP system."]
+    #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_certificate_uri: Option<String>,
+    #[doc = "Gets or sets certificate preference if secure communication is enabled."]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_preference: Option<SslPreference>,
 }
 impl SapNetWeaverProviderInstanceProperties {
     pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
@@ -2894,6 +2968,8 @@ impl SapNetWeaverProviderInstanceProperties {
             sap_client_id: None,
             sap_port_number: None,
             sap_ssl_certificate_uri: None,
+            ssl_certificate_uri: None,
+            ssl_preference: None,
         }
     }
 }
@@ -3490,6 +3566,45 @@ pub struct SshPublicKey {
 impl SshPublicKey {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Gets or sets certificate preference if secure communication is enabled."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SslPreference")]
+pub enum SslPreference {
+    Disabled,
+    RootCertificate,
+    ServerCertificate,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SslPreference {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SslPreference {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SslPreference {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Disabled => serializer.serialize_unit_variant("SslPreference", 0u32, "Disabled"),
+            Self::RootCertificate => serializer.serialize_unit_variant("SslPreference", 1u32, "RootCertificate"),
+            Self::ServerCertificate => serializer.serialize_unit_variant("SslPreference", 2u32, "ServerCertificate"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Stop SAP Request."]

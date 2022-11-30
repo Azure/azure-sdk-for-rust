@@ -357,6 +357,24 @@ pub struct DenyAssignmentProperties {
     #[doc = "Specifies whether this deny assignment was created by Azure and cannot be edited or deleted."]
     #[serde(rename = "isSystemProtected", default, skip_serializing_if = "Option::is_none")]
     pub is_system_protected: Option<bool>,
+    #[doc = "The conditions on the deny assignment. This limits the resources it can be assigned to. e.g.: @Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub condition: Option<String>,
+    #[doc = "Version of the condition."]
+    #[serde(rename = "conditionVersion", default, skip_serializing_if = "Option::is_none")]
+    pub condition_version: Option<String>,
+    #[doc = "Time it was created"]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<time::OffsetDateTime>,
+    #[doc = "Time it was updated"]
+    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub updated_on: Option<time::OffsetDateTime>,
+    #[doc = "Id of the user who created the assignment"]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "Id of the user who updated the assignment"]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<String>,
 }
 impl DenyAssignmentProperties {
     pub fn new() -> Self {
@@ -2190,6 +2208,18 @@ pub struct RoleDefinitionProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub assignable_scopes: Vec<String>,
+    #[doc = "Time it was created"]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<time::OffsetDateTime>,
+    #[doc = "Time it was updated"]
+    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub updated_on: Option<time::OffsetDateTime>,
+    #[doc = "Id of the user who created the assignment"]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "Id of the user who updated the assignment"]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<String>,
 }
 impl RoleDefinitionProperties {
     pub fn new() -> Self {

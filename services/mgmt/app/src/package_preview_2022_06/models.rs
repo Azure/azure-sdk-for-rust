@@ -2087,10 +2087,10 @@ impl DaprSecret {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DaprSecretsCollection {
     #[doc = "Collection of secrets used by a Dapr component"]
-    pub value: Vec<Secret>,
+    pub value: Vec<DaprSecret>,
 }
 impl DaprSecretsCollection {
-    pub fn new(value: Vec<Secret>) -> Self {
+    pub fn new(value: Vec<DaprSecret>) -> Self {
         Self { value }
     }
 }

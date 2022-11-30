@@ -1,3 +1,9 @@
-# Azure SDK for Rust - Azure Key Vault crate
+# azure_security_keyvault
 
-Azure Key Vault crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust]().
+Azure Security Key Vault
+
+This crate is part of the unofficial Azure SDK effort in Rust. For more
+information on the project, and an overview of other crates, please refer to
+[our GitHub repository](https://github.com/azure/azure-sdk-for-rust).
+
+License: MIT

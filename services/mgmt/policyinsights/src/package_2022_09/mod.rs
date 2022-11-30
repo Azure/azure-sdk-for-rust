@@ -106,6 +106,9 @@ impl Client {
     pub fn attestations_client(&self) -> attestations::Client {
         attestations::Client(self.clone())
     }
+    pub fn component_policy_states_client(&self) -> component_policy_states::Client {
+        component_policy_states::Client(self.clone())
+    }
     pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -7494,76 +7497,6 @@ pub mod policy_states {
         }
     }
 }
-pub mod operations {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Lists available operations."]
-        pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder { client: self.0.clone() }
-        }
-    }
-    pub mod list {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::OperationsListResults> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::OperationsListResults = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-        }
-        impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url =
-                            azure_core::Url::parse(&format!("{}/providers/Microsoft.PolicyInsights/operations", this.client.endpoint(),))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2019-10-01");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationsListResults>> {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
 pub mod policy_metadata {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -8008,6 +7941,1022 @@ pub mod policy_restrictions {
             }
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckRestrictionsResult>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod component_policy_states {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Queries component policy states under subscription scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `component_policy_states_resource`: The virtual resource under ComponentPolicyStates resource type. In a given time range, 'latest' represents the latest component policy state(s)."]
+        pub fn list_query_results_for_subscription(
+            &self,
+            subscription_id: impl Into<String>,
+            component_policy_states_resource: impl Into<String>,
+        ) -> list_query_results_for_subscription::RequestBuilder {
+            list_query_results_for_subscription::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                component_policy_states_resource: component_policy_states_resource.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+            }
+        }
+        #[doc = "Queries component policy states under resource group scope."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `component_policy_states_resource`: The virtual resource under ComponentPolicyStates resource type. In a given time range, 'latest' represents the latest component policy state(s)."]
+        pub fn list_query_results_for_resource_group(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            component_policy_states_resource: impl Into<String>,
+        ) -> list_query_results_for_resource_group::RequestBuilder {
+            list_query_results_for_resource_group::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                component_policy_states_resource: component_policy_states_resource.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+            }
+        }
+        #[doc = "Queries component policy states for the resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_id`: Resource ID."]
+        #[doc = "* `component_policy_states_resource`: The virtual resource under ComponentPolicyStates resource type. In a given time range, 'latest' represents the latest component policy state(s)."]
+        pub fn list_query_results_for_resource(
+            &self,
+            resource_id: impl Into<String>,
+            component_policy_states_resource: impl Into<String>,
+        ) -> list_query_results_for_resource::RequestBuilder {
+            list_query_results_for_resource::RequestBuilder {
+                client: self.0.clone(),
+                resource_id: resource_id.into(),
+                component_policy_states_resource: component_policy_states_resource.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+                expand: None,
+            }
+        }
+        #[doc = "Queries component policy states for the subscription level policy definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_definition_name`: Policy definition name."]
+        #[doc = "* `component_policy_states_resource`: The virtual resource under ComponentPolicyStates resource type. In a given time range, 'latest' represents the latest component policy state(s)."]
+        pub fn list_query_results_for_policy_definition(
+            &self,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_definition_name: impl Into<String>,
+            component_policy_states_resource: impl Into<String>,
+        ) -> list_query_results_for_policy_definition::RequestBuilder {
+            list_query_results_for_policy_definition::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_definition_name: policy_definition_name.into(),
+                component_policy_states_resource: component_policy_states_resource.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+            }
+        }
+        #[doc = "Queries component policy states for the subscription level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
+        #[doc = "* `component_policy_states_resource`: The virtual resource under ComponentPolicyStates resource type. In a given time range, 'latest' represents the latest component policy state(s)."]
+        pub fn list_query_results_for_subscription_level_policy_assignment(
+            &self,
+            subscription_id: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+            component_policy_states_resource: impl Into<String>,
+        ) -> list_query_results_for_subscription_level_policy_assignment::RequestBuilder {
+            list_query_results_for_subscription_level_policy_assignment::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                component_policy_states_resource: component_policy_states_resource.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+            }
+        }
+        #[doc = "Queries component policy states for the resource group level policy assignment."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: Microsoft Azure subscription ID."]
+        #[doc = "* `resource_group_name`: Resource group name."]
+        #[doc = "* `authorization_namespace`: The namespace for Microsoft Authorization resource provider; only \"Microsoft.Authorization\" is allowed."]
+        #[doc = "* `policy_assignment_name`: Policy assignment name."]
+        #[doc = "* `component_policy_states_resource`: The virtual resource under ComponentPolicyStates resource type. In a given time range, 'latest' represents the latest component policy state(s)."]
+        pub fn list_query_results_for_resource_group_level_policy_assignment(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            authorization_namespace: impl Into<String>,
+            policy_assignment_name: impl Into<String>,
+            component_policy_states_resource: impl Into<String>,
+        ) -> list_query_results_for_resource_group_level_policy_assignment::RequestBuilder {
+            list_query_results_for_resource_group_level_policy_assignment::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                authorization_namespace: authorization_namespace.into(),
+                policy_assignment_name: policy_assignment_name.into(),
+                component_policy_states_resource: component_policy_states_resource.into(),
+                top: None,
+                orderby: None,
+                select: None,
+                from: None,
+                to: None,
+                filter: None,
+                apply: None,
+            }
+        }
+    }
+    pub mod list_query_results_for_subscription {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ComponentPolicyStatesQueryResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ComponentPolicyStatesQueryResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) component_policy_states_resource: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Maximum number of records to return."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            #[doc = "OData filter expression."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            #[doc = "OData apply expression for aggregations."]
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.component_policy_states_resource
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        if let Some(top) = &this.top {
+                            req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                        }
+                        if let Some(select) = &this.select {
+                            req.url_mut().query_pairs_mut().append_pair("$select", select);
+                        }
+                        if let Some(from) = &this.from {
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
+                        }
+                        if let Some(to) = &this.to {
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
+                        }
+                        if let Some(filter) = &this.filter {
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(apply) = &this.apply {
+                            req.url_mut().query_pairs_mut().append_pair("$apply", apply);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComponentPolicyStatesQueryResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ComponentPolicyStatesQueryResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ComponentPolicyStatesQueryResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) component_policy_states_resource: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Maximum number of records to return."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            #[doc = "OData filter expression."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            #[doc = "OData apply expression for aggregations."]
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . component_policy_states_resource)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        if let Some(top) = &this.top {
+                            req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                        }
+                        if let Some(select) = &this.select {
+                            req.url_mut().query_pairs_mut().append_pair("$select", select);
+                        }
+                        if let Some(from) = &this.from {
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
+                        }
+                        if let Some(to) = &this.to {
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
+                        }
+                        if let Some(filter) = &this.filter {
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(apply) = &this.apply {
+                            req.url_mut().query_pairs_mut().append_pair("$apply", apply);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComponentPolicyStatesQueryResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ComponentPolicyStatesQueryResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ComponentPolicyStatesQueryResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_id: String,
+            pub(crate) component_policy_states_resource: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+            pub(crate) expand: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Maximum number of records to return."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            #[doc = "OData filter expression."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            #[doc = "OData apply expression for aggregations."]
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            #[doc = "The $expand query parameter."]
+            pub fn expand(mut self, expand: impl Into<String>) -> Self {
+                self.expand = Some(expand.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults",
+                            this.client.endpoint(),
+                            &this.resource_id,
+                            &this.component_policy_states_resource
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        if let Some(top) = &this.top {
+                            req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                        }
+                        if let Some(select) = &this.select {
+                            req.url_mut().query_pairs_mut().append_pair("$select", select);
+                        }
+                        if let Some(from) = &this.from {
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
+                        }
+                        if let Some(to) = &this.to {
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
+                        }
+                        if let Some(filter) = &this.filter {
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(apply) = &this.apply {
+                            req.url_mut().query_pairs_mut().append_pair("$apply", apply);
+                        }
+                        if let Some(expand) = &this.expand {
+                            req.url_mut().query_pairs_mut().append_pair("$expand", expand);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComponentPolicyStatesQueryResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod list_query_results_for_policy_definition {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ComponentPolicyStatesQueryResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ComponentPolicyStatesQueryResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_definition_name: String,
+            pub(crate) component_policy_states_resource: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Maximum number of records to return."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            #[doc = "OData filter expression."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            #[doc = "OData apply expression for aggregations."]
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/{}/policyDefinitions/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , this . client . endpoint () , & this . subscription_id , & this . authorization_namespace , & this . policy_definition_name , & this . component_policy_states_resource)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        if let Some(top) = &this.top {
+                            req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                        }
+                        if let Some(select) = &this.select {
+                            req.url_mut().query_pairs_mut().append_pair("$select", select);
+                        }
+                        if let Some(from) = &this.from {
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
+                        }
+                        if let Some(to) = &this.to {
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
+                        }
+                        if let Some(filter) = &this.filter {
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(apply) = &this.apply {
+                            req.url_mut().query_pairs_mut().append_pair("$apply", apply);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComponentPolicyStatesQueryResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod list_query_results_for_subscription_level_policy_assignment {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ComponentPolicyStatesQueryResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ComponentPolicyStatesQueryResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) component_policy_states_resource: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Maximum number of records to return."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            #[doc = "OData filter expression."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            #[doc = "OData apply expression for aggregations."]
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , this . client . endpoint () , & this . subscription_id , & this . authorization_namespace , & this . policy_assignment_name , & this . component_policy_states_resource)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        if let Some(top) = &this.top {
+                            req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                        }
+                        if let Some(select) = &this.select {
+                            req.url_mut().query_pairs_mut().append_pair("$select", select);
+                        }
+                        if let Some(from) = &this.from {
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
+                        }
+                        if let Some(to) = &this.to {
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
+                        }
+                        if let Some(filter) = &this.filter {
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(apply) = &this.apply {
+                            req.url_mut().query_pairs_mut().append_pair("$apply", apply);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComponentPolicyStatesQueryResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod list_query_results_for_resource_group_level_policy_assignment {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ComponentPolicyStatesQueryResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ComponentPolicyStatesQueryResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) authorization_namespace: String,
+            pub(crate) policy_assignment_name: String,
+            pub(crate) component_policy_states_resource: String,
+            pub(crate) top: Option<i32>,
+            pub(crate) orderby: Option<String>,
+            pub(crate) select: Option<String>,
+            pub(crate) from: Option<time::OffsetDateTime>,
+            pub(crate) to: Option<time::OffsetDateTime>,
+            pub(crate) filter: Option<String>,
+            pub(crate) apply: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Maximum number of records to return."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Ordering expression using OData notation. One or more comma-separated column names with an optional \"desc\" (the default) or \"asc\", e.g. \"$orderby=PolicyAssignmentId, ResourceId asc\"."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Select expression using OData notation. Limits the columns on each record to just those requested, e.g. \"$select=PolicyAssignmentId, ResourceId\"."]
+            pub fn select(mut self, select: impl Into<String>) -> Self {
+                self.select = Some(select.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the start time of the interval to query. When not specified, the service uses ($to - 1-day)."]
+            pub fn from(mut self, from: impl Into<time::OffsetDateTime>) -> Self {
+                self.from = Some(from.into());
+                self
+            }
+            #[doc = "ISO 8601 formatted timestamp specifying the end time of the interval to query. When not specified, the service uses request time."]
+            pub fn to(mut self, to: impl Into<time::OffsetDateTime>) -> Self {
+                self.to = Some(to.into());
+                self
+            }
+            #[doc = "OData filter expression."]
+            pub fn filter(mut self, filter: impl Into<String>) -> Self {
+                self.filter = Some(filter.into());
+                self
+            }
+            #[doc = "OData apply expression for aggregations."]
+            pub fn apply(mut self, apply: impl Into<String>) -> Self {
+                self.apply = Some(apply.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/{}/policyAssignments/{}/providers/Microsoft.PolicyInsights/componentPolicyStates/{}/queryResults" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . authorization_namespace , & this . policy_assignment_name , & this . component_policy_states_resource)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        if let Some(top) = &this.top {
+                            req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                        }
+                        if let Some(orderby) = &this.orderby {
+                            req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                        }
+                        if let Some(select) = &this.select {
+                            req.url_mut().query_pairs_mut().append_pair("$select", select);
+                        }
+                        if let Some(from) = &this.from {
+                            req.url_mut().query_pairs_mut().append_pair("$from", &from.to_string());
+                        }
+                        if let Some(to) = &this.to {
+                            req.url_mut().query_pairs_mut().append_pair("$to", &to.to_string());
+                        }
+                        if let Some(filter) = &this.filter {
+                            req.url_mut().query_pairs_mut().append_pair("$filter", filter);
+                        }
+                        if let Some(apply) = &this.apply {
+                            req.url_mut().query_pairs_mut().append_pair("$apply", apply);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ComponentPolicyStatesQueryResults>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod operations {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Lists available operations."]
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder { client: self.0.clone() }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::OperationsListResults> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::OperationsListResults = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url =
+                            azure_core::Url::parse(&format!("{}/providers/Microsoft.PolicyInsights/operations", this.client.endpoint(),))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-04-01");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::OperationsListResults>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }

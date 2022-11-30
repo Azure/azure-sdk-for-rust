@@ -5,7 +5,7 @@
 /*!
 # The Cosmos DB crate.
 
-`azure-cosmos` offers functionality needed to interact with Cosmos DB from Rust. As an abstraction over the [Cosmos DB
+`azure-data-cosmos` offers functionality needed to interact with Cosmos DB from Rust. As an abstraction over the [Cosmos DB
 Rest API](https://docs.microsoft.com/rest/api/cosmos-db/), anything that is possible through that Rest API
 should also be possible with this crate.
 

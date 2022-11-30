@@ -255,6 +255,9 @@ impl ExtensionProperties {
 pub struct FarmBeats {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The resource model definition representing SKU"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -266,6 +269,7 @@ impl FarmBeats {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
+            sku: None,
             system_data: None,
             properties: None,
         }
@@ -440,6 +444,9 @@ pub mod farm_beats_properties {
 #[doc = "FarmBeats update request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsUpdateRequestModel {
+    #[doc = "The resource model definition representing SKU"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
     #[doc = "Geo-location where the resource lives."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -629,6 +636,46 @@ pub struct Resource {
 impl Resource {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The resource model definition representing SKU"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
+    pub name: String,
+    #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<sku::Tier>,
+    #[doc = "The SKU size. When the name field is the combination of tier and some other value, this would be the standalone code. "]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[doc = "If the service has different generations of hardware, for the same SKU, then that can be captured here."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[doc = "If the SKU supports scale out/in then the capacity integer should be included. If scale out/in is not possible for the resource this may be omitted."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
+}
+impl Sku {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            tier: None,
+            size: None,
+            family: None,
+            capacity: None,
+        }
+    }
+}
+pub mod sku {
+    use super::*;
+    #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Free,
+        Basic,
+        Standard,
+        Premium,
     }
 }
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]

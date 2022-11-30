@@ -225,6 +225,9 @@ pub struct EncryptionEntitiesDefinition {
     #[doc = "The object that contains details of encryption used on the workspace."]
     #[serde(rename = "managedServices", default, skip_serializing_if = "Option::is_none")]
     pub managed_services: Option<EncryptionV2>,
+    #[doc = "The object that contains details of encryption used on the workspace."]
+    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk: Option<ManagedDiskEncryption>,
 }
 impl EncryptionEntitiesDefinition {
     pub fn new() -> Self {
@@ -527,6 +530,89 @@ pub mod identity_data {
                 Self::None => serializer.serialize_unit_variant("Type", 0u32, "None"),
                 Self::SystemAssigned => serializer.serialize_unit_variant("Type", 1u32, "SystemAssigned"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The object that contains details of encryption used on the workspace."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedDiskEncryption {
+    #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Keyvault"]
+    #[serde(rename = "keySource")]
+    pub key_source: managed_disk_encryption::KeySource,
+    #[doc = "Key Vault input properties for encryption."]
+    #[serde(rename = "keyVaultProperties")]
+    pub key_vault_properties: managed_disk_encryption::KeyVaultProperties,
+    #[doc = "Indicate whether the latest key version should be automatically used for Managed Disk Encryption."]
+    #[serde(rename = "rotationToLatestKeyVersionEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub rotation_to_latest_key_version_enabled: Option<bool>,
+}
+impl ManagedDiskEncryption {
+    pub fn new(key_source: managed_disk_encryption::KeySource, key_vault_properties: managed_disk_encryption::KeyVaultProperties) -> Self {
+        Self {
+            key_source,
+            key_vault_properties,
+            rotation_to_latest_key_version_enabled: None,
+        }
+    }
+}
+pub mod managed_disk_encryption {
+    use super::*;
+    #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Keyvault"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "KeySource")]
+    pub enum KeySource {
+        #[serde(rename = "Microsoft.Keyvault")]
+        MicrosoftKeyvault,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for KeySource {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for KeySource {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for KeySource {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::MicrosoftKeyvault => serializer.serialize_unit_variant("KeySource", 0u32, "Microsoft.Keyvault"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Key Vault input properties for encryption."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct KeyVaultProperties {
+        #[doc = "The URI of KeyVault."]
+        #[serde(rename = "keyVaultUri")]
+        pub key_vault_uri: String,
+        #[doc = "The name of KeyVault key."]
+        #[serde(rename = "keyName")]
+        pub key_name: String,
+        #[doc = "The version of KeyVault key."]
+        #[serde(rename = "keyVersion")]
+        pub key_version: String,
+    }
+    impl KeyVaultProperties {
+        pub fn new(key_vault_uri: String, key_name: String, key_version: String) -> Self {
+            Self {
+                key_vault_uri,
+                key_name,
+                key_version,
             }
         }
     }
@@ -1403,6 +1489,12 @@ pub struct WorkspaceProperties {
     #[doc = "The Managed Identity details for storage account."]
     #[serde(rename = "storageAccountIdentity", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_identity: Option<ManagedIdentityConfiguration>,
+    #[doc = "The Managed Identity details for storage account."]
+    #[serde(rename = "managedDiskIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk_identity: Option<ManagedIdentityConfiguration>,
+    #[doc = "The resource Id of the managed disk encryption set."]
+    #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_set_id: Option<String>,
     #[doc = "Encryption properties for databricks workspace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<workspace_properties::Encryption>,
@@ -1435,6 +1527,8 @@ impl WorkspaceProperties {
             workspace_id: None,
             workspace_url: None,
             storage_account_identity: None,
+            managed_disk_identity: None,
+            disk_encryption_set_id: None,
             encryption: None,
             private_endpoint_connections: Vec::new(),
             public_network_access: None,
