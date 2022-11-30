@@ -50,22 +50,21 @@ fn main() -> Result<()> {
 }
 
 fn gen_crates(only_packages: &[&str]) -> Result<()> {
-    let mut i = 1usize;
-    for (crate_type, specs) in [("mgmt", get_mgmt_readmes()?), ("svc", get_svc_readmes()?)] {
+    let svc = get_svc_readmes()?.into_iter().map(|x| ("svc", x));
+    let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt", x));
+
+    for (i, (crate_type, spec)) in svc.chain(mgmt).enumerate() {
         let output_folder = format!("../{}", crate_type);
         let prefix = format!("azure_{}_", crate_type);
 
         let run_config = RunConfig::new(&prefix);
-        for spec in specs {
-            let package_name = gen::package_name(&spec, &run_config);
-            if !only_packages.is_empty() && !only_packages.contains(&package_name.as_str()) {
-                continue;
-            }
-
-            println!("{} ({})", package_name, i);
-            gen::gen_crate(&package_name, &spec, &run_config, &output_folder)?;
-            i += 1;
+        let package_name = gen::package_name(&spec, &run_config);
+        if !only_packages.is_empty() && !only_packages.contains(&package_name.as_str()) {
+            continue;
         }
+
+        println!("{} ({})", package_name, i);
+        gen::gen_crate(&package_name, &spec, &run_config, &output_folder)?;
     }
 
     Ok(())
