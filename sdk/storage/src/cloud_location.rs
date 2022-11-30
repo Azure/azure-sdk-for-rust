@@ -46,6 +46,9 @@ pub enum CloudLocation {
     AutoDetect {
         account: String,
         credentials: StorageCredentials,
+        /// Optional fallback cloud-location, for example in test-environments
+        ///
+        fallback: Option<Box<Self>>,
     },
     /// A custom base URL
     Custom {
@@ -69,12 +72,32 @@ impl CloudLocation {
     /// - AzureGermanCloud - Might be deprecating based on public documentation but still shows up in `az cloud list`
     ///
     pub fn auto_detect(account: impl AsRef<str>, credentials: StorageCredentials) -> CloudLocation {
+        Self::auto_detect_with_fallback(account, credentials, None)
+    }
+
+    /// Returns a cloud location that will auto-detect the current cloud,
+    ///
+    /// See CloudLocation::auto_detect(..) for more info. This fn is for more advanced scenarios.
+    ///
+    /// If a fallback option is set, and if no cloud location could be explicitly detected, the fallback location will be used instead.
+    ///
+    pub fn auto_detect_with_fallback(
+        account: impl AsRef<str>,
+        credentials: StorageCredentials,
+        fallback: Option<CloudLocation>,
+    ) -> CloudLocation {
         CloudLocation::AutoDetect {
             account: account.as_ref().to_string(),
             credentials,
+            fallback: {
+                if let Some(fallback) = fallback {
+                    Some(Box::new(fallback))
+                } else {
+                    None
+                }
+            },
         }
     }
-
     /// the base URL for a given cloud location
     pub fn url(&self, service_type: ServiceType) -> azure_core::Result<Url> {
         let url = match self {
@@ -113,6 +136,7 @@ impl CloudLocation {
             CloudLocation::AutoDetect {
                 account,
                 credentials,
+                fallback,
             } => {
                 if let Some(name) = Self::find_cloud_name() {
                     // These names are from
@@ -143,6 +167,8 @@ impl CloudLocation {
                             todo!()
                         }
                     };
+                } else if let Some(fallback) = fallback {
+                    return fallback.url(service_type);
                 } else {
                     // Default to PROD
                     return CloudLocation::Public {
@@ -437,5 +463,27 @@ name = AzureUSGovernment
 
         // Clean-up test files
         std::fs::remove_dir_all(".test").expect("should be able to remove test dir");
+    }
+
+    #[test]
+    fn test_auto_detect_fallback() {
+        std::env::remove_var("HOME");
+
+        let cloud_location: CloudLocation = CloudLocation::auto_detect_with_fallback(
+            "test_account",
+            StorageCredentials::Anonymous,
+            Some(CloudLocation::Emulator {
+                address: "test".to_string(),
+                port: 0000,
+            }),
+        );
+
+        assert_eq!(
+            cloud_location
+                .url(ServiceType::Blob)
+                .expect("should be a url")
+                .to_string(),
+            format!("http://test:0/{EMULATOR_ACCOUNT}")
+        );
     }
 }
