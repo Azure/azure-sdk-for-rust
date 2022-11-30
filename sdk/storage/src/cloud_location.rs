@@ -227,7 +227,8 @@ impl CloudLocation {
 impl TryFrom<&Url> for CloudLocation {
     type Error = azure_core::Error;
 
-    // TODO: This only works for Public and China clouds.
+    // TODO: Only supports Public, China, USGov, and Emulator
+    // Is CustomURL required?
     // ref: https://github.com/Azure/azure-sdk-for-rust/issues/502
     fn try_from(url: &Url) -> azure_core::Result<Self> {
         let token = url.query().ok_or_else(|| {
@@ -269,11 +270,34 @@ impl TryFrom<&Url> for CloudLocation {
                 account,
                 credentials,
             }),
+            "core.usgovcloudapi.net" => Ok(CloudLocation::USGov {
+                account,
+                credentials,
+            }),
+            _ if url.path().trim_matches('/') == EMULATOR_ACCOUNT
+                && url.has_host()
+                && url.port().is_some() =>
+            {
+                if let Some(host) = url.host() {
+                    match host {
+                        url::Host::Ipv4(ip) => Ok(CloudLocation::Emulator {
+                            address: format!("{ip}"),
+                            port: url.port().expect("should have a port"),
+                        }),
+                        _ => Err(azure_core::Error::with_message(
+                            azure_core::error::ErrorKind::DataConversion,
+                            || format!("Unsupported emulator URL, expected ipv4: {}", host),
+                        )),
+                    }
+                } else {
+                    unreachable!()
+                }
+            }
             _ => Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 || {
                     format!(
-                        "URL refers to a domain that is not a Public or China domain: {}",
+                        "URL refers to a domain that is not a Emulator, Public, China, or USGov domain: {}",
                         host
                     )
                 },
@@ -328,6 +352,26 @@ mod tests {
         let cloud_location: CloudLocation = (&china_cloud).try_into()?;
         assert_eq!(
             china_cloud_without_token,
+            cloud_location.url(ServiceType::Blob)?
+        );
+
+        let us_gov_cloud = Url::parse("https://test.blob.core.usgovcloudapi.net/?token=1")?;
+        let us_gov_cloud_without_token = Url::parse("https://test.blob.core.usgovcloudapi.net")?;
+
+        let cloud_location: CloudLocation = (&us_gov_cloud).try_into()?;
+        assert_eq!(
+            us_gov_cloud_without_token,
+            cloud_location.url(ServiceType::Blob)?
+        );
+
+        let emulator =
+            Url::parse(format!("http://127.0.0.1:5555/{EMULATOR_ACCOUNT}/?token=1").as_str())?;
+        let emulator_without_token =
+            Url::parse(format!("http://127.0.0.1:5555/{EMULATOR_ACCOUNT}").as_str())?;
+
+        let cloud_location: CloudLocation = (&emulator).try_into()?;
+        assert_eq!(
+            emulator_without_token,
             cloud_location.url(ServiceType::Blob)?
         );
 
