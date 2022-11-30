@@ -15,7 +15,7 @@ async fn main() -> azure_core::Result<()> {
     let policy_key = std::env::var("AZURE_POLICY_KEY").expect("missing AZURE_POLICY_KEY");
 
     let http_client = azure_core::new_http_client();
-    let mut client = Client::new(
+    let mut client = QueueClient::new(
         http_client,
         service_bus_namespace,
         queue_name,
