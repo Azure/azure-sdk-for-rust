@@ -274,7 +274,10 @@ impl TryFrom<&Url> for CloudLocation {
                 account,
                 credentials,
             }),
-            _ if url.path().trim_matches('/') == EMULATOR_ACCOUNT
+            _ if url
+                .path()
+                .trim_start_matches('/')
+                .starts_with(EMULATOR_ACCOUNT)
                 && url.has_host()
                 && url.port().is_some() =>
             {
@@ -372,6 +375,19 @@ mod tests {
         let cloud_location: CloudLocation = (&emulator).try_into()?;
         assert_eq!(
             emulator_without_token,
+            cloud_location.url(ServiceType::Blob)?
+        );
+
+        // A SAS Url could contain a container name in the path, tests that the account is parsed successfully
+        let emulator_with_container = Url::parse(
+            format!("http://127.0.0.1:5555/{EMULATOR_ACCOUNT}/test_container?token=1").as_str(),
+        )?;
+        let emulator_with_container_without_token =
+            Url::parse(format!("http://127.0.0.1:5555/{EMULATOR_ACCOUNT}").as_str())?;
+
+        let cloud_location: CloudLocation = (&emulator_with_container).try_into()?;
+        assert_eq!(
+            emulator_with_container_without_token,
             cloud_location.url(ServiceType::Blob)?
         );
 
