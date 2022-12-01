@@ -319,7 +319,7 @@ async fn send_and_receive_sessionful_messages() {
     // Send 2nd session id first
     let messages = expected_for_session_id_2.iter().map(|message| {
         let mut message = ServiceBusMessage::new(message.as_bytes());
-        message.set_session_id(session_id_2).unwrap();
+        message.set_session_id(String::from(session_id_2)).unwrap();
         message
     });
     common::create_client_and_send_messages_separately_to_queue(
@@ -335,7 +335,7 @@ async fn send_and_receive_sessionful_messages() {
     // Send 1st session id last
     let messages = expected_for_session_id_1.iter().map(|message| {
         let mut message = ServiceBusMessage::new(*message);
-        message.set_session_id(session_id_1).unwrap(); // length must not exceed max length
+        message.set_session_id(String::from(session_id_1)).unwrap(); // length must not exceed max length
         message
     });
     common::create_client_and_send_messages_separately_to_queue(

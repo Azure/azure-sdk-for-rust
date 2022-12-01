@@ -218,7 +218,7 @@ impl ServiceBusMessage {
 
     pub fn set_partition_key(
         &mut self,
-        key: impl Into<String>,
+        key: impl Into<Option<String>>,
     ) -> Result<(), SetPartitionKeyError> {
         self.amqp_message.set_partition_key(key)
     }
@@ -243,7 +243,7 @@ impl ServiceBusMessage {
 
     pub fn set_transaction_partition_key(
         &mut self,
-        key: impl Into<String>,
+        key: impl Into<Option<String>>,
     ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_via_partition_key(key)
     }
@@ -267,7 +267,7 @@ impl ServiceBusMessage {
 
     pub fn set_session_id(
         &mut self,
-        session_id: impl Into<String>,
+        session_id: impl Into<Option<String>>,
     ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_session_id(session_id)
     }
@@ -289,7 +289,7 @@ impl ServiceBusMessage {
 
     pub fn set_reply_to_session_id(
         &mut self,
-        session_id: Option<impl Into<String>>,
+        session_id: impl Into<Option<String>>,
     ) -> Result<(), MaxLengthExceededError> {
         self.amqp_message.set_reply_to_session_id(session_id)
     }
@@ -334,7 +334,7 @@ impl ServiceBusMessage {
         self.amqp_message.correlation_id()
     }
 
-    pub fn set_correlation_id(&mut self, id: Option<impl Into<String>>) {
+    pub fn set_correlation_id(&mut self, id: impl Into<Option<String>>) {
         self.amqp_message.set_correlation_id(id)
     }
 
@@ -353,7 +353,7 @@ impl ServiceBusMessage {
         self.amqp_message.subject()
     }
 
-    pub fn set_subject(&mut self, subject: Option<impl Into<String>>) {
+    pub fn set_subject(&mut self, subject: impl Into<Option<String>>) {
         self.amqp_message.set_subject(subject)
     }
 
@@ -373,7 +373,7 @@ impl ServiceBusMessage {
         self.amqp_message.to()
     }
 
-    pub fn set_to(&mut self, to: Option<impl Into<String>>) {
+    pub fn set_to(&mut self, to: impl Into<Option<String>>) {
         self.amqp_message.set_to(to)
     }
 
@@ -391,7 +391,7 @@ impl ServiceBusMessage {
         self.amqp_message.content_type()
     }
 
-    pub fn set_content_type(&mut self, content_type: Option<impl Into<String>>) {
+    pub fn set_content_type(&mut self, content_type: impl Into<Option<String>>) {
         self.amqp_message.set_content_type(content_type)
     }
 
@@ -413,7 +413,7 @@ impl ServiceBusMessage {
         self.amqp_message.reply_to()
     }
 
-    pub fn set_reply_to(&mut self, reply_to: Option<impl Into<String>>) {
+    pub fn set_reply_to(&mut self, reply_to: impl Into<Option<String>>) {
         self.amqp_message.set_reply_to(reply_to)
     }
 
@@ -464,7 +464,7 @@ impl std::fmt::Display for ServiceBusMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ServiceBusMessage, constants::MAX_MESSAGE_ID_LENGTH};
+    use crate::{ServiceBusMessage, constants::{MAX_MESSAGE_ID_LENGTH, MAX_SESSION_ID_LENGTH}};
 
     #[test]
     fn message_to_string() {
@@ -495,5 +495,78 @@ mod tests {
         assert!(message
             .set_message_id(message_id)
             .is_err());
+    }
+
+    #[test]
+    fn setting_none_session_id_returns_ok() {
+        let mut message = ServiceBusMessage::new("test message");
+        assert!(message.set_session_id(None).is_ok());
+    }
+
+    #[test]
+    fn setting_long_session_id_returns_error() {
+        let mut message = ServiceBusMessage::new("test message");
+        let session_id = "a".repeat(MAX_SESSION_ID_LENGTH);
+        assert!(message
+            .set_session_id(Some(session_id))
+            .is_ok());
+
+        let session_id = "a".repeat(MAX_SESSION_ID_LENGTH + 1);
+        assert!(message
+            .set_session_id(Some(session_id))
+            .is_err());
+    }
+
+    #[test]
+    fn setting_none_reply_to_session_id_returns_ok() {
+        let mut message = ServiceBusMessage::new("test message");
+        assert!(message.set_reply_to_session_id(None).is_ok());
+    }
+
+    #[test]
+    fn setting_long_reply_to_session_id_returns_error() {
+        let mut message = ServiceBusMessage::new("test message");
+        let reply_to_session_id = "a".repeat(MAX_SESSION_ID_LENGTH);
+        assert!(message
+            .set_reply_to_session_id(Some(reply_to_session_id))
+            .is_ok());
+
+        let reply_to_session_id = "a".repeat(MAX_SESSION_ID_LENGTH + 1);
+        assert!(message
+            .set_reply_to_session_id(Some(reply_to_session_id))
+            .is_err());
+    }
+
+    #[test]
+    fn setting_none_partition_key_returns_ok() {
+        let mut message = ServiceBusMessage::new("test message");
+        assert!(message.set_partition_key(None).is_ok());
+    }
+
+    #[test]
+    fn partition_key_must_match_session_id_if_both_are_set() {
+        let mut message = ServiceBusMessage::new("test message");
+        assert!(message.set_session_id(Some("session_id".into())).is_ok());
+        assert_eq!(message.session_id(), Some("session_id"));
+        assert!(message.partition_key().is_none());
+        assert!(message.set_partition_key(Some("partition_key".into())).is_err());
+
+        let mut message = ServiceBusMessage::new("test message");
+        assert!(message.set_partition_key(Some("partition_key".into())).is_ok());
+        assert_eq!(message.partition_key(), Some("partition_key"));
+        assert!(message.session_id().is_none());
+        assert!(message.set_session_id(Some("session_id".into())).is_ok());
+        assert_eq!(message.partition_key(), message.session_id());
+    }
+
+    #[test]
+    fn set_message_body_to_string() {
+        let message_body = "some message";
+        let mut message = ServiceBusMessage::new(message_body);
+        assert_eq!(message.body(), message_body.as_bytes());
+
+        let new_message_body = "some new message";
+        message.set_body(new_message_body);
+        assert_eq!(message.body(), new_message_body.as_bytes());
     }
 }
