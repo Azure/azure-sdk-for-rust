@@ -128,7 +128,7 @@ impl CloudLocation {
                                 azure_core::error::ErrorKind::Other,
                                 || {
                                     format!(
-                                        "Auto-detect could not find a cloud name from the current environment.",
+                                        "Auto-detect encountered an invalid cloud name, allowed values are: {AZURE_CLOUD}, {AZURE_PUBLIC_CLOUD}, {AZURE_US_GOV}, {AZURE_CHINA_CLOUD}.",
                                     )
                                 },
                             ));
