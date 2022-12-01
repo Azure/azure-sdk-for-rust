@@ -177,11 +177,17 @@ impl CloudLocation {
 
                 while let Some(Ok(line)) = lines.next() {
                     if line.trim() == "[cloud]" {
-                        if let Some(Ok(name)) = lines.next() {
-                            if let Some((name, value)) = name.split_once('=') {
+                        while let Some(Ok(line)) = lines.next() {
+                            if let Some((name, value)) = line.split_once('=') {
                                 if name.trim() == "name" {
                                     return Some(value.trim().to_string());
                                 }
+                            }
+
+                            if line.trim().starts_with('[') && line.trim().ends_with(']') {
+                                // We've encountered a different namespace and have left [cloud]
+                                // If we haven't returned by this point then we have not found a name
+                                return None;
                             }
                         }
                     }
@@ -437,6 +443,7 @@ name = AzureCloud
             &config_file,
             r#"
 [cloud]
+
 name = AzureChinaCloud
             "#
             .trim(),
@@ -454,6 +461,7 @@ name = AzureChinaCloud
             &config_file,
             r#"
 [cloud]
+not_name = NOT_NAME
 name = AzureUSGovernment
             "#
             .trim(),
@@ -470,6 +478,10 @@ name = AzureUSGovernment
         std::fs::write(
             &config_file,
             r#"
+            [cloud]
+
+            [not-cloud]
+            name = AzureCloud
             "#
             .trim(),
         )
