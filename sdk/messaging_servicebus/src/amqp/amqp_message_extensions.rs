@@ -17,7 +17,7 @@ use crate::constants::{
 
 use super::{
     amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
-    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError},
+    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError, SetMessageIdError},
 };
 
 pub(crate) trait AmqpMessageExt {
@@ -52,7 +52,7 @@ pub(crate) trait AmqpMessageMutExt {
     fn set_message_id(
         &mut self,
         message_id: impl Into<String>,
-    ) -> Result<(), MaxLengthExceededError>;
+    ) -> Result<(), SetMessageIdError>;
 
     fn partition_key_mut(&mut self) -> Option<&mut String>;
 
@@ -245,13 +245,18 @@ impl<B> AmqpMessageMutExt for Message<B> {
     fn set_message_id(
         &mut self,
         message_id: impl Into<String>,
-    ) -> Result<(), MaxLengthExceededError> {
+    ) -> Result<(), SetMessageIdError> {
         let message_id = message_id.into();
+
+        if message_id.is_empty() {
+            return Err(SetMessageIdError::Empty);
+        }
+
         if message_id.len() > MAX_MESSAGE_ID_LENGTH {
             return Err(MaxLengthExceededError::new(
                 message_id.len(),
                 MAX_MESSAGE_ID_LENGTH,
-            ));
+            ).into());
         }
 
         self.properties

@@ -36,6 +36,15 @@ impl std::fmt::Display for MaxLengthExceededError {
 impl std::error::Error for MaxLengthExceededError {}
 
 #[derive(Debug, thiserror::Error)]
+pub enum SetMessageIdError {
+    #[error("Value cannot be empty")]
+    Empty,
+
+    #[error(transparent)]
+    MaxLengthExceeded(#[from] MaxLengthExceededError),
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum SetPartitionKeyError {
     #[error(transparent)]
     MaxLengthExceeded(#[from] MaxLengthExceededError),

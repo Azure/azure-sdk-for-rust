@@ -17,7 +17,7 @@ use crate::amqp::{
         LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
     },
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
-    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError},
+    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError, SetMessageIdError},
 };
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
@@ -194,7 +194,7 @@ impl ServiceBusMessage {
     pub fn set_message_id(
         &mut self,
         message_id: impl Into<String>,
-    ) -> Result<(), MaxLengthExceededError> {
+    ) -> Result<(), SetMessageIdError> {
         self.amqp_message.set_message_id(message_id)
     }
 
@@ -464,7 +464,7 @@ impl std::fmt::Display for ServiceBusMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::ServiceBusMessage;
+    use crate::{ServiceBusMessage, constants::MAX_MESSAGE_ID_LENGTH};
 
     #[test]
     fn message_to_string() {
@@ -477,5 +477,23 @@ mod tests {
         }
     }
 
-    // TODO: should there be length limits for some message fields?
+    #[test]
+    fn setting_empty_message_id_returns_error() {
+        let mut message = ServiceBusMessage::new("test message");
+        assert!(message.set_message_id("").is_err());
+    }
+
+    #[test]
+    fn setting_long_message_id_returns_error() {
+        let mut message = ServiceBusMessage::new("test message");
+        let message_id = "a".repeat(MAX_MESSAGE_ID_LENGTH);
+        assert!(message
+            .set_message_id(message_id)
+            .is_ok());
+
+        let message_id = "a".repeat(MAX_MESSAGE_ID_LENGTH + 1);
+        assert!(message
+            .set_message_id(message_id)
+            .is_err());
+    }
 }
