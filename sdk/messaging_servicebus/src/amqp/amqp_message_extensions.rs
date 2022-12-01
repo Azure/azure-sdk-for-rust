@@ -17,7 +17,9 @@ use crate::constants::{
 
 use super::{
     amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
-    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError, SetMessageIdError},
+    error::{
+        MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError, SetPartitionKeyError,
+    },
 };
 
 pub(crate) trait AmqpMessageExt {
@@ -47,32 +49,19 @@ pub(crate) trait AmqpMessageExt {
 }
 
 pub(crate) trait AmqpMessageMutExt {
-    fn message_id_mut(&mut self) -> Option<&mut MessageId>;
-
-    fn set_message_id(
-        &mut self,
-        message_id: impl Into<String>,
-    ) -> Result<(), SetMessageIdError>;
-
-    fn partition_key_mut(&mut self) -> Option<&mut String>;
+    fn set_message_id(&mut self, message_id: impl Into<String>) -> Result<(), SetMessageIdError>;
 
     fn set_partition_key(&mut self, key: impl Into<String>) -> Result<(), SetPartitionKeyError>;
-
-    fn via_partition_key_mut(&mut self) -> Option<&mut String>;
 
     fn set_via_partition_key(
         &mut self,
         key: impl Into<String>,
     ) -> Result<(), MaxLengthExceededError>;
 
-    fn session_id_mut(&mut self) -> Option<&mut String>;
-
     fn set_session_id(
         &mut self,
         session_id: impl Into<String>,
     ) -> Result<(), MaxLengthExceededError>;
-
-    fn reply_to_session_id_mut(&mut self) -> Option<&mut String>;
 
     fn set_reply_to_session_id(
         &mut self,
@@ -84,23 +73,13 @@ pub(crate) trait AmqpMessageMutExt {
         ttl: Option<StdDuration>,
     ) -> Result<(), MaxAllowedTtlExceededError>;
 
-    fn correlation_id_mut(&mut self) -> Option<&mut MessageId>;
-
     fn set_correlation_id(&mut self, id: Option<impl Into<String>>);
-
-    fn subject_mut(&mut self) -> Option<&mut String>;
 
     fn set_subject(&mut self, subject: Option<impl Into<String>>);
 
-    fn to_mut(&mut self) -> Option<&mut String>;
-
     fn set_to(&mut self, to: Option<impl Into<String>>);
 
-    fn content_type_mut(&mut self) -> Option<&mut String>;
-
     fn set_content_type(&mut self, content_type: Option<impl Into<String>>);
-
-    fn reply_to_mut(&mut self) -> Option<&mut String>;
 
     fn set_reply_to(&mut self, reply_to: Option<impl Into<String>>);
 }
@@ -233,19 +212,11 @@ impl<B> AmqpMessageExt for Message<B> {
 }
 
 impl<B> AmqpMessageMutExt for Message<B> {
-    #[inline]
-    fn message_id_mut(&mut self) -> Option<&mut MessageId> {
-        self.properties.as_mut()?.message_id.as_mut()
-    }
-
     /// # Returns
     ///
     /// `Err(_)` if message_id length exceeds [`MAX_MESSAGE_ID_LENGTH`]
     #[inline]
-    fn set_message_id(
-        &mut self,
-        message_id: impl Into<String>,
-    ) -> Result<(), SetMessageIdError> {
+    fn set_message_id(&mut self, message_id: impl Into<String>) -> Result<(), SetMessageIdError> {
         let message_id = message_id.into();
 
         if message_id.is_empty() {
@@ -253,27 +224,15 @@ impl<B> AmqpMessageMutExt for Message<B> {
         }
 
         if message_id.len() > MAX_MESSAGE_ID_LENGTH {
-            return Err(MaxLengthExceededError::new(
-                message_id.len(),
-                MAX_MESSAGE_ID_LENGTH,
-            ).into());
+            return Err(
+                MaxLengthExceededError::new(message_id.len(), MAX_MESSAGE_ID_LENGTH).into(),
+            );
         }
 
         self.properties
             .get_or_insert(Properties::default())
             .message_id = Some(MessageId::String(message_id));
         Ok(())
-    }
-
-    #[inline]
-    fn partition_key_mut(&mut self) -> Option<&mut String> {
-        self.message_annotations
-            .as_mut()?
-            .get_mut(&amqp_message_constants::PARTITION_KEY_NAME as &dyn AnnotationKey)
-            .map(|value| match value {
-                Value::String(s) => s,
-                _ => unreachable!("Expecting a String"),
-            })
     }
 
     /// # Panic
@@ -301,56 +260,6 @@ impl<B> AmqpMessageMutExt for Message<B> {
                 key.into(),
             );
         Ok(())
-    }
-
-    #[inline]
-    fn via_partition_key_mut(&mut self) -> Option<&mut String> {
-        self.message_annotations
-            .as_mut()?
-            .get_mut(&amqp_message_constants::VIA_PARTITION_KEY_NAME as &dyn AnnotationKey)
-            .map(|value| match value {
-                Value::String(s) => s,
-                _ => unreachable!("Expecting a String"),
-            })
-    }
-
-    #[inline]
-    fn session_id_mut(&mut self) -> Option<&mut String> {
-        self.properties.as_mut()?.group_id.as_mut()
-    }
-
-    #[inline]
-    fn reply_to_session_id_mut(&mut self) -> Option<&mut String> {
-        self.properties.as_mut()?.reply_to_group_id.as_mut()
-    }
-
-    #[inline]
-    fn correlation_id_mut(&mut self) -> Option<&mut MessageId> {
-        self.properties.as_mut()?.correlation_id.as_mut()
-    }
-
-    #[inline]
-    fn subject_mut(&mut self) -> Option<&mut String> {
-        self.properties.as_mut()?.subject.as_mut()
-    }
-
-    #[inline]
-    fn to_mut(&mut self) -> Option<&mut String> {
-        self.properties.as_mut()?.to.as_mut()
-    }
-
-    #[inline]
-    fn content_type_mut(&mut self) -> Option<&mut String> {
-        self.properties
-            .as_mut()?
-            .content_type
-            .as_mut()
-            .map(|s| &mut s.0)
-    }
-
-    #[inline]
-    fn reply_to_mut(&mut self) -> Option<&mut String> {
-        self.properties.as_mut()?.reply_to.as_mut()
     }
 
     /// # Panic
@@ -396,8 +305,10 @@ impl<B> AmqpMessageMutExt for Message<B> {
         }
 
         // If the PartitionKey was already set to a different value, override it with the SessionId,
-        if let Some(partition_key) = self.partition_key_mut() {
-            *partition_key = session_id.clone();
+        if let Some(partition_key) = self.message_annotations.as_mut().and_then(|m| {
+            m.get_mut(&amqp_message_constants::PARTITION_KEY_NAME as &dyn AnnotationKey)
+        }) {
+            *partition_key = Value::String(session_id.clone());
         }
 
         self.properties
