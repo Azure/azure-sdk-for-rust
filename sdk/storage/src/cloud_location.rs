@@ -12,7 +12,6 @@ const AZURE_CLOUD: &str = "AzureCloud";
 const AZURE_PUBLIC_CLOUD: &str = "AzurePublicCloud";
 const AZURE_CHINA_CLOUD: &str = "AzureChinaCloud";
 const AZURE_US_GOV: &str = "AzureUSGovernment";
-const AZURE_GERMAN_CLOUD: &str = "AzureGermanCloud";
 
 /// The cloud with which you want to interact.
 #[derive(Debug, Clone)]
@@ -32,22 +31,12 @@ pub enum CloudLocation {
         account: String,
         credentials: StorageCredentials,
     },
-    /// Azure German Government
-    /// Note: This seems like it will be deprecated, but still shows up in `az cloud list --output table`, so adding it for
-    /// completeness
-    GermanCloud {
-        account: String,
-        credentials: StorageCredentials,
-    },
     /// Use the well-known emulator
     Emulator { address: String, port: u16 },
     /// Auto-detect location based on `AZURE_CLOUD_NAME` variable or `$HOME/.azure/config`
     AutoDetect {
         account: String,
         credentials: StorageCredentials,
-        /// Optional fallback cloud-location, for example in test-environments
-        ///
-        fallback: Option<Box<Self>>,
     },
     /// A custom base URL
     Custom {
@@ -68,29 +57,20 @@ impl CloudLocation {
     /// - AzureCloud - Public azure, in some cases may be AzurePublicCloud in env var form
     /// - AzureChinaCloud
     /// - AzureUSGovernment
-    /// - AzureGermanCloud - Might be deprecating based on public documentation but still shows up in `az cloud list`
     ///
-    pub fn auto_detect(account: impl AsRef<str>, credentials: StorageCredentials) -> CloudLocation {
-        Self::auto_detect_with_fallback(account, credentials, None)
-    }
-
-    /// Returns a cloud location that will auto-detect the current cloud,
+    /// Excluded:
+    /// - AzureGermanCloud - Shows up in the above command, but officially deprecated in 2021. Documented for posterity.
     ///
-    /// See CloudLocation::auto_detect(..) for more info. This fn is for more advanced scenarios.
-    ///
-    /// If a fallback option is set, and if no cloud location could be explicitly detected, the fallback location will be used instead.
-    ///
-    pub fn auto_detect_with_fallback(
-        account: impl AsRef<str>,
+    pub fn auto_detect(
+        account: impl Into<String>,
         credentials: StorageCredentials,
-        fallback: Option<CloudLocation>,
     ) -> CloudLocation {
         CloudLocation::AutoDetect {
-            account: account.as_ref().to_string(),
+            account: account.into(),
             credentials,
-            fallback: fallback.map(Box::new),
         }
     }
+
     /// the base URL for a given cloud location
     pub fn url(&self, service_type: ServiceType) -> azure_core::Result<Url> {
         let url = match self {
@@ -115,13 +95,6 @@ impl CloudLocation {
                     service_type.subdomain()
                 )
             }
-            CloudLocation::GermanCloud { account, .. } => {
-                format!(
-                    "https://{}.{}.core.cloudapi.de",
-                    account,
-                    service_type.subdomain()
-                )
-            }
             CloudLocation::Custom { uri, .. } => uri.clone(),
             CloudLocation::Emulator { address, port } => {
                 format!("http://{address}:{port}/{EMULATOR_ACCOUNT}")
@@ -129,7 +102,6 @@ impl CloudLocation {
             CloudLocation::AutoDetect {
                 account,
                 credentials,
-                fallback,
             } => {
                 if let Some(name) = Self::find_cloud_name() {
                     // These names are from
@@ -151,24 +123,19 @@ impl CloudLocation {
                             credentials: credentials.clone(),
                         }
                         .url(service_type),
-                        AZURE_GERMAN_CLOUD => CloudLocation::GermanCloud {
-                            account: account.clone(),
-                            credentials: credentials.clone(),
-                        }
-                        .url(service_type),
                         _ => {
                             todo!()
                         }
                     };
-                } else if let Some(fallback) = fallback {
-                    return fallback.url(service_type);
                 } else {
-                    // Default to PROD
-                    return CloudLocation::Public {
-                        account: account.clone(),
-                        credentials: credentials.clone(),
-                    }
-                    .url(service_type);
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        || {
+                            format!(
+                                "Auto-detect could not find a cloud name from the current environment.",
+                            )
+                        },
+                    ));
                 }
             }
         };
@@ -182,7 +149,6 @@ impl CloudLocation {
             CloudLocation::Public { credentials, .. }
             | CloudLocation::China { credentials, .. }
             | CloudLocation::USGov { credentials, .. }
-            | CloudLocation::GermanCloud { credentials, .. }
             | CloudLocation::Custom { credentials, .. }
             | CloudLocation::AutoDetect { credentials, .. } => credentials,
             CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
@@ -204,8 +170,6 @@ impl CloudLocation {
                 let mut lines = BufReader::new(config).lines();
 
                 while let Some(Ok(line)) = lines.next() {
-                    // Alternatively, import serde_toml for parsing this file, but probably better off doing
-                    // that by creating a struct dedicated to managing the config file
                     if line.trim() == "[cloud]" {
                         if let Some(Ok(name)) = lines.next() {
                             if let Some((name, value)) = name.split_once('=') {
@@ -435,21 +399,16 @@ mod tests {
             "https://test_account.blob.core.windows.net/"
         );
 
-        std::env::set_var("AZURE_CLOUD_NAME", AZURE_GERMAN_CLOUD);
-        assert_eq!(
-            cloud_location
-                .url(ServiceType::Blob)
-                .expect("should return a url")
-                .as_str(),
-            "https://test_account.blob.core.cloudapi.de/"
-        );
-
         std::env::remove_var("AZURE_CLOUD_NAME");
 
-        std::env::set_var("HOME", ".test");
-        std::fs::create_dir_all(".test/.azure").expect("should be able to make test dir");
+        let test_dir = std::env::temp_dir().join("test_cloud_location_auto_detect");
+        std::env::set_var("HOME", test_dir.as_os_str());
+        let test_azure_dir = test_dir.join(".azure");
+        std::fs::create_dir_all(&test_azure_dir).expect("should be able to create test dir");
+
+        let config_file = test_azure_dir.join("config");
         std::fs::write(
-            ".test/.azure/config",
+            &config_file,
             r#"
 [cloud]
 name = AzureCloud
@@ -466,7 +425,7 @@ name = AzureCloud
         );
 
         std::fs::write(
-            ".test/.azure/config",
+            &config_file,
             r#"
 [cloud]
 name = AzureChinaCloud
@@ -483,7 +442,7 @@ name = AzureChinaCloud
         );
 
         std::fs::write(
-            ".test/.azure/config",
+            &config_file,
             r#"
 [cloud]
 name = AzureUSGovernment
@@ -500,42 +459,15 @@ name = AzureUSGovernment
         );
 
         std::fs::write(
-            ".test/.azure/config",
+            &config_file,
             r#"
             "#
             .trim(),
         )
         .expect("should be able to write test config file");
-        assert_eq!(
-            cloud_location
-                .url(ServiceType::Blob)
-                .expect("should return a url")
-                .as_str(),
-            "https://test_account.blob.core.windows.net/"
-        );
+        assert!(cloud_location.url(ServiceType::Blob).is_err());
 
         // Clean-up test files
-        std::fs::remove_dir_all(".test").expect("should be able to remove test dir");
-
-        std::env::remove_var("HOME");
-        std::env::remove_var("AZURE_CLOUD_NAME");
-
-        // Test fallback
-        let cloud_location: CloudLocation = CloudLocation::auto_detect_with_fallback(
-            "test_account",
-            StorageCredentials::Anonymous,
-            Some(CloudLocation::Emulator {
-                address: "test".to_string(),
-                port: 0000,
-            }),
-        );
-
-        assert_eq!(
-            cloud_location
-                .url(ServiceType::Blob)
-                .expect("should be a url")
-                .to_string(),
-            format!("http://test:0/{EMULATOR_ACCOUNT}")
-        );
+        std::fs::remove_dir_all(test_dir).expect("should be able to remove test dir");
     }
 }
