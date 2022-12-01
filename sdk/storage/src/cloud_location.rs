@@ -1,11 +1,11 @@
-use crate::{clients::ServiceType, StorageCredentials};
+use crate::clients::ServiceType;
+use crate::StorageCredentials;
 use once_cell::sync::Lazy;
-use std::{
-    convert::TryFrom,
-    fs::File,
-    io::{BufRead, BufReader},
-    path::PathBuf,
-};
+use std::convert::TryFrom;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::PathBuf;
 use url::Url;
 
 const AZURE_CLOUD: &str = "AzureCloud";
