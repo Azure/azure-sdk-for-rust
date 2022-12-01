@@ -138,9 +138,8 @@ impl CloudLocation {
                     return Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Other,
                         || {
-                            format!(
-                                "Auto-detect could not find a cloud name from the current environment.",
-                            )
+                            "Auto-detect could not find a cloud name from the current environment."
+                                .to_string()
                         },
                     ));
                 }
