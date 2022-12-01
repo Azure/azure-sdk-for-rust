@@ -124,7 +124,14 @@ impl CloudLocation {
                         }
                         .url(service_type),
                         _ => {
-                            todo!()
+                            return Err(azure_core::Error::with_message(
+                                azure_core::error::ErrorKind::Other,
+                                || {
+                                    format!(
+                                        "Auto-detect could not find a cloud name from the current environment.",
+                                    )
+                                },
+                            ));
                         }
                     };
                 } else {
@@ -398,6 +405,9 @@ mod tests {
                 .as_str(),
             "https://test_account.blob.core.windows.net/"
         );
+
+        std::env::set_var("AZURE_CLOUD_NAME", "NotACloud");
+        assert!(cloud_location.url(ServiceType::Blob).is_err());
 
         std::env::remove_var("AZURE_CLOUD_NAME");
 
