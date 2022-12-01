@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, time::Duration};
 
 use async_trait::async_trait;
-use azure_core::{auth::AccessToken, Url};
+use azure_core::Url;
 use fe2o3_amqp::{
     connection::OpenError,
     link::{ReceiverAttachError, SenderAttachError},
@@ -31,6 +31,8 @@ use super::{
     error::{DisposeError, OpenReceiverError, OpenSenderError},
 };
 
+// TODO: current implementation doesn't support running callback in the background to refresh the
+// token
 // const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
 
 #[derive(Debug, thiserror::Error)]
@@ -87,23 +89,15 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
 /// See also [`TransportClient`]
 #[derive(Debug)]
 pub struct AmqpClient<RP> {
-    /// <summary>
-    ///   The buffer to apply when considering refreshing; credentials that expire less than this duration will be refreshed.
-    /// </summary>
-    ///
-    credential_refresh_buffer: Duration,
-
-    /// <summary>Indicates whether or not this instance has been closed.</summary>
-    closed: bool,
-
-    /// <summary>The currently active token to use for authorization with the Service Bus service.</summary>
-    access_token: Option<AccessToken>,
-
+    // TODO: Current implementation doesn't support adding a periodic callback to refresh the token.
+    //
     // /// <summary>
-    // ///   Gets the credential to use for authorization with the Service Bus service.
+    // ///   The buffer to apply when considering refreshing; credentials that expire less than this duration will be refreshed.
     // /// </summary>
     // ///
-    // credential: TC, // TODO: is this the same credential used in `connection_scope`?
+    // credential_refresh_buffer: Duration,
+    /// <summary>Indicates whether or not this instance has been closed.</summary>
+    closed: bool,
 
     //
     /// <summary>
@@ -113,8 +107,6 @@ pub struct AmqpClient<RP> {
     // private AmqpConnectionScope ConnectionScope { get; }
     connection_scope: AmqpConnectionScope,
 
-    transport_type: ServiceBusTransportType,
-
     /// Retry policy phantom
     retry_policy: PhantomData<RP>,
 }
@@ -123,16 +115,15 @@ impl<RP> AmqpClient<RP>
 where
     RP: ServiceBusRetryPolicy,
 {
-    pub(crate) fn set_retry_policy<RP2>(self) -> AmqpClient<RP2> {
-        AmqpClient {
-            credential_refresh_buffer: self.credential_refresh_buffer,
-            closed: self.closed,
-            access_token: self.access_token,
-            connection_scope: self.connection_scope,
-            transport_type: self.transport_type,
-            retry_policy: PhantomData,
-        }
-    }
+    // TODO: changing retry policy
+    //
+    // pub(crate) fn set_retry_policy<RP2>(self) -> AmqpClient<RP2> {
+    //     AmqpClient {
+    //         closed: self.closed,
+    //         connection_scope: self.connection_scope,
+    //         retry_policy: PhantomData,
+    //     }
+    // }
 }
 
 #[async_trait]
@@ -198,23 +189,21 @@ where
             service_endpoint,
             connection_endpoint,
             credential,
-            transport_type.clone(),
+            transport_type,
             retry_timeout,
         )
         .await?;
 
         Ok(Self {
-            credential_refresh_buffer: Duration::from_secs(5 * 60), // 5 mins
+            // credential_refresh_buffer: Duration::from_secs(5 * 60),
             closed: false,
-            access_token: None,
             connection_scope,
             retry_policy: PhantomData,
-            transport_type,
         })
     }
 
-    fn transport_type(&self) -> &ServiceBusTransportType {
-        &self.transport_type
+    fn transport_type(&self) -> ServiceBusTransportType {
+        self.connection_scope.transport_type()
     }
 
     /// Indicates whether or not this client has been closed.
@@ -291,11 +280,11 @@ where
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpReceiver {
-            identifier: link_identifier,
+            _identifier: link_identifier,
             retry_policy,
             receiver,
             receive_mode,
-            is_processor,
+            _is_processor: is_processor,
             prefetch_count,
             management_client,
             request_response_locked_messages: Default::default(),
@@ -329,11 +318,11 @@ where
             .await?;
         let retry_policy = RP::new(retry_options);
         let inner = AmqpReceiver {
-            identifier: link_identifier,
+            _identifier: link_identifier,
             retry_policy,
             receiver,
             receive_mode,
-            is_processor,
+            _is_processor: is_processor,
             prefetch_count,
             management_client,
             request_response_locked_messages: Default::default(),

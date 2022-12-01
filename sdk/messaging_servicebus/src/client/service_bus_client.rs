@@ -91,11 +91,6 @@ where
         self.connection.is_closed()
     }
 
-    /// The transport type used for this [`ServiceBusClient`].
-    pub fn transport_type(&self) -> &ServiceBusTransportType {
-        &self.connection.transport_type()
-    }
-
     // /// <summary>
     // /// Gets the metrics associated with this <see cref="ServiceBusClient"/> instance. The metrics returned represent a snapshot and will not be updated.
     // /// To get updated metrics, this method should be called again.
@@ -205,6 +200,10 @@ where
     C: TransportClient + Send + Sync + 'static,
     OpenReceiverError: From<C::CreateReceiverError>,
 {
+    pub fn transport_type(&self) -> ServiceBusTransportType {
+        self.connection.transport_type()
+    }
+
     pub async fn create_receiver_for_queue(
         &mut self,
         queue_name: impl Into<String>,

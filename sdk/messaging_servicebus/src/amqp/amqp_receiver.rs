@@ -40,13 +40,13 @@ use super::{
 };
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
-    pub(crate) identifier: u32,
+    pub(crate) _identifier: u32, // TODO: should this info be preserved?
 
     pub(crate) prefetch_count: u32,
     pub(crate) retry_policy: RP,
     pub(crate) receiver: fe2o3_amqp::Receiver,
     pub(crate) receive_mode: ServiceBusReceiveMode,
-    pub(crate) is_processor: bool,
+    pub(crate) _is_processor: bool, // TODO: implement processor
 
     pub(crate) management_client: MgmtClient,
     pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,

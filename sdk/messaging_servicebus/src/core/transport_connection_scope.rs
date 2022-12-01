@@ -2,9 +2,13 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 
+use crate::primitives::service_bus_transport_type::ServiceBusTransportType;
+
 #[async_trait]
 pub trait TransportConnectionScope {
     type Error;
+
+    fn transport_type(&self) -> ServiceBusTransportType;
 
     /// Indicates whether this <see cref="TransportConnectionScope"/> has been disposed.
     ///

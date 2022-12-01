@@ -44,7 +44,7 @@ pub trait TransportClient: Sized {
     ) -> Result<Self, Self::CreateClientError>;
 
     /// Get the transport type
-    fn transport_type(&self) -> &ServiceBusTransportType;
+    fn transport_type(&self) -> ServiceBusTransportType;
 
     /// Indicates whether or not this client has been closed.
     ///

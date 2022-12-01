@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::atomic::Ordering, time::Duration as StdDuration};
+use std::{sync::atomic::Ordering, time::Duration as StdDuration};
 
 use async_trait::async_trait;
 use azure_core::Url;
@@ -19,11 +19,8 @@ use fe2o3_amqp_types::{
     primitives::Symbol,
 };
 use fe2o3_amqp_ws::WebSocketStream;
-use rand::{rngs::StdRng, SeedableRng};
-use serde_amqp::Value;
 use time::{Duration as TimeSpan, OffsetDateTime};
-use tokio::time::{error::Elapsed, timeout, Interval};
-use tokio_util::sync::CancellationToken;
+use tokio::time::{error::Elapsed, timeout};
 
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
@@ -70,22 +67,14 @@ pub(crate) enum AmqpConnectionScopeError {
 }
 
 pub(crate) struct AmqpConnectionScope {
-    /// <summary>The seed to use for initializing random number generated for a given thread-specific instance.</summary>
-    // private static int s_randomSeed = Environment.TickCount;
-
-    /// <summary>The random number generator to use for a specific thread.</summary>
-    // private static readonly ThreadLocal<Random> RandomNumberGenerator = new ThreadLocal<Random>(() => new Random(Interlocked.Increment(ref s_randomSeed)), false);
-    random_number_generator: StdRng,
-
     /// <summary>Indicates whether or not this instance has been disposed.</summary>
     is_disposed: bool,
 
-    /// The cancellation token to use with operations initiated by the scope.
-    operation_cancellation_source: CancellationToken,
-
-    /// The set of active AMQP links associated with the connection scope.  These are considered
-    /// children of the active connection and should be managed as such.
-    active_links: HashMap<Value, Interval>,
+    // TODO: unused
+    //
+    // /// The set of active AMQP links associated with the connection scope.  These are considered
+    // /// children of the active connection and should be managed as such.
+    // active_links: HashMap<Value, Interval>,
 
     /// The unique identifier of the scope.
     id: String,
@@ -93,11 +82,12 @@ pub(crate) struct AmqpConnectionScope {
     /// The endpoint for the Service Bus service to which the scope is associated.
     service_endpoint: Url,
 
+    /// TODO: unused
+    ///
     /// <summary>
     ///   The endpoint for the Service Bus service to be used when establishing the connection.
     /// </summary>
-    ///
-    connection_endpoint: Url,
+    _connection_endpoint: Url,
 
     /// The provider to use for obtaining a token for authorization with the Service Bus service.
     cbs_token_provider: CbsTokenProvider,
@@ -120,7 +110,9 @@ pub(crate) struct AmqpConnectionScope {
     session: AmqpSession,
 
     /// The controller responsible for managing transactions.
-    transaction_controller: Controller,
+    ///
+    /// TODO: transactions?
+    _transaction_controller: Controller,
 
     /// CBS client
     cbs_client: CbsClient,
@@ -129,22 +121,6 @@ pub(crate) struct AmqpConnectionScope {
 impl std::fmt::Debug for AmqpConnectionScope {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AmqpConnectionScope")
-            // .field("random_number_generator", &self.random_number_generator)
-            // .field("is_disposed", &self.is_disposed)
-            // .field(
-            //     "operation_cancellation_source",
-            //     &self.operation_cancellation_source,
-            // )
-            // .field("active_links", &self.active_links)
-            // .field("id", &self.id)
-            // .field("service_endpoint", &self.service_endpoint)
-            // .field("connection_endpoint", &self.connection_endpoint)
-            // .field("cbs_token_provider", &self.cbs_token_provider)
-            // .field("transport_type", &self.transport_type)
-            // .field("connection", &self.connection_handle)
-            // .field("session_handle", &self.session_handle)
-            // .field("transaction_controller", &self.transaction_controller)
-            // .field("cbs_client", &"CbsClient")
             .finish()
     }
 }
@@ -199,10 +175,6 @@ impl AmqpConnectionScope {
 }
 
 impl AmqpConnectionScope {
-    pub(crate) fn transport_type(&self) -> &ServiceBusTransportType {
-        &self.transport_type
-    }
-
     /// Initializes a new instance of the <see cref="AmqpConnectionScope"/> class.
     ///
     /// # Arguments
@@ -231,7 +203,6 @@ impl AmqpConnectionScope {
         // 4.4. The returned Guid is guaranteed to not equal Guid.Empty.
         let uuid = uuid::Uuid::new_v4();
         let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
-        let operation_cancellation_source = CancellationToken::new();
         let cbs_token_provider =
             CbsTokenProvider::new(credential, Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
 
@@ -261,22 +232,16 @@ impl AmqpConnectionScope {
                 }
             })?;
 
-        let rng = rand::thread_rng();
-        let rng = StdRng::from_rng(rng)?;
-
         Ok(Self {
-            random_number_generator: rng,
             is_disposed: false,
-            operation_cancellation_source,
-            active_links: HashMap::new(),
             id,
             service_endpoint,
-            connection_endpoint,
+            _connection_endpoint: connection_endpoint,
             cbs_token_provider,
             transport_type,
             connection,
             session,
-            transaction_controller,
+            _transaction_controller: transaction_controller,
             cbs_client,
         })
     }
@@ -525,6 +490,11 @@ fn service_bus_receive_mode_to_amqp(
 #[async_trait]
 impl TransportConnectionScope for AmqpConnectionScope {
     type Error = DisposeError;
+
+    fn transport_type(&self) -> ServiceBusTransportType {
+        // This is a simply enum, cloning should be cheaper than or equivalent to a reference
+        self.transport_type.clone()
+    }
 
     fn is_disposed(&self) -> bool {
         self.is_disposed

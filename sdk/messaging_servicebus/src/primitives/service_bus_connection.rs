@@ -182,8 +182,8 @@ where
     C: TransportClient,
 {
     /// The transport type used for this connection.
-    pub fn transport_type(&self) -> &ServiceBusTransportType {
-        &self.inner_client.transport_type()
+    pub fn transport_type(&self) -> ServiceBusTransportType {
+        self.inner_client.transport_type()
     }
 
     pub(crate) async fn create_transport_sender(
