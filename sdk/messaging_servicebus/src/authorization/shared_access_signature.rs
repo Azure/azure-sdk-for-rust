@@ -84,10 +84,6 @@ impl SharedAccessSignature {
 
     /// <summary>The default length of time to consider a signature valid, if not otherwise specified.</summary>
     const DEFAULT_SIGNATURE_VALIDITY_DURATION: Duration = Duration::from_secs(30 * 60); // 30 mins
-
-    /// <summary>Represents the Unix epoch time value, January 1, 1970 12:00:00, UTC.</summary>
-    // static readonly DateTimeOffset Epoch = new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.Zero);
-    const EPOCH: OffsetDateTime = OffsetDateTime::UNIX_EPOCH;
 }
 
 impl SharedAccessSignature {

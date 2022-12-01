@@ -3,7 +3,6 @@ use std::borrow::Cow;
 use azure_core::Url;
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 use tokio::time::error::Elapsed;
-use tokio_util::sync::CancellationToken;
 
 use crate::{
     amqp::{amqp_client::AmqpClientError, error::DisposeError},
@@ -104,7 +103,6 @@ macro_rules! ok_if_not_none_or_empty {
 #[derive(Debug)]
 pub(crate) struct ServiceBusConnection<C> {
     fully_qualified_namespace: String,
-    entity_path: Option<String>,
     retry_options: ServiceBusRetryOptions,
 
     pub(crate) inner_client: C,
@@ -127,21 +125,6 @@ where
     /// This is likely to be similar to `{yournamespace}.servicebus.windows.net`.
     pub fn fully_qualified_namespace(&self) -> &str {
         &self.fully_qualified_namespace
-    }
-
-    /// <summary>
-    /// The entity path that the connection is bound to.
-    /// </summary>
-    // public string EntityPath { get; }
-    pub fn entity_path(&self) -> Option<&str> {
-        self.entity_path.as_ref().map(|s| s.as_str())
-    }
-
-    /// The endpoint for the Service Bus service to which the connection is associated.
-    /// This is essentially the <see cref="FullyQualifiedNamespace"/> but with
-    /// the scheme included.
-    pub(crate) fn service_endpoint(&self) -> &Url {
-        self.inner_client.service_endpoint()
     }
 
     /// The retry options associated with this connection.
@@ -330,7 +313,6 @@ where
 
         Ok(Self {
             fully_qualified_namespace: host.to_string(),
-            entity_path: entity_path.map(|s| s.to_string()),
             retry_options: options.retry_options,
             inner_client,
         })
@@ -359,7 +341,6 @@ impl<C> ServiceBusConnection<C> {
 
         Ok(ServiceBusConnection {
             fully_qualified_namespace,
-            entity_path: None,
             retry_options: options.retry_options,
             inner_client,
         })
@@ -371,12 +352,13 @@ where
     C: TransportClient + Send,
     Error: From<C::DisposeError>,
 {
-    pub async fn close(&mut self, cancellation_token: CancellationToken) -> Result<(), Error> {
-        self.inner_client
-            .close(Some(cancellation_token))
-            .await
-            .map_err(Into::into)
-    }
+    // // TODO: expose methods with cancellation token?
+    // pub async fn close(&mut self, cancellation_token: CancellationToken) -> Result<(), Error> {
+    //     self.inner_client
+    //         .close(Some(cancellation_token))
+    //         .await
+    //         .map_err(Into::into)
+    // }
 
     pub async fn dispose(&mut self) -> Result<(), Error> {
         self.inner_client.dispose().await.map_err(Into::into)

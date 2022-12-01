@@ -23,12 +23,14 @@ pub mod operations {
     pub const SET_SESSION_STATE_OPERATION: &str = concatcp!(MICROSOFT, ":set-session-state");
     pub const GET_SESSION_STATE_OPERATION: &str = concatcp!(MICROSOFT, ":get-session-state");
     pub const PEEK_MESSAGE_OPERATION: &str = concatcp!(MICROSOFT, ":peek-message");
-    pub const ADD_RULE_OPERATION: &str = concatcp!(MICROSOFT, ":add-rule");
-    pub const REMOVE_RULE_OPERATION: &str = concatcp!(MICROSOFT, ":remove-rule");
-    pub const ENUMERATE_RULES_OPERATION: &str = concatcp!(MICROSOFT, ":enumerate-rules");
     pub const SCHEDULE_MESSAGE_OPERATION: &str = concatcp!(MICROSOFT, ":schedule-message");
     pub const CANCEL_SCHEDULED_MESSAGE_OPERATION: &str =
         concatcp!(MICROSOFT, ":cancel-scheduled-message");
+
+    // // TODO: unused operations
+    // pub const ADD_RULE_OPERATION: &str = concatcp!(MICROSOFT, ":add-rule");
+    // pub const REMOVE_RULE_OPERATION: &str = concatcp!(MICROSOFT, ":remove-rule");
+    // pub const ENUMERATE_RULES_OPERATION: &str = concatcp!(MICROSOFT, ":enumerate-rules");
 }
 
 pub mod properties {
@@ -60,16 +62,6 @@ pub mod properties {
     pub const FROM_SEQUENCE_NUMBER: &str = "from-sequence-number";
     pub const MESSAGE_COUNT: &str = "message-count";
 
-    pub const SKIP: &str = "skip";
-    pub const TOP: &str = "top";
-    pub const RULES: &str = "rules";
-    pub const RULE_NAME: &str = "rule-name";
-    pub const RULE_DESCRIPTION: &str = "rule-description";
-    pub const RULE_CREATED_AT: &str = "rule-created-at";
-    pub const SQL_RULE_FILTER: &str = "sql-filter";
-    pub const SQL_RULE_ACTION: &str = "sql-rule-action";
-    pub const CORRELATION_RULE_FILTER: &str = "correlation-filter";
-    pub const EXPRESSION: &str = "expression";
     pub const CORRELATION_ID: &str = "correlation-id";
     pub const TO: &str = "to";
     pub const REPLY_TO: &str = "reply-to";
@@ -77,4 +69,16 @@ pub mod properties {
     pub const REPLY_TO_SESSION_ID: &str = "reply-to-session-id";
     pub const CONTENT_TYPE: &str = "content-type";
     pub const CORRELATION_RULE_FILTER_PROPERTIES: &str = "properties";
+
+    // // TODO: unused properties
+    // pub const SKIP: &str = "skip";
+    // pub const TOP: &str = "top";
+    // pub const RULES: &str = "rules";
+    // pub const RULE_NAME: &str = "rule-name";
+    // pub const RULE_DESCRIPTION: &str = "rule-description";
+    // pub const RULE_CREATED_AT: &str = "rule-created-at";
+    // pub const SQL_RULE_FILTER: &str = "sql-filter";
+    // pub const SQL_RULE_ACTION: &str = "sql-rule-action";
+    // pub const CORRELATION_RULE_FILTER: &str = "correlation-filter";
+    // pub const EXPRESSION: &str = "expression";
 }

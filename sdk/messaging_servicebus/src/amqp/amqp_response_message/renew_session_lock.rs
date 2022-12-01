@@ -7,7 +7,7 @@ use crate::amqp::management_constants::properties::EXPIRATION;
 type RenewSessionLockResponseBody = OrderedMap<String, Timestamp>;
 
 pub(crate) struct RenewSessionLockResponse {
-    pub has_more_messages: bool,
+    pub _has_more_messages: bool,
     pub expiration: Timestamp,
 }
 
@@ -44,7 +44,7 @@ impl Response for RenewSessionLockResponse {
                 })?;
 
         Ok(Self {
-            has_more_messages,
+            _has_more_messages: has_more_messages,
             expiration,
         })
     }
