@@ -15,7 +15,7 @@ use azure_messaging_servicebus::{
 };
 use time::OffsetDateTime;
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub fn zero_retry_options() -> ServiceBusRetryOptions {
     ServiceBusRetryOptions {
         max_retries: 0,
@@ -26,12 +26,12 @@ pub fn zero_retry_options() -> ServiceBusRetryOptions {
     }
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub fn setup_dotenv() {
     dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn drain_queue(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -56,7 +56,7 @@ pub async fn drain_queue(
     client.dispose().await.unwrap();
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_send_messages_separately_to_queue(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -74,7 +74,7 @@ pub async fn create_client_and_send_messages_separately_to_queue(
     Ok(())
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn send_messages_separately<S>(
     sender: &mut ServiceBusSender<S>,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
@@ -90,7 +90,7 @@ where
     Ok(())
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_receive_messages_from_queue(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -117,7 +117,7 @@ pub async fn create_client_and_receive_messages_from_queue(
     Ok(messages)
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_receive_sessionful_messages_from_queue(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -145,7 +145,7 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
     Ok(messages)
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_abandon_messages_from_queue(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -172,7 +172,7 @@ pub async fn create_client_and_abandon_messages_from_queue(
     Ok(messages)
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_deadletter_messages_from_queue(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -201,7 +201,7 @@ pub async fn create_client_and_deadletter_messages_from_queue(
     Ok(messages)
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_schedule_messages(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -220,7 +220,7 @@ pub async fn create_client_and_schedule_messages(
     Ok(sequence_numbers)
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_peek_messages(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -240,7 +240,7 @@ pub async fn create_client_and_peek_messages(
     Ok(messages)
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_defer_messages(
     connection_string: String,
     client_options: ServiceBusClientOptions,
@@ -267,7 +267,7 @@ pub async fn create_client_and_defer_messages(
     Ok(messages.into_iter().map(|m| m.sequence_number()).collect())
 }
 
-#[cfg(test)]
+#[allow(dead_code)]
 pub async fn create_client_and_receive_deferred_messages(
     connection_string: String,
     client_options: ServiceBusClientOptions,

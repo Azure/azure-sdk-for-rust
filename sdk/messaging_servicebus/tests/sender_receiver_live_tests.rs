@@ -5,12 +5,12 @@ use azure_messaging_servicebus::{
     primitives::sub_queue::SubQueue,
     ServiceBusMessage, ServiceBusReceiverOptions,
 };
-use common::setup_dotenv;
 use std::time::Duration as StdDuration;
 
 use time::OffsetDateTime;
 
 mod common;
+use common::setup_dotenv;
 
 #[tokio::test]
 async fn drain_queue() {
