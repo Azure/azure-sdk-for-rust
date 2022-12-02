@@ -32,7 +32,7 @@ sha2 = "0.10"
 thiserror = "1.0"
 time = "0.3.10"
 tokio = {version = "1", features = ["time"]}
-tokio-util = "0.7.3"
+tokio-util = {version = "0.7.3", features = ["time"]}
 url = "2.2"
 urlencoding = "2"
 uuid = "1"

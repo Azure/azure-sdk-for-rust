@@ -23,6 +23,7 @@ pub(crate) mod management_constants;
 pub(crate) mod rules;
 pub(crate) mod scheduled_message;
 pub(crate) mod token_type;
+pub(crate) mod amqp_cbs_link;
 
 use std::sync::atomic::AtomicU32;
 
