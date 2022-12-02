@@ -366,7 +366,7 @@ impl AmqpConnectionScope {
             self.id, self.connection.identifier, self.session.identifier, link_identifier
         );
         let sender = fe2o3_amqp::Sender::builder()
-            .name(&link_name)
+            .name(link_name)
             .source(identifier)
             .target(endpoint)
             .attach(&mut self.session.handle)
