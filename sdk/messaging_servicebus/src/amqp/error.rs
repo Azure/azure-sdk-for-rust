@@ -299,3 +299,14 @@ pub enum CorrelationFilterError {
     #[error("Correlation filter must include at least one entry")]
     EmptyFilter,
 }
+
+#[derive(Debug)]
+pub struct AmqpCbsEventLoopStopped {}
+
+impl std::fmt::Display for AmqpCbsEventLoopStopped {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "The CBS event loop has stopped")
+    }
+}
+
+impl std::error::Error for AmqpCbsEventLoopStopped {}

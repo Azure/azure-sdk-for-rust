@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::time::Instant as StdInstant;
 use std::time::Duration as StdDuration;
+use fe2o3_amqp::link::DetachError;
 use futures_util::{StreamExt};
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
@@ -12,6 +13,7 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::time::DelayQueue;
 use tokio_util::time::delay_queue;
 
+use super::error::AmqpCbsEventLoopStopped;
 use super::{cbs_token_provider::CbsTokenProvider, error::CbsAuthError};
 
 const DELAY_QUEUE_PLACEHOLDER_REFRESH_DURATION: StdDuration = StdDuration::from_secs(30 * 60);
@@ -55,7 +57,36 @@ pub(crate) struct AuthorizationRefresher {
 pub(crate) struct AmqpCbsLinkHandle {
     command_sender: mpsc::Sender<Command>,
     stop_sender: CancellationToken,
-    join_handle: JoinHandle<()>,
+    join_handle: JoinHandle<Result<(), DetachError>>,
+}
+
+impl AmqpCbsLinkHandle {
+    pub(crate) async fn request_refreshable_authorization(
+        &mut self,
+        link_identifier: u32,
+        endpoint: String,
+        resource: String,
+        required_claims: Vec<String>,
+    ) -> Result<Result<(), CbsAuthError>, AmqpCbsEventLoopStopped> {
+        let auth = AuthorizationRefresher {
+            link_identifier,
+            endpoint,
+            resource,
+            required_claims,
+        };
+        let (result_sender, result) = oneshot::channel();
+        let command = Command::NewAuthorizationRefresher { auth, result_sender };
+        self.command_sender.send(command).await.map_err(|_| AmqpCbsEventLoopStopped {})?;
+        result.await.map_err(|_| AmqpCbsEventLoopStopped {})
+    }
+
+    pub(crate) fn stop(&self) {
+        self.stop_sender.cancel();
+    }
+
+    pub(crate) fn join_handle_mut(&mut self) -> &mut JoinHandle<Result<(), DetachError>> {
+        &mut self.join_handle
+    }
 }
 
 pub(crate) struct AmqpCbsLink {
@@ -68,7 +99,7 @@ pub(crate) struct AmqpCbsLink {
 }
 
 impl AmqpCbsLink {
-    fn spawn(cbs_token_provider: CbsTokenProvider, cbs_client: CbsClient) -> AmqpCbsLinkHandle {
+    pub(crate) fn spawn(cbs_token_provider: CbsTokenProvider, cbs_client: CbsClient) -> AmqpCbsLinkHandle {
         let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
         let stop_sender = CancellationToken::new();
         let stop = stop_sender.child_token();
@@ -207,18 +238,18 @@ impl AmqpCbsLink {
         }
     }
 
-    pub(crate) async fn event_loop(mut self) {
+    pub(crate) async fn event_loop(mut self) -> Result<(), DetachError> {
         loop {
             tokio::select! {
                 _stop_cbs_link = self.stop.cancelled() => {
-                    break;
+                    return self.cbs_client.close().await
                 },
                 command = self.commands.recv() => {
                     if let Some(command) = command {
                         self.handle_command(command).await;
                     } else {
-                        // All senders including the one held by AmqpClient have been dropped, so we should stop.
-                        break;
+                        // All senders including the one held by AmqpConnectionScope have been dropped, so we should stop.
+                        return self.cbs_client.close().await
                     }
                 },
                 refresher = self.delay_queue.next() => {
@@ -235,7 +266,6 @@ impl AmqpCbsLink {
             }
         }
     }
-
 }
 
 #[cfg(test)]

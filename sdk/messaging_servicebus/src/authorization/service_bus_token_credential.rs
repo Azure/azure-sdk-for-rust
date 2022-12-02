@@ -7,6 +7,7 @@ use super::shared_access_credential::SharedAccessCredential;
 /// </summary>
 ///
 /// <seealso cref="Azure.Core.TokenCredential" />
+///
 pub enum ServiceBusTokenCredential {
     /// Shared Access Signature credential.
     ///

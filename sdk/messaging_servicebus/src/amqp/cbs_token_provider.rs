@@ -2,7 +2,7 @@ use azure_core::auth::TokenResponse;
 use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
 use futures_util::{pin_mut, ready};
-use std::{future::Future, task::Poll};
+use std::{future::Future, task::Poll, sync::Arc};
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 
@@ -139,6 +139,8 @@ impl AsyncCbsTokenProvider for CbsTokenProvider {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use fe2o3_amqp_cbs::AsyncCbsTokenProvider;
     use time::Duration as TimeSpan;
 
