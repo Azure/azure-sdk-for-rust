@@ -4,6 +4,7 @@ use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::Outcome;
 use fe2o3_amqp_types::primitives::Array;
+use tokio::sync::mpsc;
 use std::time::Duration as StdDuration;
 
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
@@ -15,6 +16,7 @@ use crate::{
     CreateMessageBatchOptions, ServiceBusMessage,
 };
 
+use super::amqp_cbs_link;
 use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
 use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequest;
@@ -28,11 +30,12 @@ use super::{
 };
 
 pub struct AmqpSender<RP: ServiceBusRetryPolicy> {
-    pub identifier: u32,
-    pub retry_policy: RP,
-    pub name: String,
-    pub sender: fe2o3_amqp::Sender,
-    pub management_client: MgmtClient,
+    pub(crate) identifier: u32,
+    pub(crate) retry_policy: RP,
+    pub(crate) name: String,
+    pub(crate) sender: fe2o3_amqp::Sender,
+    pub(crate) management_client: MgmtClient,
+    pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
 }
 
 impl<RP: ServiceBusRetryPolicy> AmqpSender<RP>
@@ -217,6 +220,8 @@ where
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
     ///   cancel the operation.
     async fn close(self) -> Result<(), Self::CloseError> {
+        // An error would mean that the AmqpCbsLink event loop has stopped
+        let _ = self.cbs_command_sender.send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(self.identifier)).await;
         self.sender.close().await?;
         self.management_client.close().await?;
         Ok(())

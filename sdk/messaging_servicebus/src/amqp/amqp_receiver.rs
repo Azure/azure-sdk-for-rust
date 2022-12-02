@@ -10,6 +10,7 @@ use fe2o3_amqp_types::{
     primitives::{Array, OrderedMap, Symbol, Timestamp, Uuid},
 };
 use serde_amqp::Value;
+use tokio::sync::mpsc;
 use std::{collections::HashSet, time::Duration as StdDuration};
 
 use crate::{
@@ -36,11 +37,11 @@ use super::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
-    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_cbs_link,
 };
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
-    pub(crate) _identifier: u32, // TODO: should this info be preserved?
+    pub(crate) identifier: u32, // TODO: should this info be preserved?
 
     pub(crate) prefetch_count: u32,
     pub(crate) retry_policy: RP,
@@ -51,6 +52,8 @@ pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
     pub(crate) management_client: MgmtClient,
     pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,
     pub(crate) last_peeked_sequence_number: i64,
+
+    pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
 }
 
 impl<RP> AmqpReceiver<RP> where RP: ServiceBusRetryPolicy {}
@@ -115,6 +118,7 @@ where
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn close(mut self) -> Result<(), Self::CloseError> {
+        let _ = self.cbs_command_sender.send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(self.identifier)).await;
         self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
         self.receiver.close().await?;
         self.management_client.close().await?;

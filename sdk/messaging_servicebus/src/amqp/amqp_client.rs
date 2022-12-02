@@ -237,7 +237,7 @@ where
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
         // TODO: this will be updated once GAT is stablized
-        let (link_identifier, link_name, sender) = self
+        let (link_identifier, link_name, sender, cbs_command_sender) = self
             .connection_scope
             .open_sender_link(&entity_path, &identifier)
             .await?;
@@ -252,6 +252,7 @@ where
             retry_policy,
             sender,
             management_client,
+            cbs_command_sender,
         })
     }
 
@@ -264,7 +265,7 @@ where
         prefetch_count: u32,
         is_processor: bool,
     ) -> Result<Self::Receiver, Self::CreateReceiverError> {
-        let (link_identifier, receiver) = self
+        let (link_identifier, receiver, cbs_command_sender) = self
             .connection_scope
             .open_receiver_link(
                 &entity_path,
@@ -280,7 +281,7 @@ where
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpReceiver {
-            _identifier: link_identifier,
+            identifier: link_identifier,
             retry_policy,
             receiver,
             receive_mode,
@@ -289,6 +290,7 @@ where
             management_client,
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
+            cbs_command_sender,
         })
     }
 
@@ -302,7 +304,7 @@ where
         prefetch_count: u32,
         is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError> {
-        let (link_identifier, receiver) = self
+        let (link_identifier, receiver, cbs_command_sender) = self
             .connection_scope
             .open_receiver_link(
                 &entity_path,
@@ -318,7 +320,7 @@ where
             .await?;
         let retry_policy = RP::new(retry_options);
         let inner = AmqpReceiver {
-            _identifier: link_identifier,
+            identifier: link_identifier,
             retry_policy,
             receiver,
             receive_mode,
@@ -327,6 +329,7 @@ where
             management_client,
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
+            cbs_command_sender
         };
         Ok(AmqpSessionReceiver { inner })
     }

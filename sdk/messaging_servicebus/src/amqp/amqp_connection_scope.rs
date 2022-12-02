@@ -24,7 +24,7 @@ use fe2o3_amqp_types::{
 use fe2o3_amqp_ws::WebSocketStream;
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::{
-    sync::oneshot,
+    sync::{oneshot, mpsc},
     time::{error::Elapsed, timeout},
 };
 
@@ -342,7 +342,7 @@ impl AmqpConnectionScope {
         &mut self,
         entity_path: &str,
         identifier: &str,
-    ) -> Result<(u32, String, fe2o3_amqp::Sender), OpenSenderError> {
+    ) -> Result<(u32, String, fe2o3_amqp::Sender, mpsc::Sender<amqp_cbs_link::Command>), OpenSenderError> {
         if self.is_disposed {
             return Err(OpenSenderError::ScopeIsDisposed);
         }
@@ -370,7 +370,7 @@ impl AmqpConnectionScope {
             .target(endpoint)
             .attach(&mut self.session.handle)
             .await?;
-        Ok((link_identifier, link_name, sender))
+        Ok((link_identifier, link_name, sender, self.cbs_link.command_sender().clone()))
     }
 
     pub(crate) async fn open_receiver_link(
@@ -380,7 +380,7 @@ impl AmqpConnectionScope {
         receive_mode: &ServiceBusReceiveMode,
         session_id: Option<String>,
         prefetch_count: u32,
-    ) -> Result<(u32, fe2o3_amqp::Receiver), OpenReceiverError> {
+    ) -> Result<(u32, fe2o3_amqp::Receiver, mpsc::Sender<amqp_cbs_link::Command>), OpenReceiverError> {
         if self.is_disposed {
             return Err(OpenReceiverError::ScopeIsDisposed);
         }
@@ -440,7 +440,7 @@ impl AmqpConnectionScope {
         }
 
         let receiver = builder.attach(&mut self.session.handle).await?;
-        Ok((link_identifier, receiver))
+        Ok((link_identifier, receiver, self.cbs_link.command_sender().clone()))
     }
 }
 

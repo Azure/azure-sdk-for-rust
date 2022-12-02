@@ -61,6 +61,10 @@ pub(crate) struct AmqpCbsLinkHandle {
 }
 
 impl AmqpCbsLinkHandle {
+    pub(crate) fn command_sender(&self) -> &mpsc::Sender<Command> {
+        &self.command_sender
+    }
+
     pub(crate) async fn request_refreshable_authorization(
         &mut self,
         link_identifier: u32,
