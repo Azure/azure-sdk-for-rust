@@ -32,7 +32,6 @@ use super::{
 pub struct AmqpSender<RP: ServiceBusRetryPolicy> {
     pub(crate) identifier: u32,
     pub(crate) retry_policy: RP,
-    pub(crate) name: String,
     pub(crate) sender: fe2o3_amqp::Sender,
     pub(crate) management_client: MgmtClient,
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,

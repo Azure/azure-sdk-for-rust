@@ -237,7 +237,7 @@ where
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
         // TODO: this will be updated once GAT is stablized
-        let (link_identifier, link_name, sender, cbs_command_sender) = self
+        let (link_identifier, sender, cbs_command_sender) = self
             .connection_scope
             .open_sender_link(&entity_path, &identifier)
             .await?;
@@ -248,7 +248,6 @@ where
         let retry_policy = RP::new(retry_options);
         Ok(AmqpSender {
             identifier: link_identifier,
-            name: link_name,
             retry_policy,
             sender,
             management_client,

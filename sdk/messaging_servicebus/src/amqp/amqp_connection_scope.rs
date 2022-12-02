@@ -339,7 +339,6 @@ impl AmqpConnectionScope {
     ) -> Result<
         (
             u32,
-            String,
             fe2o3_amqp::Sender,
             mpsc::Sender<amqp_cbs_link::Command>,
         ),
@@ -374,7 +373,6 @@ impl AmqpConnectionScope {
             .await?;
         Ok((
             link_identifier,
-            link_name,
             sender,
             self.cbs_link.command_sender().clone(),
         ))

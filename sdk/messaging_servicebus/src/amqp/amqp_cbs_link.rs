@@ -35,11 +35,11 @@ pub(crate) enum Command {
     RemoveAuthorizationRefresher(LinkIdentifier),
 }
 
-pub(crate) struct AuthorizationOnce {
-    endpoint: String,
-    resource: String,
-    required_claims: Vec<String>,
-}
+// pub(crate) struct AuthorizationOnce {
+//     endpoint: String,
+//     resource: String,
+//     required_claims: Vec<String>,
+// }
 
 pub(crate) enum Refresher {
     /// This is a placeholder that is only used to avoid spinning the runtime when the
