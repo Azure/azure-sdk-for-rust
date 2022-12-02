@@ -17,7 +17,9 @@ use crate::amqp::{
         LOCKED_UNTIL_NAME, MESSAGE_STATE_NAME, SEQUENCE_NUMBER_NAME,
     },
     amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt},
-    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetPartitionKeyError, SetMessageIdError},
+    error::{
+        MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError, SetPartitionKeyError,
+    },
 };
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
@@ -464,7 +466,10 @@ impl std::fmt::Display for ServiceBusMessage {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ServiceBusMessage, constants::{MAX_MESSAGE_ID_LENGTH, MAX_SESSION_ID_LENGTH}};
+    use crate::{
+        constants::{MAX_MESSAGE_ID_LENGTH, MAX_SESSION_ID_LENGTH},
+        ServiceBusMessage,
+    };
 
     #[test]
     fn message_to_string() {
@@ -487,14 +492,10 @@ mod tests {
     fn setting_long_message_id_returns_error() {
         let mut message = ServiceBusMessage::new("test message");
         let message_id = "a".repeat(MAX_MESSAGE_ID_LENGTH);
-        assert!(message
-            .set_message_id(message_id)
-            .is_ok());
+        assert!(message.set_message_id(message_id).is_ok());
 
         let message_id = "a".repeat(MAX_MESSAGE_ID_LENGTH + 1);
-        assert!(message
-            .set_message_id(message_id)
-            .is_err());
+        assert!(message.set_message_id(message_id).is_err());
     }
 
     #[test]
@@ -507,14 +508,10 @@ mod tests {
     fn setting_long_session_id_returns_error() {
         let mut message = ServiceBusMessage::new("test message");
         let session_id = "a".repeat(MAX_SESSION_ID_LENGTH);
-        assert!(message
-            .set_session_id(Some(session_id))
-            .is_ok());
+        assert!(message.set_session_id(Some(session_id)).is_ok());
 
         let session_id = "a".repeat(MAX_SESSION_ID_LENGTH + 1);
-        assert!(message
-            .set_session_id(Some(session_id))
-            .is_err());
+        assert!(message.set_session_id(Some(session_id)).is_err());
     }
 
     #[test]
@@ -549,10 +546,14 @@ mod tests {
         assert!(message.set_session_id(Some("session_id".into())).is_ok());
         assert_eq!(message.session_id(), Some("session_id"));
         assert!(message.partition_key().is_none());
-        assert!(message.set_partition_key(Some("partition_key".into())).is_err());
+        assert!(message
+            .set_partition_key(Some("partition_key".into()))
+            .is_err());
 
         let mut message = ServiceBusMessage::new("test message");
-        assert!(message.set_partition_key(Some("partition_key".into())).is_ok());
+        assert!(message
+            .set_partition_key(Some("partition_key".into()))
+            .is_ok());
         assert_eq!(message.partition_key(), Some("partition_key"));
         assert!(message.session_id().is_none());
         assert!(message.set_session_id(Some("session_id".into())).is_ok());

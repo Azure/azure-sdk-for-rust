@@ -10,8 +10,8 @@ use fe2o3_amqp_types::{
     primitives::{Array, OrderedMap, Symbol, Timestamp, Uuid},
 };
 use serde_amqp::Value;
-use tokio::sync::mpsc;
 use std::{collections::HashSet, time::Duration as StdDuration};
+use tokio::sync::mpsc;
 
 use crate::{
     core::TransportReceiver,
@@ -25,6 +25,7 @@ use crate::{
 };
 
 use super::{
+    amqp_cbs_link,
     amqp_client_constants::DEAD_LETTER_NAME,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
     amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
@@ -37,7 +38,7 @@ use super::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
-    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_cbs_link,
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
 pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
@@ -118,7 +119,12 @@ where
     ///
     /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn close(mut self) -> Result<(), Self::CloseError> {
-        let _ = self.cbs_command_sender.send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(self.identifier)).await;
+        let _ = self
+            .cbs_command_sender
+            .send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(
+                self.identifier,
+            ))
+            .await;
         self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
         self.receiver.close().await?;
         self.management_client.close().await?;

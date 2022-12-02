@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-use std::time::Instant as StdInstant;
-use std::time::Duration as StdDuration;
 use fe2o3_amqp::link::DetachError;
-use futures_util::{StreamExt};
+use futures_util::StreamExt;
+use std::collections::HashMap;
+use std::time::Duration as StdDuration;
+use std::time::Instant as StdInstant;
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
 use time::OffsetDateTime;
@@ -10,8 +10,8 @@ use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
-use tokio_util::time::DelayQueue;
 use tokio_util::time::delay_queue;
+use tokio_util::time::DelayQueue;
 
 use super::error::AmqpCbsEventLoopStopped;
 use super::{cbs_token_provider::CbsTokenProvider, error::CbsAuthError};
@@ -23,7 +23,7 @@ const CBS_LINK_COMMAND_QUEUE_SIZE: usize = 128;
 type LinkIdentifier = u32;
 
 pub(crate) enum Command {
-    NewAuthorizationOnce{
+    NewAuthorizationOnce {
         auth: AuthorizationOnce,
         result_sender: oneshot::Sender<Result<(), CbsAuthError>>,
     },
@@ -79,8 +79,14 @@ impl AmqpCbsLinkHandle {
             required_claims,
         };
         let (result_sender, result) = oneshot::channel();
-        let command = Command::NewAuthorizationRefresher { auth, result_sender };
-        self.command_sender.send(command).await.map_err(|_| AmqpCbsEventLoopStopped {})?;
+        let command = Command::NewAuthorizationRefresher {
+            auth,
+            result_sender,
+        };
+        self.command_sender
+            .send(command)
+            .await
+            .map_err(|_| AmqpCbsEventLoopStopped {})?;
         result.await.map_err(|_| AmqpCbsEventLoopStopped {})
     }
 
@@ -103,12 +109,18 @@ pub(crate) struct AmqpCbsLink {
 }
 
 impl AmqpCbsLink {
-    pub(crate) fn spawn(cbs_token_provider: CbsTokenProvider, cbs_client: CbsClient) -> AmqpCbsLinkHandle {
+    pub(crate) fn spawn(
+        cbs_token_provider: CbsTokenProvider,
+        cbs_client: CbsClient,
+    ) -> AmqpCbsLinkHandle {
         let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
         let stop_sender = CancellationToken::new();
         let stop = stop_sender.child_token();
         let mut delay_queue = DelayQueue::new();
-        delay_queue.insert(Refresher::Placeholder, DELAY_QUEUE_PLACEHOLDER_REFRESH_DURATION);
+        delay_queue.insert(
+            Refresher::Placeholder,
+            DELAY_QUEUE_PLACEHOLDER_REFRESH_DURATION,
+        );
 
         let amqp_cbs_link = AmqpCbsLink {
             stop,
@@ -131,7 +143,7 @@ impl AmqpCbsLink {
         &mut self,
         endpoint: impl AsRef<str>,
         resource: impl AsRef<str>,
-        required_claims:  impl IntoIterator<Item = impl AsRef<str>>,
+        required_claims: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Result<Option<StdInstant>, CbsAuthError> {
         let resource = resource.as_ref();
         let token = self
@@ -173,8 +185,11 @@ impl AmqpCbsLink {
                     .await;
 
                 let _ = result_sender.send(result.map(|_| ()));
-            },
-            Command::NewAuthorizationRefresher { auth, result_sender } => {
+            }
+            Command::NewAuthorizationRefresher {
+                auth,
+                result_sender,
+            } => {
                 // First request authorization once, and then schedule a refresh.
                 let result = self
                     .request_authorization_using_cbs(
@@ -189,31 +204,36 @@ impl AmqpCbsLink {
                             if expires_at > StdInstant::now() {
                                 let link_identifier = auth.link_identifier;
                                 let when = tokio::time::Instant::from_std(expires_at);
-                                let key = self.delay_queue.insert_at(Refresher::Authorization(auth), when);
+                                let key = self
+                                    .delay_queue
+                                    .insert_at(Refresher::Authorization(auth), when);
                                 self.active_link_identifiers.insert(link_identifier, key);
                             }
                         }
                         let _ = result_sender.send(Ok(()));
-                    },
+                    }
                     Err(err) => {
                         let _ = result_sender.send(Err(err));
                     }
                 }
-            },
+            }
             Command::RemoveAuthorizationRefresher(link_identifier) => {
                 let key = self.active_link_identifiers.remove(&link_identifier);
                 if let Some(key) = key {
                     self.delay_queue.remove(&key);
                 }
-            },
+            }
         }
     }
 
     async fn handle_refresher(&mut self, refresher: Refresher) {
         match refresher {
             Refresher::Placeholder => {
-                let _key = self.delay_queue.insert(Refresher::Placeholder, DELAY_QUEUE_PLACEHOLDER_REFRESH_DURATION);
-            },
+                let _key = self.delay_queue.insert(
+                    Refresher::Placeholder,
+                    DELAY_QUEUE_PLACEHOLDER_REFRESH_DURATION,
+                );
+            }
             Refresher::Authorization(auth) => {
                 let link_identifier = auth.link_identifier;
                 let result = self
@@ -228,17 +248,19 @@ impl AmqpCbsLink {
                         if let Some(expires_at) = expires_at {
                             if expires_at > StdInstant::now() {
                                 let when = tokio::time::Instant::from_std(expires_at);
-                                let key = self.delay_queue.insert_at(Refresher::Authorization(auth), when);
+                                let key = self
+                                    .delay_queue
+                                    .insert_at(Refresher::Authorization(auth), when);
                                 self.active_link_identifiers.insert(link_identifier, key);
                             }
                         }
-                    },
+                    }
                     Err(err) => {
                         // TODO: log error
                         log::error!("CBS authorization refresh failed: {}", err);
                     }
                 }
-            },
+            }
         }
     }
 
@@ -276,9 +298,9 @@ impl AmqpCbsLink {
 mod tests {
     #[tokio::test]
     async fn test_delay_queue() {
-        use tokio_util::time::DelayQueue;
-        use std::time::Duration;
         use futures_util::StreamExt;
+        use std::time::Duration;
+        use tokio_util::time::DelayQueue;
 
         let mut delay_queue = DelayQueue::new();
         delay_queue.insert("a", Duration::from_secs(1));

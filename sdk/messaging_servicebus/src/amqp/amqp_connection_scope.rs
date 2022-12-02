@@ -1,7 +1,4 @@
-use std::{
-    sync::{atomic::Ordering, Arc},
-    time::Duration as StdDuration,
-};
+use std::{sync::atomic::Ordering, time::Duration as StdDuration};
 
 use async_trait::async_trait;
 use azure_core::Url;
@@ -14,7 +11,7 @@ use fe2o3_amqp::{
     Connection, Session,
 };
 
-use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
+use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ReceiverSettleMode, SenderSettleMode},
@@ -22,14 +19,13 @@ use fe2o3_amqp_types::{
     primitives::Symbol,
 };
 use fe2o3_amqp_ws::WebSocketStream;
-use time::{Duration as TimeSpan, OffsetDateTime};
+use time::Duration as TimeSpan;
 use tokio::{
-    sync::{oneshot, mpsc},
+    sync::mpsc,
     time::{error::Elapsed, timeout},
 };
 
 use crate::{
-    amqp::cbs_token_provider,
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::TransportConnectionScope,
     primitives::service_bus_transport_type::ServiceBusTransportType,
@@ -37,7 +33,7 @@ use crate::{
 };
 
 use super::{
-    amqp_cbs_link::{self, AmqpCbsLink, AmqpCbsLinkHandle, AuthorizationRefresher},
+    amqp_cbs_link::{self, AmqpCbsLink, AmqpCbsLinkHandle},
     amqp_client_constants::{self, MANAGEMENT_ADDRESS},
     amqp_connection::AmqpConnection,
     amqp_constants,
@@ -200,10 +196,8 @@ impl AmqpConnectionScope {
         // 4.4. The returned Guid is guaranteed to not equal Guid.Empty.
         let uuid = uuid::Uuid::new_v4();
         let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
-        let cbs_token_provider = CbsTokenProvider::new(
-            credential,
-            Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
-        );
+        let cbs_token_provider =
+            CbsTokenProvider::new(credential, Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
 
         let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
         let connection_handle = timeout(operation_timeout, fut).await??;
@@ -342,7 +336,15 @@ impl AmqpConnectionScope {
         &mut self,
         entity_path: &str,
         identifier: &str,
-    ) -> Result<(u32, String, fe2o3_amqp::Sender, mpsc::Sender<amqp_cbs_link::Command>), OpenSenderError> {
+    ) -> Result<
+        (
+            u32,
+            String,
+            fe2o3_amqp::Sender,
+            mpsc::Sender<amqp_cbs_link::Command>,
+        ),
+        OpenSenderError,
+    > {
         if self.is_disposed {
             return Err(OpenSenderError::ScopeIsDisposed);
         }
@@ -370,7 +372,12 @@ impl AmqpConnectionScope {
             .target(endpoint)
             .attach(&mut self.session.handle)
             .await?;
-        Ok((link_identifier, link_name, sender, self.cbs_link.command_sender().clone()))
+        Ok((
+            link_identifier,
+            link_name,
+            sender,
+            self.cbs_link.command_sender().clone(),
+        ))
     }
 
     pub(crate) async fn open_receiver_link(
@@ -380,7 +387,14 @@ impl AmqpConnectionScope {
         receive_mode: &ServiceBusReceiveMode,
         session_id: Option<String>,
         prefetch_count: u32,
-    ) -> Result<(u32, fe2o3_amqp::Receiver, mpsc::Sender<amqp_cbs_link::Command>), OpenReceiverError> {
+    ) -> Result<
+        (
+            u32,
+            fe2o3_amqp::Receiver,
+            mpsc::Sender<amqp_cbs_link::Command>,
+        ),
+        OpenReceiverError,
+    > {
         if self.is_disposed {
             return Err(OpenReceiverError::ScopeIsDisposed);
         }
@@ -440,7 +454,11 @@ impl AmqpConnectionScope {
         }
 
         let receiver = builder.attach(&mut self.session.handle).await?;
-        Ok((link_identifier, receiver, self.cbs_link.command_sender().clone()))
+        Ok((
+            link_identifier,
+            receiver,
+            self.cbs_link.command_sender().clone(),
+        ))
     }
 }
 

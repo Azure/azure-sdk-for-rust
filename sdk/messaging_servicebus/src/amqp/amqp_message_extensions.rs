@@ -51,7 +51,10 @@ pub(crate) trait AmqpMessageExt {
 pub(crate) trait AmqpMessageMutExt {
     fn set_message_id(&mut self, message_id: impl Into<String>) -> Result<(), SetMessageIdError>;
 
-    fn set_partition_key(&mut self, key: impl Into<Option<String>>) -> Result<(), SetPartitionKeyError>;
+    fn set_partition_key(
+        &mut self,
+        key: impl Into<Option<String>>,
+    ) -> Result<(), SetPartitionKeyError>;
 
     fn set_via_partition_key(
         &mut self,
@@ -235,13 +238,14 @@ impl<B> AmqpMessageMutExt for Message<B> {
 
     /// Returns error if key length exceeds [`MAX_PARTITION_KEY_LENGTH`]
     #[inline]
-    fn set_partition_key(&mut self, key: impl Into<Option<String>>) -> Result<(), SetPartitionKeyError> {
+    fn set_partition_key(
+        &mut self,
+        key: impl Into<Option<String>>,
+    ) -> Result<(), SetPartitionKeyError> {
         let key: Option<String> = key.into();
         match key.as_ref().map(|k| k.len()) {
             Some(len) if len > MAX_PARTITION_KEY_LENGTH => {
-                return Err(
-                    MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH).into()
-                )
+                return Err(MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH).into())
             }
             _ => {}
         }
@@ -272,9 +276,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
 
         match key.as_ref().map(|k| k.len()) {
             Some(len) if len > MAX_PARTITION_KEY_LENGTH => {
-                return Err(
-                    MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH).into()
-                )
+                return Err(MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH).into())
             }
             _ => {}
         }
@@ -324,7 +326,8 @@ impl<B> AmqpMessageMutExt for Message<B> {
         &mut self,
         session_id: impl Into<Option<String>>,
     ) -> Result<(), MaxLengthExceededError> {
-        let session_id = session_id.into()
+        let session_id = session_id
+            .into()
             .map(|s| {
                 if s.len() > MAX_SESSION_ID_LENGTH {
                     Result::<String, _>::Err(MaxLengthExceededError::new(

@@ -329,7 +329,7 @@ where
             management_client,
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
-            cbs_command_sender
+            cbs_command_sender,
         };
         Ok(AmqpSessionReceiver { inner })
     }

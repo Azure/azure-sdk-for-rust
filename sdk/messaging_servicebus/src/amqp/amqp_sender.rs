@@ -4,8 +4,8 @@ use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::Outcome;
 use fe2o3_amqp_types::primitives::Array;
-use tokio::sync::mpsc;
 use std::time::Duration as StdDuration;
+use tokio::sync::mpsc;
 
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
@@ -221,7 +221,12 @@ where
     ///   cancel the operation.
     async fn close(self) -> Result<(), Self::CloseError> {
         // An error would mean that the AmqpCbsLink event loop has stopped
-        let _ = self.cbs_command_sender.send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(self.identifier)).await;
+        let _ = self
+            .cbs_command_sender
+            .send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(
+                self.identifier,
+            ))
+            .await;
         self.sender.close().await?;
         self.management_client.close().await?;
         Ok(())

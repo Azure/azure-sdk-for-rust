@@ -10,8 +10,8 @@ use azure_messaging_servicebus::{
     primitives::sub_queue::SubQueue,
     ServiceBusMessage, ServiceBusReceiverOptions,
 };
-use std::time::Duration as StdDuration;
 use serial_test::serial;
+use std::time::Duration as StdDuration;
 
 use time::OffsetDateTime;
 
