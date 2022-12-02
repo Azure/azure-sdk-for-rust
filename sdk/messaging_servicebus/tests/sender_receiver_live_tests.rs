@@ -1,3 +1,8 @@
+//! Test Sender and Receiver with a live Service Bus namespace.
+//!
+//! All tests must be run sequentially as they use the same queue for testing, and every
+//! test must ensure that the queue is empty after it is done.
+
 use azure_messaging_servicebus::{
     client::{
         service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
@@ -6,6 +11,7 @@ use azure_messaging_servicebus::{
     ServiceBusMessage, ServiceBusReceiverOptions,
 };
 use std::time::Duration as StdDuration;
+use serial_test::serial;
 
 use time::OffsetDateTime;
 
@@ -13,6 +19,7 @@ mod common;
 use common::setup_dotenv;
 
 #[tokio::test]
+#[serial]
 async fn drain_queue() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -32,6 +39,7 @@ async fn drain_queue() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_receive_one_message_on_queue() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -68,6 +76,7 @@ async fn send_and_receive_one_message_on_queue() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_one_message_and_try_receiver_more_than_one_on_queue() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -109,6 +118,7 @@ async fn send_one_message_and_try_receiver_more_than_one_on_queue() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_receive_multiple_messages_separately() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -151,6 +161,7 @@ async fn send_and_receive_multiple_messages_separately() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_receive_multiple_messages_separately_with_prefetch() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -189,6 +200,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -230,6 +242,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_messagebatch_and_try_receive_more_than_sent() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -276,6 +289,7 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_receive_sessionful_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -377,6 +391,7 @@ async fn send_and_receive_sessionful_messages() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_abandon_messages_then_receive_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -427,6 +442,7 @@ async fn send_and_abandon_messages_then_receive_messages() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_deadletter_then_receive_from_deadletter_queue() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -479,6 +495,7 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
 }
 
 #[tokio::test]
+#[serial]
 async fn schedule_and_receive_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -525,6 +542,7 @@ async fn schedule_and_receive_messages() {
 }
 
 #[tokio::test]
+#[serial]
 async fn schedule_and_cancel_scheduled_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -573,6 +591,7 @@ async fn schedule_and_cancel_scheduled_messages() {
 }
 
 #[tokio::test]
+#[serial]
 async fn send_and_peek_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -623,6 +642,7 @@ async fn send_and_peek_messages() {
 }
 
 #[tokio::test]
+#[serial]
 async fn defer_and_receive_deferred_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -674,6 +694,7 @@ async fn defer_and_receive_deferred_messages() {
 }
 
 #[tokio::test]
+#[serial]
 async fn receive_and_renew_lock() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
