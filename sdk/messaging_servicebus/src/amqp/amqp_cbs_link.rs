@@ -23,10 +23,11 @@ const CBS_LINK_COMMAND_QUEUE_SIZE: usize = 128;
 type LinkIdentifier = u32;
 
 pub(crate) enum Command {
-    NewAuthorizationOnce {
-        auth: AuthorizationOnce,
-        result_sender: oneshot::Sender<Result<(), CbsAuthError>>,
-    },
+    // TODO: unused variant?
+    // NewAuthorizationOnce {
+    //     auth: AuthorizationOnce,
+    //     result_sender: oneshot::Sender<Result<(), CbsAuthError>>,
+    // },
     NewAuthorizationRefresher {
         auth: AuthorizationRefresher,
         result_sender: oneshot::Sender<Result<(), CbsAuthError>>,
@@ -172,20 +173,20 @@ impl AmqpCbsLink {
 
     async fn handle_command(&mut self, command: Command) {
         match command {
-            Command::NewAuthorizationOnce {
-                auth,
-                result_sender,
-            } => {
-                let result = self
-                    .request_authorization_using_cbs(
-                        &auth.endpoint,
-                        &auth.resource,
-                        &auth.required_claims,
-                    )
-                    .await;
+            // Command::NewAuthorizationOnce {
+            //     auth,
+            //     result_sender,
+            // } => {
+            //     let result = self
+            //         .request_authorization_using_cbs(
+            //             &auth.endpoint,
+            //             &auth.resource,
+            //             &auth.required_claims,
+            //         )
+            //         .await;
 
-                let _ = result_sender.send(result.map(|_| ()));
-            }
+            //     let _ = result_sender.send(result.map(|_| ()));
+            // }
             Command::NewAuthorizationRefresher {
                 auth,
                 result_sender,
@@ -314,4 +315,6 @@ mod tests {
 
         assert_eq!(count, 3);
     }
+
+    // TODO: mock tests
 }
