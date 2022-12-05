@@ -1,8 +1,10 @@
 mod backup;
 mod get_certificate;
 mod get_versions;
+mod import;
 mod update_properties;
 pub use backup::*;
 pub use get_certificate::*;
 pub use get_versions::*;
+pub use import::*;
 pub use update_properties::*;
