@@ -123,3 +123,19 @@ pub struct CertificateProperties {
     pub updated_on: OffsetDateTime,
     pub enabled: bool,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct CertificateOperationResponse {
+    pub cancellation_requested: bool,
+    pub csr: String,
+    pub id: String,
+    pub issuer: IssuerParameters,
+    pub request_id: String,
+    pub status: String,
+    pub status_details: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct IssuerParameters {
+    pub name: String,
+}
