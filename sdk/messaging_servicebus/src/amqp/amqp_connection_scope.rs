@@ -7,9 +7,11 @@ use fe2o3_amqp::{
     link::{receiver::CreditMode, ReceiverAttachError, SenderAttachError},
     sasl_profile::SaslProfile,
     session::{BeginError, SessionHandle},
-    transaction::Controller,
     Connection, Session,
 };
+
+#[cfg(feature = "transaction")]
+use fe2o3_amqp::transaction::Controller;
 
 use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_management::client::MgmtClient;
@@ -106,6 +108,7 @@ pub(crate) struct AmqpConnectionScope {
     /// The controller responsible for managing transactions.
     ///
     /// TODO: transactions?
+    #[cfg(feature = "transaction")]
     _transaction_controller: Controller,
 
     /// CBS client
@@ -208,6 +211,7 @@ impl AmqpConnectionScope {
             timeout(operation_timeout, Session::begin(&mut connection.handle)).await??;
         let mut session = AmqpSession::new(session_handle);
 
+        #[cfg(feature = "transaction")]
         let transaction_controller = timeout(
             operation_timeout,
             Self::attach_txn_controller(&mut session.handle, &id),
@@ -225,8 +229,9 @@ impl AmqpConnectionScope {
             transport_type,
             connection,
             session,
-            _transaction_controller: transaction_controller,
             cbs_link,
+            #[cfg(feature = "transaction")]
+            _transaction_controller: transaction_controller,
         })
     }
 
@@ -265,6 +270,7 @@ impl AmqpConnectionScope {
         Ok(connection)
     }
 
+    #[cfg(feature = "transaction")]
     async fn attach_txn_controller(
         session: &mut SessionHandle<()>,
         scope_identifier: &str,

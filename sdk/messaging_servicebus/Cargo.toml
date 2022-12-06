@@ -35,10 +35,10 @@ tokio = {version = "1", features = ["time"]}
 tokio-util = {version = "0.7.3", features = ["time"]}
 url = "2.2"
 urlencoding = "2"
-uuid = "1"
+uuid = { version = "1", features=["v4"] }
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.7.15", features = ["transaction", "rustls"]}
+fe2o3-amqp = {version = "0.7.15", features = ["rustls"]}
 fe2o3-amqp-cbs = "0.0.11"
 # fe2o3-amqp-cbs = {git = "https://github.com/minghuaw/fe2o3-amqp", branch = "0.7.0-dev"}
 fe2o3-amqp-management = "0.0.5"
@@ -58,3 +58,7 @@ serial_test = "0.9"
 [features]
 default = ["azure_core/enable_reqwest"]
 test_e2e = []
+
+# TODO: transaction is not implemented yet.
+# Transaction requires standard tier or above
+transaction = ["fe2o3-amqp/transaction"]

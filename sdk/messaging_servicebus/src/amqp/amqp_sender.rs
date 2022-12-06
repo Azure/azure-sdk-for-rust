@@ -265,6 +265,7 @@ async fn send_batch_envelope(
             Outcome::Modified(modified) => {
                 return Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
             }
+            #[cfg(feature = "transaction")]
             Outcome::Declared(_) => {
                 unreachable!("Declared is not expected outside txn-control links")
             }
