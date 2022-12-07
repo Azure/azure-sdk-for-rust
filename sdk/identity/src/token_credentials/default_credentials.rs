@@ -97,10 +97,10 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                 )
             }
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
-                // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
+                // IMSD timeout is only limited to 5 second when used in DefaultAzureCredential
                 credential
                     .get_token(resource)
-                    .timeout(Duration::from_secs(1))
+                    .timeout(Duration::from_secs(5))
                     .await
                     .context(
                         ErrorKind::Credential,
