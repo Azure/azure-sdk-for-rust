@@ -9,7 +9,6 @@ operation! {
     client: CertificateClient,
     name: String,
     x5c: Vec<String>,
-    ?pwd: String,
     ?enabled: bool,
     ?not_before: OffsetDateTime,
     ?expiration: OffsetDateTime,
@@ -18,6 +17,7 @@ operation! {
 
 #[derive(Serialize, Debug)]
 struct Attributes {
+    #[serde(skip_serializing_if = "Option::is_none")]
     enabled: Option<bool>,
     #[serde(default, with = "azure_core::date::timestamp::option", rename = "exp")]
     expiration: Option<OffsetDateTime>,
