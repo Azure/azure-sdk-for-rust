@@ -1,5 +1,6 @@
 use crate::{core::TransportMessageBatch, ServiceBusMessage};
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ServiceBusMessageBatch<T: TransportMessageBatch> {
     pub(crate) inner: T,
 }

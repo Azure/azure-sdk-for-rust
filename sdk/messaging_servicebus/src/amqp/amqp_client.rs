@@ -25,7 +25,6 @@ use crate::{
 use super::{
     amqp_connection_scope::{AmqpConnectionScope, AmqpConnectionScopeError},
     amqp_receiver::AmqpReceiver,
-    amqp_rule_manager::AmqpRuleManager,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
     error::{DisposeError, OpenReceiverError, OpenSenderError},
@@ -140,7 +139,8 @@ where
     type Sender = AmqpSender<RP>;
     type Receiver = AmqpReceiver<RP>;
     type SessionReceiver = AmqpSessionReceiver<RP>;
-    type RuleManager = AmqpRuleManager;
+
+    // type RuleManager = AmqpRuleManager;
 
     async fn create_transport_client(
         host: &str,
@@ -333,27 +333,27 @@ where
         Ok(AmqpSessionReceiver { inner })
     }
 
-    /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
-    /// for adding, removing and getting rules from the Service Bus subscription.
-    ///
-    /// # Arguments
-    ///
-    /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
-    ///   is bound.
-    /// * `retry_options` - The policy which governs retry behavior and try timeouts.
-    /// * `identifier` - The identifier for the rule manager.
-    ///
-    /// # Returns
-    ///
-    /// A [TransportRuleManager] configured in the requested manner.
-    async fn create_rule_manager(
-        &mut self,
-        _subscription_path: String,
-        _retry_options: ServiceBusRetryOptions,
-        _identifier: String,
-    ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
-        todo!()
-    }
+    // /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
+    // /// for adding, removing and getting rules from the Service Bus subscription.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
+    // ///   is bound.
+    // /// * `retry_options` - The policy which governs retry behavior and try timeouts.
+    // /// * `identifier` - The identifier for the rule manager.
+    // ///
+    // /// # Returns
+    // ///
+    // /// A [TransportRuleManager] configured in the requested manner.
+    // async fn create_rule_manager(
+    //     &mut self,
+    //     _subscription_path: String,
+    //     _retry_options: ServiceBusRetryOptions,
+    //     _identifier: String,
+    // ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
+    //     todo!()
+    // }
 
     /// Closes the connection to the transport client instance.
     ///

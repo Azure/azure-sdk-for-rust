@@ -9,6 +9,7 @@ const DELAY_MAX: Duration = Duration::from_secs(5 * 60);
 const TRY_TIMEOUT_MIN: Duration = Duration::ZERO;
 const TRY_TIMEOUT_MAX: Duration = Duration::from_secs(1 * 60 * 60); // 1 Hour
 
+#[derive(Debug)]
 pub enum OutOfRange<T> {
     LessThanAllowed { value: T, minimum_allowed: T },
     GreaterThanAllowed { value: T, maximum_allowed: T },

@@ -9,20 +9,12 @@ use crate::{
 
 type PeekSessionMessageResponseBody = super::peek_message::PeekMessageResponseBody;
 
-pub struct PeekSessionMessageResponse {
-    pub has_more_messages: bool,
+pub(crate) struct PeekSessionMessageResponse {
+    pub _has_more_messages: bool,
     pub messages: Vec<Vec<u8>>,
 }
 
 impl PeekSessionMessageResponse {
-    pub fn has_more_messages(&self) -> bool {
-        self.has_more_messages
-    }
-
-    pub fn into_messages(self) -> Vec<Vec<u8>> {
-        self.messages
-    }
-
     pub fn into_peeked_messages(self) -> Result<Vec<ServiceBusPeekedMessage>, serde_amqp::Error> {
         self.messages
             .into_iter()
@@ -71,7 +63,7 @@ impl Response for PeekSessionMessageResponse {
             .collect();
 
         Ok(Self {
-            has_more_messages,
+            _has_more_messages: has_more_messages,
             messages,
         })
     }

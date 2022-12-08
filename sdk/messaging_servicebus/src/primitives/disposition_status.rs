@@ -1,5 +1,6 @@
 use serde_amqp::Value;
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DispositionStatus {
     Completed = 1,
     Defered = 2,

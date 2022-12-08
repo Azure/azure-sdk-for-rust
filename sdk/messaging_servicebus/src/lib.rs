@@ -1,7 +1,10 @@
 //! Azure service bus crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 #![recursion_limit = "128"]
+#![deny(
+    // missing_docs,
+    missing_debug_implementations,
+)]
 
-pub mod administration;
 pub mod amqp;
 pub mod client;
 pub mod constants;
@@ -14,6 +17,9 @@ pub mod receiver;
 pub mod sender;
 pub mod service_bus;
 pub mod utils;
+
+// TODO: reserved for future use
+// mod administration;
 
 pub use primitives::service_bus_message::ServiceBusMessage;
 pub use receiver::{

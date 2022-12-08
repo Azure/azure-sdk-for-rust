@@ -11,7 +11,7 @@ use crate::amqp::{
 
 type PeekSessionMessageRequestBody = OrderedMap<String, serde_amqp::Value>;
 
-pub struct PeekSessionMessageRequest<'a> {
+pub(crate) struct PeekSessionMessageRequest<'a> {
     server_timeout: Option<u32>,
     associated_link_name: Option<&'a str>,
     body: PeekSessionMessageRequestBody,

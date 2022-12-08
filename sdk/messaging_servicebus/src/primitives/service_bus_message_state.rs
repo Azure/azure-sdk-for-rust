@@ -1,4 +1,5 @@
 /// <summary>Represents the message state of the [`ServiceBusReceivedMessage`]
+#[derive(Debug)]
 pub enum ServiceBusMessageState {
     /// Specifies an active message state.
     Active = 0,

@@ -16,7 +16,7 @@ type DeferredMessage = OrderedMap<String, Value>;
 type ListOfDeferredMessages = Vec<DeferredMessage>;
 type ReceiveBySequenceNumberResponseBody = OrderedMap<String, ListOfDeferredMessages>;
 
-pub struct ReceiveBySequenceNumberResponse {
+pub(crate) struct ReceiveBySequenceNumberResponse {
     pub deferred_messages: Vec<(Uuid, Binary)>,
 }
 

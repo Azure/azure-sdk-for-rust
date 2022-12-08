@@ -189,6 +189,7 @@ async fn peek_lock_message2(
 }
 
 /// PeekLockResponse object that is returned by `peek_lock_message2`
+#[derive(Debug)]
 pub struct PeekLockResponse {
     body: String,
     lock_location: String,

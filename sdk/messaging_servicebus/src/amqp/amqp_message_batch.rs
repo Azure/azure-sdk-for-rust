@@ -10,6 +10,7 @@ use super::error::TryAddMessageError;
 /// created using <see
 /// cref="ServiceBusSender.CreateMessageBatchAsync(System.Threading.CancellationToken)"/>.
 /// Messages can be added to the batch using the <see cref="TryAddMessage"/> method on the batch.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AmqpMessageBatch {
     /// The maximum size of the batch, in bytes.
     pub(crate) max_size_in_bytes: u64,

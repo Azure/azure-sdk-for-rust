@@ -5,6 +5,7 @@ use crate::{
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
+#[derive(Debug)]
 pub struct ServiceBusSender<S> {
     pub(crate) inner: S,
     pub(crate) entity_path: String,

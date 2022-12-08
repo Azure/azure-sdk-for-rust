@@ -16,6 +16,7 @@ pub struct ServiceBusReceiverOptions {
     pub sub_queue: SubQueue,
 }
 
+#[derive(Debug)]
 pub struct ServiceBusReceiver<R> {
     pub(crate) inner: R,
     pub(crate) entity_path: String,

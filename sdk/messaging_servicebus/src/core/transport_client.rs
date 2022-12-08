@@ -14,7 +14,7 @@ use crate::{
 };
 
 use super::{
-    transport_receiver::TransportReceiver, transport_rule_manager::TransportRuleManager,
+    transport_receiver::TransportReceiver,
     transport_sender::TransportSender, TransportSessionReceiver,
 };
 
@@ -33,7 +33,9 @@ pub trait TransportClient: Sized {
     type Sender: TransportSender;
     type Receiver: TransportReceiver;
     type SessionReceiver: TransportSessionReceiver;
-    type RuleManager: TransportRuleManager;
+
+    // TODO: impl rule manager
+    // type RuleManager: TransportRuleManager;
 
     async fn create_transport_client<'a>(
         host: &'a str,
@@ -94,25 +96,25 @@ pub trait TransportClient: Sized {
         is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError>;
 
-    /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
-    /// for adding, removing and getting rules from the Service Bus subscription.
-    ///
-    /// # Arguments
-    ///
-    /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
-    ///   is bound.
-    /// * `retry_policy` - The policy which governs retry behavior and try timeouts.
-    /// * `identifier` - The identifier for the rule manager.
-    ///
-    /// # Returns
-    ///
-    /// A [TransportRuleManager] configured in the requested manner.
-    async fn create_rule_manager(
-        &mut self,
-        subscription_path: String,
-        retry_policy: ServiceBusRetryOptions,
-        identifier: String,
-    ) -> Result<Self::RuleManager, Self::CreateRuleManagerError>;
+    // /// TODO: Creates a rule manager strongly aligned with the active protocol and transport, responsible
+    // /// for adding, removing and getting rules from the Service Bus subscription.
+    // ///
+    // /// # Arguments
+    // ///
+    // /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
+    // ///   is bound.
+    // /// * `retry_policy` - The policy which governs retry behavior and try timeouts.
+    // /// * `identifier` - The identifier for the rule manager.
+    // ///
+    // /// # Returns
+    // ///
+    // /// A [TransportRuleManager] configured in the requested manner.
+    // async fn create_rule_manager(
+    //     &mut self,
+    //     subscription_path: String,
+    //     retry_policy: ServiceBusRetryOptions,
+    //     identifier: String,
+    // ) -> Result<Self::RuleManager, Self::CreateRuleManagerError>;
 
     /// Closes the connection to the transport client instance.
     ///

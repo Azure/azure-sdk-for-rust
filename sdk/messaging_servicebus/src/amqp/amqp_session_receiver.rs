@@ -32,8 +32,9 @@ use super::{
     error::AmqpRequestResponseError,
 };
 
-pub struct AmqpSessionReceiver<R: ServiceBusRetryPolicy> {
-    pub(crate) inner: AmqpReceiver<R>,
+#[derive(Debug)]
+pub struct AmqpSessionReceiver<RP> {
+    pub(crate) inner: AmqpReceiver<RP>,
 }
 
 #[async_trait]

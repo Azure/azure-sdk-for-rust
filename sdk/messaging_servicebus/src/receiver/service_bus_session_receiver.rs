@@ -42,6 +42,7 @@ impl From<ServiceBusSessionReceiverOptions> for ServiceBusReceiverOptions {
     }
 }
 
+#[derive(Debug)]
 pub struct ServiceBusSessionReceiver<R> {
     pub(crate) inner: R,
     pub(crate) entity_path: String,

@@ -6,7 +6,7 @@ use crate::amqp::management_constants::properties::EXPIRATIONS;
 
 type RenewLockResponseBody = OrderedMap<String, Array<Timestamp>>;
 
-pub struct RenewLockResponse {
+pub(crate) struct RenewLockResponse {
     pub expirations: Array<Timestamp>,
 }
 

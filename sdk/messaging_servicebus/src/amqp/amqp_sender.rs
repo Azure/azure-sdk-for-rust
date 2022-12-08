@@ -29,19 +29,13 @@ use super::{
     error::NotAcceptedError,
 };
 
-pub struct AmqpSender<RP: ServiceBusRetryPolicy> {
+#[derive(Debug)]
+pub struct AmqpSender<RP> {
     pub(crate) identifier: u32,
     pub(crate) retry_policy: RP,
     pub(crate) sender: fe2o3_amqp::Sender,
     pub(crate) management_client: MgmtClient,
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
-}
-
-impl<RP: ServiceBusRetryPolicy> AmqpSender<RP>
-where
-    RP: ServiceBusRetryPolicy + Send + Sync,
-    RP::State: ServiceBusRetryPolicyState,
-{
 }
 
 #[async_trait]

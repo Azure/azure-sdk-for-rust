@@ -12,8 +12,8 @@ pub(super) type EncodedMessage = Binary;
 pub(super) type EncodedMessages = Vec<OrderedMap<String, EncodedMessage>>;
 pub(super) type PeekMessageResponseBody = OrderedMap<String, EncodedMessages>;
 
-pub struct PeekMessageResponse {
-    pub has_more_messages: bool,
+pub(crate) struct PeekMessageResponse {
+    pub _has_more_messages: bool,
     pub messages: Vec<Vec<u8>>,
 }
 
@@ -30,14 +30,6 @@ pub(crate) fn get_messages_from_body(
 }
 
 impl PeekMessageResponse {
-    pub fn has_more_messages(&self) -> bool {
-        self.has_more_messages
-    }
-
-    pub fn into_messages(self) -> Vec<Vec<u8>> {
-        self.messages
-    }
-
     pub fn into_peeked_messages(self) -> Result<Vec<ServiceBusPeekedMessage>, serde_amqp::Error> {
         self.messages
             .into_iter()
@@ -86,7 +78,7 @@ impl Response for PeekMessageResponse {
             .collect();
 
         Ok(Self {
-            has_more_messages,
+            _has_more_messages: has_more_messages,
             messages,
         })
     }

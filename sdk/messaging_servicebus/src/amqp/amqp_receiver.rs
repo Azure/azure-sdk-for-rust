@@ -41,7 +41,8 @@ use super::{
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
-pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
+#[derive(Debug)]
+pub struct AmqpReceiver<RP> {
     pub(crate) identifier: u32, // TODO: should this info be preserved?
 
     pub(crate) prefetch_count: u32,
@@ -56,8 +57,6 @@ pub struct AmqpReceiver<RP: ServiceBusRetryPolicy> {
 
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
 }
-
-impl<RP> AmqpReceiver<RP> where RP: ServiceBusRetryPolicy {}
 
 #[async_trait]
 impl<RP> TransportReceiver for AmqpReceiver<RP>
