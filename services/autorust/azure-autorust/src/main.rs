@@ -34,8 +34,7 @@ impl Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     let packages = &args.packages();
-    gen_mgmt(packages)?;
-    gen_svc(packages)?;
+    gen_crates(packages)?;
     gen_services_workspace(packages)?;
     if packages.is_empty() {
         gen_workflow_check_all_services()?;
@@ -50,39 +49,24 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn gen_mgmt(only_packages: &[&str]) -> Result<()> {
-    const OUTPUT_FOLDER: &str = "../mgmt";
-    let run_config = &mut RunConfig::new("azure_mgmt_");
-    for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
-        if !only_packages.is_empty() {
-            let package_name = gen::package_name(spec, run_config);
-            if only_packages.contains(&package_name.as_str()) {
-                println!("{} {}", i + 1, spec.spec());
-                gen::gen_crate(spec, run_config, OUTPUT_FOLDER)?;
-            }
-        } else {
-            println!("{} {}", i + 1, spec.spec());
-            gen::gen_crate(spec, run_config, OUTPUT_FOLDER)?;
-        }
-    }
-    Ok(())
-}
+fn gen_crates(only_packages: &[&str]) -> Result<()> {
+    let svc = get_svc_readmes()?.into_iter().map(|x| ("svc", x));
+    let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt", x));
 
-fn gen_svc(only_packages: &[&str]) -> Result<()> {
-    const OUTPUT_FOLDER: &str = "../svc";
-    let run_config = &mut RunConfig::new("azure_svc_");
-    for (i, spec) in get_svc_readmes()?.iter().enumerate() {
-        if !only_packages.is_empty() {
-            let package_name = gen::package_name(spec, run_config);
-            if only_packages.contains(&package_name.as_str()) {
-                println!("{} {}", i + 1, spec.spec());
-                gen::gen_crate(spec, run_config, OUTPUT_FOLDER)?;
-            }
-        } else {
-            println!("{} {}", i + 1, spec.spec());
-            gen::gen_crate(spec, run_config, OUTPUT_FOLDER)?;
+    for (i, (crate_type, spec)) in svc.chain(mgmt).enumerate() {
+        let output_folder = format!("../{}", crate_type);
+        let prefix = format!("azure_{}_", crate_type);
+
+        let run_config = RunConfig::new(&prefix);
+        let package_name = gen::package_name(&spec, &run_config);
+        if !only_packages.is_empty() && !only_packages.contains(&package_name.as_str()) {
+            continue;
         }
+
+        println!("{} ({})", package_name, i);
+        gen::gen_crate(&package_name, &spec, &run_config, &output_folder)?;
     }
+
     Ok(())
 }
 

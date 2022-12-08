@@ -1828,6 +1828,9 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "Recommended quality for reserved instances."]
     #[serde(rename = "recommendedQuantity", default, skip_serializing_if = "Option::is_none")]
     pub recommended_quantity: Option<f64>,
+    #[doc = "Resource type."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
     #[doc = "The amount plus currency ."]
     #[serde(rename = "totalCostWithReservedInstances", default, skip_serializing_if = "Option::is_none")]
     pub total_cost_with_reserved_instances: Option<Amount>,
@@ -1851,6 +1854,9 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "This is the ARM Sku name."]
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
+    #[doc = "Subscription ID"]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 impl ModernReservationRecommendationProperties {
     pub fn new() -> Self {

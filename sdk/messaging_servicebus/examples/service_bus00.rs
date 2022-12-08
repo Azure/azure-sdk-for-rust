@@ -16,7 +16,7 @@ async fn main() {
 
     let http_client = azure_core::new_http_client();
 
-    let client = Client::new(
+    let client = QueueClient::new(
         http_client,
         service_bus_namespace,
         queue_name,

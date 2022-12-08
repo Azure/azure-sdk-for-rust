@@ -11,6 +11,10 @@ pub use package_2022_09_preview::*;
 pub mod package_2022_06_01_preview;
 #[cfg(all(feature = "package-2022-06-01-preview", not(feature = "no-default-tag")))]
 pub use package_2022_06_01_preview::*;
+#[cfg(feature = "package-2022-04")]
+pub mod package_2022_04;
+#[cfg(all(feature = "package-2022-04", not(feature = "no-default-tag")))]
+pub use package_2022_04::*;
 #[cfg(feature = "package-2022-03")]
 pub mod package_2022_03;
 #[cfg(all(feature = "package-2022-03", not(feature = "no-default-tag")))]
@@ -19,7 +23,3 @@ pub use package_2022_03::*;
 pub mod package_2022_02;
 #[cfg(all(feature = "package-2022-02", not(feature = "no-default-tag")))]
 pub use package_2022_02::*;
-#[cfg(feature = "package-2022-01")]
-pub mod package_2022_01;
-#[cfg(all(feature = "package-2022-01", not(feature = "no-default-tag")))]
-pub use package_2022_01::*;

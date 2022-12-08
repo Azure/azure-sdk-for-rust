@@ -1,58 +1,35 @@
-# Azure SDK for Rust - Azure service bus crate
+# azure_messaging_servicebus
 
-## The Messaging Service Bus crate
+Azure Service Bus crate for the unofficial Microsoft Azure SDK for Rust.
+This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
-`azure-messaging-servicebus` offers functionality needed to interact with Azure's Service Bus from Rust. As an abstraction over the [Service Bus API](https://docs.microsoft.com/en-us/rest/api/servicebus/), anything that is possible through that Rest API
-should also be possible with this crate.
-
-### An example
-
-```rs
-// Use the prelude to bring `Client` into scope
+## Example
+```no_run,rust
 use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
-async fn main() {
-    // Get your service bus namespace, queue name, policy name, and policy key from environment variables
-    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE")
-        .expect("Please set AZURE_SERVICE_BUS_NAMESPACE env variable first!");
+async fn main() -> azure_core::Result<()> {
+    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE").expect("missing AZURE_SERVICE_BUS_NAMESPACE");
+    let queue_name = std::env::var("AZURE_QUEUE_NAME").expect("missing AZURE_QUEUE_NAME");
+    let policy_name = std::env::var("AZURE_POLICY_NAME").expect("missing AZURE_POLICY_NAME");
+    let policy_key = std::env::var("AZURE_POLICY_KEY").expect("missing AZURE_POLICY_KEY");
 
-    let queue_name =
-        std::env::var("AZURE_QUEUE_NAME").expect("Please set AZURE_QUEUE_NAME env variable first!");
-
-    let policy_name = std::env::var("AZURE_POLICY_NAME")
-        .expect("Please set AZURE_POLICY_NAME env variable first!");
-
-    let policy_key =
-        std::env::var("AZURE_POLICY_KEY").expect("Please set AZURE_POLICY_KEY env variable first!");
-
-    // Create a new instance of an HTTP client to make calls to the rest API
     let http_client = azure_core::new_http_client();
-
-    // Create a new instance of a client object to group together all we've gathered so far.
-    let mut client = Client::new(
+    let mut client = QueueClient::new(
         http_client,
         service_bus_namespace,
         queue_name,
         policy_name,
         policy_key,
-    )
-    .expect("Failed to create client");
+    )?;
 
-    // Send message to your queue
-    let message_to_send = "hello, world!";
-    client
-        .send_message(message_to_send)
-        .await
-        .expect("Failed to send message while testing receive");
-    println!("Sent Message: {}", message_to_send);
+    client.send_message("hello world").await?;
 
-    // Receive and delete a message from your queue
-    let received_message = client
-        .receive_and_delete_message()
-        .await
-        .expect("Failed to receive message");
+    let received_message = client.receive_and_delete_message().await?;
     println!("Received Message: {}", received_message);
-}
 
+    Ok(())
+}
 ```
+
+License: MIT

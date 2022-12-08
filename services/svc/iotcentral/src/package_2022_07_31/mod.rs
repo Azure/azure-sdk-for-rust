@@ -891,7 +891,7 @@ pub mod device_templates {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get the list of device templates in an application with basic ODATA support ($top, $filter, $orderby), [more details](https://aka.ms/iotcentralodatasupport)."]
+        #[doc = "Get the list of device templates in an application."]
         pub fn list(&self) -> list::RequestBuilder {
             list::RequestBuilder { client: self.0.clone() }
         }
@@ -1255,7 +1255,7 @@ pub mod devices {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get the list of devices in an application with basic ODATA support ($top, $filter, $orderby), [more details](https://aka.ms/iotcentralodatasupport)."]
+        #[doc = "Get the list of devices in an application."]
         pub fn list(&self) -> list::RequestBuilder {
             list::RequestBuilder { client: self.0.clone() }
         }

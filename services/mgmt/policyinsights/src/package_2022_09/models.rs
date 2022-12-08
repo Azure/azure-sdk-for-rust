@@ -313,6 +313,188 @@ impl ComponentEventDetails {
         Self::default()
     }
 }
+#[doc = "Evaluation details of policy language expressions."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ComponentExpressionEvaluationDetails {
+    #[doc = "Evaluation result."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result: Option<String>,
+    #[doc = "Expression evaluated."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expression: Option<String>,
+    #[doc = "The kind of expression that was evaluated."]
+    #[serde(rename = "expressionKind", default, skip_serializing_if = "Option::is_none")]
+    pub expression_kind: Option<String>,
+    #[doc = "Property path if the expression is a field or an alias."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[doc = "Value of the expression."]
+    #[serde(rename = "expressionValue", default, skip_serializing_if = "Option::is_none")]
+    pub expression_value: Option<serde_json::Value>,
+    #[doc = "Target value to be compared with the expression value."]
+    #[serde(rename = "targetValue", default, skip_serializing_if = "Option::is_none")]
+    pub target_value: Option<serde_json::Value>,
+    #[doc = "Operator to compare the expression value and the target value."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operator: Option<String>,
+}
+impl ComponentExpressionEvaluationDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Policy evaluation details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ComponentPolicyEvaluationDetails {
+    #[doc = "Details of the evaluated expressions."]
+    #[serde(
+        rename = "evaluatedExpressions",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub evaluated_expressions: Vec<ComponentExpressionEvaluationDetails>,
+    #[doc = "Additional textual reason for the evaluation outcome."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+impl ComponentPolicyEvaluationDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Component Policy State record."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ComponentPolicyState {
+    #[doc = "OData entity ID; always set to null since component policy state records do not have an entity ID."]
+    #[serde(rename = "@odata.id", default, skip_serializing_if = "Option::is_none")]
+    pub odata_id: Option<String>,
+    #[doc = "OData context string; used by OData clients to resolve type information based on metadata."]
+    #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
+    pub odata_context: Option<String>,
+    #[doc = "Timestamp for the component policy state record."]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
+    pub timestamp: Option<time::OffsetDateTime>,
+    #[doc = "Component Id."]
+    #[serde(rename = "componentId", default, skip_serializing_if = "Option::is_none")]
+    pub component_id: Option<String>,
+    #[doc = "Component type."]
+    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
+    pub component_type: Option<String>,
+    #[doc = "Component name."]
+    #[serde(rename = "componentName", default, skip_serializing_if = "Option::is_none")]
+    pub component_name: Option<String>,
+    #[doc = "Resource ID."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[doc = "Policy assignment ID."]
+    #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_assignment_id: Option<String>,
+    #[doc = "Policy definition ID."]
+    #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_id: Option<String>,
+    #[doc = "Subscription ID."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[doc = "Resource type."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "Resource location."]
+    #[serde(rename = "resourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub resource_location: Option<String>,
+    #[doc = "Resource group name."]
+    #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
+    pub resource_group: Option<String>,
+    #[doc = "Policy assignment name."]
+    #[serde(rename = "policyAssignmentName", default, skip_serializing_if = "Option::is_none")]
+    pub policy_assignment_name: Option<String>,
+    #[doc = "Policy assignment owner."]
+    #[serde(rename = "policyAssignmentOwner", default, skip_serializing_if = "Option::is_none")]
+    pub policy_assignment_owner: Option<String>,
+    #[doc = "Policy assignment parameters."]
+    #[serde(rename = "policyAssignmentParameters", default, skip_serializing_if = "Option::is_none")]
+    pub policy_assignment_parameters: Option<String>,
+    #[doc = "Policy assignment scope."]
+    #[serde(rename = "policyAssignmentScope", default, skip_serializing_if = "Option::is_none")]
+    pub policy_assignment_scope: Option<String>,
+    #[doc = "Policy definition name."]
+    #[serde(rename = "policyDefinitionName", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_name: Option<String>,
+    #[doc = "Policy definition action, i.e. effect."]
+    #[serde(rename = "policyDefinitionAction", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_action: Option<String>,
+    #[doc = "Policy definition category."]
+    #[serde(rename = "policyDefinitionCategory", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_category: Option<String>,
+    #[doc = "Policy set definition ID, if the policy assignment is for a policy set."]
+    #[serde(rename = "policySetDefinitionId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_id: Option<String>,
+    #[doc = "Policy set definition name, if the policy assignment is for a policy set."]
+    #[serde(rename = "policySetDefinitionName", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_name: Option<String>,
+    #[doc = "Policy set definition owner, if the policy assignment is for a policy set."]
+    #[serde(rename = "policySetDefinitionOwner", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_owner: Option<String>,
+    #[doc = "Policy set definition category, if the policy assignment is for a policy set."]
+    #[serde(rename = "policySetDefinitionCategory", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_category: Option<String>,
+    #[doc = "Policy set definition parameters, if the policy assignment is for a policy set."]
+    #[serde(rename = "policySetDefinitionParameters", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_parameters: Option<String>,
+    #[doc = "Reference ID for the policy definition inside the policy set, if the policy assignment is for a policy set."]
+    #[serde(rename = "policyDefinitionReferenceId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_reference_id: Option<String>,
+    #[doc = "Compliance state of the resource."]
+    #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
+    pub compliance_state: Option<String>,
+    #[doc = "Policy evaluation details."]
+    #[serde(rename = "policyEvaluationDetails", default, skip_serializing_if = "Option::is_none")]
+    pub policy_evaluation_details: Option<ComponentPolicyEvaluationDetails>,
+    #[doc = "Policy definition group names."]
+    #[serde(
+        rename = "policyDefinitionGroupNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub policy_definition_group_names: Vec<String>,
+    #[doc = "Evaluated policy definition version."]
+    #[serde(rename = "policyDefinitionVersion", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_version: Option<String>,
+    #[doc = "Evaluated policy set definition version."]
+    #[serde(rename = "policySetDefinitionVersion", default, skip_serializing_if = "Option::is_none")]
+    pub policy_set_definition_version: Option<String>,
+    #[doc = "Evaluated policy assignment version."]
+    #[serde(rename = "policyAssignmentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub policy_assignment_version: Option<String>,
+}
+impl ComponentPolicyState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Query results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ComponentPolicyStatesQueryResults {
+    #[doc = "OData context string; used by OData clients to resolve type information based on metadata."]
+    #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
+    pub odata_context: Option<String>,
+    #[doc = "OData entity count; represents the number of policy state records returned."]
+    #[serde(rename = "@odata.count", default, skip_serializing_if = "Option::is_none")]
+    pub odata_count: Option<i32>,
+    #[doc = "Query results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ComponentPolicyState>,
+}
+impl ComponentPolicyStatesQueryResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Component state details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentStateDetails {
@@ -526,6 +708,9 @@ pub struct Operation {
     #[doc = "Operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
     #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,

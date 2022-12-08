@@ -47,14 +47,14 @@ pub enum Runs {
 
 /// Settings for the entire run, generating multiple crates
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RunConfig {
-    pub crate_name_prefix: &'static str,
+pub struct RunConfig<'a> {
+    pub crate_name_prefix: &'a str,
     pub runs: Vec<Runs>,
     pub print_writing_file: bool,
 }
 
-impl RunConfig {
-    pub fn new(crate_name_prefix: &'static str) -> Self {
+impl<'a> RunConfig<'a> {
+    pub fn new(crate_name_prefix: &'a str) -> Self {
         Self {
             crate_name_prefix,
             runs: vec![Runs::Models, Runs::Operations],
@@ -66,7 +66,7 @@ impl RunConfig {
 /// Settings for generating of a single crate
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CrateConfig<'a> {
-    pub run_config: &'a RunConfig,
+    pub run_config: &'a RunConfig<'a>,
     pub input_files: Vec<Utf8PathBuf>,
     pub output_folder: Utf8PathBuf,
 }
