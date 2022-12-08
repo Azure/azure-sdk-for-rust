@@ -2,7 +2,7 @@ use azure_core::error::{Error, ErrorKind, ResultExt};
 use std::time::Duration;
 use url::Url;
 
-pub fn craft_peek_lock_url(
+pub(crate) fn craft_peek_lock_url(
     namespace: &str,
     queue_or_topic: &str,
     lock_expiry: Option<Duration>,
@@ -23,7 +23,7 @@ pub fn craft_peek_lock_url(
     Ok(url)
 }
 
-pub fn body_bytes_to_utf8(bytes: &[u8]) -> Result<String, Error> {
+pub(crate) fn body_bytes_to_utf8(bytes: &[u8]) -> Result<String, Error> {
     Ok(std::str::from_utf8(bytes)
         .context(
             ErrorKind::DataConversion,
@@ -32,7 +32,7 @@ pub fn body_bytes_to_utf8(bytes: &[u8]) -> Result<String, Error> {
         .to_string())
 }
 
-pub fn get_head_url(namespace: &str, queue_or_topic: &str, subscription: Option<&str>) -> String {
+pub(crate) fn get_head_url(namespace: &str, queue_or_topic: &str, subscription: Option<&str>) -> String {
     match subscription {
         Some(sub) => format!(
             "https://{}.servicebus.windows.net/{}/subscriptions/{}/messages/head",

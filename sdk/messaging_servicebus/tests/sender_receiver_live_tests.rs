@@ -5,7 +5,7 @@
 
 use azure_messaging_servicebus::{
     client::{
-        service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
+        ServiceBusClient, ServiceBusClientOptions,
     },
     primitives::sub_queue::SubQueue,
     ServiceBusMessage, ServiceBusReceiverOptions,
@@ -208,7 +208,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
 
     let expected = ["test message 1", "test message 2", "test message 3"];
 
-    let mut client = ServiceBusClient::new_with_options(&connection_string, Default::default())
+    let mut client = ServiceBusClient::new(&connection_string, Default::default())
         .await
         .unwrap();
     let mut sender = client
@@ -250,7 +250,7 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
 
     let expected = ["test message 1", "test message 2", "test message 3"];
 
-    let mut client = ServiceBusClient::new_with_options(&connection_string, Default::default())
+    let mut client = ServiceBusClient::new(&connection_string, Default::default())
         .await
         .unwrap();
     let mut sender = client
@@ -554,7 +554,7 @@ async fn schedule_and_cancel_scheduled_messages() {
         .map(|message| ServiceBusMessage::new(*message));
 
     let mut client =
-        ServiceBusClient::new_with_options(connection_string.clone(), Default::default())
+        ServiceBusClient::new(connection_string.clone(), Default::default())
             .await
             .unwrap();
     let mut sender = client
@@ -715,7 +715,7 @@ async fn receive_and_renew_lock() {
     .unwrap();
 
     let mut client =
-        ServiceBusClient::new_with_options(connection_string.clone(), Default::default())
+        ServiceBusClient::new(connection_string.clone(), Default::default())
             .await
             .unwrap();
     let mut receiver = client

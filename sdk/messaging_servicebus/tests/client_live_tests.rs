@@ -1,6 +1,6 @@
 use azure_messaging_servicebus::{
     client::{
-        service_bus_client::ServiceBusClient, service_bus_client_options::ServiceBusClientOptions,
+        ServiceBusClient, ServiceBusClientOptions,
     },
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };
@@ -16,7 +16,7 @@ async fn client_can_connect_using_connection_string_over_amqp_tcp() {
     let mut option = ServiceBusClientOptions::default();
     option.transport_type = ServiceBusTransportType::AmqpTcp;
 
-    let mut client = ServiceBusClient::new_with_options(&connection_string, option)
+    let mut client = ServiceBusClient::new(&connection_string, option)
         .await
         .unwrap();
     client.dispose().await.unwrap();
@@ -30,7 +30,7 @@ async fn client_can_connect_using_connection_string_over_amqp_websockets() {
     let mut option = ServiceBusClientOptions::default();
     option.transport_type = ServiceBusTransportType::AmqpWebSockets;
 
-    let mut client = ServiceBusClient::new_with_options(&connection_string, option)
+    let mut client = ServiceBusClient::new(&connection_string, option)
         .await
         .unwrap();
 

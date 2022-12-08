@@ -13,8 +13,8 @@ async fn send_to_queue_every_minute_for_two_hour() {
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
 
-    let mut client = azure_messaging_servicebus::client::service_bus_client::ServiceBusClient::new(
-        &connection_string,
+    let mut client = azure_messaging_servicebus::client::ServiceBusClient::new(
+        &connection_string, Default::default(),
     )
     .await
     .unwrap();

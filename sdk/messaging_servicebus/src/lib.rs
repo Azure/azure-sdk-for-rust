@@ -39,7 +39,6 @@ async fn main() -> azure_core::Result<()> {
 
 pub mod amqp;
 pub mod client;
-pub mod constants;
 pub mod core;
 pub mod diagnostics;
 pub mod prelude;
@@ -47,7 +46,7 @@ pub mod primitives;
 pub mod processor;
 pub mod receiver;
 pub mod sender;
-pub mod service_bus;
+// pub mod service_bus;
 pub mod utils;
 
 // TODO: reserved for future use
@@ -64,5 +63,6 @@ pub use sender::{
     service_bus_sender_options::ServiceBusSenderOptions,
 };
 
+pub(crate) mod constants;
 pub(crate) mod authorization;
 pub(crate) mod entity_name_formatter;

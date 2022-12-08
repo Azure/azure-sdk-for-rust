@@ -1,4 +1,8 @@
+//! Implements the ServiceBusClient
+
 use std::borrow::Cow;
+
+use azure_core::Url;
 
 use crate::{
     amqp::{
@@ -11,7 +15,7 @@ use crate::{
     entity_name_formatter::{self, format_entity_path},
     primitives::{
         service_bus_connection::ServiceBusConnection,
-        service_bus_transport_type::ServiceBusTransportType,
+        service_bus_transport_type::ServiceBusTransportType, error::Error, service_bus_retry_options::ServiceBusRetryOptions,
     },
     receiver::service_bus_session_receiver::{
         ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
@@ -19,7 +23,45 @@ use crate::{
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
 
-use super::{service_bus_client_options::ServiceBusClientOptions, Error};
+/// The set of options that can be specified when creating an [`ServiceBusConnection`]
+/// to configure its behavior.
+#[derive(Debug, Clone, Default)]
+pub struct ServiceBusClientOptions {
+    /// The type of protocol and transport that will be used for communicating with the Service
+    /// Bus service.
+    pub transport_type: ServiceBusTransportType,
+
+    /// A property used to set the [`ServiceBusClient`] ID to identify the client. This can be used
+    /// to correlate logs and exceptions. If `None` or empty, a random unique value will be
+    /// used.
+    pub identifier: Option<String>,
+
+    /// A custom endpoint address that can be used when establishing the connection to the Service
+    /// Bus service.
+    ///
+    /// # Remarks
+    ///
+    /// The custom endpoint address will be used in place of the default endpoint provided by the
+    /// Service Bus namespace when establishing the connection. The connection string or fully
+    /// qualified namespace will still be needed in order to validate the connection with the
+    /// service.
+    pub custom_endpoint_address: Option<Url>,
+
+    /// The set of options to use for determining whether a failed operation should be retried and,
+    /// if so, the amount of time to wait between retry attempts.  These options also control the
+    /// amount of time allowed for receiving messages and other interactions with the Service Bus
+    /// service.
+    pub retry_options: ServiceBusRetryOptions,
+
+    /// Gets or sets a flag that indicates whether or not transactions may span multiple
+    /// Service Bus entities.
+    ///
+    /// # Value
+    ///
+    /// `true`, when cross-entity transactions are enabled; `false` when transactions are not being
+    /// used or should be limited to a single entity.
+    pub enable_cross_entity_transactions: bool,
+}
 
 /// The [`ServiceBusClient`] is the top-level client through which all Service Bus entities can be
 /// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
@@ -43,11 +85,7 @@ pub struct ServiceBusClient<C> {
 }
 
 impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
-    pub async fn new<'a>(connection_string: impl Into<Cow<'a, str>>) -> Result<Self, super::Error> {
-        Self::new_with_options(connection_string, ServiceBusClientOptions::default()).await
-    }
-
-    pub async fn new_with_options<'a>(
+    pub async fn new<'a>(
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {

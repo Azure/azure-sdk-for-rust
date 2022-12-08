@@ -11,3 +11,4 @@ pub mod service_bus_retry_options;
 pub mod service_bus_retry_policy;
 pub mod service_bus_transport_type;
 pub mod sub_queue;
+pub mod error;
