@@ -50,22 +50,12 @@ where
     type MessageBatch = AmqpMessageBatch;
     type CreateMessageBatchError = RequestedSizeOutOfRange;
 
-    /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
+    /// Creates a size-constraint batch to which [`ServiceBusMessage`] may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
-    /// batch will not allow adding the message and signal that scenario using its return value.
+    /// batch will not allow adding the message and returns an error.
     ///
     /// Because messages that would violate the size constraint cannot be added, publishing a batch
     /// will not trigger an exception when attempting to send the message to the Queue/Topic.
-    ///
-    /// # Parameters
-    ///
-    /// * `options` - The set of options to consider when creating this batch.
-    /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
-    ///   request to cancel the operation.
-    ///
-    /// # Returns
-    ///
-    /// An [ServiceBusMessageBatch] with the requested `options`
     fn create_message_batch(
         &self,
         options: CreateMessageBatchOptions,
@@ -88,15 +78,9 @@ where
     }
 
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
-    /// the size of the messages exceed the maximum size of a single batch, an exception will be
-    /// triggered and the send will fail. In order to ensure that the messages being sent will fit
-    /// in a batch, use <see cref="SendBatchAsync"/> instead.
-    ///
-    /// # Parameters
-    ///
-    /// * `messages` - The list of messages to send.
-    /// * `cancellationToken` - An optional <see cref="CancellationToken"/> instance to signal the
-    ///   request to cancel the operation.
+    /// the size of the messages exceed the maximum size of a single batch, an error will be
+    /// returned and the send will fail. In order to ensure that the messages being sent will fit
+    /// in a batch, use [`send_batch()`] instead.
     async fn send(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
@@ -116,17 +100,7 @@ where
         }
     }
 
-    /// Sends a <see cref="ServiceBusMessageBatch"/> to the associated Queue/Topic.
-    ///
-    /// # Parameters
-    ///
-    /// * `message_batch` - The set of messages to send.
-    /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
-    ///   request to cancel the operation.
-    ///
-    /// # Returns
-    ///
-    /// A task to be resolved on when the operation has completed.
+    /// Sends [`ServiceBusMessageBatch`] to the associated Queue/Topic.
     async fn send_batch(
         &mut self,
         message_batch: Self::MessageBatch,
@@ -207,11 +181,6 @@ where
     }
 
     /// Closes the connection to the transport producer instance.
-    ///
-    /// # Parameters
-    ///
-    /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
-    ///   cancel the operation.
     async fn close(self) -> Result<(), Self::CloseError> {
         // An error would mean that the AmqpCbsLink event loop has stopped
         let _ = self

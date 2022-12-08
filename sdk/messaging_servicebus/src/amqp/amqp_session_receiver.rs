@@ -162,17 +162,6 @@ impl<RP> TransportSessionReceiver for AmqpSessionReceiver<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
-    /// <summary>
-    /// Indicates whether the session link has been closed. This is useful for session receiver scenarios because once the link is closed for a
-    /// session receiver it will not be reopened.
-    /// </summary>
-    fn is_session_link_closed(&self) -> bool {
-        todo!()
-    }
-
-    /// <summary>
-    /// The Session Id associated with the receiver.
-    /// </summary>
     fn session_locked_until(&self) -> Option<OffsetDateTime> {
         self.inner.receiver.properties(get_session_locked_until)
     }
@@ -187,13 +176,6 @@ where
         self.inner.receiver.properties_mut(op);
     }
 
-    /// <summary>
-    /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
-    /// </summary>
-    ///
-    /// <returns>New lock token expiry date and time in UTC format.</returns>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn renew_session_lock(
         &mut self,
         session_id: &str,
@@ -215,13 +197,6 @@ where
         Ok(OffsetDateTime::from(response.expiration))
     }
 
-    /// <summary>
-    /// Gets the session state.
-    /// </summary>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <returns>The session state as <see cref="BinaryData"/>.</returns>
     async fn session_state(
         &mut self,
         session_id: &str,
@@ -242,19 +217,6 @@ where
         Ok(response.session_state.into_vec())
     }
 
-    /// <summary>
-    /// Set a custom state on the session which can be later retrieved using <see cref="GetStateAsync"/>
-    /// </summary>
-    ///
-    /// <param name="sessionState">A <see cref="BinaryData"/> of session state</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>This state is stored on Service Bus forever unless you set an empty state on it.</remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
-    // public abstract Task SetStateAsync(
-    //     BinaryData sessionState,
-    //     CancellationToken cancellationToken);
     async fn set_session_state(
         &mut self,
         session_id: &str,
