@@ -3,10 +3,10 @@ use std::{sync::atomic::Ordering, time::Duration as StdDuration};
 use async_trait::async_trait;
 use azure_core::Url;
 use fe2o3_amqp::{
-    connection::{ConnectionHandle, OpenError},
-    link::{receiver::CreditMode, ReceiverAttachError, SenderAttachError},
+    connection::{ConnectionHandle},
+    link::{receiver::CreditMode},
     sasl_profile::SaslProfile,
-    session::{BeginError, SessionHandle},
+    session::{SessionHandle},
     Connection, Session,
 };
 
@@ -24,7 +24,7 @@ use fe2o3_amqp_ws::WebSocketStream;
 use time::Duration as TimeSpan;
 use tokio::{
     sync::mpsc,
-    time::{error::Elapsed, timeout},
+    time::{timeout},
 };
 
 use crate::{
@@ -41,57 +41,24 @@ use super::{
     amqp_constants,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
-    error::{CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError, OpenSenderError},
+    error::{CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError, OpenSenderError, AmqpConnectionScopeError},
     filters::SessionFilter,
     LINK_IDENTIFIER,
 };
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
-#[derive(Debug, thiserror::Error)]
-pub(crate) enum AmqpConnectionScopeError {
-    #[error(transparent)]
-    Open(#[from] OpenError),
-
-    #[error(transparent)]
-    WebSocket(#[from] fe2o3_amqp_ws::Error),
-
-    #[error(transparent)]
-    TimeoutElapsed(#[from] Elapsed),
-
-    #[error(transparent)]
-    Begin(#[from] BeginError),
-
-    #[error(transparent)]
-    SenderAttach(#[from] SenderAttachError),
-
-    #[error(transparent)]
-    ReceiverAttach(#[from] ReceiverAttachError),
-
-    #[error(transparent)]
-    Rng(#[from] rand::Error),
-}
-
 pub(crate) struct AmqpConnectionScope {
-    /// <summary>Indicates whether or not this instance has been disposed.</summary>
+    /// Indicates whether or not this instance has been disposed.
     is_disposed: bool,
 
-    // TODO: unused
-    //
-    // /// The set of active AMQP links associated with the connection scope.  These are considered
-    // /// children of the active connection and should be managed as such.
-    // active_links: HashMap<Value, Interval>,
     /// The unique identifier of the scope.
     id: String,
 
     /// The endpoint for the Service Bus service to which the scope is associated.
     service_endpoint: Url,
 
-    /// TODO: unused
-    ///
-    /// <summary>
-    ///   The endpoint for the Service Bus service to be used when establishing the connection.
-    /// </summary>
+    /// The endpoint for the Service Bus service to be used when establishing the connection.
     _connection_endpoint: Url,
 
     /// The type of transport to use for communication.
@@ -101,8 +68,6 @@ pub(crate) struct AmqpConnectionScope {
     connection: AmqpConnection,
 
     /// A handle to the AMQP session that is active for the current connection
-    ///
-    /// TODO: a single session?
     session: AmqpSession,
 
     /// The controller responsible for managing transactions.
@@ -122,42 +87,12 @@ impl std::fmt::Debug for AmqpConnectionScope {
 }
 
 impl AmqpConnectionScope {
-    // /// The name to assign to the SASL handler to specify that CBS tokens are in use.
-    // const CBS_SASL_HANDLER_NAME: &'static str = "MSSBCBS";
-
     /// The suffix to attach to the resource path when using web sockets for service communication.
     pub(crate) const WEB_SOCKETS_PATH_SUFFIX: &'static str = "/$servicebus/websocket/";
 
     /// The amount of time to allow an AMQP connection to be idle before considering
     /// it to be timed out.
     const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(1 * 60);
-
-    // /// The amount of buffer to apply to account for clock skew when
-    // /// refreshing authorization.  Authorization will be refreshed earlier
-    // /// than the expected expiration by this amount.
-    // const AUTHORIZATION_REFRESH_BUFFER: StdDuration =
-    //     StdDuration::from_secs(AUTHORIZATION_REFRESH_BUFFER_SECONDS); // 7 mins
-
-    // /// The amount of seconds to use as the basis for calculating a random jitter amount
-    // /// when refreshing token authorization.  This is intended to ensure that multiple
-    // /// resources using the authorization do not all attempt to refresh at the same moment.
-    // const AUTHORIZATION_BASE_JITTER_SECONDS: u64 = 30;
-
-    // /// The minimum amount of time for authorization to be refreshed; any calculations that
-    // /// call for refreshing more frequently will be substituted with this value.
-    // const MINIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(3 * 60);
-
-    // /// The maximum amount of time to allow before authorization is refreshed; any calculations
-    // /// that call for refreshing less frequently will be substituted with this value.
-    // ///
-    // /// # Remarks
-    // ///
-    // /// This value must be less than 49 days, 17 hours, 2 minutes, 47 seconds, 294 milliseconds
-    // /// in order to not overflow the Timer used to track authorization refresh.
-    // const MAXIMUM_AUTHORIZATION_REFRESH: StdDuration = StdDuration::from_secs(49 * 24 * 60 * 60); // 49 days
-
-    // /// The amount time to allow to refresh authorization of an AMQP link.
-    // const AUTHORIZATION_REFRESH_TIMEOUT: StdDuration = StdDuration::from_secs(3 * 60); // 3 mins
 
     /// The amount of buffer to apply when considering an authorization token
     /// to be expired.  The token's actual expiration will be decreased by this
@@ -184,7 +119,7 @@ impl AmqpConnectionScope {
     /// * `use_single_session` - If true, all links will use a single session.
     /// * `operation_timeout` - The timeout for operations associated with the connection.
     /// * `metrics` - The metrics instance to populate transport metrics. May be null.
-    pub async fn new(
+    pub(crate) async fn new(
         service_endpoint: Url,
         connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
         credential: ServiceBusTokenCredential,

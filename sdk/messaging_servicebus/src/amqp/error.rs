@@ -1,15 +1,87 @@
 use fe2o3_amqp::{
-    connection,
+    connection::{self, OpenError},
     link::{
         IllegalLinkStateError, LinkStateError, ReceiverAttachError, RecvError, SenderAttachError,
     },
-    session,
+    session::{self, BeginError},
 };
 use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use tokio::time::error::Elapsed;
 
 use crate::{primitives::service_bus_retry_policy::ServiceBusRetryPolicyError, ServiceBusMessage};
+
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum AmqpConnectionScopeError {
+    #[error(transparent)]
+    Open(#[from] OpenError),
+
+    #[error(transparent)]
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error(transparent)]
+    TimeoutElapsed(#[from] Elapsed),
+
+    #[error(transparent)]
+    Begin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    ReceiverAttach(#[from] ReceiverAttachError),
+
+    #[error(transparent)]
+    Rng(#[from] rand::Error),
+}
+
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpClientError {
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
+
+    #[error(transparent)]
+    Open(#[from] OpenError),
+
+    #[error(transparent)]
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error(transparent)]
+    TimeoutElapsed(#[from] Elapsed),
+
+    #[error(transparent)]
+    Begin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    ReceiverAttach(#[from] ReceiverAttachError),
+
+    #[error(transparent)]
+    Rng(#[from] rand::Error),
+
+    #[error("Cancelled")]
+    Cancelled,
+
+    #[error(transparent)]
+    Dispose(#[from] DisposeError),
+}
+
+impl From<AmqpConnectionScopeError> for AmqpClientError {
+    fn from(err: AmqpConnectionScopeError) -> Self {
+        match err {
+            AmqpConnectionScopeError::Open(err) => Self::Open(err),
+            AmqpConnectionScopeError::WebSocket(err) => Self::WebSocket(err),
+            AmqpConnectionScopeError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
+            AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
+            AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
+            AmqpConnectionScopeError::Rng(err) => Self::Rng(err),
+            AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct MaxLengthExceededError {

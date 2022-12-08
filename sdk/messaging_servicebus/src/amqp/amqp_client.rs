@@ -2,12 +2,6 @@ use std::{marker::PhantomData, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::Url;
-use fe2o3_amqp::{
-    connection::OpenError,
-    link::{ReceiverAttachError, SenderAttachError},
-    session::BeginError,
-};
-use tokio::time::error::Elapsed;
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -23,63 +17,16 @@ use crate::{
 };
 
 use super::{
-    amqp_connection_scope::{AmqpConnectionScope, AmqpConnectionScopeError},
+    amqp_connection_scope::{AmqpConnectionScope},
     amqp_receiver::AmqpReceiver,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
-    error::{DisposeError, OpenReceiverError, OpenSenderError},
+    error::{OpenReceiverError, OpenSenderError, AmqpClientError},
 };
 
 // TODO: current implementation doesn't support running callback in the background to refresh the
 // token
 // const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
-
-#[derive(Debug, thiserror::Error)]
-pub enum AmqpClientError {
-    #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
-
-    #[error(transparent)]
-    Open(#[from] OpenError),
-
-    #[error(transparent)]
-    WebSocket(#[from] fe2o3_amqp_ws::Error),
-
-    #[error(transparent)]
-    TimeoutElapsed(#[from] Elapsed),
-
-    #[error(transparent)]
-    Begin(#[from] BeginError),
-
-    #[error(transparent)]
-    SenderAttach(#[from] SenderAttachError),
-
-    #[error(transparent)]
-    ReceiverAttach(#[from] ReceiverAttachError),
-
-    #[error(transparent)]
-    Rng(#[from] rand::Error),
-
-    #[error("Cancelled")]
-    Cancelled,
-
-    #[error(transparent)]
-    Dispose(#[from] DisposeError),
-}
-
-impl From<AmqpConnectionScopeError> for AmqpClientError {
-    fn from(err: AmqpConnectionScopeError) -> Self {
-        match err {
-            AmqpConnectionScopeError::Open(err) => Self::Open(err),
-            AmqpConnectionScopeError::WebSocket(err) => Self::WebSocket(err),
-            AmqpConnectionScopeError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
-            AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
-            AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
-            AmqpConnectionScopeError::Rng(err) => Self::Rng(err),
-            AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
-        }
-    }
-}
 
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
 ///

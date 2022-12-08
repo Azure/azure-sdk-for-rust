@@ -39,7 +39,7 @@ uuid = { version = "1", features=["v4"] }
 
 # AMQP dependencies
 fe2o3-amqp = {version = "0.7.15", features = ["rustls"]}
-fe2o3-amqp-cbs = "0.1.0"
+fe2o3-amqp-cbs = "0.1.1"
 fe2o3-amqp-management = "0.1.0"
 fe2o3-amqp-types = "0.6.2"
 fe2o3-amqp-ws = { version = "0.1.2", features = ["rustls-tls-webpki-roots"] }

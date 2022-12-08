@@ -5,7 +5,7 @@ use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginE
 use tokio::time::error::Elapsed;
 
 use crate::{
-    amqp::{amqp_client::AmqpClientError, error::DisposeError},
+    amqp::{error::{DisposeError, AmqpClientError}},
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential,
