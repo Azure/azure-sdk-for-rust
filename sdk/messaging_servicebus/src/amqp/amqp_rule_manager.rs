@@ -21,7 +21,7 @@ impl TransportRuleManager for AmqpRuleManager {
     /// Adds a rule to the current subscription to filter the messages reaching from topic to the
     /// subscription.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `properties` - The rule properties for the rule to add.
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the
@@ -40,7 +40,7 @@ impl TransportRuleManager for AmqpRuleManager {
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `rule_name` - Name of the rule
     /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
@@ -59,7 +59,7 @@ impl TransportRuleManager for AmqpRuleManager {
 
     /// Get all rules associated with the subscription.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `skip` - The number of rules to skip when retrieving the next set of rules.
     /// * `top` - The number of rules to retrieve per service request.
@@ -80,7 +80,7 @@ impl TransportRuleManager for AmqpRuleManager {
 
     /// Closes the connection to the transport rule manager instance.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
     ///   cancel the operation.

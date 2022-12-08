@@ -64,7 +64,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     /// Calculates the amount of time to allow the current attempt for an operation to
     /// complete before considering it to be timed out.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `attempt_count` - The number of total attempts that have been made, including the initial attempt before any retries.</param>
     ///
@@ -75,7 +75,7 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
 
     /// Calculates the amount of time to wait before another attempt should be made.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `last_error` - The last exception that was observed for the operation to be retried.
     /// * `attemptCount` - The number of total attempts that have been made, including the initial

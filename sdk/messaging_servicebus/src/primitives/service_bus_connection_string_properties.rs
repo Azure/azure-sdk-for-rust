@@ -179,7 +179,7 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
     /// Parses the specified Service Bus connection string into its component properties.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `connection_string` - The connection string to parse.
     ///

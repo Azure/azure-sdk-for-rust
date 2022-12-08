@@ -21,7 +21,7 @@ pub trait TransportSender {
     /// Because messages that would violate the size constraint cannot be added, publishing a batch
     /// will not trigger an exception when attempting to send the message to the Queue/Topic.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `options` - The set of options to consider when creating this batch.
     /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
@@ -40,7 +40,7 @@ pub trait TransportSender {
     /// triggered and the send will fail. In order to ensure that the messages being sent will fit
     /// in a batch, use <see cref="SendBatchAsync"/> instead.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `messages` - The list of messages to send.
     /// * `cancellationToken` - An optional <see cref="CancellationToken"/> instance to signal the
@@ -52,7 +52,7 @@ pub trait TransportSender {
 
     /// Sends a <see cref="ServiceBusMessageBatch"/> to the associated Queue/Topic.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `message_batch` - The set of messages to send.
     /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
@@ -78,7 +78,7 @@ pub trait TransportSender {
 
     /// Closes the connection to the transport producer instance.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
     ///   cancel the operation.

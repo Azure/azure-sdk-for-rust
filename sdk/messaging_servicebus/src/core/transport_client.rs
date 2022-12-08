@@ -59,7 +59,7 @@ pub trait TransportClient: Sized {
     /// Creates a sender strongly aligned with the active protocol and transport,
     /// responsible for sending <see cref="ServiceBusMessage" /> to the entity.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `entity_path` - The entity path to send the message to.
     /// * `retry_policy` - The policy which governs retry behavior and try timeouts
@@ -99,7 +99,7 @@ pub trait TransportClient: Sized {
     // /// TODO: Creates a rule manager strongly aligned with the active protocol and transport, responsible
     // /// for adding, removing and getting rules from the Service Bus subscription.
     // ///
-    // /// # Arguments
+    // /// # Parameters
     // ///
     // /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
     // ///   is bound.
@@ -118,7 +118,7 @@ pub trait TransportClient: Sized {
 
     /// Closes the connection to the transport client instance.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
     async fn close(

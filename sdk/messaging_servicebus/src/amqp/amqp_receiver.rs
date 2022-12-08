@@ -76,14 +76,17 @@ where
         self.receive_mode
     }
 
-    /// <summary>
-    /// Receives a set of <see cref="ServiceBusReceivedMessage" /> from the entity using <see cref="ServiceBusReceiveMode"/> mode.
-    /// </summary>
-    /// <param name="maximumMessageCount">The maximum number of messages that will be received.</param>
-    /// <param name="maxWaitTime">An optional <see cref="TimeSpan"/> specifying the maximum time to wait for the first message before returning an empty list if no messages have been received.
-    ///     If not specified, the <see cref="ServiceBusRetryOptions.TryTimeout"/> will be used.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    /// <returns>List of messages received. Returns an empty list if no message is found.</returns>
+    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
+    ///
+    /// # Parameters
+    ///
+    /// * `maximum_message_count` - The maximum number of messages that will be received.
+    /// * `max_wait_time` - An optional [`std::time::Duration`] specifying the maximum time to wait for the first message before returning an empty list if no messages have been received.
+    ///     If not specified, the [`ServiceBusRetryOptions.try_timeout`] will be used.
+    ///
+    /// # Returns
+    ///
+    /// List of messages received. Returns an empty list if no message is found.
     async fn receive_messages(
         &mut self,
         max_messages: u32,
@@ -112,11 +115,7 @@ where
         )
     }
 
-    /// <summary>
     /// Closes the connection to the transport consumer instance.
-    /// </summary>
-    ///
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn close(mut self) -> Result<(), Self::CloseError> {
         let _ = self
             .cbs_command_sender
@@ -130,19 +129,7 @@ where
         Ok(())
     }
 
-    /// <summary>
-    /// Completes a <see cref="ServiceBusReceivedMessage"/>. This will delete the message from the service.
-    /// </summary>
-    ///
-    /// <param name="lockToken">The lockToken of the <see cref="ServiceBusReceivedMessage"/> to complete.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>
-    /// This operation can only be performed on a message that was received by this receiver
-    /// when <see cref="ServiceBusReceiveMode"/> is set to <see cref="ServiceBusReceiveMode.PeekLock"/>.
-    /// </remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
+    /// Completes a [`ServiceBusReceivedMessage`]. This will delete the message from the service.
     async fn complete(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -190,22 +177,7 @@ where
         Ok(())
     }
 
-    /// <summary> Indicates that the receiver wants to defer the processing for the message.</summary>
-    ///
-    /// <param name="lockToken">The lockToken of the <see cref="ServiceBusReceivedMessage"/> to defer.</param>
-    /// <param name="propertiesToModify">The properties of the message to modify while deferring the message.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>
-    /// A lock token can be found in <see cref="ServiceBusReceivedMessage.LockTokenGuid"/>,
-    /// only when <see cref="ServiceBusReceiveMode"/> is set to <see cref="ServiceBusReceiveMode.PeekLock"/>.
-    /// In order to receive this message again in the future, you will need to save the <see cref="ServiceBusReceivedMessage.SequenceNumber"/>
-    /// and receive it using ReceiveDeferredMessageBatchAsync(IEnumerable, CancellationToken).
-    /// Deferring messages does not impact message's expiration, meaning that deferred messages can still expire.
-    /// This operation can only be performed on messages that were received by this receiver.
-    /// </remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
+    /// Indicates that the receiver wants to defer the processing for the message.
     async fn defer(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -253,21 +225,7 @@ where
         Ok(())
     }
 
-    /// <summary>
     /// Fetches the next batch of active messages without changing the state of the receiver or the message source.
-    /// </summary>
-    ///
-    /// <param name="sequenceNumber">The sequence number from where to read the message.</param>
-    /// <param name="messageCount">The maximum number of messages that will be fetched.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>
-    /// The first call to PeekBatchBySequenceAsync(long, int, CancellationToken) fetches the first active message for this receiver. Each subsequent call
-    /// fetches the subsequent message in the entity.
-    /// Unlike a received message, peeked message will not have lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.
-    /// Also, unlike <see cref="ReceiveMessagesAsync"/>, this method will fetch even Deferred messages (but not Deadlettered messages).
-    /// </remarks>
-    /// <returns></returns>
     async fn peek_message(
         &mut self,
         sequence_number: Option<i64>,
@@ -338,21 +296,7 @@ where
         Ok(peeked_messages)
     }
 
-    /// <summary>
-    /// Abandons a <see cref="ServiceBusReceivedMessage"/>. This will make the message available again for processing.
-    /// </summary>
-    ///
-    /// <param name="lockToken">The lock token of the <see cref="ServiceBusReceivedMessage"/> to abandon.</param>
-    /// <param name="propertiesToModify">The properties of the message to modify while abandoning the message.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>
-    /// Abandoning a message will increase the delivery count on the message.
-    /// This operation can only be performed on messages that were received by this receiver
-    /// when <see cref="ServiceBusReceiveMode"/> is set to <see cref="ServiceBusReceiveMode.PeekLock"/>.
-    /// </remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
+    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for processing.
     async fn abandon(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -400,25 +344,7 @@ where
         Ok(())
     }
 
-    /// <summary>
     /// Moves a message to the dead-letter subqueue.
-    /// </summary>
-    ///
-    /// <param name="lockToken">The lock token of the <see cref="ServiceBusReceivedMessage"/> to dead-letter.</param>
-    /// <param name="deadLetterReason">The reason for dead-lettering the message.</param>
-    /// <param name="deadLetterErrorDescription">The error description for dead-lettering the message.</param>
-    /// <param name="propertiesToModify">The properties of the message to modify while moving to subqueue.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
-    ///
-    /// <remarks>
-    /// In order to receive a message from the dead-letter queue, you will need a new
-    /// <see cref="ServiceBusReceiver"/> with the corresponding path.
-    /// You can use EntityNameHelper.FormatDeadLetterPath(string)"/> to help with this.
-    /// This operation can only be performed on messages that were received by this receiver
-    /// when <see cref="ServiceBusReceiveMode"/> is set to <see cref="ServiceBusReceiveMode.PeekLock"/>.
-    /// </remarks>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
     async fn dead_letter(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -476,14 +402,7 @@ where
         Ok(())
     }
 
-    /// <summary>
-    /// Receives a <see cref="IList{Message}"/> of deferred messages identified by <paramref name="sequenceNumbers"/>.
-    /// </summary>
-    /// <param name="sequenceNumbers">A <see cref="IList{SequenceNumber}"/> containing the sequence numbers to receive.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>Messages identified by sequence number are returned.
-    /// Throws if the messages have not been deferred.</returns>
-    /// <seealso cref="DeferAsync"/>
+    /// Receives a [`Vec<ServiceBusReceivedMessages>`] of deferred messages identified by `sequence_numbers`.
     async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
@@ -528,13 +447,7 @@ where
         Ok(received_messages)
     }
 
-    /// <summary>
     /// Renews the lock on the message. The lock will be renewed based on the setting specified on the queue.
-    /// </summary>
-    /// <returns>New lock token expiry date and time in UTC format.</returns>
-    ///
-    /// <param name="lockToken">Lock token associated with the message.</param>
-    /// <param name="cancellationToken">An optional <see cref="CancellationToken"/> instance to signal the request to cancel the operation.</param>
     async fn renew_message_lock(
         &mut self,
         lock_tokens: Vec<Uuid>,

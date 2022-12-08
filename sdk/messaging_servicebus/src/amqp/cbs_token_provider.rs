@@ -27,7 +27,7 @@ pub(crate) struct CbsTokenProvider {
 impl CbsTokenProvider {
     /// Initializes a new instance of the <see cref="CbsTokenProvider"/> class.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// `credential` - The credential to use for access token generation.
     /// `token_expiration_buffer` - The amount of time to buffer expiration

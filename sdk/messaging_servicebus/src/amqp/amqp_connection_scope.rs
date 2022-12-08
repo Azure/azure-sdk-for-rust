@@ -108,7 +108,7 @@ impl AmqpConnectionScope {
 impl AmqpConnectionScope {
     /// Initializes a new instance of the <see cref="AmqpConnectionScope"/> class.
     ///
-    /// # Arguments
+    /// # Parameters
     ///
     /// * `service_endpoint` - Endpoint for the Service Bus service to which the scope is
     ///   associated.

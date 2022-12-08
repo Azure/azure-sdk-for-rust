@@ -5,11 +5,10 @@ use crate::core::TransportMessageBatch;
 
 use super::error::TryAddMessageError;
 
-/// A set of <see cref="ServiceBusMessage" /> with size constraints known up-front, intended to be
-/// sent to the Queue/Topic as a single batch. A <see cref="ServiceBusMessageBatch"/> can be
-/// created using <see
-/// cref="ServiceBusSender.CreateMessageBatchAsync(System.Threading.CancellationToken)"/>.
-/// Messages can be added to the batch using the <see cref="TryAddMessage"/> method on the batch.
+/// A set of [`ServiceBusMessage`] with size constraints known up-front, intended to be
+/// sent to the Queue/Topic as a single batch. A [`ServiceBusMessageBatch`] can be
+/// created using `ServiceBusSender::create_message_batch()`.
+/// Messages can be added to the batch using the [`try_add_message()`] method on the batch.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AmqpMessageBatch {
     /// The maximum size of the batch, in bytes.
