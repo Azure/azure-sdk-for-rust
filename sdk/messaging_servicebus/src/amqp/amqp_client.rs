@@ -82,28 +82,11 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
 }
 
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
-/// It is intended that the public <see cref="ServiceBusConnection" /> make use of an instance via containment
-/// and delegate operations to it.
 ///
 /// See also [`TransportClient`]
 #[derive(Debug)]
 pub struct AmqpClient<RP> {
-    // TODO: Current implementation doesn't support adding a periodic callback to refresh the token.
-    //
-    // /// <summary>
-    // ///   The buffer to apply when considering refreshing; credentials that expire less than this duration will be refreshed.
-    // /// </summary>
-    // ///
-    // credential_refresh_buffer: Duration,
-    /// <summary>Indicates whether or not this instance has been closed.</summary>
-    closed: bool,
-
-    //
-    /// <summary>
-    ///   The AMQP connection scope responsible for managing transport constructs for this instance.
-    /// </summary>
-    ///
-    // private AmqpConnectionScope ConnectionScope { get; }
+    /// The AMQP connection scope responsible for managing transport constructs for this instance.
     connection_scope: AmqpConnectionScope,
 
     /// Retry policy phantom
@@ -195,8 +178,6 @@ where
         .await?;
 
         Ok(Self {
-            // credential_refresh_buffer: Duration::from_secs(5 * 60),
-            closed: false,
             connection_scope,
             retry_policy: PhantomData,
         })
@@ -206,37 +187,20 @@ where
         self.connection_scope.transport_type()
     }
 
-    /// Indicates whether or not this client has been closed.
-    ///
-    /// Returnss `true` if the client is closed, otherwise `false`
     fn is_closed(&self) -> bool {
-        todo!()
+        self.connection_scope.is_disposed()
     }
 
-    /// The endpoint for the Service Bus service to which the client is associated.
     fn service_endpoint(&self) -> &Url {
         self.connection_scope.service_endpoint()
     }
 
-    /// Creates a sender strongly aligned with the active protocol and transport,
-    /// responsible for sending <see cref="ServiceBusMessage" /> to the entity.
-    ///
-    /// # Arguments
-    ///
-    /// * `entity_path` - The entity path to send the message to.
-    /// * `retry_options` - The policy which governs retry behavior and try timeouts
-    /// * `identifier` - The identifier for the sender.
-    ///
-    /// # Returns
-    ///
-    /// A [TransportSender] configured in the requested manner.
     async fn create_sender(
         &mut self,
         entity_path: String,
         identifier: String,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
-        // TODO: this will be updated once GAT is stablized
         let (link_identifier, sender, cbs_command_sender) = self
             .connection_scope
             .open_sender_link(&entity_path, &identifier)
@@ -333,19 +297,7 @@ where
         Ok(AmqpSessionReceiver { inner })
     }
 
-    // /// Creates a rule manager strongly aligned with the active protocol and transport, responsible
-    // /// for adding, removing and getting rules from the Service Bus subscription.
-    // ///
-    // /// # Arguments
-    // ///
-    // /// * `subscription_path` - The path of the Service Bus subscription to which the rule manager
-    // ///   is bound.
-    // /// * `retry_options` - The policy which governs retry behavior and try timeouts.
-    // /// * `identifier` - The identifier for the rule manager.
-    // ///
-    // /// # Returns
-    // ///
-    // /// A [TransportRuleManager] configured in the requested manner.
+    // TODO:
     // async fn create_rule_manager(
     //     &mut self,
     //     _subscription_path: String,
@@ -355,16 +307,11 @@ where
     //     todo!()
     // }
 
-    /// Closes the connection to the transport client instance.
-    ///
-    /// # Arguments
-    ///
-    /// An optional [CancellationToken] instance to signal the request to cancel the operation.
     async fn close(
         &mut self,
         cancellation_token: Option<CancellationToken>,
     ) -> Result<(), Self::DisposeError> {
-        if self.closed {
+        if self.is_closed() {
             Ok(())
         } else {
             match cancellation_token {
@@ -372,7 +319,6 @@ where
                     tokio::select! {
                         _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
                         result = self.connection_scope.dispose() => {
-                            self.closed = true;
                             result.map_err(Into::into)
                         }
                     }
@@ -381,10 +327,6 @@ where
                     .connection_scope
                     .dispose()
                     .await
-                    .and_then(|_| {
-                        self.closed = true;
-                        Ok(())
-                    })
                     .map_err(Into::into),
             }
         }
