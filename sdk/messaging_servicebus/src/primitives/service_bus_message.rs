@@ -151,7 +151,7 @@ impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
 }
 
 impl ServiceBusMessage {
-    /// Creates a new [ServiceBusMessage] with a raw AMQP message.
+    /// Creates a new [`ServiceBusMessage`] with a raw AMQP message.
     pub fn from_raw_amqp_message(amqp_message: Message<Data>) -> Self {
         Self { amqp_message }
     }
@@ -161,6 +161,7 @@ impl ServiceBusMessage {
         &self.amqp_message
     }
 
+    /// Creates a new [`ServiceBusMessage`] with the given data as the body.
     pub fn new(data: impl Into<Vec<u8>>) -> Self {
         Self {
             amqp_message: Message::builder().data(Binary::from(data)).build(),
@@ -172,6 +173,7 @@ impl ServiceBusMessage {
         &self.amqp_message.body.0
     }
 
+    /// Gets a mutable reference to the body of the message
     pub fn body_mut(&mut self) -> &mut Vec<u8> {
         &mut self.amqp_message.body.0
     }

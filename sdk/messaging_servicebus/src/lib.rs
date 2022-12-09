@@ -33,7 +33,7 @@ async fn main() -> azure_core::Result<()> {
 */
 #![recursion_limit = "128"]
 #![deny(
-    missing_docs,
+    // missing_docs,
     missing_debug_implementations,
 )]
 
@@ -42,6 +42,7 @@ pub mod client;
 pub mod primitives;
 pub mod receiver;
 pub mod sender;
+pub mod core; // TODO: change to pub(crate)?
 
 // pub mod prelude;
 // pub mod service_bus;
@@ -62,7 +63,6 @@ pub use sender::{
     service_bus_sender_options::ServiceBusSenderOptions,
 };
 
-pub(crate) mod core;
 pub(crate) mod constants;
 pub(crate) mod diagnostics;
 pub(crate) mod authorization;
