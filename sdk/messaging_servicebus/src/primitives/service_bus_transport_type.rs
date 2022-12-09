@@ -1,3 +1,5 @@
+//! Defines the type of protocol and transport that will be used for communicating with Azure Service
+
 /// Specifies the type of protocol and transport that will be used for communicating with Azure
 /// Service Bus.
 #[derive(Debug, Clone)]

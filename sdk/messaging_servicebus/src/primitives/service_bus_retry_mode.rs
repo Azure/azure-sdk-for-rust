@@ -1,3 +1,5 @@
+//! The type of approach to apply when calculating the delay
+
 /// The type of approach to apply when calculating the delay
 /// between retry attempts.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

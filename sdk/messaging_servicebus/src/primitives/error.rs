@@ -1,10 +1,11 @@
+//! Error types for the service bus primitives.
+
 use fe2o3_amqp::{connection::OpenError, session::BeginError, link::SenderAttachError};
 use tokio::time::error::Elapsed;
 
 use crate::{authorization::shared_access_signature::SasSignatureError, amqp::error::{DisposeError, AmqpClientError}};
 
 use super::service_bus_connection_string_properties::FormatError;
-
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

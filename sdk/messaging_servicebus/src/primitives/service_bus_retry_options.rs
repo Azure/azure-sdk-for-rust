@@ -1,3 +1,5 @@
+//! Defines the [`ServiceBusRetryOptions`] struct.
+
 use std::time::Duration;
 
 use super::service_bus_retry_mode::ServiceBusRetryMode;

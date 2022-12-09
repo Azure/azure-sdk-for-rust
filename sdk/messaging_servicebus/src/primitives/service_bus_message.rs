@@ -1,3 +1,5 @@
+//! Implements ServiceBusMessage
+
 use std::borrow::Cow;
 
 use std::time::Duration as StdDuration;

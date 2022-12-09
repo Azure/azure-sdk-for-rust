@@ -1,3 +1,5 @@
+//! Defines the retry policy trait for Service Bus operations.
+
 use std::hash::Hash;
 use std::time::Duration as StdDuration;
 

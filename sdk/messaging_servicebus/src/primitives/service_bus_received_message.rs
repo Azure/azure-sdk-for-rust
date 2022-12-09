@@ -1,3 +1,5 @@
+//! Defines the [`ServiceBusReceivedMessage`] struct.
+
 use std::borrow::Cow;
 use std::time::Duration as StdDuration;
 use time::Duration as TimeSpan;

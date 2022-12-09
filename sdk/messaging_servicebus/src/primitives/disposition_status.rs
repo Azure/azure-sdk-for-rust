@@ -1,7 +1,7 @@
 use serde_amqp::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum DispositionStatus {
+pub(crate) enum DispositionStatus {
     Completed = 1,
     Defered = 2,
     Suspended = 3,

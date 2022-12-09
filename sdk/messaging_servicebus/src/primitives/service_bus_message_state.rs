@@ -1,3 +1,5 @@
+//! Defines the [`ServiceBusMessageState`] enum.
+
 /// <summary>Represents the message state of the [`ServiceBusReceivedMessage`]
 #[derive(Debug)]
 pub enum ServiceBusMessageState {

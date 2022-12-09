@@ -33,24 +33,23 @@ async fn main() -> azure_core::Result<()> {
 */
 #![recursion_limit = "128"]
 #![deny(
-    // missing_docs,
+    missing_docs,
     missing_debug_implementations,
 )]
 
 pub mod amqp;
 pub mod client;
-pub mod core;
-pub mod diagnostics;
-pub mod prelude;
 pub mod primitives;
-pub mod processor;
 pub mod receiver;
 pub mod sender;
+
+// pub mod prelude;
 // pub mod service_bus;
-pub mod utils;
+// pub mod utils;
 
 // TODO: reserved for future use
-// mod administration;
+// pub mod administration;
+// pub mod processor;
 
 pub use primitives::service_bus_message::ServiceBusMessage;
 pub use receiver::{
@@ -63,6 +62,8 @@ pub use sender::{
     service_bus_sender_options::ServiceBusSenderOptions,
 };
 
+pub(crate) mod core;
 pub(crate) mod constants;
+pub(crate) mod diagnostics;
 pub(crate) mod authorization;
 pub(crate) mod entity_name_formatter;
