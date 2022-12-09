@@ -2,7 +2,7 @@
 
 pub(crate) mod disposition_status;
 pub(crate) mod service_bus_connection;
-pub(crate) mod service_bus_connection_string_properties;
+pub mod service_bus_connection_string_properties;
 pub mod service_bus_message;
 pub mod service_bus_message_state;
 pub mod service_bus_peeked_message;

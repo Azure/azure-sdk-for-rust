@@ -1,5 +1,6 @@
 use serde_amqp::Value;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum DispositionStatus {
     Completed = 1,
