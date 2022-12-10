@@ -7,11 +7,12 @@ use fe2o3_amqp_types::primitives::Array;
 use std::time::Duration as StdDuration;
 use tokio::sync::mpsc;
 
+use crate::primitives::error::RetryError;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
     core::TransportSender,
     primitives::service_bus_retry_policy::{
-        run_operation, RetryError, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
+        run_operation, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
     },
     CreateMessageBatchOptions, ServiceBusMessage,
 };

@@ -71,3 +71,15 @@ impl From<AmqpClientError> for Error {
         }
     }
 }
+
+/// Service bus retry policy error
+#[derive(Debug, thiserror::Error)]
+pub enum RetryError<E> {
+    /// Retry policy exhausted
+    #[error("Retry policy exhausted")]
+    ServiceBusy,
+
+    /// Error with the operation
+    #[error(transparent)]
+    Operation(E),
+}

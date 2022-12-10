@@ -9,24 +9,11 @@ use fe2o3_amqp_management::error::Error as ManagementError;
 
 use super::service_bus_retry_options::ServiceBusRetryOptions;
 
-pub static SERVER_BUSY_BASE_SLEEP_TIME: StdDuration = StdDuration::from_secs(10);
+pub(crate) static SERVER_BUSY_BASE_SLEEP_TIME: StdDuration = StdDuration::from_secs(10);
 
-pub trait MapRetryPolicy<P> {
-    type Output;
-
-    fn map_retry_policy(self) -> Self::Output;
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum RetryError<E> {
-    #[error("Retry policy exhausted")]
-    ServiceBusy,
-
-    #[error(transparent)]
-    Operation(E),
-}
-
+/// Trait for operation errors that can be retried.
 pub trait ServiceBusRetryPolicyError: std::error::Error + Send + Sync + 'static {
+    /// Returns true if the connection scope is disposed.
     fn is_scope_disposed(&self) -> bool;
 }
 
@@ -53,14 +40,19 @@ impl ServiceBusRetryPolicyError for fe2o3_amqp_management::error::Error {
 /// policies but instead configure the default policy by specifying the desired set of
 /// retry options when creating one of the Service Bus clients.
 pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
+    /// The type of state maintained by the retry policy.
     type State: ServiceBusRetryPolicyState;
 
+    /// Creates a new retry policy instance with the specified options.
     fn new(options: ServiceBusRetryOptions) -> Self;
 
+    /// Gets the retry options for the policy.
     fn options(&self) -> &ServiceBusRetryOptions;
 
+    /// Gets the state for the policy.
     fn state(&self) -> &Self::State;
 
+    /// Gets the state mutably for the policy.
     fn state_mut(&mut self) -> &mut Self::State;
 
     /// Calculates the amount of time to allow the current attempt for an operation to
@@ -94,12 +86,15 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     ) -> Option<StdDuration>;
 }
 
+/// Trait for state maintained by a retry policy.
 pub trait ServiceBusRetryPolicyState {
     /// Determines whether or not the server returned a busy error.
     fn is_server_busy(&self) -> bool;
 
+    /// Sets the server busy state.
     fn set_server_busy(&mut self, error_message: String);
 
+    /// Resets the server busy state.
     fn reset_server_busy(&mut self);
 
     /// Gets the exception message when a server busy error is returned.
@@ -222,13 +217,13 @@ macro_rules! run_operation {
                             tokio::time::sleep(retry_delay).await;
                             $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
                         }
-                        _ => return Err(crate::primitives::service_bus_retry_policy::RetryError::Operation(error)),
+                        _ => return Err(crate::primitives::error::RetryError::Operation(error)),
                     }
                 }
             }
         };
 
-        Result::<_, crate::primitives::service_bus_retry_policy::RetryError<$err_ty>>::Ok(outcome)
+        Result::<_, crate::primitives::error::RetryError<$err_ty>>::Ok(outcome)
     }};
 
     ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $cancellation_token:ident, $op:expr) => {{
@@ -242,7 +237,7 @@ macro_rules! run_operation {
             // entire Sleep time.
             tokio::time::timeout($try_timeout, $cancellation_token.cancelled())
                 .await
-                .map_err(|_| crate::primitives::service_bus_retry_policy::RetryError::ServiceBusy)?
+                .map_err(|_| crate::primitives::error::RetryError::ServiceBusy)?
         }
 
         let outcome = loop {
@@ -278,13 +273,13 @@ macro_rules! run_operation {
                                     .await;
                             $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
                         }
-                        _ => return Err(RetryError::Operation(error)),
+                        _ => return Err(crate::primitives::error::RetryError::Operation(error)),
                     }
                 }
             }
         };
 
-        Result::<_, crate::primitives::service_bus_retry_policy::RetryError<$err_ty>>::Ok(outcome)
+        Result::<_, crate::primitives::error::RetryError<$err_ty>>::Ok(outcome)
     }};
 }
 

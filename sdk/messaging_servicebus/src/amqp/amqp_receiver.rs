@@ -19,7 +19,8 @@ use crate::{
         disposition_status::DispositionStatus,
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::{ReceivedMessageLockToken, ServiceBusReceivedMessage},
-        service_bus_retry_policy::{run_operation, RetryError, ServiceBusRetryPolicy},
+        service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
+        error::RetryError,
     },
     ServiceBusReceiveMode,
 };
