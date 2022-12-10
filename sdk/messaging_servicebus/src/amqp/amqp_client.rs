@@ -2,7 +2,6 @@ use std::{marker::PhantomData, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::Url;
-use tokio_util::sync::CancellationToken;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
@@ -256,26 +255,31 @@ where
 
     async fn close(
         &mut self,
-        cancellation_token: Option<CancellationToken>,
+        // cancellation_token: Option<CancellationToken>,
     ) -> Result<(), Self::DisposeError> {
         if self.is_closed() {
             Ok(())
         } else {
-            match cancellation_token {
-                Some(token) => {
-                    tokio::select! {
-                        _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
-                        result = self.connection_scope.dispose() => {
-                            result.map_err(Into::into)
-                        }
-                    }
-                }
-                None => self
-                    .connection_scope
-                    .dispose()
-                    .await
-                    .map_err(Into::into),
-            }
+            // match cancellation_token {
+            //     Some(token) => {
+            //         tokio::select! {
+            //             _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
+            //             result = self.connection_scope.dispose() => {
+            //                 result.map_err(Into::into)
+            //             }
+            //         }
+            //     }
+            //     None => self
+            //         .connection_scope
+            //         .dispose()
+            //         .await
+            //         .map_err(Into::into),
+            // }
+            self
+                .connection_scope
+                .dispose()
+                .await
+                .map_err(Into::into)
         }
     }
 }

@@ -30,9 +30,6 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     ReceiverAttach(#[from] ReceiverAttachError),
-
-    #[error(transparent)]
-    Rng(#[from] rand::Error),
 }
 
 
@@ -60,12 +57,6 @@ pub enum AmqpClientError {
     ReceiverAttach(#[from] ReceiverAttachError),
 
     #[error(transparent)]
-    Rng(#[from] rand::Error),
-
-    #[error("Cancelled")]
-    Cancelled,
-
-    #[error(transparent)]
     Dispose(#[from] DisposeError),
 }
 
@@ -77,7 +68,6 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
             AmqpConnectionScopeError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
             AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
-            AmqpConnectionScopeError::Rng(err) => Self::Rng(err),
             AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
         }
     }

@@ -2,7 +2,6 @@ use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
 use azure_core::Url;
-use tokio_util::sync::CancellationToken;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
@@ -138,13 +137,13 @@ pub trait TransportClient: Sized {
     /// An optional [CancellationToken] instance to signal the request to cancel the operation.
     async fn close(
         &mut self,
-        cancellation_token: Option<CancellationToken>,
+        // cancellation_token: Option<CancellationToken>,
     ) -> Result<(), Self::DisposeError>;
 
     /// Performs the task needed to clean up resources used by the client,
     /// including ensuring that the client itself has been closed.
     async fn dispose(&mut self) -> Result<(), Self::DisposeError> {
-        self.close(None).await?;
+        self.close().await?;
         Ok(())
     }
 }
