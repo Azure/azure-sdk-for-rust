@@ -1,7 +1,11 @@
 use crate::ServiceBusMessage;
 
+/// Trait for a message batch.
 pub trait TransportMessageBatch {
+    /// Error with adding a message to the batch.
     type TryAddError: std::error::Error + Send;
+
+    /// An iterator type over the messages in the batch.
     type Iter<'a>: Iterator
     where
         Self: 'a;

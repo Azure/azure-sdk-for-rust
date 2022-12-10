@@ -2,17 +2,28 @@ use async_trait::async_trait;
 
 use crate::{CreateMessageBatchOptions, ServiceBusMessage};
 
+use super::TransportMessageBatch;
+
 /// Provides an abstraction for generalizing an Service Bus entity Producer so that a dedicated instance may provide operations
 /// for a specific transport, such as AMQP or JMS.  It is intended that the public <see cref="ServiceBusSender" /> employ
 /// a transport producer via containment and delegate operations to it rather than understanding protocol-specific details
 /// for different transports.
 #[async_trait]
 pub trait TransportSender {
+    /// Error with sending a message
     type SendError: std::error::Error + Send;
+
+    /// Error with scheduling a message
     type ScheduleError: std::error::Error + Send;
+
+    /// Error with closing a sender
     type CloseError: std::error::Error + Send;
-    type MessageBatch: Send;
+
+    /// Error with creating a message batch
     type CreateMessageBatchError: std::error::Error + Send;
+
+    /// The message batch type
+    type MessageBatch: TransportMessageBatch + Send;
 
     /// Creates a size-constraint batch to which <see cref="ServiceBusMessage" /> may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -66,11 +77,13 @@ pub trait TransportSender {
         message_batch: Self::MessageBatch,
     ) -> Result<(), Self::SendError>;
 
+    /// Schedules a list of messages to appear on Service Bus at a later time.
     async fn schedule_messages(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + Send,
     ) -> Result<Vec<i64>, Self::ScheduleError>;
 
+    /// Cancels one or more messages that were scheduled.
     async fn cancel_scheduled_messages(
         &mut self,
         sequence_numbers: Vec<i64>,

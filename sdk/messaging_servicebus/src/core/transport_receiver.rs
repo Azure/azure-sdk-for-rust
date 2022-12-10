@@ -12,6 +12,7 @@ use crate::{
     ServiceBusReceiveMode,
 };
 
+/// Trait for session receiver
 #[async_trait]
 pub trait TransportSessionReceiver: TransportReceiver {
     // /// TODO: dispose/close will consume the ownership, is this still necessary?
@@ -20,8 +21,10 @@ pub trait TransportSessionReceiver: TransportReceiver {
     // ///
     // fn is_session_link_closed(&self) -> bool;
 
+    /// Get locked until time for the session
     fn session_locked_until(&self) -> Option<OffsetDateTime>;
 
+    /// Set locked until time for the session
     fn set_session_locked_until(&mut self, session_locked_until: OffsetDateTime);
 
     /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
@@ -44,15 +47,25 @@ pub trait TransportSessionReceiver: TransportReceiver {
     ) -> Result<(), Self::RequestResponseError>;
 }
 
+/// Trait for a receiver.
 #[async_trait]
 pub trait TransportReceiver {
+    /// Error with request-response operations
     type RequestResponseError;
+
+    /// Error with receiving messages
     type ReceiveError;
+
+    /// Error with disposing messages
     type DispositionError;
+
+    /// Error with closing the receiver
     type CloseError;
 
+    /// Get the prefetch count
     fn prefetch_count(&self) -> u32;
 
+    /// Get the receive mode
     fn receive_mode(&self) -> ServiceBusReceiveMode;
 
     /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
@@ -98,6 +111,7 @@ pub trait TransportReceiver {
         message_count: i32,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError>;
 
+    /// Fetches the next batch of active messages for a session without changing the state of the receiver or the message source.
     async fn peek_session_message(
         &mut self,
         sequence_number: Option<i64>,

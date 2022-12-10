@@ -24,19 +24,32 @@ use super::{
 /// operations to it rather than understanding protocol-specific details for different transports.
 #[async_trait]
 pub trait TransportClient: Sized {
+    /// Error with creating a client
     type CreateClientError: Send;
+
+    /// Error with creating a sender
     type CreateSenderError: Send;
+
+    /// Error with creating a receiver
     type CreateReceiverError: Send;
-    type CreateRuleManagerError: Send;
+
+    /// Error with closing a client
     type DisposeError: Send;
 
+    /// Sender type
     type Sender: TransportSender;
+
+    /// Receiver type
     type Receiver: TransportReceiver;
+
+    /// Session receiver type
     type SessionReceiver: TransportSessionReceiver;
 
     // TODO: impl rule manager
+    // type CreateRuleManagerError: Send;
     // type RuleManager: TransportRuleManager;
 
+    /// Creates a new instance of Self.
     async fn create_transport_client<'a>(
         host: &'a str,
         credential: ServiceBusTokenCredential,
@@ -75,6 +88,7 @@ pub trait TransportClient: Sized {
         retry_policy: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError>;
 
+    /// Creates a receiver
     async fn create_receiver(
         &mut self,
         entity_path: String,
@@ -85,6 +99,7 @@ pub trait TransportClient: Sized {
         is_processor: bool,
     ) -> Result<Self::Receiver, Self::CreateReceiverError>;
 
+    /// Creates a session receiver
     async fn create_session_receiver(
         &mut self,
         entity_path: String,

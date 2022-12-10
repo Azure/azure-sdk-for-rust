@@ -11,46 +11,16 @@ use crate::primitives::{
 
 const JITTER_FACTOR: f64 = 0.08;
 
-// // TODO: separate send and recv errors
-// #[derive(Debug, thiserror::Error)]
-// pub enum BasicRetryPolicyError {
-//     #[error(transparent)]
-//     Send(#[from] SendError),
-
-//     #[error(transparent)]
-//     Elapsed(#[from] Elapsed),
-
-//     #[error(transparent)]
-//     Management(#[from] ManagementError),
-
-//     #[error(transparent)]
-//     NotAccepted(#[from] NotAcceptedError),
-
-//     #[error(transparent)]
-//     Disposition(#[from] IllegalLinkStateError),
-
-//     #[error(transparent)]
-//     Recv(#[from] ServiceBusRecvError),
-// }
-
-// impl ServiceBusRetryPolicyError for BasicRetryPolicyError {
-//     fn is_scope_disposed(&self) -> bool {
-//         match self {
-//             BasicRetryPolicyError::Send(SendError::LinkStateError(
-//                 LinkStateError::IllegalSessionState,
-//             ))
-//             | BasicRetryPolicyError::Disposition(IllegalLinkStateError::IllegalSessionState) => {
-//                 true
-//             }
-//             _ => false,
-//         }
-//     }
-// }
-
+/// State for the basic retry policy.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BasicRetryPolicyState {
+    /// The server is not busy.
     ServerNotBusy,
-    ServerBusy { error_message: String },
+    /// The server is busy.
+    ServerBusy {
+        /// The error message if the server is busy.
+        error_message: String
+    },
 }
 
 impl Default for BasicRetryPolicyState {
@@ -83,12 +53,8 @@ impl ServiceBusRetryPolicyState for BasicRetryPolicyState {
     }
 }
 
-/// <summary>
-///   The default retry policy for the Service Bus client library, respecting the
-///   configuration specified as a set of <see cref="ServiceBusRetryOptions" />.
-/// </summary>
-///
-/// <seealso cref="ServiceBusRetryOptions"/>
+/// The default retry policy for the Service Bus client library, respecting the
+/// configuration specified as a set of [`ServiceBusRetryOptions`].
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BasicRetryPolicy {
     options: ServiceBusRetryOptions,
@@ -102,8 +68,6 @@ impl Display for BasicRetryPolicy {
 }
 
 impl ServiceBusRetryPolicy for BasicRetryPolicy {
-    // type Ok = ();
-
     type State = BasicRetryPolicyState;
 
     fn new(options: ServiceBusRetryOptions) -> Self {
