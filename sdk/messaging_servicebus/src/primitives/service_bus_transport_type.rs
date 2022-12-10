@@ -21,6 +21,7 @@ impl ServiceBusTransportType {
     const AMQP_URI_SCHEME: &'static str = "amqps";
     const WEBSOCKET_SCHEME: &'static str = "wss";
 
+    /// Returns the URI scheme for the transport type.
     pub fn url_scheme(&self) -> &str {
         match self {
             ServiceBusTransportType::AmqpTcp => Self::AMQP_URI_SCHEME,

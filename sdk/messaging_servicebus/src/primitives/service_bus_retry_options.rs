@@ -11,12 +11,27 @@ const DELAY_MAX: Duration = Duration::from_secs(5 * 60);
 const TRY_TIMEOUT_MIN: Duration = Duration::ZERO;
 const TRY_TIMEOUT_MAX: Duration = Duration::from_secs(1 * 60 * 60); // 1 Hour
 
+/// The error type returned when a retry option value is out of range.
 #[derive(Debug)]
 pub enum OutOfRange<T> {
-    LessThanAllowed { value: T, minimum_allowed: T },
-    GreaterThanAllowed { value: T, maximum_allowed: T },
+    /// The value is less than the minimum allowed value.
+    LessThanAllowed {
+        /// The value that was provided.
+        value: T,
+        /// The minimum allowed value.
+        minimum_allowed: T
+    },
+    /// The value is greater than the maximum allowed value.
+    GreaterThanAllowed {
+        /// The value that was provided.
+        value: T,
+        /// The maximum allowed value.
+        maximum_allowed: T
+    },
 }
 
+/// The set of options that can be specified to influence how
+/// retry attempts are made, and a failure is eligible to be retried.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ServiceBusRetryOptions {
     /// The approach to use for calculating retry delays.
@@ -61,9 +76,16 @@ impl Default for ServiceBusRetryOptions {
 }
 
 impl ServiceBusRetryOptions {
+    /// Default value for [`ServiceBusRetryOptions::max_retries`].
     pub const DEFAULT_MAX_RETRIES: u32 = 3;
+
+    /// Default value for [`ServiceBusRetryOptions::delay`].
     pub const DEFAULT_DELAY: Duration = Duration::from_millis(800);
+
+    /// Default value for [`ServiceBusRetryOptions::max_delay`].
     pub const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
+
+    /// Default value for [`ServiceBusRetryOptions::try_timeout`].
     pub const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
 
     /// The approach to use for calculating retry delays.

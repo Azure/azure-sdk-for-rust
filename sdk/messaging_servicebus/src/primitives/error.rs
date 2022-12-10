@@ -7,6 +7,8 @@ use crate::{authorization::shared_access_signature::SasSignatureError, amqp::err
 
 use super::service_bus_connection_string_properties::FormatError;
 
+// TODO: split this into a few different error types
+//
 /// Error with service bus connection
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -38,7 +40,7 @@ pub enum Error {
     #[error(transparent)]
     TimeoutElapsed(#[from] Elapsed),
 
-    /// Error beginning the session
+    /// Error beginning the AMQP session
     #[error(transparent)]
     Begin(#[from] BeginError),
 
@@ -50,6 +52,7 @@ pub enum Error {
     #[error(transparent)]
     ReceiverAttach(#[from] fe2o3_amqp::link::ReceiverAttachError),
 
+    /// Error disposing the connection
     #[error(transparent)]
     Dispose(#[from] DisposeError),
 }

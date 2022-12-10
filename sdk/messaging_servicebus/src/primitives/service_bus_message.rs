@@ -204,7 +204,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_message_id(message_id)
     }
 
-    /// Gets or sets a partition key for sending a message to a partitioned entity.
+    /// Gets the partition key for sending a message to a partitioned entity.
     ///
     /// # Value
     ///
@@ -216,12 +216,13 @@ impl ServiceBusMessage {
     /// entities](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-partitioning),
     /// setting this value enables assigning related messages to the same internal partition, so
     /// that submission sequence order is correctly recorded. The partition is chosen by a hash
-    /// function over this value and cannot be chosen directly. For session-aware entities, the <see
-    /// cref="SessionId"/> property overrides this value.
+    /// function over this value and cannot be chosen directly. For session-aware entities, the
+    /// [`set_session_id()`] method overrides this value.
     pub fn partition_key(&self) -> Option<&str> {
         self.amqp_message.partition_key()
     }
 
+    /// Sets a partition key for sending a message to a partitioned entity.
     pub fn set_partition_key(
         &mut self,
         key: impl Into<Option<String>>,
@@ -229,7 +230,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_partition_key(key)
     }
 
-    /// Gets or sets a partition key for sending a message into an entity via a partitioned transfer
+    /// Gets a partition key for sending a message into an entity via a partitioned transfer
     /// queue.
     ///
     /// # Value
@@ -243,10 +244,13 @@ impl ServiceBusMessage {
     /// and ensures that messages are kept together and in order as they are transferred. See
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-via).
+    #[cfg(feature = "transaction")]
     pub fn transaction_partition_key(&self) -> Option<&str> {
         self.amqp_message.via_partition_key()
     }
 
+    /// Sets a partition key for sending a message into an entity via a partitioned transfer
+    #[cfg(feature = "transaction")]
     pub fn set_transaction_partition_key(
         &mut self,
         key: impl Into<Option<String>>,
@@ -254,7 +258,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_via_partition_key(key)
     }
 
-    /// Gets or sets the session identifier for a session-aware entity.
+    /// Gets the session identifier for a session-aware entity.
     ///
     /// # Value
     ///
@@ -271,6 +275,7 @@ impl ServiceBusMessage {
         self.amqp_message.session_id()
     }
 
+    /// Sets the session identifier for a session-aware entity.
     pub fn set_session_id(
         &mut self,
         session_id: impl Into<Option<String>>,
@@ -278,7 +283,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_session_id(session_id)
     }
 
-    /// Gets or sets a session identifier augmenting the <see cref="ReplyTo"/> address.
+    /// Gets session identifier augmenting the [`reply_to()`] address.
     ///
     /// # Value
     ///
@@ -293,6 +298,7 @@ impl ServiceBusMessage {
         self.amqp_message.reply_to_session_id()
     }
 
+    /// Sets a session identifier augmenting the [`reply_to()`] address.
     pub fn set_reply_to_session_id(
         &mut self,
         session_id: impl Into<Option<String>>,
@@ -300,7 +306,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_reply_to_session_id(session_id)
     }
 
-    /// Gets or sets the message’s "time to live" value.
+    /// Gets the message’s "time to live" value.
     ///
     /// # Value
     ///
@@ -317,6 +323,7 @@ impl ServiceBusMessage {
         self.amqp_message.time_to_live()
     }
 
+    /// Sets the message’s "time to live" value.
     pub fn set_time_to_live(
         &mut self,
         ttl: Option<StdDuration>,
@@ -324,7 +331,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_time_to_live(ttl)
     }
 
-    /// Gets or sets the a correlation identifier.
+    /// Gets the correlation identifier.
     ///
     /// # Value
     ///
@@ -340,11 +347,12 @@ impl ServiceBusMessage {
         self.amqp_message.correlation_id()
     }
 
+    /// Sets the correlation identifier.
     pub fn set_correlation_id(&mut self, id: impl Into<Option<String>>) {
         self.amqp_message.set_correlation_id(id)
     }
 
-    /// Gets or sets an application specific subject.
+    /// Gets application specific subject.
     ///
     /// # Value
     ///
@@ -359,11 +367,12 @@ impl ServiceBusMessage {
         self.amqp_message.subject()
     }
 
+    /// Sets an application specific subject.
     pub fn set_subject(&mut self, subject: impl Into<Option<String>>) {
         self.amqp_message.set_subject(subject)
     }
 
-    /// Gets or sets the "to" address.
+    /// Gets the "to" address.
     ///
     /// # Value
     ///
@@ -379,11 +388,12 @@ impl ServiceBusMessage {
         self.amqp_message.to()
     }
 
+    /// Sets the "to" address.
     pub fn set_to(&mut self, to: impl Into<Option<String>>) {
         self.amqp_message.set_to(to)
     }
 
-    /// Gets or sets the content type descriptor.
+    /// Gets the content type descriptor.
     ///
     /// # Value
     ///
@@ -397,11 +407,12 @@ impl ServiceBusMessage {
         self.amqp_message.content_type()
     }
 
+    /// Sets the content type descriptor.
     pub fn set_content_type(&mut self, content_type: impl Into<Option<String>>) {
         self.amqp_message.set_content_type(content_type)
     }
 
-    /// Gets or sets the address of an entity to send replies to.
+    /// Gets the address of an entity to send replies to.
     ///
     /// # Value
     ///
@@ -419,6 +430,7 @@ impl ServiceBusMessage {
         self.amqp_message.reply_to()
     }
 
+    /// Sets the address of an entity to send replies to.
     pub fn set_reply_to(&mut self, reply_to: impl Into<Option<String>>) {
         self.amqp_message.set_reply_to(reply_to)
     }

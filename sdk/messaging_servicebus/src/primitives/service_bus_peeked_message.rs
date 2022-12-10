@@ -25,6 +25,7 @@ use crate::{
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
+/// A peeked message from a Service Bus queue or topic.
 #[derive(Debug)]
 pub struct ServiceBusPeekedMessage {
     pub(crate) raw_amqp_message: Message<Body<Value>>,

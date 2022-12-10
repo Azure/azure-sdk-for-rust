@@ -1,22 +1,31 @@
+//! The set of properties that comprise a Service Bus connection string.
+
 use azure_core::Url;
 
+/// Error with parsing the connection string.
 #[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum FormatError {
+    /// Connection string cannot be empty
     #[error("Connection string cannot be empty")]
     ConnectionStringIsEmpty,
 
+    /// Connection string is malformed
     #[error("Connection string is malformed")]
     InvalidConnectionString,
 }
 
+/// Error with outputting the connection string.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ToConnectionStringError {
+    /// Missing connection information
     #[error("Missing connection information")]
     MissingConnectionInformation,
 
+    /// Invalid endpoint address
     #[error("Invalid endpoint address")]
     InvalidEndpointAddress,
 
+    /// Only one of the shared access authorization tokens may be used
     #[error("Only one shared access authorization can be used")]
     OnlyOneSharedAccessAuthorizationMayBeUsed,
 }
