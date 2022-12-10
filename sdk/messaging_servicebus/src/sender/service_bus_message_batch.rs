@@ -1,3 +1,5 @@
+//! Implements `ServiceBusMessageBatch`.
+
 use crate::{core::TransportMessageBatch, ServiceBusMessage};
 
 /// The set of options that can be specified to influence the way in which an service bus message

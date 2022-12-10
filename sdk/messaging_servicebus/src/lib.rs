@@ -60,7 +60,7 @@ pub use receiver::{
 pub use sender::{
     service_bus_message_batch::CreateMessageBatchOptions,
     service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
-    service_bus_sender_options::ServiceBusSenderOptions,
+    service_bus_sender::ServiceBusSenderOptions,
 };
 
 pub(crate) mod constants;
