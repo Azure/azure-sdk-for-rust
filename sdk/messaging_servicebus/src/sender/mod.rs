@@ -1,6 +1,5 @@
 //! Implements the Service Bus Sender.
 
-pub mod error;
 pub mod service_bus_message_batch;
 pub mod service_bus_sender;
 pub mod service_bus_sender_options;

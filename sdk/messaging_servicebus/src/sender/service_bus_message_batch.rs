@@ -8,7 +8,24 @@ pub struct CreateMessageBatchOptions {
     pub max_size_in_bytes: Option<u64>,
 }
 
-
+/// A set of [`ServiceBusMessage`] with size constraints known up-front,
+/// intended to be sent to the Queue/Topic as a single batch.
+///
+/// A [`ServiceBusMessageBatch`] can be created using
+/// [`ServiceBusSender::create_message_batch()`].
+/// Messages can be added to the batch using the [`try_add_message`] method on the batch.
+///
+/// # Examples
+///
+/// ```rust
+/// let options = CreateMessageBatchOptions::default();
+/// let mut message_batch = sender.create_message_batch(options).unwrap();
+/// message_batch.try_add_message("Message 1").unwrap();
+/// message_batch.try_add_message("Message 2").unwrap();
+/// message_batch.try_add_message("Message 3").unwrap();
+///
+/// sender.send_message_batch(message_batch).await.unwrap();
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ServiceBusMessageBatch<T: TransportMessageBatch> {
     pub(crate) inner: T,
@@ -30,7 +47,11 @@ impl<T: TransportMessageBatch> ServiceBusMessageBatch<T> {
         self.inner.len()
     }
 
-    /// Attempts to add a <see cref="ServiceBusMessage"/> to the <see cref="ServiceBusMessageBatch"/>.
+    /// Attempts to add a [`ServiceBusMessage`] to the [`ServiceBusMessageBatch`].
+    ///
+    /// Returns an error if the message is too large to fit in the batch or
+    /// if the message fails to serialize. The original message can be recovered
+    /// from the error.
     pub fn try_add_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
