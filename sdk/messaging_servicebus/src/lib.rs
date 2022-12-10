@@ -58,7 +58,7 @@ pub use receiver::{
     service_bus_receiver::ServiceBusReceiverOptions,
 };
 pub use sender::{
-    create_message_batch_options::CreateMessageBatchOptions,
+    service_bus_message_batch::CreateMessageBatchOptions,
     service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
     service_bus_sender_options::ServiceBusSenderOptions,
 };
