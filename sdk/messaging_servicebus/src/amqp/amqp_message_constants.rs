@@ -18,11 +18,11 @@ pub(crate) const MESSAGE_STATE_NAME: &str = "x-opt-message-state";
 // concatcp!(amqp_constants::VENDOR, ":datetime-offset");
 
 /// Property key representing dead-letter reason, when a message is received from a dead-letter subqueue of an entity.
-/// This key and the associated values are stored in the <see cref="ServiceBusReceivedMessage.ApplicationProperties"/> dictionary
+/// This key and the associated values are stored in the [`ServiceBusReceivedMessage.application_properties`] dictionary
 /// for dead lettered messages.
 pub(crate) const DEAD_LETTER_REASON_HEADER: &str = "DeadLetterReason";
 
 /// Property key representing detailed error description, when a message is received from a dead-letter subqueue of an entity.
-/// This key and the associated values are stored in the <see cref="ServiceBusReceivedMessage.ApplicationProperties"/> dictionary
+/// This key and the associated values are stored in the [`ServiceBusReceivedMessage.application_properties`] dictionary
 /// for dead lettered messages.
 pub(crate) const DEAD_LETTER_ERROR_DESCRIPTION_HEADER: &str = "DeadLetterErrorDescription";

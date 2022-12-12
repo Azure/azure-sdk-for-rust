@@ -39,7 +39,7 @@ pub trait TransportSessionReceiver: TransportReceiver {
         session_id: &str,
     ) -> Result<Vec<u8>, Self::RequestResponseError>;
 
-    /// Set a custom state on the session which can be later retrieved using [`session_state`]
+    /// Set a custom state on the session which can be later retrieved using [`TransportSessionReceiver::session_state()`]
     async fn set_session_state(
         &mut self,
         session_id: &str,

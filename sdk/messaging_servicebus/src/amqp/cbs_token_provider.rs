@@ -13,12 +13,8 @@ use super::token_type::TokenType;
 #[derive(Debug)]
 pub(crate) struct CbsTokenProvider {
     /// The type to consider a token generated from the associated <see cref="Credential" />
-    ///
-    /// TODO: Is this too many layers?
     token_type: TokenType,
 
-    // /// The credential used to generate access tokens.
-    // credential: ServiceBusTokenCredential<TC>,
     /// The amount of buffer to when evaluating token expiration; the token's expiration date will
     /// be adjusted earlier by this amount.
     token_expiration_buffer: TimeSpan,
@@ -41,7 +37,6 @@ impl CbsTokenProvider {
 
         Self {
             token_type,
-            // credential,
             token_expiration_buffer,
         }
     }
