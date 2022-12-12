@@ -5,7 +5,7 @@ use azure_core::{
     auth::TokenCredential, prelude::Timeout, ClientOptions, CollectedResponse, Context, Method,
     Pipeline, Request, Response, TimeoutPolicy, Url,
 };
-use base64::{decode, encode_config};
+use base64::{decode, encode};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::sync::Arc;
@@ -131,7 +131,7 @@ impl ServiceClient {
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
-        let sas_token: &str = &encode_config(result.into_bytes(), base64::STANDARD);
+        let sas_token: &str = &encode(result.into_bytes());
 
         let encoded: String = url::form_urlencoded::Serializer::new(String::new())
             .append_pair("sr", &format!("{}.azure-devices.net", iot_hub_name))
