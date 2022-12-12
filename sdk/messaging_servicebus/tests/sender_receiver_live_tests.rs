@@ -724,7 +724,7 @@ async fn receive_and_renew_lock() {
         .unwrap();
 
     let mut message = receiver
-        .receive_message()
+        .receive_message_with_max_wait_time(None)
         .await
         .unwrap()
         .expect("Expected a message");

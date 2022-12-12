@@ -4,7 +4,7 @@ use azure_messaging_servicebus::{
     client::{
         ServiceBusClient, ServiceBusClientOptions,
     },
-    core::{TransportMessageBatch, TransportSender},
+    core::{TransportSender},
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
@@ -46,7 +46,7 @@ pub async fn drain_queue(
         .create_receiver_for_queue(queue_name, receiver_options)
         .await
         .unwrap();
-    let messages = receiver.receive_messages(max_messages, None).await.unwrap();
+    let messages = receiver.receive_messages_with_max_wait_time(max_messages, None).await.unwrap();
 
     for message in messages {
         receiver.complete_message(&message).await.unwrap();
@@ -78,11 +78,9 @@ pub async fn create_client_and_send_messages_separately_to_queue(
 pub async fn send_messages_separately<S>(
     sender: &mut ServiceBusSender<S>,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
-) -> Result<(), anyhow::Error>
+) -> Result<(), S::SendError>
 where
-    S: TransportSender + Send + Sync,
-    <S as TransportSender>::MessageBatch: TransportMessageBatch + Send + Sync,
-    <S as TransportSender>::SendError: Send + Sync + 'static,
+    S: TransportSender,
 {
     for message in messages {
         sender.send_message(message).await?;
@@ -105,7 +103,7 @@ pub async fn create_client_and_receive_messages_from_queue(
         .await?;
 
     let messages = receiver
-        .receive_messages(max_messages, max_wait_time)
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
         .await?;
 
     for message in &messages {
@@ -133,7 +131,7 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
         .await?;
 
     let messages = receiver
-        .receive_messages(max_messages, max_wait_time)
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
         .await?;
 
     for message in &messages {
@@ -160,7 +158,7 @@ pub async fn create_client_and_abandon_messages_from_queue(
         .await?;
 
     let messages = receiver
-        .receive_messages(max_messages, max_wait_time)
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
         .await?;
 
     for message in &messages {
@@ -187,7 +185,7 @@ pub async fn create_client_and_deadletter_messages_from_queue(
         .await?;
 
     let messages = receiver
-        .receive_messages(max_messages, max_wait_time)
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
         .await?;
 
     for message in &messages {
@@ -255,7 +253,7 @@ pub async fn create_client_and_defer_messages(
         .await?;
 
     let messages = receiver
-        .receive_messages(max_messages, max_wait_time)
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
         .await?;
 
     for message in &messages {

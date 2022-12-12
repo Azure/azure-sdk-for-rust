@@ -58,10 +58,17 @@ where
     async fn receive_messages(
         &mut self,
         max_messages: u32,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
+        self.inner.receive_messages(max_messages).await
+    }
+
+    async fn receive_messages_with_max_wait_time(
+        &mut self,
+        max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
         self.inner
-            .receive_messages(max_messages, max_wait_time)
+            .receive_messages_with_max_wait_time(max_messages, max_wait_time)
             .await
     }
 

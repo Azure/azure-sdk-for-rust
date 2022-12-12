@@ -77,6 +77,43 @@ where
         self.receive_mode
     }
 
+    async fn receive_messages(
+        &mut self,
+        max_messages: u32,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
+        let receiver = &mut self.receiver;
+        let prefetch_count = self.prefetch_count;
+        let receive_mode = &self.receive_mode;
+        let retry_policy = &self.retry_policy;
+        let mut try_timeout = retry_policy.calculate_try_timeout(0);
+
+        // TODO: Should this wait indefinitely until all messages are received?
+        let default_max_wait_time = self.retry_policy.options().try_timeout;
+        let mut buffer = Vec::with_capacity(max_messages as usize);
+        loop {
+            run_operation!(
+                retry_policy,
+                RP,
+                AmqpRecvError,
+                try_timeout,
+                receive_messages_with_timeout(
+                    receiver,
+                    prefetch_count,
+                    receive_mode,
+                    &mut buffer,
+                    max_messages,
+                    default_max_wait_time
+                )
+                .await
+            )?;
+
+            if !buffer.is_empty() {
+                break;
+            }
+        }
+        Ok(buffer)
+    }
+
     /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
     ///
     /// # Parameters
@@ -88,7 +125,7 @@ where
     /// # Returns
     ///
     /// List of messages received. Returns an empty list if no message is found.
-    async fn receive_messages(
+    async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
@@ -100,6 +137,7 @@ where
         let receive_mode = &self.receive_mode;
         let retry_policy = &self.retry_policy;
         let mut try_timeout = retry_policy.calculate_try_timeout(0);
+        let mut buffer = Vec::with_capacity(max_messages as usize);
         run_operation!(
             retry_policy,
             RP,
@@ -109,11 +147,13 @@ where
                 receiver,
                 prefetch_count,
                 receive_mode,
+                &mut buffer,
                 max_messages,
                 max_wait_time
             )
             .await
-        )
+        )?;
+        Ok(buffer)
     }
 
     /// Closes the connection to the transport consumer instance.
@@ -530,11 +570,12 @@ async fn receive_messages_with_timeout(
     receiver: &mut Receiver,
     prefetch_count: u32,
     receive_mode: &ServiceBusReceiveMode,
+    buffer: &mut Vec<ServiceBusReceivedMessage>,
     max_messages: u32,
     max_wait_time: StdDuration,
-) -> Result<Vec<ServiceBusReceivedMessage>, AmqpRecvError> {
-    let mut message_buffer: Vec<ServiceBusReceivedMessage> =
-        Vec::with_capacity(max_messages as usize);
+) -> Result<(), AmqpRecvError> {
+    // let mut message_buffer: Vec<ServiceBusReceivedMessage> =
+    //     Vec::with_capacity(max_messages as usize);
 
     tokio::select! {
         _ = tokio::time::sleep(max_wait_time) => {
@@ -543,11 +584,11 @@ async fn receive_messages_with_timeout(
                     log::error!("{}", err);
                 }
             }
-            Ok(message_buffer)
+            Ok(())
         }
-        result = receive_messages(receiver, prefetch_count, receive_mode, &mut message_buffer, max_messages) => {
+        result = receive_messages(receiver, prefetch_count, receive_mode, buffer, max_messages) => {
             result?;
-            Ok(message_buffer)
+            Ok(())
         }
     }
 }

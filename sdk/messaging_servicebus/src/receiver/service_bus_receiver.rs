@@ -1,3 +1,5 @@
+//! Defines and implements `ServiceBusReceiver` and `ServiceBusReceiverOptions`
+
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
@@ -8,14 +10,30 @@ use crate::{
 
 use crate::{primitives::sub_queue::SubQueue, ServiceBusReceiveMode};
 
+/// The set of options that can be specified when creating a [`ServiceBusReceiver`]
+/// to configure its behavior.
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ServiceBusReceiverOptions {
+    /// The number of messages that will be eagerly requested from Queues or Subscriptions and queued locally without regard to
+    /// whether the receiver is actively receiving, intended to help maximize throughput by allowing the receiver to receive
+    /// from a local cache rather than waiting on a service request.
     pub prefetch_count: u32,
+
+    /// Specifies how messages are received. Defaults to [`ServiceBusReceiveMode::PeekLock`] mode.
     pub receive_mode: ServiceBusReceiveMode,
+
+    /// A property used to set the [`ServiceBusReceiver`] ID to identify the client. This can be used to correlate logs
+    /// and exceptions. If `None` or empty, a random unique value will be used.
     pub identifier: Option<String>,
+
+    /// The subqueue to connect the receiver to. By default, the receiver will not connect to a subqueue.
     pub sub_queue: SubQueue,
 }
 
+/// The [`ServiceBusReceiver`] is responsible for receiving
+/// [`ServiceBusReceivedMessage`] and settling messages from Queues and Subscriptions.
+/// It is constructed by calling [`ServiceBusClient::create_receiver_for_queue()`] or
+/// [`ServiceBusClient::create_receiver_for_subscription()`].
 #[derive(Debug)]
 pub struct ServiceBusReceiver<R> {
     pub(crate) inner: R,
@@ -33,38 +51,84 @@ where
         &self.entity_path
     }
 
+    /// The identifier of the receiver.
     pub fn identifier(&self) -> &str {
         &self.identifier
     }
 
+    /// The number of messages that will be eagerly requested from Queues or Subscriptions and queued locally without regard to
+    /// whether the receiver is actively receiving, intended to help maximize throughput by allowing the receiver to receive
+    /// from a local cache rather than waiting on a service request.
     pub fn prefetch_count(&self) -> u32 {
         self.inner.prefetch_count()
     }
 
+    /// Specifies how messages are received.
     pub fn receive_mode(&self) -> ServiceBusReceiveMode {
         self.inner.receive_mode()
     }
 
+    /// Closes the receiver and performs any cleanup required.
     pub async fn dispose(self) -> Result<(), R::CloseError> {
         self.inner.close().await
     }
 
-    /// Receive a single message from the entity.
+    /// Receive a single message from the entity using the receiver's receive mode.
+    /// This method will wait indefinitely until at least one message is received.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let received = receiver.receive_message().await.unwrap();
+    /// ```
     pub async fn receive_message(
         &mut self,
+    ) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
+        self.receive_messages(1)
+            .await
+            .map(|mut v| v.drain(..).next().expect("At least one message should be received."))
+    }
+
+    /// Receive messages from the entity using the receiver's receive mode.
+    /// This method will wait indefinitely until at least one message is received.
+    pub async fn receive_messages(
+        &mut self,
+        max_messages: u32,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
+        self.inner
+            .receive_messages(max_messages)
+            .await
+    }
+
+    /// Receive a single message from the entity using the receiver's receive mode with a maximum wait time.
+    ///
+    /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let received = receiver.receive_message().await.unwrap();
+    /// ```
+    pub async fn receive_message_with_max_wait_time(
+        &mut self,
+        max_wait_time: Option<std::time::Duration>,
     ) -> Result<Option<ServiceBusReceivedMessage>, R::ReceiveError> {
-        self.receive_messages(1, None)
+        self.receive_messages_with_max_wait_time(1, max_wait_time)
             .await
             .map(|mut v| v.drain(..).next())
     }
 
-    pub async fn receive_messages(
+    /// Receive messages from the entity using the receiver's receive mode with a maximum wait time.
+    ///
+    /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
+    /// Please use [`ServiceBusReceiver::receive_messages()`] if the user wants to wait indefinitely for at least one message.
+    pub async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
         max_wait_time: Option<std::time::Duration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
         self.inner
-            .receive_messages(max_messages, max_wait_time)
+            .receive_messages_with_max_wait_time(max_messages, max_wait_time)
             .await
     }
 

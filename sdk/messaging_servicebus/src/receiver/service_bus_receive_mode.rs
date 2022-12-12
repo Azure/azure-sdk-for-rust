@@ -1,3 +1,5 @@
+//! Defines `ServiceBusReceiveMode`
+
 /// The mode in which to receive messages.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ServiceBusReceiveMode {

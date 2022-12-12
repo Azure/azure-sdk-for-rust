@@ -1,3 +1,5 @@
+//! Defines and implements `ServiceBusSessionReceiver` and `ServiceBusSessionReceiverOptions`
+
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
@@ -74,22 +76,62 @@ where
         self.inner.close().await
     }
 
-    /// Receive a single message from the entity.
+    /// Receive a single message from the entity using the receiver's receive mode.
+    /// This method will wait indefinitely until at least one message is received.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let received = receiver.receive_message().await.unwrap();
+    /// ```
     pub async fn receive_message(
         &mut self,
+    ) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
+        self.receive_messages(1)
+            .await
+            .map(|mut v| v.drain(..).next().expect("At least one message should be received."))
+    }
+
+    /// Receive messages from the entity using the receiver's receive mode.
+    /// This method will wait indefinitely until at least one message is received.
+    pub async fn receive_messages(
+        &mut self,
+        max_messages: u32,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
+        self.inner
+            .receive_messages(max_messages)
+            .await
+    }
+
+    /// Receive a single message from the entity using the receiver's receive mode with a maximum wait time.
+    ///
+    /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let received = receiver.receive_message().await.unwrap();
+    /// ```
+    pub async fn receive_message_with_max_wait_time(
+        &mut self,
+        max_wait_time: Option<std::time::Duration>,
     ) -> Result<Option<ServiceBusReceivedMessage>, R::ReceiveError> {
-        self.receive_messages(1, None)
+        self.receive_messages_with_max_wait_time(1, max_wait_time)
             .await
             .map(|mut v| v.drain(..).next())
     }
 
-    pub async fn receive_messages(
+    /// Receive messages from the entity using the receiver's receive mode with a maximum wait time.
+    ///
+    /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
+    /// Please use [`ServiceBusReceiver::receive_messages()`] if the user wants to wait indefinitely for at least one message.
+    pub async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
         max_wait_time: Option<std::time::Duration>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
         self.inner
-            .receive_messages(max_messages, max_wait_time)
+            .receive_messages_with_max_wait_time(max_messages, max_wait_time)
             .await
     }
 

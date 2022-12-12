@@ -69,7 +69,18 @@ pub trait TransportReceiver {
     fn receive_mode(&self) -> ServiceBusReceiveMode;
 
     /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
+    ///
+    /// This method should poll indefinitely until at least one message is received.
     async fn receive_messages(
+        &mut self,
+        max_messages: u32,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError>;
+
+    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
+    ///
+    /// The `max_wait_time` parameter specifies the maximum amount of time the receiver will wait to receive the specified number of messages.
+    /// If the `max_wait_time` is not specified, a default value that is provided by the `ServiceBusReceiverOptions` will be used.
+    async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,

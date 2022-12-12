@@ -7,7 +7,7 @@ use azure_core::Url;
 use crate::{
     amqp::{
         amqp_client::AmqpClient,
-        error::{OpenReceiverError, OpenSenderError},
+        error::{OpenSenderError},
     },
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
     core::{BasicRetryPolicy, TransportClient},
@@ -202,6 +202,7 @@ where
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
+            .filter(|id| !id.is_empty())
             .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let inner = self
@@ -224,7 +225,6 @@ where
 impl<C> ServiceBusClient<C>
 where
     C: TransportClient + Send + Sync + 'static,
-    OpenReceiverError: From<C::CreateReceiverError>,
 {
     pub fn transport_type(&self) -> ServiceBusTransportType {
         self.connection.transport_type()
@@ -239,7 +239,7 @@ where
         self.create_receiver(entity_path, options).await
     }
 
-    pub async fn create_receiver_for_subscription<'a>(
+    pub async fn create_receiver_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
         subscription_name: impl AsRef<str>,
@@ -260,6 +260,7 @@ where
     ) -> Result<ServiceBusReceiver<C::Receiver>, C::CreateReceiverError> {
         let identifier = options
             .identifier
+            .filter(|id| !id.is_empty())
             .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let receive_mode = options.receive_mode;

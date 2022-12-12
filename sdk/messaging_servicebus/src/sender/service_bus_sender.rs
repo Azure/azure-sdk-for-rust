@@ -3,20 +3,16 @@
 use time::OffsetDateTime;
 
 use crate::{
-    core::{TransportMessageBatch, TransportSender},
+    core::{TransportSender},
     CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
-/// <summary>
-/// The set of options that can be specified when creating a <see cref="ServiceBusSender"/>
+/// The set of options that can be specified when creating a [`ServiceBusSender`]
 /// to configure its behavior.
-/// </summary>
 #[derive(Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ServiceBusSenderOptions {
-    /// <summary>
-    /// A property used to set the <see cref="ServiceBusSender"/> ID to identify the client. This can be used to correlate logs
-    /// and exceptions. If <c>null</c> or empty, a random unique value will be used.
-    /// </summary>
+    /// A property used to set the [`ServiceBusSender`] ID to identify the client. This can be used to correlate logs
+    /// and exceptions. If `None` or empty, a random unique value will be used.
     pub identifier: Option<String>,
 }
 
@@ -31,8 +27,7 @@ pub struct ServiceBusSender<S> {
 
 impl<S> ServiceBusSender<S>
 where
-    S: TransportSender + Send + Sync,
-    S::MessageBatch: TransportMessageBatch,
+    S: TransportSender,
 {
     /// The path of the entity that the sender is connected to, specific to the
     /// Service Bus namespace that contains it.
@@ -40,7 +35,7 @@ where
         &self.entity_path
     }
 
-    /// Gets the ID to identify this client. This can be used to correlate logs and exceptions.
+    /// Gets the ID to identify this sender. This can be used to correlate logs and exceptions.
     pub fn identifier(&self) -> &str {
         &self.identifier
     }
