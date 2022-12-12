@@ -44,7 +44,7 @@ async fn send_to_queue_every_minute_for_two_hour() {
             let received = common::create_client_and_receive_messages_from_queue(
                 &connection_string,
                 Default::default(),
-                queue_name.clone(),
+                &queue_name,
                 Default::default(),
                 total,
                 None,

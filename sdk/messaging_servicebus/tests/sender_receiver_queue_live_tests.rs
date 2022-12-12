@@ -29,7 +29,7 @@ async fn drain_queue() {
     common::drain_queue(
         &connection_string,
         client_options,
-        queue_name,
+        &queue_name,
         Default::default(),
         max_messages,
     )
@@ -50,7 +50,7 @@ async fn send_and_receive_one_message() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -60,7 +60,7 @@ async fn send_and_receive_one_message() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         Default::default(),
         total as u32,
         None,
@@ -87,7 +87,7 @@ async fn send_one_message_and_try_receive_more_than_one() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -100,7 +100,7 @@ async fn send_one_message_and_try_receive_more_than_one() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         receiver_client_options,
-        queue_name,
+        &queue_name,
         Default::default(),
         total as u32 + 1,
         None,
@@ -133,7 +133,7 @@ async fn send_and_receive_multiple_messages_separately() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages.into_iter(),
     )
@@ -143,7 +143,7 @@ async fn send_and_receive_multiple_messages_separately() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         Default::default(),
         total as u32,
         None,
@@ -176,7 +176,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages.into_iter(),
     )
@@ -188,7 +188,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
     common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         receiver_options,
         max_messages,
         None,
@@ -199,7 +199,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
 
 #[tokio::test]
 #[serial]
-async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
+async fn send_and_receive_multiple_messages_with_message_batch() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
@@ -210,7 +210,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
         .await
         .unwrap();
     let mut sender = client
-        .create_sender(queue_name.clone(), Default::default())
+        .create_sender(&queue_name, Default::default())
         .await
         .unwrap();
     let mut message_batch = sender.create_message_batch(Default::default()).unwrap();
@@ -224,7 +224,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         Default::default(),
         total as u32,
         None,
@@ -241,7 +241,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
 
 #[tokio::test]
 #[serial]
-async fn send_messagebatch_and_try_receive_more_than_sent() {
+async fn send_message_batch_and_try_receive_more_than_sent() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
@@ -252,7 +252,7 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
         .await
         .unwrap();
     let mut sender = client
-        .create_sender(queue_name.clone(), Default::default())
+        .create_sender(&queue_name, Default::default())
         .await
         .unwrap();
     let mut message_batch = sender.create_message_batch(Default::default()).unwrap();
@@ -269,7 +269,7 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         receiving_client_options,
-        queue_name,
+        &queue_name,
         Default::default(),
         total as u32 + 1,
         None,
@@ -304,7 +304,7 @@ async fn send_and_receive_sessionful_messages() {
         common::create_client_and_receive_sessionful_messages_from_queue(
             &connection_string_clone,
             Default::default(),
-            queue_name_clone,
+            &queue_name_clone,
             Default::default(),
             session_id_1.to_string(),
             expected_for_session_id_1.len() as u32,
@@ -319,7 +319,7 @@ async fn send_and_receive_sessionful_messages() {
         common::create_client_and_receive_sessionful_messages_from_queue(
             &connection_string_clone,
             Default::default(),
-            queue_name_clone,
+            &queue_name_clone,
             Default::default(),
             session_id_2.to_string(),
             expected_for_session_id_2.len() as u32,
@@ -337,7 +337,7 @@ async fn send_and_receive_sessionful_messages() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -353,7 +353,7 @@ async fn send_and_receive_sessionful_messages() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -403,7 +403,7 @@ async fn send_and_abandon_messages_then_receive_messages() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -413,7 +413,7 @@ async fn send_and_abandon_messages_then_receive_messages() {
     common::create_client_and_abandon_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         expected.len() as u32,
         None,
@@ -424,7 +424,7 @@ async fn send_and_abandon_messages_then_receive_messages() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         Default::default(),
         expected.len() as u32,
         None,
@@ -454,7 +454,7 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -464,7 +464,7 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
     common::create_client_and_deadletter_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         expected.len() as u32,
         None,
@@ -477,7 +477,7 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         receiver_options,
         expected.len() as u32,
         None,
@@ -509,7 +509,7 @@ async fn schedule_and_receive_messages() {
     let sequence_numbers = common::create_client_and_schedule_messages(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
         enqueue_time,
@@ -524,7 +524,7 @@ async fn schedule_and_receive_messages() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         Default::default(),
-        queue_name,
+        &queue_name,
         Default::default(),
         expected.len() as u32,
         None,
@@ -555,7 +555,7 @@ async fn schedule_and_cancel_scheduled_messages() {
         .await
         .unwrap();
     let mut sender = client
-        .create_sender(queue_name.clone(), Default::default())
+        .create_sender(&queue_name, Default::default())
         .await
         .unwrap();
 
@@ -577,7 +577,7 @@ async fn schedule_and_cancel_scheduled_messages() {
     let received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
         client_options,
-        queue_name,
+        &queue_name,
         Default::default(),
         expected.len() as u32,
         None,
@@ -602,7 +602,7 @@ async fn send_and_peek_messages() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -612,7 +612,7 @@ async fn send_and_peek_messages() {
     let peeked = common::create_client_and_peek_messages(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         expected.len() as u32,
     )
@@ -631,7 +631,7 @@ async fn send_and_peek_messages() {
     common::drain_queue(
         &connection_string,
         client_options,
-        queue_name,
+        &queue_name,
         Default::default(),
         expected.len() as u32,
     )
@@ -653,7 +653,7 @@ async fn defer_and_receive_deferred_messages() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )
@@ -663,7 +663,7 @@ async fn defer_and_receive_deferred_messages() {
     let seq_nums = common::create_client_and_defer_messages(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         expected.len() as u32,
         None,
@@ -676,7 +676,7 @@ async fn defer_and_receive_deferred_messages() {
     let received = common::create_client_and_receive_deferred_messages(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         seq_nums,
     )
@@ -704,7 +704,7 @@ async fn receive_and_renew_lock() {
     common::create_client_and_send_messages_separately_to_queue_or_topic(
         &connection_string,
         Default::default(),
-        queue_name.clone(),
+        &queue_name,
         Default::default(),
         messages,
     )

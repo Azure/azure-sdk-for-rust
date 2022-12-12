@@ -31,7 +31,7 @@ pub fn setup_dotenv() {
 pub async fn drain_queue(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
 ) {
@@ -56,7 +56,7 @@ pub async fn drain_queue(
 pub async fn create_client_and_send_messages_separately_to_queue_or_topic(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_or_topic_name: String,
+    queue_or_topic_name: &str,
     sender_options: ServiceBusSenderOptions,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
 ) -> Result<(), anyhow::Error> {
@@ -88,7 +88,7 @@ where
 pub async fn create_client_and_receive_messages_from_queue(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
@@ -115,7 +115,7 @@ pub async fn create_client_and_receive_messages_from_queue(
 pub async fn create_client_and_receive_sessionful_messages_from_queue(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusSessionReceiverOptions,
     session_id: String,
     max_messages: u32,
@@ -143,8 +143,8 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
 pub async fn create_client_and_receive_messages_from_subscription(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    topic_name: String,
-    subscription_name: String,
+    topic_name: &str,
+    subscription_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
@@ -171,8 +171,8 @@ pub async fn create_client_and_receive_messages_from_subscription(
 pub async fn create_client_and_receiver_sessionful_messages_from_subscription(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    topic_name: String,
-    subscription_name: String,
+    topic_name: &str,
+    subscription_name: &str,
     receiver_options: ServiceBusSessionReceiverOptions,
     session_id: String,
     max_messages: u32,
@@ -205,7 +205,7 @@ pub async fn create_client_and_receiver_sessionful_messages_from_subscription(
 pub async fn create_client_and_abandon_messages_from_queue(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
@@ -232,7 +232,7 @@ pub async fn create_client_and_abandon_messages_from_queue(
 pub async fn create_client_and_deadletter_messages_from_queue(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
@@ -261,7 +261,7 @@ pub async fn create_client_and_deadletter_messages_from_queue(
 pub async fn create_client_and_schedule_messages(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     sender_options: ServiceBusSenderOptions,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>> + ExactSizeIterator + Send,
     enqueue_time: OffsetDateTime,
@@ -280,7 +280,7 @@ pub async fn create_client_and_schedule_messages(
 pub async fn create_client_and_peek_messages(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
 ) -> Result<Vec<ServiceBusPeekedMessage>, anyhow::Error> {
@@ -300,7 +300,7 @@ pub async fn create_client_and_peek_messages(
 pub async fn create_client_and_defer_messages(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
@@ -327,7 +327,7 @@ pub async fn create_client_and_defer_messages(
 pub async fn create_client_and_receive_deferred_messages(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_name: &str,
     receiver_options: ServiceBusReceiverOptions,
     sequence_numbers: Vec<i64>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
