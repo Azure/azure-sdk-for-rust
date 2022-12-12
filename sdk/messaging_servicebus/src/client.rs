@@ -195,7 +195,7 @@ where
 {
     /// Creates a new [`ServiceBusSender`] which can be used to send messages to a specific queue or
     /// topic.
-    pub async fn create_sender(
+    pub async fn create_sender<'a>(
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
@@ -208,7 +208,7 @@ where
         let retry_options = self.connection.retry_options().clone();
         let inner = self
             .connection
-            .create_transport_sender(entity_path.clone(), identifier.clone(), retry_options) // TODO: remove clone once GAT is stablized
+            .create_transport_sender(&entity_path, &identifier, retry_options)
             .await?;
 
         Ok(ServiceBusSender {
@@ -276,8 +276,8 @@ where
         let inner = self
             .connection
             .create_transport_receiver(
-                entity_path.clone(),
-                identifier.clone(),
+                &entity_path,
+                &identifier,
                 retry_options,
                 receive_mode,
                 prefetch_count,
@@ -347,8 +347,8 @@ where
         let inner = self
             .connection
             .create_transport_session_receiver(
-                entity_path.clone(),
-                identifier.clone(),
+                &entity_path,
+                &identifier,
                 retry_options,
                 receive_mode,
                 prefetch_count,

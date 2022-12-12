@@ -123,10 +123,10 @@ where
         self.inner_client.transport_type()
     }
 
-    pub(crate) async fn create_transport_sender(
+    pub(crate) async fn create_transport_sender<'a>(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<C::Sender, C::CreateSenderError> {
         let sender = self
@@ -139,8 +139,8 @@ where
 
     pub(crate) async fn create_transport_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
@@ -163,8 +163,8 @@ where
 
     pub(crate) async fn create_transport_session_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,

@@ -1,4 +1,4 @@
-use std::time::Duration as StdDuration;
+use std::{time::Duration as StdDuration};
 
 use async_trait::async_trait;
 use azure_core::Url;
@@ -80,16 +80,16 @@ pub trait TransportClient: Sized {
     /// A [TransportSender] configured in the requested manner.
     async fn create_sender(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_policy: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError>;
 
     /// Creates a receiver
     async fn create_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
@@ -99,8 +99,8 @@ pub trait TransportClient: Sized {
     /// Creates a session receiver
     async fn create_session_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         session_id: String,

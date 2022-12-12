@@ -307,6 +307,10 @@ impl AmqpConnectionScope {
         ))
     }
 
+    /// Open a receiver link to the service bus.
+    ///
+    /// `session_id` takes a String because it will be encoded as a `Value::String` in the
+    /// filter set.
     pub(crate) async fn open_receiver_link(
         &mut self,
         entity_path: &str,

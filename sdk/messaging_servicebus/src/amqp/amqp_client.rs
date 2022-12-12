@@ -143,17 +143,17 @@ where
 
     async fn create_sender(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
         let (link_identifier, sender, cbs_command_sender) = self
             .connection_scope
-            .open_sender_link(&entity_path, &identifier)
+            .open_sender_link(entity_path, identifier)
             .await?;
         let management_client = self
             .connection_scope
-            .open_management_link(&entity_path, &identifier)
+            .open_management_link(entity_path, identifier)
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpSender {
@@ -167,8 +167,8 @@ where
 
     async fn create_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
@@ -177,8 +177,8 @@ where
         let (link_identifier, receiver, cbs_command_sender) = self
             .connection_scope
             .open_receiver_link(
-                &entity_path,
-                &identifier,
+                entity_path,
+                identifier,
                 &receive_mode,
                 None,
                 prefetch_count,
@@ -205,8 +205,8 @@ where
 
     async fn create_session_receiver(
         &mut self,
-        entity_path: String,
-        identifier: String,
+        entity_path: &str,
+        identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         session_id: String,
@@ -216,8 +216,8 @@ where
         let (link_identifier, receiver, cbs_command_sender) = self
             .connection_scope
             .open_receiver_link(
-                &entity_path,
-                &identifier,
+                entity_path,
+                identifier,
                 &receive_mode,
                 Some(session_id),
                 prefetch_count,
