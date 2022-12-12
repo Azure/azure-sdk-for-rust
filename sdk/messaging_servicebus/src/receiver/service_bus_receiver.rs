@@ -79,7 +79,7 @@ where
     /// # Example
     ///
     /// ```rust
-    /// let received = receiver.receive_message().await.unwrap();
+    /// todo!()
     /// ```
     pub async fn receive_message(
         &mut self,
@@ -91,6 +91,12 @@ where
 
     /// Receive messages from the entity using the receiver's receive mode.
     /// This method will wait indefinitely until at least one message is received.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// todo!()
+    /// ```
     pub async fn receive_messages(
         &mut self,
         max_messages: u32,
@@ -122,6 +128,12 @@ where
     ///
     /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
     /// Please use [`ServiceBusReceiver::receive_messages()`] if the user wants to wait indefinitely for at least one message.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// todo!()
+    /// ```
     pub async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
@@ -132,6 +144,7 @@ where
             .await
     }
 
+    /// Completes a [`ServiceBusReceivedMessage`]. This will delete the message from the service.
     pub async fn complete_message(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -139,6 +152,7 @@ where
         self.inner.complete(message, None).await
     }
 
+    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for immediate processing as the lock on the message held by the receiver will be released.
     pub async fn abandon_message(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -149,6 +163,7 @@ where
             .await
     }
 
+    /// Moves a message to the dead-letter subqueue.
     pub async fn dead_letter_message(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -167,6 +182,13 @@ where
             .await
     }
 
+    /// Indicates that the receiver wants to defer the processing for the message.
+    ///
+    /// In order to receive this message again in the future, you will need to save the
+    /// [`ServiceBusReceivedMessage::sequence_number()`]
+    /// and receive it using [`receive_deferred_message(seq_num)`].
+    /// Deferring messages does not impact message's expiration, meaning that deferred messages can still expire.
+    /// This operation can only be performed on messages that were received by this receiver.
     pub async fn defer_message(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -175,6 +197,11 @@ where
         self.inner.defer(message, properties_to_modify, None).await
     }
 
+    /// Fetches the next active <see cref="ServiceBusReceivedMessage"/> without changing the state of the receiver or the message source.
+    ///
+    /// The first call to [`peek_message()`] fetches the first active message for this receiver. Each subsequent call fetches the subsequent message in the entity.
+    /// Unlike a received message, a peeked message will not have a lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.
+    /// Also, unlike [`receive_message()`], this method will fetch even Deferred messages (but not Deadlettered message).
     pub async fn peek_message(
         &mut self,
         from_sequence_number: Option<i64>,
@@ -184,6 +211,10 @@ where
             .map(|mut v| v.drain(..).next())
     }
 
+    /// Fetches a list of active messages without changing the state of the receiver or the message source.
+    ///
+    /// Unlike a received message, a peeked message will not have a lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.
+    /// Also, unlike [`receive_message()`], this method will fetch even Deferred messages (but not Deadlettered message).
     pub async fn peek_messages(
         &mut self,
         max_messages: u32, // FIXME: stop user from putting a negative number here?
@@ -194,7 +225,7 @@ where
             .await
     }
 
-    /// TODO: should the return type be `Result<Option<_>>`?
+    /// Receives a deferred message identified by `sequence_number`. An error is returned if the message is not deferred.
     pub async fn receive_deferred_message(
         &mut self,
         sequence_number: i64,
@@ -204,6 +235,7 @@ where
             .map(|mut v| v.drain(..).next())
     }
 
+    /// Receives a list of deferred messages identified by `sequence_numbers`. An error is returned if any of the messages are not deferred.
     pub async fn receive_deferred_messages<Seq>(
         &mut self,
         sequence_numbers: Seq,
@@ -217,6 +249,7 @@ where
             .await
     }
 
+    /// Renews the lock on the specified message. The lock will be renewed based on the setting specified on the entity.
     pub async fn renew_message_lock(
         &mut self,
         message: &mut ServiceBusReceivedMessage,
