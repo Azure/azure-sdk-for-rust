@@ -29,7 +29,7 @@ pub fn setup_dotenv() {
 
 #[allow(dead_code)]
 pub async fn drain_queue(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
@@ -53,15 +53,15 @@ pub async fn drain_queue(
 }
 
 #[allow(dead_code)]
-pub async fn create_client_and_send_messages_separately_to_queue(
-    connection_string: String,
+pub async fn create_client_and_send_messages_separately_to_queue_or_topic(
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
-    queue_name: String,
+    queue_or_topic_name: String,
     sender_options: ServiceBusSenderOptions,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
 ) -> Result<(), anyhow::Error> {
     let mut client = ServiceBusClient::new(connection_string, client_options).await?;
-    let mut sender = client.create_sender(queue_name, sender_options).await?;
+    let mut sender = client.create_sender(queue_or_topic_name, sender_options).await?;
 
     send_messages_separately(&mut sender, messages).await?;
 
@@ -86,7 +86,7 @@ where
 
 #[allow(dead_code)]
 pub async fn create_client_and_receive_messages_from_queue(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
@@ -113,7 +113,7 @@ pub async fn create_client_and_receive_messages_from_queue(
 
 #[allow(dead_code)]
 pub async fn create_client_and_receive_sessionful_messages_from_queue(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusSessionReceiverOptions,
@@ -140,8 +140,70 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
 }
 
 #[allow(dead_code)]
+pub async fn create_client_and_receive_messages_from_subscription(
+    connection_string: &str,
+    client_options: ServiceBusClientOptions,
+    topic_name: String,
+    subscription_name: String,
+    receiver_options: ServiceBusReceiverOptions,
+    max_messages: u32,
+    max_wait_time: Option<StdDuration>,
+) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
+    let mut client = ServiceBusClient::new(connection_string, client_options).await?;
+    let mut receiver = client
+        .create_receiver_for_subscription(topic_name, subscription_name, receiver_options)
+        .await?;
+
+    let messages = receiver
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
+        .await?;
+
+    for message in &messages {
+        receiver.complete_message(message).await?;
+    }
+
+    receiver.dispose().await?;
+    client.dispose().await?;
+    Ok(messages)
+}
+
+#[allow(dead_code)]
+pub async fn create_client_and_receiver_sessionful_messages_from_subscription(
+    connection_string: &str,
+    client_options: ServiceBusClientOptions,
+    topic_name: String,
+    subscription_name: String,
+    receiver_options: ServiceBusSessionReceiverOptions,
+    session_id: String,
+    max_messages: u32,
+    max_wait_time: Option<StdDuration>,
+) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
+    let mut client = ServiceBusClient::new(connection_string, client_options).await?;
+    let mut receiver = client
+        .accept_next_session_for_subscription(
+            topic_name,
+            subscription_name,
+            session_id,
+            receiver_options,
+        )
+        .await?;
+
+    let messages = receiver
+        .receive_messages_with_max_wait_time(max_messages, max_wait_time)
+        .await?;
+
+    for message in &messages {
+        receiver.complete_message(message).await?;
+    }
+
+    receiver.dispose().await?;
+    client.dispose().await?;
+    Ok(messages)
+}
+
+#[allow(dead_code)]
 pub async fn create_client_and_abandon_messages_from_queue(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
@@ -168,7 +230,7 @@ pub async fn create_client_and_abandon_messages_from_queue(
 
 #[allow(dead_code)]
 pub async fn create_client_and_deadletter_messages_from_queue(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
@@ -197,7 +259,7 @@ pub async fn create_client_and_deadletter_messages_from_queue(
 
 #[allow(dead_code)]
 pub async fn create_client_and_schedule_messages(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     sender_options: ServiceBusSenderOptions,
@@ -216,7 +278,7 @@ pub async fn create_client_and_schedule_messages(
 
 #[allow(dead_code)]
 pub async fn create_client_and_peek_messages(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
@@ -236,7 +298,7 @@ pub async fn create_client_and_peek_messages(
 
 #[allow(dead_code)]
 pub async fn create_client_and_defer_messages(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,
@@ -263,7 +325,7 @@ pub async fn create_client_and_defer_messages(
 
 #[allow(dead_code)]
 pub async fn create_client_and_receive_deferred_messages(
-    connection_string: String,
+    connection_string: &str,
     client_options: ServiceBusClientOptions,
     queue_name: String,
     receiver_options: ServiceBusReceiverOptions,

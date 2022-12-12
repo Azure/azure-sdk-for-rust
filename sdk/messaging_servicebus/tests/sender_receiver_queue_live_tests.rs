@@ -4,9 +4,7 @@
 //! test must ensure that the queue is empty after it is done.
 
 use azure_messaging_servicebus::{
-    client::{
-        ServiceBusClient, ServiceBusClientOptions,
-    },
+    client::{ServiceBusClient, ServiceBusClientOptions},
     primitives::sub_queue::SubQueue,
     ServiceBusMessage, ServiceBusReceiverOptions,
 };
@@ -29,7 +27,7 @@ async fn drain_queue() {
     let mut client_options = ServiceBusClientOptions::default();
     client_options.retry_options = common::zero_retry_options();
     common::drain_queue(
-        connection_string,
+        &connection_string,
         client_options,
         queue_name,
         Default::default(),
@@ -40,7 +38,7 @@ async fn drain_queue() {
 
 #[tokio::test]
 #[serial]
-async fn send_and_receive_one_message_on_queue() {
+async fn send_and_receive_one_message() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
@@ -49,8 +47,8 @@ async fn send_and_receive_one_message_on_queue() {
     let messages = std::iter::once(message);
     let total = messages.len();
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -60,7 +58,7 @@ async fn send_and_receive_one_message_on_queue() {
     .unwrap();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         Default::default(),
@@ -77,7 +75,7 @@ async fn send_and_receive_one_message_on_queue() {
 
 #[tokio::test]
 #[serial]
-async fn send_one_message_and_try_receiver_more_than_one_on_queue() {
+async fn send_one_message_and_try_receive_more_than_one() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
@@ -86,8 +84,8 @@ async fn send_one_message_and_try_receiver_more_than_one_on_queue() {
     let messages = std::iter::once(message);
     let total = messages.len();
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -100,7 +98,7 @@ async fn send_one_message_and_try_receiver_more_than_one_on_queue() {
     receiver_client_options.retry_options = common::zero_retry_options();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         receiver_client_options,
         queue_name,
         Default::default(),
@@ -132,8 +130,8 @@ async fn send_and_receive_multiple_messages_separately() {
     ];
     let total = messages.len();
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -143,7 +141,7 @@ async fn send_and_receive_multiple_messages_separately() {
     .unwrap();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         Default::default(),
@@ -175,8 +173,8 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
     ];
     let max_messages = messages.len() as u32;
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -188,7 +186,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
     let mut receiver_options = ServiceBusReceiverOptions::default();
     receiver_options.prefetch_count = max_messages;
     common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         receiver_options,
@@ -224,7 +222,7 @@ async fn send_messagebatch_and_try_receive_messages_of_the_same_amount() {
     sender.send_message_batch(message_batch).await.unwrap();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         Default::default(),
@@ -269,7 +267,7 @@ async fn send_messagebatch_and_try_receive_more_than_sent() {
     receiving_client_options.retry_options = common::zero_retry_options();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         receiving_client_options,
         queue_name,
         Default::default(),
@@ -304,7 +302,7 @@ async fn send_and_receive_sessionful_messages() {
     let queue_name_clone = queue_name.clone();
     let handle_1 = tokio::spawn(async move {
         common::create_client_and_receive_sessionful_messages_from_queue(
-            connection_string_clone,
+            &connection_string_clone,
             Default::default(),
             queue_name_clone,
             Default::default(),
@@ -319,7 +317,7 @@ async fn send_and_receive_sessionful_messages() {
     let queue_name_clone = queue_name.clone();
     let handle_2 = tokio::spawn(async move {
         common::create_client_and_receive_sessionful_messages_from_queue(
-            connection_string_clone,
+            &connection_string_clone,
             Default::default(),
             queue_name_clone,
             Default::default(),
@@ -336,8 +334,8 @@ async fn send_and_receive_sessionful_messages() {
         message.set_session_id(String::from(session_id_2)).unwrap();
         message
     });
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -352,8 +350,8 @@ async fn send_and_receive_sessionful_messages() {
         message.set_session_id(String::from(session_id_1)).unwrap(); // length must not exceed max length
         message
     });
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string,
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name,
         Default::default(),
@@ -402,8 +400,8 @@ async fn send_and_abandon_messages_then_receive_messages() {
         .iter()
         .map(|message| ServiceBusMessage::new(*message));
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -413,7 +411,7 @@ async fn send_and_abandon_messages_then_receive_messages() {
     .unwrap();
 
     common::create_client_and_abandon_messages_from_queue(
-        connection_string.clone(),
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -424,7 +422,7 @@ async fn send_and_abandon_messages_then_receive_messages() {
     .unwrap();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         Default::default(),
@@ -453,8 +451,8 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
         .iter()
         .map(|message| ServiceBusMessage::new(*message));
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -464,7 +462,7 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
     .unwrap();
 
     common::create_client_and_deadletter_messages_from_queue(
-        connection_string.clone(),
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -477,7 +475,7 @@ async fn send_and_deadletter_then_receive_from_deadletter_queue() {
     let mut receiver_options = ServiceBusReceiverOptions::default();
     receiver_options.sub_queue = SubQueue::DeadLetter;
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         receiver_options,
@@ -509,7 +507,7 @@ async fn schedule_and_receive_messages() {
     let wait_time = StdDuration::from_secs(30);
     let enqueue_time = OffsetDateTime::now_utc() + wait_time;
     let sequence_numbers = common::create_client_and_schedule_messages(
-        connection_string.clone(),
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -524,7 +522,7 @@ async fn schedule_and_receive_messages() {
     tokio::time::sleep(wait_time).await;
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         Default::default(),
         queue_name,
         Default::default(),
@@ -553,10 +551,9 @@ async fn schedule_and_cancel_scheduled_messages() {
         .iter()
         .map(|message| ServiceBusMessage::new(*message));
 
-    let mut client =
-        ServiceBusClient::new(connection_string.clone(), Default::default())
-            .await
-            .unwrap();
+    let mut client = ServiceBusClient::new(&connection_string, Default::default())
+        .await
+        .unwrap();
     let mut sender = client
         .create_sender(queue_name.clone(), Default::default())
         .await
@@ -578,7 +575,7 @@ async fn schedule_and_cancel_scheduled_messages() {
     client_options.retry_options = common::zero_retry_options();
 
     let received = common::create_client_and_receive_messages_from_queue(
-        connection_string,
+        &connection_string,
         client_options,
         queue_name,
         Default::default(),
@@ -602,8 +599,8 @@ async fn send_and_peek_messages() {
         .iter()
         .map(|message| ServiceBusMessage::new(*message));
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -613,7 +610,7 @@ async fn send_and_peek_messages() {
     .unwrap();
 
     let peeked = common::create_client_and_peek_messages(
-        connection_string.clone(),
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -632,7 +629,7 @@ async fn send_and_peek_messages() {
     let mut client_options = ServiceBusClientOptions::default();
     client_options.retry_options = common::zero_retry_options();
     common::drain_queue(
-        connection_string,
+        &connection_string,
         client_options,
         queue_name,
         Default::default(),
@@ -653,8 +650,8 @@ async fn defer_and_receive_deferred_messages() {
         .iter()
         .map(|message| ServiceBusMessage::new(*message));
 
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -664,7 +661,7 @@ async fn defer_and_receive_deferred_messages() {
     .unwrap();
 
     let seq_nums = common::create_client_and_defer_messages(
-        connection_string.clone(),
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -677,7 +674,7 @@ async fn defer_and_receive_deferred_messages() {
     assert_eq!(seq_nums.len(), expected.len());
 
     let received = common::create_client_and_receive_deferred_messages(
-        connection_string.clone(),
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -704,8 +701,8 @@ async fn receive_and_renew_lock() {
     let messages = message
         .iter()
         .map(|message| ServiceBusMessage::new(*message));
-    common::create_client_and_send_messages_separately_to_queue(
-        connection_string.clone(),
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
         Default::default(),
         queue_name.clone(),
         Default::default(),
@@ -714,10 +711,9 @@ async fn receive_and_renew_lock() {
     .await
     .unwrap();
 
-    let mut client =
-        ServiceBusClient::new(connection_string.clone(), Default::default())
-            .await
-            .unwrap();
+    let mut client = ServiceBusClient::new(&connection_string, Default::default())
+        .await
+        .unwrap();
     let mut receiver = client
         .create_receiver_for_queue(queue_name, Default::default())
         .await

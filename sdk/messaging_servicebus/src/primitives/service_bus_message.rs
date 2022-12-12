@@ -163,9 +163,7 @@ impl ServiceBusMessage {
 
     /// Creates a new [`ServiceBusMessage`] with the given data as the body.
     pub fn new(data: impl Into<Vec<u8>>) -> Self {
-        Self {
-            amqp_message: Message::builder().data(Binary::from(data)).build(),
-        }
+        Self::from(data)
     }
 
     /// Gets the body of the message

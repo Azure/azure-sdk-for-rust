@@ -8,6 +8,12 @@ mod common;
 #[ignore]
 #[serial]
 async fn send_to_queue_every_minute_for_two_hour() {
+    // Run this test with:
+    //
+    // ```sh
+    // cargo test --test long_tests -- --ignored --exact --nocapture
+    // ```
+
     common::setup_dotenv();
 
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -36,7 +42,7 @@ async fn send_to_queue_every_minute_for_two_hour() {
         let mut total_received = 0;
         while total_received < total {
             let received = common::create_client_and_receive_messages_from_queue(
-                connection_string.clone(),
+                &connection_string,
                 Default::default(),
                 queue_name.clone(),
                 Default::default(),
