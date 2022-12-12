@@ -75,12 +75,6 @@ where
 
     /// Receive a single message from the entity using the receiver's receive mode.
     /// This method will wait indefinitely until at least one message is received.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// todo!()
-    /// ```
     pub async fn receive_message(
         &mut self,
     ) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
@@ -91,12 +85,6 @@ where
 
     /// Receive messages from the entity using the receiver's receive mode.
     /// This method will wait indefinitely until at least one message is received.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// todo!()
-    /// ```
     pub async fn receive_messages(
         &mut self,
         max_messages: u32,
@@ -109,12 +97,6 @@ where
     /// Receive a single message from the entity using the receiver's receive mode with a maximum wait time.
     ///
     /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let received = receiver.receive_message().await.unwrap();
-    /// ```
     pub async fn receive_message_with_max_wait_time(
         &mut self,
         max_wait_time: Option<std::time::Duration>,
@@ -128,12 +110,6 @@ where
     ///
     /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
     /// Please use [`ServiceBusReceiver::receive_messages()`] if the user wants to wait indefinitely for at least one message.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// todo!()
-    /// ```
     pub async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,

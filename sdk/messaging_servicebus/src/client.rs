@@ -83,9 +83,14 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use
+    /// use azure_messaging_servicebus::{
+    ///     ServiceBusClient, ServiceBusClientOptions,
+    /// };
     ///
-    /// todo!()
+    /// let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///     .await
+    ///     .unwrap();
+    /// client.dispose().await.unwrap();
     /// ```
     pub async fn new<'a>(
         connection_string: impl Into<Cow<'a, str>>,
