@@ -99,7 +99,7 @@ where
     /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
     pub async fn receive_message_with_max_wait_time(
         &mut self,
-        max_wait_time: Option<std::time::Duration>,
+        max_wait_time: impl Into<Option<std::time::Duration>>,
     ) -> Result<Option<ServiceBusReceivedMessage>, R::ReceiveError> {
         self.receive_messages_with_max_wait_time(1, max_wait_time)
             .await
@@ -113,43 +113,43 @@ where
     pub async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
-        max_wait_time: Option<std::time::Duration>,
+        max_wait_time: impl Into<Option<std::time::Duration>>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
         self.inner
-            .receive_messages_with_max_wait_time(max_messages, max_wait_time)
+            .receive_messages_with_max_wait_time(max_messages, max_wait_time.into())
             .await
     }
 
     /// Completes a [`ServiceBusReceivedMessage`]. This will delete the message from the service.
     pub async fn complete_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
+        message: impl AsRef<ServiceBusReceivedMessage>,
     ) -> Result<(), R::DispositionError> {
-        self.inner.complete(message, None).await
+        self.inner.complete(message.as_ref(), None).await
     }
 
     /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for immediate processing as the lock on the message held by the receiver will be released.
     pub async fn abandon_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
+        message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
         self.inner
-            .abandon(message, properties_to_modify, None)
+            .abandon(message.as_ref(), properties_to_modify, None)
             .await
     }
 
     /// Moves a message to the dead-letter subqueue.
     pub async fn dead_letter_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
+        message: impl AsRef<ServiceBusReceivedMessage>,
         dead_letter_reason: Option<String>,
         dead_letter_error_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
         self.inner
             .dead_letter(
-                message,
+                message.as_ref(),
                 dead_letter_reason,
                 dead_letter_error_description,
                 properties_to_modify,
@@ -167,10 +167,10 @@ where
     /// This operation can only be performed on messages that were received by this receiver.
     pub async fn defer_message(
         &mut self,
-        message: &ServiceBusReceivedMessage,
+        message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
-        self.inner.defer(message, properties_to_modify, None).await
+        self.inner.defer(message.as_ref(), properties_to_modify, None).await
     }
 
     /// Fetches the next active <see cref="ServiceBusReceivedMessage"/> without changing the state of the receiver or the message source.

@@ -66,6 +66,12 @@ pub struct ServiceBusReceivedMessage {
     pub(crate) lock_token: ReceivedMessageLockToken,
 }
 
+impl AsRef<ServiceBusReceivedMessage> for ServiceBusReceivedMessage {
+    fn as_ref(&self) -> &ServiceBusReceivedMessage {
+        self
+    }
+}
+
 impl From<ServiceBusReceivedMessage> for ReceivedMessageLockToken {
     fn from(message: ServiceBusReceivedMessage) -> Self {
         message.lock_token
