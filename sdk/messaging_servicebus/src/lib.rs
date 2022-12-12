@@ -2,7 +2,7 @@
 Azure Service Bus crate for the unofficial Microsoft Azure SDK for Rust.
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
-# Example
+# Examples
 
 ## Send messages to the queue
 
@@ -11,20 +11,30 @@ use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string, which can be found in the Azure portal
-    // and should look like "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
-    let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
-        .await?;
+    // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
+    // which can be found in the Azure portal and should look like
+    // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
+    let mut client = ServiceBusClient::new(
+        "<NAMESPACE-CONNECTION-STRING>",
+        Default::default()
+    )
+    .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
-    let mut sender = client.create_sender("<QUEUE-NAME>", ServiceBusSenderOptions::default()).await?;
+    let mut sender = client.create_sender(
+        "<QUEUE-NAME>",
+        Default::default()
+    )
+    .await?;
 
     // Create a batch
-    let mut message_batch = sender.create_message_batch(CreateMessageBatchOptions::default()).await?;
+    let mut message_batch = sender.create_message_batch(Default::default()).await?;
 
     for i in 0..3 {
-        // Try to add a message to the batch
-        if let Err(e) = message_batch.try_add_message(ServiceBusMessage::new(format!("Message {}", i))) {
+        // Create a message
+        let message = ServiceBusMessage::new(format!("Message {}", i));
+        // Try to add the message to the batch
+        if let Err(e) = message_batch.try_add_message(message) {
             // If the batch is full, an error will be returned
             println!("Failed to add message {} to batch: {:?}", i, e);
             break;
@@ -51,16 +61,25 @@ use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string, which can be found in the Azure portal
-    // and should look like "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
-    let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
-        .await?;
+    // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
+    // which can be found in the Azure portal and should look like
+    // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
+    let mut client = ServiceBusClient::new(
+        "<NAMESPACE-CONNECTION-STRING>",
+        Default::default()
+    )
+    .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
-    let mut receiver = client.create_receiver("<QUEUE-NAME>", ServiceBusReceiverOptions::default()).await?;
+    let mut receiver = client.create_receiver(
+        "<QUEUE-NAME>",
+        Default::default()
+    )
+    .await?;
 
-    // Receive messages from the queue using a default max wait time
-    let messages = receiver.receive_messages_with_max_wait_time(3, None).await?;
+    // Receive messages from the queue
+    // This will wait indefinitely until at least one message is received
+    let messages = receiver.receive_messages(3).await?;
 
     for message in &messages {
         let body = message.body()?;
@@ -78,22 +97,19 @@ async fn main() -> anyhow::Result<()> {
 ```
 */
 #![recursion_limit = "128"]
-#![deny(
-    missing_docs,
-    missing_debug_implementations,
-)]
+#![deny(missing_docs, missing_debug_implementations)]
 
+pub(crate) mod authorization;
 pub(crate) mod constants;
 pub(crate) mod diagnostics;
-pub(crate) mod authorization;
 pub(crate) mod entity_name_formatter;
 
 pub mod amqp;
 pub mod client;
+pub mod core;
 pub mod primitives;
 pub mod receiver;
-pub mod sender;
-pub mod core; // TODO: change to pub(crate)?
+pub mod sender; // TODO: change to pub(crate)?
 
 // pub mod prelude;
 // pub mod service_bus;
@@ -109,26 +125,27 @@ pub mod core; // TODO: change to pub(crate)?
 pub mod prelude {
     //! Re-exports
 
+    pub use crate::client::{ServiceBusClient, ServiceBusClientOptions};
     pub use crate::primitives::{
-        service_bus_message::ServiceBusMessage, service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_peeked_message::ServiceBusPeekedMessage, service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_connection_string_properties::ServiceBusConnectionStringProperties,
-        service_bus_retry_policy::ServiceBusRetryPolicy, service_bus_message_state::ServiceBusMessageState,
-        service_bus_retry_mode::ServiceBusRetryMode, service_bus_transport_type::ServiceBusTransportType,
-        sub_queue::SubQueue,
+        service_bus_message::ServiceBusMessage, service_bus_message_state::ServiceBusMessageState,
+        service_bus_peeked_message::ServiceBusPeekedMessage,
+        service_bus_received_message::ServiceBusReceivedMessage,
+        service_bus_retry_mode::ServiceBusRetryMode,
+        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_transport_type::ServiceBusTransportType, sub_queue::SubQueue,
     };
     pub use crate::receiver::{
         service_bus_receive_mode::ServiceBusReceiveMode, service_bus_receiver::ServiceBusReceiver,
-        service_bus_receiver::ServiceBusReceiverOptions, service_bus_session_receiver::ServiceBusSessionReceiver,
+        service_bus_receiver::ServiceBusReceiverOptions,
+        service_bus_session_receiver::ServiceBusSessionReceiver,
         service_bus_session_receiver::ServiceBusSessionReceiverOptions,
     };
     pub use crate::sender::{
         service_bus_message_batch::CreateMessageBatchOptions,
         service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
         service_bus_sender::ServiceBusSenderOptions,
-    };
-    pub use crate::client::{
-        ServiceBusClient, ServiceBusClientOptions
     };
 }
 
