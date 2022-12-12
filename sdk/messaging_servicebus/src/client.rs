@@ -23,7 +23,7 @@ use crate::{
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
 };
 
-/// The set of options that can be specified when creating an [`ServiceBusConnection`]
+/// The set of options that can be specified when creating an [`ServiceBusClient`]
 /// to configure its behavior.
 #[derive(Debug, Clone, Default)]
 pub struct ServiceBusClientOptions {
@@ -293,11 +293,10 @@ where
 
     /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving
     /// and settling messages from a session-enabled queue by accepting the next unlocked session that contains Active messages. If there
-    /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout`] value and returns
+    /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout()`] value and returns
     /// an error.
     ///
-    /// The [`ServiceBusReceiveMode`] can be specified in the [`ServiceBusReceiverOptions`] to configure how messages are received.
-    /// The default value is [`ServiceBusReceiveMode::PeekLock`].
+    /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.
     pub async fn accept_next_session_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -315,8 +314,7 @@ where
     /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout`] value and returns
     /// an error.
     ///
-    /// The [`ServiceBusReceiveMode`] can be specified in the [`ServiceBusReceiverOptions`] to configure how messages are received.
-    /// The default value is [`ServiceBusReceiveMode::PeekLock`].
+    /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.
     pub async fn accept_next_session_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,

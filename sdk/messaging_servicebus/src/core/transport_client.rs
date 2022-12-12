@@ -18,9 +18,7 @@ use super::{
 };
 
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
-/// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended
-/// that the public [ServiceBusConnection] employ a transport client via containment and delegate
-/// operations to it rather than understanding protocol-specific details for different transports.
+/// instance may provide operations for a specific transport.
 #[async_trait]
 pub trait TransportClient: Sized {
     /// Error with creating a client
@@ -74,8 +72,8 @@ pub trait TransportClient: Sized {
     /// # Parameters
     ///
     /// * `entity_path` - The entity path to send the message to.
-    /// * `retry_policy` - The policy which governs retry behavior and try timeouts
     /// * `identifier` - The identifier for the sender.
+    /// * `retry_policy` - The policy which governs retry behavior and try timeouts
     ///
     /// # Returns
     ///
@@ -131,10 +129,6 @@ pub trait TransportClient: Sized {
     // ) -> Result<Self::RuleManager, Self::CreateRuleManagerError>;
 
     /// Closes the connection to the transport client instance.
-    ///
-    /// # Parameters
-    ///
-    /// An optional [CancellationToken] instance to signal the request to cancel the operation.
     async fn close(
         &mut self,
         // cancellation_token: Option<CancellationToken>,

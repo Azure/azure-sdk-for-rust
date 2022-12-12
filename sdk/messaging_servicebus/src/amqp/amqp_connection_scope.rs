@@ -106,19 +106,7 @@ impl AmqpConnectionScope {
 }
 
 impl AmqpConnectionScope {
-    /// Initializes a new instance of the <see cref="AmqpConnectionScope"/> class.
-    ///
-    /// # Parameters
-    ///
-    /// * `service_endpoint` - Endpoint for the Service Bus service to which the scope is
-    ///   associated.
-    /// * `connection_endpoint` - The endpoint to use for the initial connection to the Service Bus
-    ///   service.
-    /// * `credential` - The credential to use for authorization with the Service Bus service.
-    /// * `transport_type` - The transport to use for communication.
-    /// * `use_single_session` - If true, all links will use a single session.
-    /// * `operation_timeout` - The timeout for operations associated with the connection.
-    /// * `metrics` - The metrics instance to populate transport metrics. May be null.
+    /// Initializes a new instance of the [`AmqpConnectionScope`] class.
     pub(crate) async fn new(
         service_endpoint: Url,
         connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied

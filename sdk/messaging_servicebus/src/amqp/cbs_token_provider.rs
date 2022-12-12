@@ -25,13 +25,7 @@ pub(crate) struct CbsTokenProvider {
 }
 
 impl CbsTokenProvider {
-    /// Initializes a new instance of the <see cref="CbsTokenProvider"/> class.
-    ///
-    /// # Parameters
-    ///
-    /// `credential` - The credential to use for access token generation.
-    /// `token_expiration_buffer` - The amount of time to buffer expiration
-    /// `cancellation_token` - The cancellation token to consider when making requests.
+    /// Initializes a new instance of the [`CbsTokenProvider`] class.
     pub fn new(credential: ServiceBusTokenCredential, token_expiration_buffer: TimeSpan) -> Self {
         let token_type = if credential.is_shared_access_credential() {
             TokenType::SharedAccessToken { credential }

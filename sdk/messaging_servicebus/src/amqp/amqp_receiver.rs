@@ -115,16 +115,6 @@ where
     }
 
     /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
-    ///
-    /// # Parameters
-    ///
-    /// * `maximum_message_count` - The maximum number of messages that will be received.
-    /// * `max_wait_time` - An optional [`std::time::Duration`] specifying the maximum time to wait for the first message before returning an empty list if no messages have been received.
-    ///     If not specified, the [`ServiceBusRetryOptions.try_timeout`] will be used.
-    ///
-    /// # Returns
-    ///
-    /// List of messages received. Returns an empty list if no message is found.
     async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,

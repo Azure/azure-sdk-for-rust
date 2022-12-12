@@ -187,20 +187,6 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     }
 
     /// Parses the specified Service Bus connection string into its component properties.
-    ///
-    /// # Parameters
-    ///
-    /// * `connection_string` - The connection string to parse.
-    ///
-    /// # Returns
-    ///
-    /// ## `Ok`
-    ///
-    /// The component properties parsed from the connection string.
-    ///
-    /// ## `Err`
-    ///
-    /// Returns `Err(_)` if the specified connection string was malformed and could not be parsed.
     pub fn parse(connection_string: &'a str) -> Result<Self, FormatError> {
         if connection_string.is_empty() {
             return Err(FormatError::ConnectionStringIsEmpty);
