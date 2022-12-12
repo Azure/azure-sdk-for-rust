@@ -67,14 +67,6 @@ pub struct ServiceBusClientOptions {
 /// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
 /// [`ServiceBusReceiver`] will share the same AMQP connection. Disposing the [`ServiceBusClient`]
 /// will cause the AMQP connection to close.
-///
-/// # Remarks
-///
-/// The <see cref="ServiceBusClient" /> is safe to cache and use for the lifetime of an application,
-/// which is the best practice when the application is making use of Service Bus regularly or
-/// semi-regularly.  The client is responsible for ensuring efficient network, CPU, and memory use.
-/// Calling <see cref="DisposeAsync" /> as the application is shutting down will ensure that network
-/// resources and other unmanaged objects are properly cleaned up.
 #[derive(Debug)]
 pub struct ServiceBusClient<C> {
     /// The name used to identify this [`ServiceBusClient`]
@@ -85,6 +77,16 @@ pub struct ServiceBusClient<C> {
 }
 
 impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
+    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
+    /// connection string and [`ServiceBusClientOptions`].
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use
+    ///
+    /// todo!()
+    /// ```
     pub async fn new<'a>(
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
@@ -109,29 +111,25 @@ where
 {
     /// The fully qualified Service Bus namespace that the connection is associated with. This is
     /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
-    ///
-    // public virtual string FullyQualifiedNamespace => Connection.FullyQualifiedNamespace;
     pub fn fully_qualified_namespace(&self) -> &str {
         self.connection.fully_qualified_namespace()
     }
 
-    /// The name used to identify this <see cref="ServiceBusClient"/>.
+    /// The name used to identify this [`ServiceBusClient`].
     pub fn identifier(&self) -> &str {
         &self.identifier
     }
 
     /// Indicates whether or not this [`ServiceBusClient`] has been closed.
-    ///
-    /// # Value
-    ///
-    /// `true` if the client is closed; otherwise, `false`.
     pub fn is_closed(&self) -> bool {
         self.connection.is_closed()
     }
 }
 
 impl ServiceBusClient<()> {
-    pub async fn new_with_credential_and_options<C>(
+    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
+    /// fully qualified namespace and credential.
+    pub async fn new_with_credential<C>(
         fully_qualified_namespace: impl Into<String>,
         credential: impl Into<ServiceBusTokenCredential>,
         options: ServiceBusClientOptions,
@@ -171,12 +169,8 @@ where
     C: TransportClient + Send + Sync + 'static,
     Error: From<C::DisposeError>,
 {
-    /// <summary>
-    ///   Performs the task needed to clean up resources used by the <see cref="ServiceBusClient" />,
-    ///   including ensuring that the client itself has been closed.
-    /// </summary>
-    ///
-    /// <returns>A task to be resolved on when the operation has completed.</returns>
+    /// Performs the task needed to clean up resources used by the [`ServiceBusClient`],
+    /// including ensuring that the client itself has been closed.
     pub async fn dispose(&mut self) -> Result<(), Error> {
         // self.closed = true;
 
@@ -194,6 +188,8 @@ where
     C: TransportClient + Send + Sync + 'static,
     OpenSenderError: From<C::CreateSenderError>,
 {
+    /// Creates a new [`ServiceBusSender`] which can be used to send messages to a specific queue or
+    /// topic.
     pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
@@ -226,10 +222,13 @@ impl<C> ServiceBusClient<C>
 where
     C: TransportClient + Send + Sync + 'static,
 {
+    /// The transport type used by the client.
     pub fn transport_type(&self) -> ServiceBusTransportType {
         self.connection.transport_type()
     }
 
+    /// Creates a new [`ServiceBusReceiver`] which can be used to receive messages from a specific
+    /// queue.
     pub async fn create_receiver_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -239,6 +238,8 @@ where
         self.create_receiver(entity_path, options).await
     }
 
+    /// Creates a new [`ServiceBusReceiver`] which can be used to receive messages from a specific
+    /// subscription.
     pub async fn create_receiver_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
@@ -285,6 +286,13 @@ where
         })
     }
 
+    /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving
+    /// and settling messages from a session-enabled queue by accepting the next unlocked session that contains Active messages. If there
+    /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout`] value and returns
+    /// an error.
+    ///
+    /// The [`ServiceBusReceiveMode`] can be specified in the [`ServiceBusReceiverOptions`] to configure how messages are received.
+    /// The default value is [`ServiceBusReceiveMode::PeekLock`].
     pub async fn accept_next_session_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -297,6 +305,13 @@ where
             .await
     }
 
+    /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving
+    /// and settling messages from a session-enabled subscription by accepting the next unlocked session that contains Active messages. If there
+    /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout`] value and returns
+    /// an error.
+    ///
+    /// The [`ServiceBusReceiveMode`] can be specified in the [`ServiceBusReceiverOptions`] to configure how messages are received.
+    /// The default value is [`ServiceBusReceiveMode::PeekLock`].
     pub async fn accept_next_session_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
