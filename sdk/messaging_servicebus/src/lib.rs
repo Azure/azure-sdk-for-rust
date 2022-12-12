@@ -52,15 +52,26 @@ pub mod core; // TODO: change to pub(crate)?
 // pub mod administration;
 // pub mod processor;
 
-pub use primitives::service_bus_message::ServiceBusMessage;
+pub use primitives::{
+    service_bus_message::ServiceBusMessage, service_bus_received_message::ServiceBusReceivedMessage,
+    service_bus_peeked_message::ServiceBusPeekedMessage, service_bus_retry_options::ServiceBusRetryOptions,
+    service_bus_connection_string_properties::ServiceBusConnectionStringProperties,
+    service_bus_retry_policy::ServiceBusRetryPolicy, service_bus_message_state::ServiceBusMessageState,
+    service_bus_retry_mode::ServiceBusRetryMode, service_bus_transport_type::ServiceBusTransportType,
+    sub_queue::SubQueue,
+};
 pub use receiver::{
     service_bus_receive_mode::ServiceBusReceiveMode, service_bus_receiver::ServiceBusReceiver,
-    service_bus_receiver::ServiceBusReceiverOptions,
+    service_bus_receiver::ServiceBusReceiverOptions, service_bus_session_receiver::ServiceBusSessionReceiver,
+    service_bus_session_receiver::ServiceBusSessionReceiverOptions,
 };
 pub use sender::{
     service_bus_message_batch::CreateMessageBatchOptions,
     service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
     service_bus_sender::ServiceBusSenderOptions,
+};
+pub use client::{
+    ServiceBusClient, ServiceBusClientOptions
 };
 
 pub(crate) mod constants;

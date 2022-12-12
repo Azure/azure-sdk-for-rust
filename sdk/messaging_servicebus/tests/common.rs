@@ -1,17 +1,13 @@
 use std::time::Duration as StdDuration;
 
 use azure_messaging_servicebus::{
-    client::{
-        ServiceBusClient, ServiceBusClientOptions,
-    },
-    core::{TransportSender},
-    primitives::{
-        service_bus_peeked_message::ServiceBusPeekedMessage,
-        service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_options::ServiceBusRetryOptions,
-    },
-    receiver::service_bus_session_receiver::ServiceBusSessionReceiverOptions,
+    ServiceBusClient, ServiceBusClientOptions,
+    ServiceBusPeekedMessage,
+    ServiceBusReceivedMessage,
+    ServiceBusRetryOptions,
+    ServiceBusSessionReceiverOptions,
     ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
+    core::{TransportSender},
 };
 use time::OffsetDateTime;
 
