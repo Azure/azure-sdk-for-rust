@@ -12,6 +12,7 @@ operation! {
     issuer_name: String,
     ?kty: JsonWebKeyType,
     ?key_size: u16,
+    ?dns_names: Vec<String>,
     ?exportable: bool,
     ?reuse_key: bool,
     ?enabled: bool,
@@ -61,6 +62,13 @@ struct KeyProperties {
 #[derive(Serialize, Debug)]
 struct X509Properties {
     subject: String,
+    sans: SubjectAlternativeNames,
+}
+
+#[derive(Serialize, Debug)]
+struct SubjectAlternativeNames {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    dns_names: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Debug)]
@@ -103,6 +111,9 @@ impl CreateCertificateBuilder {
                     },
                     x509_props: X509Properties {
                         subject: self.subject,
+                        sans: SubjectAlternativeNames {
+                            dns_names: self.dns_names,
+                        },
                     },
                     issuer: Issuer {
                         name: self.issuer_name,
