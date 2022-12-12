@@ -15,7 +15,7 @@ rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
-base64 = "0.13"
+base64 = "0.20"
 bytes = "1.0"
 time = { version = "0.3.10", features = ["serde-well-known", "macros", "local-offset"] }
 dyn-clone = "1.0"
