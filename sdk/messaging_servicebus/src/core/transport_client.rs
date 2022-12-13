@@ -67,17 +67,7 @@ pub trait TransportClient: Sized {
     fn service_endpoint(&self) -> &Url;
 
     /// Creates a sender strongly aligned with the active protocol and transport,
-    /// responsible for sending <see cref="ServiceBusMessage" /> to the entity.
-    ///
-    /// # Parameters
-    ///
-    /// * `entity_path` - The entity path to send the message to.
-    /// * `identifier` - The identifier for the sender.
-    /// * `retry_policy` - The policy which governs retry behavior and try timeouts
-    ///
-    /// # Returns
-    ///
-    /// A [TransportSender] configured in the requested manner.
+    /// responsible for sending [`ServiceBusMessage`] to the entity.
     async fn create_sender(
         &mut self,
         entity_path: &str,

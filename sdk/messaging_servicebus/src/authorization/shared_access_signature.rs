@@ -51,38 +51,38 @@ pub(crate) struct SignatureParts<'a> {
 }
 
 impl SharedAccessSignature {
-    /// <summary>The maximum allowed length of the SAS key name.</summary>
+    /// The maximum allowed length of the SAS key name.
     pub(crate) const MAXIMUM_KEY_NAME_LENGTH: usize = 256;
 
-    /// <summary>The maximum allowed length of the SAS key.</summary>
+    /// The maximum allowed length of the SAS key.
     const MAXIMUM_KEY_LENGTH: usize = 256;
 
-    /// <summary>The token that represents the type of authentication used.</summary>
+    /// The token that represents the type of authentication used.
     const AUTHENTICATION_TYPE_TOKEN: &'static str = "SharedAccessSignature";
 
-    /// <summary>The token that identifies the signed component of the shared access signature.</summary>
+    /// The token that identifies the signed component of the shared access signature.
     const SIGNED_RESOURCE_TOKEN: &'static str = "sr";
 
-    /// <summary>The token that identifies the signature component of the shared access signature.</summary>
+    /// The token that identifies the signature component of the shared access signature.
     const SIGNATURE_TOKEN: &'static str = "sig";
 
-    /// <summary>The token that identifies the signed SAS key component of the shared access signature.</summary>
+    /// The token that identifies the signed SAS key component of the shared access signature.
     const SIGNED_KEY_NAME_TOKEN: &'static str = "skn";
 
-    /// <summary>The token that identifies the signed expiration time of the shared access signature.</summary>
+    /// The token that identifies the signed expiration time of the shared access signature.
     const SIGNED_EXPIRY_TOKEN: &'static str = "se";
 
-    /// <summary>The token that fully identifies the signed resource within the signature.</summary>
+    /// The token that fully identifies the signed resource within the signature.
     // AuthenticationTypeToken + " " + SignedResourceToken;
     const SIGNED_RESOURCE_FULL_IDENTIFIER_TOKEN: &'static str = "SharedAccessSignature sr";
 
-    /// <summary>The character used to separate a token and its value in the connection string.</summary>
+    /// The character used to separate a token and its value in the connection string.
     const TOKEN_VALUE_SEPARATOR: char = '=';
 
-    /// <summary>The character used to mark the beginning of a new token/value pair in the signature.</summary>
+    /// The character used to mark the beginning of a new token/value pair in the signature.
     const TOKEN_VALUE_PAIR_DELIMITER: char = '&';
 
-    /// <summary>The default length of time to consider a signature valid, if not otherwise specified.</summary>
+    /// The default length of time to consider a signature valid, if not otherwise specified.
     const DEFAULT_SIGNATURE_VALIDITY_DURATION: Duration = Duration::from_secs(30 * 60); // 30 mins
 }
 
@@ -115,15 +115,12 @@ impl SharedAccessSignature {
         &self.value
     }
 
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="SharedAccessSignature"/> class.
-    /// </summary>
+    /// Initializes a new instance of the [`SharedAccessSignature`] class.
     ///
-    /// <param name="serviceBusResource">The Service Bus resource to which the token is intended to serve as authorization.</param>
-    /// <param name="sharedAccessKeyName">The name of the shared access key that the signature should be based on.</param>
-    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
-    /// <param name="signatureValidityDuration">The duration that the signature should be considered valid; if not specified, a default will be assumed.</param>
-    ///
+    /// - `service_bus_resource` - The Service Bus resource to which the token is intended to serve as authorization.
+    /// - `shared_access_key_name` - The name of the shared access key that the signature should be based on.
+    /// - `shared_access_key` - The value of the shared access key for the signature.
+    /// - `signature_validity_duration` - The duration that the signature should be considered valid; if not specified, a default will be assumed.
     pub fn try_from_parts(
         service_bus_resource: impl Into<String>,
         shared_access_key_name: impl Into<String>,
@@ -144,12 +141,9 @@ impl SharedAccessSignature {
         )
     }
 
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="SharedAccessSignature"/> class.
-    /// </summary>
+    /// Initializes a new instance of the [`SharedAccessSignature`] class.
     ///
-    /// <param name="sharedAccessSignature">The shared access signature that will be parsed as the basis of this instance.</param>
-    ///
+    /// - `shared_access_signature` - The shared access signature that will be parsed as the basis of this instance.
     pub fn try_from_signature(
         shared_access_signature: impl Into<String>,
     ) -> Result<Self, SasSignatureError> {
@@ -157,13 +151,10 @@ impl SharedAccessSignature {
         Self::try_from_signature_and_key(shared_access_signature, "")
     }
 
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="SharedAccessSignature"/> class.
-    /// </summary>
+    /// Initializes a new instance of the [`SharedAccessSignature`] class.
     ///
-    /// <param name="sharedAccessSignature">The shared access signature that will be parsed as the basis of this instance.</param>
-    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
-    ///
+    /// - `shared_access_signature` - The shared access signature that will be parsed as the basis of this instance.
+    /// - `shared_access_key` - The value of the shared access key for the signature.
     pub fn try_from_signature_and_key(
         shared_access_signature: impl Into<String>,
         shared_access_key: impl Into<String>,
@@ -186,15 +177,12 @@ impl SharedAccessSignature {
         })
     }
 
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="SharedAccessSignature" /> class.
-    /// </summary>
+    /// Initializes a new instance of the [`SharedAccessSignature`] class.
     ///
-    /// <param name="eventHubResource">The Service Bus resource to which the token is intended to serve as authorization.</param>
-    /// <param name="sharedAccessKeyName">The name of the shared access key that the signature should be based on.</param>
-    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
-    /// <param name="signatureExpiration">The date and time that the shared access signature expires, in UTC.</param>
-    ///
+    /// - `event_hub_resource` - The Service Bus resource to which the token is intended to serve as authorization.
+    /// - `shared_access_key_name` - The name of the shared access key that the signature should be based on.
+    /// - `shared_access_key` - The value of the shared access key for the signature.
+    /// - `signature_expiration` - The date and time that the shared access signature expires, in UTC.
     pub fn try_new(
         resource: impl Into<String>,
         shared_access_key_name: impl Into<String>,
@@ -240,14 +228,7 @@ impl SharedAccessSignature {
         })
     }
 
-    // /// <summary>
     // ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
-    // /// </summary>
-    // ///
-    // /// <param name="signatureValidityDuration">The duration that the signature should be considered valid.</param>
-    // ///
-    // /// <returns>A new <see cref="SharedAccessSignature" /> based on the same key, but with a new expiration time.</returns>
-    // ///
     // pub fn clone_with_new_expiration(
     //     &self,
     //     signature_validity_duration: Duration,
@@ -264,14 +245,7 @@ impl SharedAccessSignature {
     //     )
     // }
 
-    /// <summary>
-    ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
-    /// </summary>
-    ///
-    /// <param name="signatureValidityDuration">The duration that the signature should be considered valid.</param>
-    ///
-    /// <returns>A new <see cref="SharedAccessSignature" /> based on the same key, but with a new expiration time.</returns>
-    ///
+    /// Creates a new signature with the specified period for which the shared access signature is considered valid.
     pub fn update_with_new_expiration(
         &mut self,
         signature_validity_duration: Duration,
@@ -290,14 +264,7 @@ impl SharedAccessSignature {
         Ok(())
     }
 
-    /// <summary>
-    ///   Parses a shared access signature into its component parts.
-    /// </summary>
-    ///
-    /// <param name="sharedAccessSignature">The shared access signature to parse.</param>
-    ///
-    /// <returns>The set of composite properties parsed from the signature.</returns>
-    ///
+    /// Parses a shared access signature into its component parts.
     pub(crate) fn parse_signature(
         shared_access_signature: &str,
     ) -> Result<SignatureParts, SasSignatureError> {
@@ -354,18 +321,15 @@ impl SharedAccessSignature {
         })
     }
 
-    /// <summary>
-    ///   Builds the shared access signature value, which can be used as a token for
-    ///   access to the Service Bus service.
-    /// </summary>
+    /// Builds the shared access signature value, which can be used as a token for
+    /// access to the Service Bus service.
     ///
-    /// <param name="audience">The audience scope to which this signature applies.</param>
-    /// <param name="sharedAccessKeyName">The name of the shared access key that the signature should be based on.</param>
-    /// <param name="sharedAccessKey">The value of the shared access key for the signature.</param>
-    /// <param name="expirationTime">The date/time, in UTC, that the signature expires.</param>
+    /// - `audience` - The audience scope to which this signature applies.
+    /// - `shared_access_key_name` - The name of the shared access key that the signature should be based on.
+    /// - `shared_access_key` - The value of the shared access key for the signature.
+    /// - `expiration_time` - The date/time, in UTC, that the signature expires.
     ///
-    /// <returns>The value of the shared access signature.</returns>
-    ///
+    /// Returns the value of the shared access signature.
     fn build_signature(
         audience: &str,
         shared_access_key_name: &str,
@@ -399,25 +363,12 @@ impl SharedAccessSignature {
     }
 }
 
-/// <summary>
-///   Converts the instance to string representation.
-/// </summary>
-///
-/// <returns>A <see cref="System.String" /> that represents this instance.</returns>
-///
 impl ToString for SharedAccessSignature {
     fn to_string(&self) -> String {
         self.value.clone()
     }
 }
 
-/// <summary>
-///   Converts a <see cref="DateTimeOffset" /> value to the corresponding Unix-style timestamp.
-/// </summary>
-///
-/// <param name="dateTimeOffset">The date/time to convert.</param>
-///
-/// <returns>The Unix-style timestamp which corresponds to the specified date/time.</returns>
 fn convert_to_unix_time(offset_date_time: OffsetDateTime) -> i64 {
     offset_date_time.unix_timestamp()
 }

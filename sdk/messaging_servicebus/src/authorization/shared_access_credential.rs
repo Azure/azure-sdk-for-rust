@@ -25,10 +25,10 @@ impl From<SharedAccessSignature> for SharedAccessCredential {
 }
 
 impl SharedAccessCredential {
-    /// <summary>The buffer to apply when considering refreshing; signatures that expire less than this duration will be refreshed.</summary>
+    /// The buffer to apply when considering refreshing; signatures that expire less than this duration will be refreshed.
     const SIGNATURE_REFRESH_BUFFER: Duration = Duration::from_secs(10 * 60); // 10 mins
 
-    /// <summary>The length of time extend signature validity, if a token was requested.</summary>
+    /// The length of time extend signature validity, if a token was requested.
     const SIGNATURE_EXTENSION_DURATION: Duration = Duration::from_secs(30 * 60); // 30 mins
 
     pub(crate) fn from_signature(shared_access_signature: SharedAccessSignature) -> Self {
@@ -39,12 +39,9 @@ impl SharedAccessCredential {
         }
     }
 
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="SharedAccessCredential" /> class.
-    /// </summary>
+    /// Initializes a new instance of the [`SharedAccessCredential`] class.
     ///
-    /// <param name="sourceCredential">The <see cref="AzureSasCredential"/> to base signatures on.</param>
-    ///
+    /// - `source_sas_credential` - The [`AzureSasCredential`] to base signatures on.
     pub fn try_from_sas_credential(
         source_sas_credential: AzureSasCredential,
     ) -> Result<Self, SasSignatureError> {
@@ -58,13 +55,10 @@ impl SharedAccessCredential {
         })
     }
 
-    /// <summary>
-    ///   Initializes a new instance of the <see cref="SharedAccessCredential" /> class.
-    /// </summary>
+    /// Initializes a new instance of the [`SharedAccessCredential`] class.
     ///
-    /// <param name="sourceCredential">The <see cref="AzureNamedKeyCredential"/> to base signatures on.</param>
-    /// <param name="signatureResource">The fully-qualified identifier for the resource to which this credential is intended to serve as authorization for.  This is also known as the "token audience" in some contexts.</param>
-    ///
+    /// - `source_credential` - The [`AzureNamedKeyCredential`] to base signatures on.
+    /// - `signature_resource` - The fully-qualified identifier for the resource to which this credential is intended to serve as authorization for.  This is also known as the "token audience" in some contexts.
     pub fn try_from_named_key_credential(
         source_credential: AzureNamedKeyCredential,
         signature_resource: impl Into<String>,
@@ -82,15 +76,8 @@ impl SharedAccessCredential {
 }
 
 impl SharedAccessCredential {
-    /// <summary>
-    ///   Retrieves the token that represents the shared access signature credential, for
-    ///   use in authorization against a Service Bus entity.
-    /// </summary>
-    ///
-    /// <param name="requestContext">The details of the authentication request.</param>
-    /// <param name="cancellationToken">The token used to request cancellation of the operation.</param>
-    ///
-    /// <returns>The token representing the shared access signature for this credential.</returns>
+    /// Retrieves the token that represents the shared access signature credential, for
+    /// use in authorization against a Service Bus entity.
     ///
     /// FIXME: this is a temporary workaround until specialization is stablized.
     pub(crate) async fn get_token(&self, _resource: &str) -> azure_core::Result<TokenResponse> {

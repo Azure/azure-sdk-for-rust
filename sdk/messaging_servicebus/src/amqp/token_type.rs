@@ -20,7 +20,7 @@ pub(crate) enum TokenType {
         /// to instantiate the semaphore if no caching is taking place.
         semaphore: Semaphore,
 
-        /// The JWT-based <see cref="CbsToken" /> that is currently cached for authorization.
+        /// The JWT-based token that is currently cached for authorization.
         cached_token: Option<TokenResponse>,
     },
 }

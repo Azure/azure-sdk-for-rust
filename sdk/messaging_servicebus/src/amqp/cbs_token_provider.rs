@@ -12,7 +12,7 @@ use super::token_type::TokenType;
 
 #[derive(Debug)]
 pub(crate) struct CbsTokenProvider {
-    /// The type to consider a token generated from the associated <see cref="Credential" />
+    /// The token type
     token_type: TokenType,
 
     /// The amount of buffer to when evaluating token expiration; the token's expiration date will
