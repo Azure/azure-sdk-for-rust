@@ -117,14 +117,19 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
     client_options: ServiceBusClientOptions,
     queue_name: &str,
     receiver_options: ServiceBusSessionReceiverOptions,
-    session_id: String,
+    session_id: Option<String>,
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
     let mut client = ServiceBusClient::new(connection_string, client_options).await?;
-    let mut receiver = client
-        .accept_session_for_queue(queue_name, session_id, receiver_options)
-        .await?;
+    let mut receiver = match session_id {
+        Some(session_id) => client
+            .accept_session_for_queue(queue_name, session_id, receiver_options)
+            .await?,
+        None => client
+            .accept_next_session_for_queue(queue_name, receiver_options)
+            .await?,
+    };
 
     let messages = receiver
         .receive_messages_with_max_wait_time(max_messages, max_wait_time)
@@ -168,7 +173,7 @@ pub async fn create_client_and_receive_messages_from_subscription(
 }
 
 #[allow(dead_code)]
-pub async fn create_client_and_receiver_sessionful_messages_from_subscription(
+pub async fn create_client_and_receive_sessionful_messages_from_subscription(
     connection_string: &str,
     client_options: ServiceBusClientOptions,
     topic_name: &str,

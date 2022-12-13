@@ -156,7 +156,7 @@ async fn send_and_receive_sessionful_messages() {
     let topic_name_clone = topic_name.clone();
     let subscription_name_clone = subscription_name.clone();
     let handle_1 = tokio::spawn(async move {
-        common::create_client_and_receiver_sessionful_messages_from_subscription(
+        common::create_client_and_receive_sessionful_messages_from_subscription(
             &connection_string_clone,
             Default::default(),
             &topic_name_clone,
@@ -173,7 +173,7 @@ async fn send_and_receive_sessionful_messages() {
     let topic_name_clone = topic_name.clone();
     let subscription_name_clone = subscription_name.clone();
     let handle_2 = tokio::spawn(async move {
-        common::create_client_and_receiver_sessionful_messages_from_subscription(
+        common::create_client_and_receive_sessionful_messages_from_subscription(
             &connection_string_clone,
             Default::default(),
             &topic_name_clone,

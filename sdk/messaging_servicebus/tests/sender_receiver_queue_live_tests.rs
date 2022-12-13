@@ -288,6 +288,61 @@ async fn send_message_batch_and_try_receive_more_than_sent() {
 
 #[tokio::test]
 #[serial]
+async fn send_and_receive_on_next_session() {
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_SESSION_QUEUE").unwrap();
+
+    let expected = ["test message 1", "test message 2", "test message 3"];
+    let session_id = "test_session";
+    let messages = expected.iter().map(|message| {
+        let mut message = ServiceBusMessage::new(message.as_bytes());
+        message.set_session_id(String::from(session_id)).unwrap();
+        message
+    });
+
+    common::create_client_and_send_messages_separately_to_queue_or_topic(
+        &connection_string,
+        Default::default(),
+        &queue_name,
+        Default::default(),
+        messages,
+    )
+    .await
+    .unwrap();
+
+    // let handle = tokio::spawn(async move {
+    //     let mut client = ServiceBusClient::new(&connection_string, Default::default())
+    //         .await.unwrap();
+    //     if let Ok(mut receiver) = client.accept_next_session_for_queue(queue_name, Default::default()).await {
+
+    //         receiver.dispose().await.unwrap();
+    //     }
+
+    //     client.dispose().await.unwrap();
+    // });
+
+    let received = common::create_client_and_receive_sessionful_messages_from_queue(
+        &connection_string,
+        Default::default(),
+        &queue_name,
+        Default::default(),
+        None,
+        expected.len() as u32,
+        None,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(received.len(), expected.len());
+    for i in 0..expected.len() {
+        let received_message_body = received[i].body().unwrap();
+        assert_eq!(received_message_body, expected[i].as_bytes());
+    }
+}
+
+#[tokio::test]
+#[serial]
 async fn send_and_receive_sessionful_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -306,7 +361,7 @@ async fn send_and_receive_sessionful_messages() {
             Default::default(),
             &queue_name_clone,
             Default::default(),
-            session_id_1.to_string(),
+            Some(session_id_1.to_string()),
             expected_for_session_id_1.len() as u32,
             None,
         )
@@ -321,7 +376,7 @@ async fn send_and_receive_sessionful_messages() {
             Default::default(),
             &queue_name_clone,
             Default::default(),
-            session_id_2.to_string(),
+            Some(session_id_2.to_string()),
             expected_for_session_id_2.len() as u32,
             None,
         )

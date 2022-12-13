@@ -174,12 +174,13 @@ where
             .source()
             .as_ref()
             .and_then(|source| source.filter.as_ref())
-            .and_then(|filter| match filter.get(amqp_client_constants::SESSION_FILTER_NAME) {
-                Some(Some(described)) => Some(described),
-                _ => None,
-            })
-            .and_then(|described| match described.value {
+            .and_then(|filter| filter.get(amqp_client_constants::SESSION_FILTER_NAME))
+            .and_then(|value| match value {
                 Value::String(ref string) => Some(string.as_str()),
+                Value::Described(described) => match described.value {
+                    Value::String(ref string) => Some(string.as_str()),
+                    _ => None,
+                },
                 _ => None,
             })
     }

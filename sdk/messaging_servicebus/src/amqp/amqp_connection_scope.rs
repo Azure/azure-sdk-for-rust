@@ -3,11 +3,8 @@ use std::{sync::atomic::Ordering, time::Duration as StdDuration};
 use async_trait::async_trait;
 use azure_core::Url;
 use fe2o3_amqp::{
-    connection::{ConnectionHandle},
-    link::{receiver::CreditMode},
-    sasl_profile::SaslProfile,
-    session::{SessionHandle},
-    Connection, Session,
+    connection::ConnectionHandle, link::receiver::CreditMode, sasl_profile::SaslProfile,
+    session::SessionHandle, Connection, Session,
 };
 
 #[cfg(feature = "transaction")]
@@ -22,10 +19,7 @@ use fe2o3_amqp_types::{
 };
 use fe2o3_amqp_ws::WebSocketStream;
 use time::Duration as TimeSpan;
-use tokio::{
-    sync::mpsc,
-    time::{timeout},
-};
+use tokio::{sync::mpsc, time::timeout};
 
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
@@ -41,7 +35,10 @@ use super::{
     amqp_constants,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
-    error::{CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError, OpenSenderError, AmqpConnectionScopeError},
+    error::{
+        AmqpConnectionScopeError, CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError,
+        OpenSenderError,
+    },
     filters::SessionFilter,
     LINK_IDENTIFIER,
 };
@@ -50,9 +47,7 @@ const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
 pub(crate) enum ReceiverType {
     NonSession,
-    Session {
-        session_id: Option<String>,
-    }
+    Session { session_id: Option<String> },
 }
 
 pub(crate) struct AmqpConnectionScope {
@@ -333,6 +328,8 @@ impl AmqpConnectionScope {
         ),
         OpenReceiverError,
     > {
+        use serde_amqp::Value;
+
         if self.is_disposed {
             return Err(OpenReceiverError::ScopeIsDisposed);
         }
@@ -356,12 +353,16 @@ impl AmqpConnectionScope {
             ReceiverType::NonSession => FilterSet::with_capacity(0),
             ReceiverType::Session { session_id } => {
                 let mut filter_set = FilterSet::with_capacity(1);
+                let value = session_id
+                    .map(SessionFilter)
+                    .map(|filter| Value::Described(Box::new(filter.into())))
+                    .unwrap_or(Value::Null);
                 filter_set.insert(
                     Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
-                    session_id.map(SessionFilter).map(Into::into),
+                    value,
                 );
                 filter_set
-            },
+            }
         };
 
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
