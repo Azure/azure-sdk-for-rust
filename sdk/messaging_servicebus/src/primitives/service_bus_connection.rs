@@ -257,16 +257,15 @@ where
     }
 }
 
-impl<C> ServiceBusConnection<C> {
+impl<C> ServiceBusConnection<C>
+where
+    C: TransportClient + Send,
+{
     pub(crate) async fn new_with_credential(
         fully_qualified_namespace: String,
         credential: impl Into<ServiceBusTokenCredential>,
         options: ServiceBusClientOptions,
-    ) -> Result<ServiceBusConnection<C>, Error>
-    where
-        C: TransportClient,
-        Error: From<C::CreateClientError>,
-    {
+    ) -> Result<ServiceBusConnection<C>, C::CreateClientError> {
         let token_credential: ServiceBusTokenCredential = credential.into();
         let inner_client = C::create_transport_client(
             &fully_qualified_namespace,
@@ -283,12 +282,7 @@ impl<C> ServiceBusConnection<C> {
             inner_client,
         })
     }
-}
 
-impl<C> ServiceBusConnection<C>
-where
-    C: TransportClient + Send,
-{
     pub async fn dispose(&mut self) -> Result<(), C::DisposeError> {
         self.inner_client.dispose().await.map_err(Into::into)
     }

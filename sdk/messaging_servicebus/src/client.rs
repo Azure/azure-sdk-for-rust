@@ -43,8 +43,6 @@ pub struct ServiceBusClientOptions {
     /// A custom endpoint address that can be used when establishing the connection to the Service
     /// Bus service.
     ///
-    /// # Remarks
-    ///
     /// The custom endpoint address will be used in place of the default endpoint provided by the
     /// Service Bus namespace when establishing the connection. The connection string or fully
     /// qualified namespace will still be needed in order to validate the connection with the
@@ -59,11 +57,6 @@ pub struct ServiceBusClientOptions {
 
     /// Gets or sets a flag that indicates whether or not transactions may span multiple
     /// Service Bus entities.
-    ///
-    /// # Value
-    ///
-    /// `true`, when cross-entity transactions are enabled; `false` when transactions are not being
-    /// used or should be limited to a single entity.
     pub enable_cross_entity_transactions: bool,
 }
 

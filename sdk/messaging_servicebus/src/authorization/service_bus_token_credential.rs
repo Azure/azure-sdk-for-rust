@@ -2,12 +2,7 @@ use azure_core::auth::{TokenCredential, TokenResponse};
 
 use super::shared_access_credential::SharedAccessCredential;
 
-/// <summary>
-///   Provides a generic token-based credential for a given Service Bus entity instance.
-/// </summary>
-///
-/// <seealso cref="Azure.Core.TokenCredential" />
-///
+/// Token-based credential for Service Bus.
 pub enum ServiceBusTokenCredential {
     /// Shared Access Signature credential.
     ///
