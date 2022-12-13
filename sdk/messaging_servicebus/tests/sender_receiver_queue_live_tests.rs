@@ -311,17 +311,6 @@ async fn send_and_receive_on_next_session() {
     .await
     .unwrap();
 
-    // let handle = tokio::spawn(async move {
-    //     let mut client = ServiceBusClient::new(&connection_string, Default::default())
-    //         .await.unwrap();
-    //     if let Ok(mut receiver) = client.accept_next_session_for_queue(queue_name, Default::default()).await {
-
-    //         receiver.dispose().await.unwrap();
-    //     }
-
-    //     client.dispose().await.unwrap();
-    // });
-
     let received = common::create_client_and_receive_sessionful_messages_from_queue(
         &connection_string,
         Default::default(),

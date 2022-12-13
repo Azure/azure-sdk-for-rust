@@ -44,12 +44,12 @@ uuid = { version = "1", features=["v4"] }
 # fe2o3-amqp-types = "0.6.2"
 # fe2o3-amqp-ws = { version = "0.1.2", features = ["rustls-tls-webpki-roots"] }
 # serde_amqp = {version = "0.5.6", features = ["time"]}
-fe2o3-amqp = {git="https://github.com/minghuaw/fe2o3-amqp", branch="legacy-filter-set", features = ["rustls"]}
-fe2o3-amqp-cbs = {git="https://github.com/minghuaw/fe2o3-amqp", branch="legacy-filter-set"}
-fe2o3-amqp-management = {git="https://github.com/minghuaw/fe2o3-amqp", branch="legacy-filter-set"}
-fe2o3-amqp-types = {git="https://github.com/minghuaw/fe2o3-amqp", branch="legacy-filter-set"}
-fe2o3-amqp-ws = {git="https://github.com/minghuaw/fe2o3-amqp", branch="legacy-filter-set", features = ["rustls-tls-webpki-roots"]}
-serde_amqp = {git="https://github.com/minghuaw/fe2o3-amqp", branch="legacy-filter-set", features = ["time"]}
+fe2o3-amqp = {git="https://github.com/minghuaw/fe2o3-amqp", branch="0.8-dev", features = ["rustls"]}
+fe2o3-amqp-cbs = {git="https://github.com/minghuaw/fe2o3-amqp", branch="0.8-dev"}
+fe2o3-amqp-management = {git="https://github.com/minghuaw/fe2o3-amqp", branch="0.8-dev"}
+fe2o3-amqp-types = {git="https://github.com/minghuaw/fe2o3-amqp", branch="0.8-dev"}
+fe2o3-amqp-ws = {git="https://github.com/minghuaw/fe2o3-amqp", branch="0.8-dev", features = ["rustls-tls-webpki-roots"]}
+serde_amqp = {git="https://github.com/minghuaw/fe2o3-amqp", branch="0.8-dev", features = ["time"]}
 
 [dev-dependencies]
 anyhow = "1.0"
