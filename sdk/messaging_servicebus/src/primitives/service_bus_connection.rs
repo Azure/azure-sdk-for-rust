@@ -288,17 +288,8 @@ impl<C> ServiceBusConnection<C> {
 impl<C> ServiceBusConnection<C>
 where
     C: TransportClient + Send,
-    Error: From<C::DisposeError>,
 {
-    // // TODO: expose methods with cancellation token?
-    // pub async fn close(&mut self, cancellation_token: CancellationToken) -> Result<(), Error> {
-    //     self.inner_client
-    //         .close(Some(cancellation_token))
-    //         .await
-    //         .map_err(Into::into)
-    // }
-
-    pub async fn dispose(&mut self) -> Result<(), Error> {
+    pub async fn dispose(&mut self) -> Result<(), C::DisposeError> {
         self.inner_client.dispose().await.map_err(Into::into)
     }
 }

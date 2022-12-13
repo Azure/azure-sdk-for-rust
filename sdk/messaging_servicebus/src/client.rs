@@ -1,26 +1,30 @@
 //! Implements the ServiceBusClient
 
-use std::borrow::Cow;
+use std::{borrow::Cow, marker::PhantomData};
 
-use azure_core::{Url, auth::TokenCredential};
+use azure_core::{auth::TokenCredential, Url};
 
 use crate::{
-    amqp::{
-        amqp_client::AmqpClient,
-        error::{OpenSenderError},
+    amqp::{amqp_client::AmqpClient},
+    authorization::{
+        service_bus_token_credential::ServiceBusTokenCredential,
+        shared_access_credential::SharedAccessCredential, AzureNamedKeyCredential,
+        AzureSasCredential,
     },
-    authorization::{service_bus_token_credential::ServiceBusTokenCredential, AzureNamedKeyCredential, shared_access_credential::SharedAccessCredential, AzureSasCredential},
     core::{BasicRetryPolicy, TransportClient},
     diagnostics,
     entity_name_formatter::{self, format_entity_path},
     primitives::{
-        service_bus_connection::{ServiceBusConnection, build_connection_resource},
-        service_bus_transport_type::ServiceBusTransportType, error::Error, service_bus_retry_options::ServiceBusRetryOptions,
+        error::Error,
+        service_bus_connection::{build_connection_resource, ServiceBusConnection},
+        service_bus_retry_options::ServiceBusRetryOptions,
+        service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_session_receiver::{
         ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
     },
-    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
+    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRetryPolicy, ServiceBusSender,
+    ServiceBusSenderOptions,
 };
 
 /// The set of options that can be specified when creating an [`ServiceBusClient`]
@@ -63,47 +67,29 @@ pub struct ServiceBusClientOptions {
     pub enable_cross_entity_transactions: bool,
 }
 
-/// The [`ServiceBusClient`] is the top-level client through which all Service Bus entities can be
-/// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
-/// [`ServiceBusReceiver`] will share the same AMQP connection. Disposing the [`ServiceBusClient`]
-/// will cause the AMQP connection to close.
 #[derive(Debug)]
-pub struct ServiceBusClient<C> {
-    /// The name used to identify this [`ServiceBusClient`]
-    identifier: String,
-
-    /// The connection that is used for the client.
-    connection: ServiceBusConnection<C>, // TODO: use trait objects?
+pub struct WithCustomRetryPolicy<RP> {
+    retry_policy: PhantomData<RP>,
 }
 
-impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
+impl<RP> WithCustomRetryPolicy<RP>
+where
+    RP: ServiceBusRetryPolicy + Send + Sync,
+{
     /// Creates a new instance of the [`ServiceBusClient`] class using the specified
     /// connection string and [`ServiceBusClientOptions`].
-    ///
-    /// # Example
-    ///
-    /// ```rust,no_run
-    /// use azure_messaging_servicebus::{
-    ///     ServiceBusClient, ServiceBusClientOptions,
-    /// };
-    ///
-    /// let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
-    ///     .await
-    ///     .unwrap();
-    /// client.dispose().await.unwrap();
-    /// ```
     pub async fn new<'a>(
+        self,
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, Error> {
+    ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let connection_string = connection_string.into();
         let identifier = options.identifier.clone();
         let connection = ServiceBusConnection::new(connection_string, options).await?;
         let identifier = identifier.unwrap_or(diagnostics::utilities::generate_identifier(
             connection.fully_qualified_namespace(),
         ));
-        Ok(Self {
-            // closed: false,
+        Ok(ServiceBusClient {
             identifier,
             connection,
         })
@@ -111,10 +97,11 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
     pub async fn new_with_named_key_credential(
+        self,
         fully_qualified_namespace: impl Into<String>,
         credential: AzureNamedKeyCredential,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, Error> {
+    ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier =
             options
@@ -123,11 +110,13 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
                 .unwrap_or(diagnostics::utilities::generate_identifier(
                     &fully_qualified_namespace,
                 ));
-        let signuture_resource = build_connection_resource(&options.transport_type, Some(&fully_qualified_namespace), None)?;
-        let shared_access_credential = SharedAccessCredential::try_from_named_key_credential(
-            credential,
-            signuture_resource,
+        let signuture_resource = build_connection_resource(
+            &options.transport_type,
+            Some(&fully_qualified_namespace),
+            None,
         )?;
+        let shared_access_credential =
+            SharedAccessCredential::try_from_named_key_credential(credential, signuture_resource)?;
         let credential = ServiceBusTokenCredential::new(shared_access_credential);
         let connection = ServiceBusConnection::new_with_credential(
             fully_qualified_namespace,
@@ -143,10 +132,11 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
     pub async fn new_with_sas_credential(
+        self,
         fully_qualified_namespace: impl Into<String>,
         credential: AzureSasCredential,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, Error> {
+    ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier =
             options
@@ -155,9 +145,7 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
                 .unwrap_or(diagnostics::utilities::generate_identifier(
                     &fully_qualified_namespace,
                 ));
-        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(
-            credential,
-        )?;
+        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
         let credential = ServiceBusTokenCredential::new(shared_access_credential);
         let connection = ServiceBusConnection::new_with_credential(
             fully_qualified_namespace,
@@ -173,10 +161,11 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
     pub async fn new_with_token_credential(
+        self,
         fully_qualified_namespace: impl Into<String>,
         credential: impl TokenCredential + 'static,
         options: ServiceBusClientOptions,
-    ) -> Result<Self, Error> {
+    ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier =
             options
@@ -196,6 +185,84 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
             identifier,
             connection,
         })
+    }
+}
+
+/// The [`ServiceBusClient`] is the top-level client through which all Service Bus entities can be
+/// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
+/// [`ServiceBusReceiver`] will share the same AMQP connection. Disposing the [`ServiceBusClient`]
+/// will cause the AMQP connection to close.
+#[derive(Debug)]
+pub struct ServiceBusClient<C> {
+    /// The name used to identify this [`ServiceBusClient`]
+    identifier: String,
+
+    /// The connection that is used for the client.
+    connection: ServiceBusConnection<C>, // TODO: use trait objects?
+}
+
+impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
+    pub fn with_custom_retry_policy<RP>() -> WithCustomRetryPolicy<RP> {
+        WithCustomRetryPolicy {
+            retry_policy: PhantomData,
+        }
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
+    /// connection string and [`ServiceBusClientOptions`].
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use azure_messaging_servicebus::{
+    ///     ServiceBusClient, ServiceBusClientOptions,
+    /// };
+    ///
+    /// let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///     .await
+    ///     .unwrap();
+    /// client.dispose().await.unwrap();
+    /// ```
+    pub async fn new<'a>(
+        connection_string: impl Into<Cow<'a, str>>,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        Self::with_custom_retry_policy()
+            .new(connection_string, options)
+            .await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
+    pub async fn new_with_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        Self::with_custom_retry_policy()
+            .new_with_named_key_credential(fully_qualified_namespace, credential, options)
+            .await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
+    pub async fn new_with_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureSasCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        Self::with_custom_retry_policy()
+            .new_with_sas_credential(fully_qualified_namespace, credential, options)
+            .await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
+    pub async fn new_with_token_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: impl TokenCredential + 'static,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        Self::with_custom_retry_policy()
+            .new_with_token_credential(fully_qualified_namespace, credential, options)
+            .await
     }
 }
 
@@ -227,13 +294,10 @@ where
 impl<C> ServiceBusClient<C>
 where
     C: TransportClient + Send + Sync + 'static,
-    Error: From<C::DisposeError>,
 {
     /// Performs the task needed to clean up resources used by the [`ServiceBusClient`],
     /// including ensuring that the client itself has been closed.
-    pub async fn dispose(&mut self) -> Result<(), Error> {
-        // self.closed = true;
-
+    pub async fn dispose(&mut self) -> Result<(), C::DisposeError> {
         self.connection.dispose().await?;
         Ok(())
     }
@@ -246,7 +310,6 @@ where
 impl<C> ServiceBusClient<C>
 where
     C: TransportClient + Send + Sync + 'static,
-    OpenSenderError: From<C::CreateSenderError>,
 {
     /// Creates a new [`ServiceBusSender`] which can be used to send messages to a specific queue or
     /// topic.
@@ -254,7 +317,7 @@ where
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
-    ) -> Result<ServiceBusSender<C::Sender>, OpenSenderError> {
+    ) -> Result<ServiceBusSender<C::Sender>, C::CreateSenderError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
