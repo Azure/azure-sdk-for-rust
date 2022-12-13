@@ -36,7 +36,7 @@ impl From<SasSignatureError> for azure_core::Error {
 
 /// TODO: visibility?
 #[derive(Debug, Clone)]
-pub struct SharedAccessSignature {
+pub(crate) struct SharedAccessSignature {
     shared_access_key_name: String,
     shared_access_key: String,
     signature_expiration: OffsetDateTime,

@@ -8,11 +8,11 @@ mod transport_receiver;
 mod transport_sender;
 
 pub use basic_retry_policy::*;
-pub use transport_client::*;
 pub use transport_message_batch::*;
 pub use transport_receiver::*;
 pub use transport_sender::*;
 
+pub(crate) use transport_client::*;
 pub(crate) use transport_connection_scope::*;
 
 // TODO:

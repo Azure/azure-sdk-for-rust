@@ -2,6 +2,11 @@ pub(crate) mod service_bus_claim;
 pub(crate) mod service_bus_token_credential;
 pub(crate) mod shared_access_credential;
 pub(crate) mod shared_access_signature;
+mod azure_named_key_credential;
+mod azure_sas_credential;
+
+pub use azure_named_key_credential::AzureNamedKeyCredential;
+pub use azure_sas_credential::AzureSasCredential;
 
 #[cfg(test)]
 pub(crate) mod tests {

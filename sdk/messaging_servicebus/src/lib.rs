@@ -97,13 +97,16 @@ async fn main() -> anyhow::Result<()> {
 ```
 */
 #![recursion_limit = "128"]
-#![deny(missing_docs, missing_debug_implementations)]
+#![deny(
+    // missing_docs,
+    missing_debug_implementations
+)]
 
-pub(crate) mod authorization;
 pub(crate) mod constants;
 pub(crate) mod diagnostics;
 pub(crate) mod entity_name_formatter;
 
+pub mod authorization;
 pub mod amqp;
 pub mod client;
 pub mod core;
@@ -151,3 +154,7 @@ pub mod prelude {
 
 // TODO: Re-export again to allow user to selectively import components
 pub use prelude::*;
+
+mod sealed {
+    pub trait Sealed {}
+}

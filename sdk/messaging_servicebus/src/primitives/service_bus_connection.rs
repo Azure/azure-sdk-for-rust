@@ -34,6 +34,51 @@ macro_rules! ok_if_not_none_or_empty {
     };
 }
 
+
+/// <summary>
+///   Builds the audience of the connection for use in the signature.
+/// </summary>
+///
+/// <param name="transportType">The type of protocol and transport that will be used for communicating with the Service Bus service.</param>
+/// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
+/// <param name="entityName">The name of the specific entity to connect the client to.</param>
+///
+/// <returns>The value to use as the audience of the signature.</returns>
+///
+pub(crate) fn build_connection_resource(
+    transport_type: &ServiceBusTransportType,
+    fully_qualified_namespace: Option<&str>,
+    entity_name: Option<&str>,
+) -> Result<String, Error> {
+    match fully_qualified_namespace {
+        Some(fqn) => {
+            let mut builder =
+                Url::parse(&format!("{}://{}", transport_type.url_scheme(), fqn))?;
+            builder.set_path(&entity_name.unwrap_or_default());
+            builder
+                .set_port(None)
+                .map_err(|_| Error::ArgumentError("Unable to set port to None".to_string()))?;
+            builder.set_fragment(None);
+            builder.set_password(None).map_err(|_| {
+                Error::ArgumentError("Unable to set password to None".to_string())
+            })?;
+            builder.set_username("").map_err(|_| {
+                Error::ArgumentError("Unable to set username to empty string".to_string())
+            })?;
+
+            // Removes the trailing slash if and only if there is one and it is not the first
+            // character
+            builder
+                .path_segments_mut()
+                .map_err(|_| url::ParseError::RelativeUrlWithCannotBeABaseBase)?
+                .pop_if_empty();
+
+            Ok(builder.to_string().to_lowercase())
+        }
+        None => Ok(String::new()),
+    }
+}
+
 /// A connection to the Azure Service Bus service, enabling client communications with a specific
 /// Service Bus entity instance within a Service Bus namespace. There is a one-to-one correspondence
 /// between [`ServiceBusClient`] and [`ServiceBusConnection`] instances.
@@ -67,50 +112,6 @@ where
     /// The retry options associated with this connection.
     pub fn retry_options(&self) -> &ServiceBusRetryOptions {
         &self.retry_options
-    }
-
-    /// <summary>
-    ///   Builds the audience of the connection for use in the signature.
-    /// </summary>
-    ///
-    /// <param name="transportType">The type of protocol and transport that will be used for communicating with the Service Bus service.</param>
-    /// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
-    /// <param name="entityName">The name of the specific entity to connect the client to.</param>
-    ///
-    /// <returns>The value to use as the audience of the signature.</returns>
-    ///
-    fn build_connection_resource(
-        transport_type: &ServiceBusTransportType,
-        fully_qualified_namespace: Option<&str>,
-        entity_name: Option<&str>,
-    ) -> Result<String, Error> {
-        match fully_qualified_namespace {
-            Some(fqn) => {
-                let mut builder =
-                    Url::parse(&format!("{}://{}", transport_type.url_scheme(), fqn))?;
-                builder.set_path(&entity_name.unwrap_or_default());
-                builder
-                    .set_port(None)
-                    .map_err(|_| Error::ArgumentError("Unable to set port to None".to_string()))?;
-                builder.set_fragment(None);
-                builder.set_password(None).map_err(|_| {
-                    Error::ArgumentError("Unable to set password to None".to_string())
-                })?;
-                builder.set_username("").map_err(|_| {
-                    Error::ArgumentError("Unable to set username to empty string".to_string())
-                })?;
-
-                // Removes the trailing slash if and only if there is one and it is not the first
-                // character
-                builder
-                    .path_segments_mut()
-                    .map_err(|_| url::ParseError::RelativeUrlWithCannotBeABaseBase)?
-                    .pop_if_empty();
-
-                Ok(builder.to_string().to_lowercase())
-            }
-            None => Ok(String::new()),
-        }
     }
 }
 
@@ -211,7 +212,7 @@ where
                 SharedAccessSignature::try_from_signature(shared_access_signature)?
             }
             None => {
-                let resource = Self::build_connection_resource(
+                let resource = build_connection_resource(
                     &options.transport_type,
                     fully_qualified_namespace,
                     entity_path,

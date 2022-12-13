@@ -37,3 +37,8 @@ async fn client_can_connect_using_connection_string_over_amqp_websockets() {
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     client.dispose().await.unwrap();
 }
+
+#[tokio::test]
+async fn client_can_connect_using_credential() {
+    // let sas_credential = SharedAccessCredential;
+}

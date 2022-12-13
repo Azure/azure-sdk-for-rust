@@ -2,19 +2,19 @@
 
 use std::borrow::Cow;
 
-use azure_core::Url;
+use azure_core::{Url, auth::TokenCredential};
 
 use crate::{
     amqp::{
         amqp_client::AmqpClient,
         error::{OpenSenderError},
     },
-    authorization::service_bus_token_credential::ServiceBusTokenCredential,
+    authorization::{service_bus_token_credential::ServiceBusTokenCredential, AzureNamedKeyCredential, shared_access_credential::SharedAccessCredential, AzureSasCredential},
     core::{BasicRetryPolicy, TransportClient},
     diagnostics,
     entity_name_formatter::{self, format_entity_path},
     primitives::{
-        service_bus_connection::ServiceBusConnection,
+        service_bus_connection::{ServiceBusConnection, build_connection_resource},
         service_bus_transport_type::ServiceBusTransportType, error::Error, service_bus_retry_options::ServiceBusRetryOptions,
     },
     receiver::service_bus_session_receiver::{
@@ -108,6 +108,95 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
             connection,
         })
     }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
+    pub async fn new_with_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        let fully_qualified_namespace = fully_qualified_namespace.into();
+        let identifier =
+            options
+                .identifier
+                .clone()
+                .unwrap_or(diagnostics::utilities::generate_identifier(
+                    &fully_qualified_namespace,
+                ));
+        let signuture_resource = build_connection_resource(&options.transport_type, Some(&fully_qualified_namespace), None)?;
+        let shared_access_credential = SharedAccessCredential::try_from_named_key_credential(
+            credential,
+            signuture_resource,
+        )?;
+        let credential = ServiceBusTokenCredential::new(shared_access_credential);
+        let connection = ServiceBusConnection::new_with_credential(
+            fully_qualified_namespace,
+            credential,
+            options,
+        )
+        .await?;
+        Ok(ServiceBusClient {
+            identifier,
+            connection,
+        })
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
+    pub async fn new_with_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureSasCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        let fully_qualified_namespace = fully_qualified_namespace.into();
+        let identifier =
+            options
+                .identifier
+                .clone()
+                .unwrap_or(diagnostics::utilities::generate_identifier(
+                    &fully_qualified_namespace,
+                ));
+        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(
+            credential,
+        )?;
+        let credential = ServiceBusTokenCredential::new(shared_access_credential);
+        let connection = ServiceBusConnection::new_with_credential(
+            fully_qualified_namespace,
+            credential,
+            options,
+        )
+        .await?;
+        Ok(ServiceBusClient {
+            identifier,
+            connection,
+        })
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
+    pub async fn new_with_token_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: impl TokenCredential + 'static,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, Error> {
+        let fully_qualified_namespace = fully_qualified_namespace.into();
+        let identifier =
+            options
+                .identifier
+                .clone()
+                .unwrap_or(diagnostics::utilities::generate_identifier(
+                    &fully_qualified_namespace,
+                ));
+        let credential = ServiceBusTokenCredential::new(credential);
+        let connection = ServiceBusConnection::new_with_credential(
+            fully_qualified_namespace,
+            credential,
+            options,
+        )
+        .await?;
+        Ok(ServiceBusClient {
+            identifier,
+            connection,
+        })
+    }
 }
 
 impl<C> ServiceBusClient<C>
@@ -128,40 +217,6 @@ where
     /// Indicates whether or not this [`ServiceBusClient`] has been closed.
     pub fn is_closed(&self) -> bool {
         self.connection.is_closed()
-    }
-}
-
-impl ServiceBusClient<()> {
-    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
-    /// fully qualified namespace and credential.
-    pub async fn new_with_credential<C>(
-        fully_qualified_namespace: impl Into<String>,
-        credential: impl Into<ServiceBusTokenCredential>,
-        options: ServiceBusClientOptions,
-    ) -> Result<ServiceBusClient<C>, Error>
-    where
-        C: TransportClient,
-        Error: From<C::CreateClientError>,
-    {
-        let fully_qualified_namespace = fully_qualified_namespace.into();
-        let identifier =
-            options
-                .identifier
-                .clone()
-                .unwrap_or(diagnostics::utilities::generate_identifier(
-                    &fully_qualified_namespace,
-                ));
-        let connection = ServiceBusConnection::new_with_credential(
-            fully_qualified_namespace,
-            credential,
-            options,
-        )
-        .await?;
-        Ok(ServiceBusClient {
-            // closed: false,
-            identifier,
-            connection,
-        })
     }
 }
 

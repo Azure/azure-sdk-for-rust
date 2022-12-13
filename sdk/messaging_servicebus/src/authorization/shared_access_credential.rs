@@ -3,55 +3,8 @@ use std::{sync::Mutex, time::Duration};
 use azure_core::auth::{AccessToken, TokenResponse};
 use time::OffsetDateTime;
 
-use super::shared_access_signature::{SasSignatureError, SharedAccessSignature};
+use super::{shared_access_signature::{SasSignatureError, SharedAccessSignature}, azure_named_key_credential::AzureNamedKeyCredential, AzureSasCredential};
 
-/// TODO: visibility?
-#[derive(Debug)]
-pub struct AzureNamedKeyCredential {
-    name: String,
-    key: String,
-}
-
-impl AzureNamedKeyCredential {
-    pub fn new(name: impl Into<String>, key: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            key: key.into(),
-        }
-    }
-
-    pub fn update(&mut self, name: impl Into<String>, key: impl Into<String>) {
-        self.name = name.into();
-        self.key = key.into();
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn key(&self) -> &str {
-        &self.key
-    }
-}
-
-impl AzureNamedKeyCredential {}
-
-#[derive(Debug)]
-pub struct AzureSasCredential(String);
-
-impl AzureSasCredential {
-    pub fn new(signature: impl Into<String>) -> Self {
-        Self(signature.into())
-    }
-
-    pub fn signature(&self) -> &str {
-        &self.0
-    }
-
-    pub fn update(&mut self, signature: impl Into<String>) {
-        self.0 = signature.into();
-    }
-}
 
 /// TODO: visibility?
 #[derive(Debug)]
@@ -78,7 +31,7 @@ impl SharedAccessCredential {
     /// <summary>The length of time extend signature validity, if a token was requested.</summary>
     const SIGNATURE_EXTENSION_DURATION: Duration = Duration::from_secs(30 * 60); // 30 mins
 
-    pub fn from_signature(shared_access_signature: SharedAccessSignature) -> Self {
+    pub(crate) fn from_signature(shared_access_signature: SharedAccessSignature) -> Self {
         Self {
             source_key_credential: None,
             source_sas_credential: None,
@@ -96,7 +49,7 @@ impl SharedAccessCredential {
         source_sas_credential: AzureSasCredential,
     ) -> Result<Self, SasSignatureError> {
         let shared_access_signature =
-            SharedAccessSignature::try_from_signature(&source_sas_credential.0)?;
+            SharedAccessSignature::try_from_signature(source_sas_credential.signature())?;
 
         Ok(Self {
             source_key_credential: None,
