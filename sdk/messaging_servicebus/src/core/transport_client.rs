@@ -93,7 +93,7 @@ pub trait TransportClient: Sized {
         identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
-        session_id: String,
+        session_id: Option<String>,
         prefetch_count: u32,
         is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError>;

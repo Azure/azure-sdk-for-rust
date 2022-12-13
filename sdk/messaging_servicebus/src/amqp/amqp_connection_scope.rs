@@ -48,6 +48,13 @@ use super::{
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
+pub(crate) enum ReceiverType {
+    NonSession,
+    Session {
+        session_id: Option<String>,
+    }
+}
+
 pub(crate) struct AmqpConnectionScope {
     /// Indicates whether or not this instance has been disposed.
     is_disposed: bool,
@@ -316,7 +323,7 @@ impl AmqpConnectionScope {
         entity_path: &str,
         identifier: &str,
         receive_mode: &ServiceBusReceiveMode,
-        session_id: Option<String>,
+        receiver_type: ReceiverType,
         prefetch_count: u32,
     ) -> Result<
         (
@@ -334,16 +341,27 @@ impl AmqpConnectionScope {
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
-        let filter_set = match session_id {
-            Some(session_id) => {
+        // let filter_set = match session_id {
+        //     Some(session_id) => {
+        //         let mut filter_set = FilterSet::with_capacity(1);
+        //         filter_set.insert(
+        //             Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
+        //             SessionFilter(session_id).into(),
+        //         );
+        //         filter_set
+        //     }
+        //     None => FilterSet::with_capacity(0),
+        // };
+        let filter_set = match receiver_type {
+            ReceiverType::NonSession => FilterSet::with_capacity(0),
+            ReceiverType::Session { session_id } => {
                 let mut filter_set = FilterSet::with_capacity(1);
                 filter_set.insert(
                     Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
-                    SessionFilter(session_id).into(),
+                    session_id.map(SessionFilter).map(Into::into),
                 );
                 filter_set
-            }
-            None => FilterSet::with_capacity(0),
+            },
         };
 
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);

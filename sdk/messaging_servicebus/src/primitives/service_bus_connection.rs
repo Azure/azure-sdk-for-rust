@@ -169,7 +169,7 @@ where
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
-        session_id: String,
+        session_id: Option<String>,
         is_processor: bool,
     ) -> Result<C::SessionReceiver, C::CreateReceiverError> {
         let receiver = self

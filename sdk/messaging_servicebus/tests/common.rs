@@ -123,7 +123,7 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
     let mut client = ServiceBusClient::new(connection_string, client_options).await?;
     let mut receiver = client
-        .accept_next_session_for_queue(queue_name, session_id, receiver_options)
+        .accept_session_for_queue(queue_name, session_id, receiver_options)
         .await?;
 
     let messages = receiver
@@ -180,7 +180,7 @@ pub async fn create_client_and_receiver_sessionful_messages_from_subscription(
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
     let mut client = ServiceBusClient::new(connection_string, client_options).await?;
     let mut receiver = client
-        .accept_next_session_for_subscription(
+        .accept_session_for_subscription(
             topic_name,
             subscription_name,
             session_id,

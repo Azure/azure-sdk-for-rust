@@ -16,7 +16,7 @@ use crate::{
 };
 
 use super::{
-    amqp_connection_scope::{AmqpConnectionScope},
+    amqp_connection_scope::{AmqpConnectionScope, ReceiverType},
     amqp_receiver::AmqpReceiver,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
@@ -165,7 +165,7 @@ where
                 entity_path,
                 identifier,
                 &receive_mode,
-                None,
+                ReceiverType::NonSession,
                 prefetch_count,
             )
             .await?;
@@ -194,7 +194,7 @@ where
         identifier: &str,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
-        session_id: String,
+        session_id: Option<String>,
         prefetch_count: u32,
         is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError> {
@@ -204,7 +204,7 @@ where
                 entity_path,
                 identifier,
                 &receive_mode,
-                Some(session_id),
+                ReceiverType::Session { session_id },
                 prefetch_count,
             )
             .await?;

@@ -408,7 +408,7 @@ where
     /// an error.
     ///
     /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.
-    pub async fn accept_next_session_for_queue(
+    pub async fn accept_session_for_queue(
         &mut self,
         queue_name: impl Into<String>,
         session_id: impl Into<String>,
@@ -416,7 +416,7 @@ where
     ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
         let entity_path = queue_name.into();
         let session_id = session_id.into();
-        self.accept_next_session(entity_path, session_id, options)
+        self.accept_session(entity_path, session_id, options)
             .await
     }
 
@@ -426,7 +426,7 @@ where
     /// an error.
     ///
     /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.
-    pub async fn accept_next_session_for_subscription(
+    pub async fn accept_session_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
         subscription_name: impl AsRef<str>,
@@ -438,11 +438,11 @@ where
             subscription_name.as_ref(),
         );
         let session_id = session_id.into();
-        self.accept_next_session(entity_path, session_id, options)
+        self.accept_session(entity_path, session_id, options)
             .await
     }
 
-    async fn accept_next_session(
+    async fn accept_session(
         &mut self,
         entity_path: String,
         session_id: String,
@@ -463,7 +463,7 @@ where
                 retry_options,
                 receive_mode,
                 prefetch_count,
-                session_id.clone(),
+                Some(session_id.clone()),
                 false,
             )
             .await?;
@@ -475,4 +475,37 @@ where
             session_id,
         })
     }
+
+    // async fn accept_next_session(
+    //     &mut self,
+    //     entity_path: String,
+    //     options: ServiceBusSessionReceiverOptions,
+    // ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
+    //     let identifier = options
+    //         .identifier
+    //         .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+    //     let retry_options = self.connection.retry_options().clone();
+    //     let receive_mode = options.receive_mode;
+    //     let prefetch_count = options.prefetch_count;
+
+    //     let inner = self
+    //         .connection
+    //         .create_transport_session_receiver(
+    //             &entity_path,
+    //             &identifier,
+    //             retry_options,
+    //             receive_mode,
+    //             prefetch_count,
+    //             None,
+    //             false,
+    //         )
+    //         .await?;
+
+    //     Ok(ServiceBusSessionReceiver {
+    //         inner,
+    //         entity_path,
+    //         identifier,
+    //         session_id: None,
+    //     })
+    // }
 }
