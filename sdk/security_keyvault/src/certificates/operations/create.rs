@@ -11,7 +11,7 @@ operation! {
     subject: String,
     issuer_name: String,
     ?kty: JsonWebKeyType,
-    ?key_size: u16,
+    ?key_size: i32,
     ?dns_names: Vec<String>,
     ?exportable: bool,
     ?reuse_key: bool,
@@ -54,7 +54,7 @@ struct KeyProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     kty: Option<JsonWebKeyType>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    key_size: Option<u16>,
+    key_size: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     reuse_key: Option<bool>,
 }
