@@ -240,29 +240,29 @@ impl SharedAccessSignature {
         })
     }
 
-    /// <summary>
-    ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
-    /// </summary>
-    ///
-    /// <param name="signatureValidityDuration">The duration that the signature should be considered valid.</param>
-    ///
-    /// <returns>A new <see cref="SharedAccessSignature" /> based on the same key, but with a new expiration time.</returns>
-    ///
-    pub fn clone_with_new_expiration(
-        &self,
-        signature_validity_duration: Duration,
-    ) -> Result<Self, SasSignatureError> {
-        if self.shared_access_key.is_empty() {
-            return Err(SasSignatureError::SharedAccessKeyIsRequired);
-        }
+    // /// <summary>
+    // ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
+    // /// </summary>
+    // ///
+    // /// <param name="signatureValidityDuration">The duration that the signature should be considered valid.</param>
+    // ///
+    // /// <returns>A new <see cref="SharedAccessSignature" /> based on the same key, but with a new expiration time.</returns>
+    // ///
+    // pub fn clone_with_new_expiration(
+    //     &self,
+    //     signature_validity_duration: Duration,
+    // ) -> Result<Self, SasSignatureError> {
+    //     if self.shared_access_key.is_empty() {
+    //         return Err(SasSignatureError::SharedAccessKeyIsRequired);
+    //     }
 
-        Self::try_from_parts(
-            &self.resource,
-            &self.shared_access_key_name,
-            &self.shared_access_key,
-            Some(signature_validity_duration),
-        )
-    }
+    //     Self::try_from_parts(
+    //         &self.resource,
+    //         &self.shared_access_key_name,
+    //         &self.shared_access_key,
+    //         Some(signature_validity_duration),
+    //     )
+    // }
 
     /// <summary>
     ///   Creates a new signature with the specified period for which the shared access signature is considered valid.
