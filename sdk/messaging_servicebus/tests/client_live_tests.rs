@@ -1,7 +1,6 @@
 use azure_messaging_servicebus::{
-    client::{
-        ServiceBusClient, ServiceBusClientOptions,
-    },
+    authorization::AzureNamedKeyCredential,
+    client::{ServiceBusClient, ServiceBusClientOptions},
     primitives::service_bus_transport_type::ServiceBusTransportType,
 };
 
@@ -39,6 +38,30 @@ async fn client_can_connect_using_connection_string_over_amqp_websockets() {
 }
 
 #[tokio::test]
-async fn client_can_connect_using_credential() {
-    // let sas_credential = SharedAccessCredential;
+async fn client_can_connect_using_named_key_credential() {
+    setup_dotenv();
+    let namespace = std::env::var("SERVICE_BUS_NAMESPACE").unwrap();
+    let key_name = std::env::var("SERVICE_BUS_SAS_KEY_NAME").unwrap();
+    let key = std::env::var("SERVICE_BUS_SAS_KEY").unwrap();
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+
+    let credential = AzureNamedKeyCredential::new(key_name, key);
+    let mut client =
+        ServiceBusClient::new_with_named_key_credential(namespace, credential, Default::default())
+            .await
+            .unwrap();
+
+    // Creating sender and receiver will perform CBS authentication first.
+    let sender = client
+        .create_sender(queue_name.clone(), Default::default())
+        .await
+        .unwrap();
+    let receiver = client
+        .create_receiver_for_queue(queue_name, Default::default())
+        .await
+        .unwrap();
+
+    receiver.dispose().await.unwrap();
+    sender.dispose().await.unwrap();
+    client.dispose().await.unwrap();
 }

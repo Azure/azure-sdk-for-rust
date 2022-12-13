@@ -95,7 +95,7 @@ impl ServiceBusPeekedMessage {
     /// # Remarks
     ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
-    /// the transfer queue partition: This is functionally equivalent to <see cref="PartitionKey"/>
+    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
     /// and ensures that messages are kept together and in order as they are transferred. See
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-viaå).
@@ -120,13 +120,7 @@ impl ServiceBusPeekedMessage {
         self.raw_amqp_message.session_id()
     }
 
-    /// Gets a session identifier augmenting the [`reply_to()`](#method.reply_to) address.
-    ///
-    /// # Value
-    ///
-    /// Session identifier. Maximum length is 128 characters.
-    ///
-    /// # Remarks
+    /// Gets a session identifier augmenting the [`Self::reply_to()`] address.
     ///
     /// This value augments the ReplyTo information and specifies which SessionId should be set for
     /// the reply when sent to the reply entity. See [Message Routing and
@@ -137,16 +131,9 @@ impl ServiceBusPeekedMessage {
 
     /// Gets the message’s "time to live" value.
     ///
-    /// # Value
-    ///
-    /// The message’s time to live value.
-    ///
-    /// # Remarks
-    ///
     /// This value is the relative duration after which the message expires, starting from the
-    /// instant the message has been accepted and stored by the broker, as captured in <see
-    /// cref="EnqueuedTime"/>. When not set explicitly, the assumed value is the DefaultTimeToLive
-    /// for the respective queue or topic. A message-level <see cref="TimeToLive"/> value cannot be
+    /// instant the message has been accepted and stored by the broker. When not set explicitly, the assumed value is the DefaultTimeToLive
+    /// for the respective queue or topic. A message-level time to live value cannot be
     /// longer than the entity's DefaultTimeToLive setting and it is silently adjusted if it does.
     /// See [Expiration](https://docs.microsoft.com/azure/service-bus-messaging/message-expiration)
     pub fn time_to_live(&self) -> Option<StdDuration> {

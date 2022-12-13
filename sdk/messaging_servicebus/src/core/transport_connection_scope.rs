@@ -10,11 +10,7 @@ pub trait TransportConnectionScope {
 
     fn transport_type(&self) -> ServiceBusTransportType;
 
-    /// Indicates whether this <see cref="TransportConnectionScope"/> has been disposed.
-    ///
-    /// # Returns
-    ///
-    /// `true` if disposed; otherwise, `false`
+    /// Indicates whether this [`TransportConnectionScope`] has been disposed.
     fn is_disposed(&self) -> bool;
 
     /// The recommended timeout to associate with the session.

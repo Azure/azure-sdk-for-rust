@@ -26,8 +26,7 @@ use crate::amqp::{
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
 
-/// The [ServiceBusMessage] is used to send data to Service Bus Queues and Topics. When receiving messages, the <see
-/// cref="ServiceBusReceivedMessage"/> is used.
+/// The [ServiceBusMessage] is used to send data to Service Bus Queues and Topics. When receiving messages, the [`ServiceBusReceivedMessage`] is used.
 ///
 /// The message structure is discussed in detail in the [product
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
@@ -238,7 +237,7 @@ impl ServiceBusMessage {
     /// # Remarks
     ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
-    /// the transfer queue partition: This is functionally equivalent to <see cref="PartitionKey"/>
+    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
     /// and ensures that messages are kept together and in order as they are transferred. See
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-via).

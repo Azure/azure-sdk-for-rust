@@ -7,7 +7,7 @@ pub enum ServiceBusReceiveMode {
     /// particular duration. If the message is not settled by this time, it lands back on Service
     /// Bus to be fetched by the next receive operation.
     ///
-    /// This is the default value for <see cref="ServiceBusReceiveMode" />, and should be used for
+    /// This is the default value for [`ServiceBusReceiveMode`], and should be used for
     /// guaranteed delivery.
     PeekLock,
 

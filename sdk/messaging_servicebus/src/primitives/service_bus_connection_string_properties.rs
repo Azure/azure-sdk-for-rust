@@ -111,18 +111,6 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
 
     /// Creates an Service Bus connection string based on this set of
     /// [`ServiceBusConnectionStringProperties`].
-    ///
-    /// # Returns
-    ///
-    /// ## `Some(String)`
-    ///
-    /// A valid Service Bus connection string; depending on the specified property information, this
-    /// may represent the namespace-level or Event Hub-level.
-    ///
-    /// ## `None`
-    ///
-    /// If field `endpoint` is `None`
-    ///
     pub fn to_connection_string(&self) -> Result<String, ToConnectionStringError> {
         let mut s = String::new();
 
@@ -289,8 +277,6 @@ mod tests {
         };
     }
 
-    /// Provides the reordered token test cases for the <see
-    /// cref="ServiceBusConnectionStringProperties.Parse" /> tests.
     fn random_ordering_connection_string_cases() -> Vec<(String, Expected)> {
         vec![
             (
@@ -387,10 +373,6 @@ mod tests {
         ]
     }
 
-    /// <summary>
-    ///   Provides the reordered token test cases for the <see cref="ServiceBusConnectionStringProperties.Parse" /> tests.
-    /// </summary>
-    ///
     fn partial_connection_string_cases() -> Vec<(String, Expected)> {
         vec![
             (
@@ -491,10 +473,6 @@ mod tests {
         ]
     }
 
-    /// <summary>
-    ///   Provides the invalid properties argument cases for the <see cref="ServiceBusConnectionStringProperties.Create" /> tests.
-    /// </summary>
-    ///
     fn to_connection_string_validates_properties_cases(
     ) -> Vec<ServiceBusConnectionStringProperties<'static>> {
         let mut cases = Vec::new();
@@ -508,12 +486,7 @@ mod tests {
         };
         cases.push(case);
 
-        // yield return new object[] { new ServiceBusConnectionStringProperties
-        // {
-        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
-        //     EntityPath = "fake"
-        // },
-        // "missing authorization" };
+        // "missing authorization"
         let case = ServiceBusConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
             entity_path: Some("fake"),
@@ -523,14 +496,7 @@ mod tests {
         };
         cases.push(case);
 
-        // yield return new object[] { new ServiceBusConnectionStringProperties
-        // {
-        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
-        //     EntityPath = "fake",
-        //     SharedAccessSignature = "fake",
-        //     SharedAccessKey = "fake"
-        // },
-        // "SAS and key specified" };
+        // "SAS and key specified"
         let case = ServiceBusConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
             entity_path: Some("fake"),
@@ -540,14 +506,7 @@ mod tests {
         };
         cases.push(case);
 
-        // yield return new object[] { new ServiceBusConnectionStringProperties
-        // {
-        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
-        //     EntityPath = "fake",
-        //     SharedAccessSignature = "fake",
-        //     SharedAccessKeyName = "fake"
-        // },
-        // "SAS and shared key name specified" };
+        // "SAS and shared key name specified"
         let case = ServiceBusConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
             entity_path: Some("fake"),
@@ -557,13 +516,7 @@ mod tests {
         };
         cases.push(case);
 
-        // yield return new object[] { new ServiceBusConnectionStringProperties
-        // {
-        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
-        //     EntityPath = "fake",
-        //     SharedAccessKeyName = "fake"
-        // },
-        // "only shared key name specified" };
+        // "only shared key name specified"
         let case = ServiceBusConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
             entity_path: Some("fake"),
@@ -573,13 +526,7 @@ mod tests {
         };
         cases.push(case);
 
-        // yield return new object[] { new ServiceBusConnectionStringProperties
-        // {
-        //     Endpoint = new Uri(string.Concat(GetServiceBusEndpointScheme(), "someplace.hosname.ext")),
-        //     EntityPath = "fake",
-        //     SharedAccessKey = "fake"
-        // },
-        // "only shared key specified" };
+        // "only shared key specified"
         let case = ServiceBusConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
             entity_path: Some("fake"),
@@ -592,8 +539,6 @@ mod tests {
         cases
     }
 
-    /// Verifies functionality of the [`ServiceBusConnectionStringProperties::parse`]
-    /// method.
     #[test]
     fn parse_correctly_parses_a_namespace_connection_string() {
         let endpoint = "test.endpoint.com";
@@ -616,11 +561,6 @@ mod tests {
         assert_eq!(parsed.entity_path(), None);
     }
 
-    /// <summary>
-    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
-    ///   method.
-    /// </summary>
-    ///
     #[test]
     fn parse_correctly_parses_an_entity_connection_string() {
         let endpoint = "test.endpoint.com";
@@ -653,11 +593,6 @@ mod tests {
         }
     }
 
-    /// <summary>
-    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
-    ///   method.
-    /// </summary>
-    ///
     #[test]
     fn parse_tolerates_leading_delimiters() {
         let endpoint = "test.endpoint.com";
@@ -676,11 +611,6 @@ mod tests {
         assert_eq!(parsed.entity_path(), Some(event_hub));
     }
 
-    /// <summary>
-    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
-    ///   method.
-    /// </summary>
-    ///
     #[test]
     fn parse_tolerates_spaces_between_pairs() {
         let endpoint = "test.endpoint.com";
@@ -699,11 +629,6 @@ mod tests {
         assert_eq!(parsed.entity_path(), Some(event_hub));
     }
 
-    /// <summary>
-    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
-    ///   method.
-    /// </summary>
-    ///
     #[test]
     fn parse_tolerates_spaces_between_values() {
         let endpoint = "test.endpoint.com";
@@ -722,11 +647,6 @@ mod tests {
         assert_eq!(parsed.entity_path(), Some(event_hub));
     }
 
-    /// <summary>
-    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
-    ///   method.
-    /// </summary>
-    ///
     #[test]
     fn parse_does_not_force_token_ordering() {
         let cases = random_ordering_connection_string_cases();
@@ -736,11 +656,6 @@ mod tests {
         }
     }
 
-    /// <summary>
-    ///   Verifies functionality of the <see cref="ServiceBusConnectionStringProperties.Parse" />
-    ///   method.
-    /// </summary>
-    ///
     #[test]
     fn parse_ignores_unknown_tokens() {
         let endpoint = "test.endpoint.com";
@@ -762,7 +677,7 @@ mod tests {
     #[test]
     fn parse_does_accept_host_names_and_urls_for_the_endpoint() {
         let endpoint_values = &[
-            // "test.endpoint.com", // TODO: this is not a valid url and cannot be parsed by url::Url
+            // "test.endpoint.com", // TODO: this is not a valid url and cannot be parsed by `url::Url`
             "sb://test.endpoint.com",
             "sb://test.endpoint.com:80",
             "amqp://test.endpoint.com",

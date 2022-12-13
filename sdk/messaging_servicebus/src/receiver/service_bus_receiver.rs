@@ -173,7 +173,7 @@ where
         self.inner.defer(message.as_ref(), properties_to_modify, None).await
     }
 
-    /// Fetches the next active <see cref="ServiceBusReceivedMessage"/> without changing the state of the receiver or the message source.
+    /// Fetches the next active [`ServiceBusPeekedMessage`] without changing the state of the receiver or the message source.
     ///
     /// The first call to [`peek_message()`] fetches the first active message for this receiver. Each subsequent call fetches the subsequent message in the entity.
     /// Unlike a received message, a peeked message will not have a lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.

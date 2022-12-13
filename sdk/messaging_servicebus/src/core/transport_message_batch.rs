@@ -19,7 +19,7 @@ pub trait TransportMessageBatch {
     /// Number of messages in the batch.
     fn len(&self) -> usize;
 
-    /// Attempts to add a <see cref="ServiceBusMessage"/> to the <see cref="ServiceBusMessageBatch"/>.
+    /// Attempts to add a [`ServiceBusMessage`] to the batch.
     fn try_add_message(&mut self, message: ServiceBusMessage) -> Result<(), Self::TryAddError>;
 
     /// Iterate over the messages in the batch.

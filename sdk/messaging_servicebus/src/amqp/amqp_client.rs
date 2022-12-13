@@ -39,21 +39,6 @@ pub struct AmqpClient<RP> {
     retry_policy: PhantomData<RP>,
 }
 
-impl<RP> AmqpClient<RP>
-where
-    RP: ServiceBusRetryPolicy,
-{
-    // TODO: changing retry policy
-    //
-    // pub(crate) fn set_retry_policy<RP2>(self) -> AmqpClient<RP2> {
-    //     AmqpClient {
-    //         closed: self.closed,
-    //         connection_scope: self.connection_scope,
-    //         retry_policy: PhantomData,
-    //     }
-    // }
-}
-
 #[async_trait]
 impl<RP> TransportClient for AmqpClient<RP>
 where

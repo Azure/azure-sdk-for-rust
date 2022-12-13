@@ -27,7 +27,7 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// Set locked until time for the session
     fn set_session_locked_until(&mut self, session_locked_until: OffsetDateTime);
 
-    /// Renews the lock on the session specified by the <see cref="SessionId"/>. The lock will be renewed based on the setting specified on the entity.
+    /// Renews the lock on the session specified by the `session_id`. The lock will be renewed based on the setting specified on the entity.
     async fn renew_session_lock(
         &mut self,
         session_id: &str,
