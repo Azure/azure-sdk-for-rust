@@ -97,7 +97,7 @@ impl CertificateClient {
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     let certificate = client.create("NAME").await.unwrap();
+    ///     let certificate = client.create("NAME", "SUBJECT", "ISSUER").await.unwrap();
     ///     dbg!(&certificate);
     /// }
     ///
@@ -135,7 +135,7 @@ impl CertificateClient {
     ///         &"KEYVAULT_URL",
     ///         Arc::new(creds),
     ///     ).unwrap().certificate_client();
-    ///     let certificate = client.merge("NAME", "X5C").await.unwrap();
+    ///     let certificate = client.merge("NAME", vec![String::from("X5C")]).await.unwrap();
     ///     dbg!(&certificate);
     /// }
     ///

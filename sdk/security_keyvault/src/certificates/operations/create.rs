@@ -79,7 +79,6 @@ struct Issuer {
 }
 
 #[derive(Serialize, Debug, Clone, Copy)]
-
 pub enum JsonWebKeyType {
     #[serde(rename = "EC")]
     Ec,
