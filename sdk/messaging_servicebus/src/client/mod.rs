@@ -11,7 +11,7 @@ use crate::{
         shared_access_credential::SharedAccessCredential, AzureNamedKeyCredential,
         AzureSasCredential,
     },
-    core::{BasicRetryPolicy, TransportClient},
+    core::{BasicRetryPolicy, TransportClient, TransportSessionReceiver},
     diagnostics,
     entity_name_formatter::{self, format_entity_path},
     primitives::{
@@ -26,6 +26,10 @@ use crate::{
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRetryPolicy, ServiceBusSender,
     ServiceBusSenderOptions,
 };
+
+use self::error::AcceptNextSessionError;
+
+pub mod error;
 
 /// The set of options that can be specified when creating an [`ServiceBusClient`]
 /// to configure its behavior.
@@ -475,37 +479,72 @@ where
             session_id,
         })
     }
+}
 
-    // async fn accept_next_session(
-    //     &mut self,
-    //     entity_path: String,
-    //     options: ServiceBusSessionReceiverOptions,
-    // ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
-    //     let identifier = options
-    //         .identifier
-    //         .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
-    //     let retry_options = self.connection.retry_options().clone();
-    //     let receive_mode = options.receive_mode;
-    //     let prefetch_count = options.prefetch_count;
 
-    //     let inner = self
-    //         .connection
-    //         .create_transport_session_receiver(
-    //             &entity_path,
-    //             &identifier,
-    //             retry_options,
-    //             receive_mode,
-    //             prefetch_count,
-    //             None,
-    //             false,
-    //         )
-    //         .await?;
+impl<C> ServiceBusClient<C>
+where
+    C: TransportClient + Send + Sync + 'static,
+    AcceptNextSessionError: From<C::CreateReceiverError>,
+{
+    pub async fn accept_next_session_for_queue(
+        &mut self,
+        queue_name: impl Into<String>,
+        options: ServiceBusSessionReceiverOptions,
+    ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, AcceptNextSessionError> {
+        let entity_path = queue_name.into();
+        self.accept_next_session(entity_path, options)
+            .await
+    }
 
-    //     Ok(ServiceBusSessionReceiver {
-    //         inner,
-    //         entity_path,
-    //         identifier,
-    //         session_id: None,
-    //     })
-    // }
+    pub async fn accept_next_session_for_subscription(
+        &mut self,
+        topic_name: impl AsRef<str>,
+        subscription_name: impl AsRef<str>,
+        options: ServiceBusSessionReceiverOptions,
+    ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, AcceptNextSessionError> {
+        let entity_path = entity_name_formatter::format_subscription_path(
+            topic_name.as_ref(),
+            subscription_name.as_ref(),
+        );
+        self.accept_next_session(entity_path, options)
+            .await
+    }
+
+    async fn accept_next_session(
+        &mut self,
+        entity_path: String,
+        options: ServiceBusSessionReceiverOptions,
+    ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, AcceptNextSessionError> {
+        let identifier = options
+            .identifier
+            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+        let retry_options = self.connection.retry_options().clone();
+        let receive_mode = options.receive_mode;
+        let prefetch_count = options.prefetch_count;
+
+        let inner = self
+            .connection
+            .create_transport_session_receiver(
+                &entity_path,
+                &identifier,
+                retry_options,
+                receive_mode,
+                prefetch_count,
+                None,
+                false,
+            )
+            .await?;
+
+        let session_id = inner.session_id()
+            .ok_or(AcceptNextSessionError::SessionIdNotSet)?
+            .to_string();
+
+        Ok(ServiceBusSessionReceiver {
+            inner,
+            entity_path,
+            identifier,
+            session_id,
+        })
+    }
 }

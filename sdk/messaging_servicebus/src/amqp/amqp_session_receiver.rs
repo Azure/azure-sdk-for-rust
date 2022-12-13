@@ -19,7 +19,7 @@ use crate::{
 };
 
 use super::{
-    amqp_client_constants::LOCKED_UNTIL_UTC,
+    amqp_client_constants::{LOCKED_UNTIL_UTC, self},
     amqp_receiver::AmqpReceiver,
     amqp_request_message::{
         get_session_state::GetSessionStateRequest, renew_session_lock::RenewSessionLockRequest,
@@ -169,6 +169,21 @@ impl<RP> TransportSessionReceiver for AmqpSessionReceiver<RP>
 where
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
+    fn session_id(&self) -> Option<&str> {
+        self.inner.receiver
+            .source()
+            .as_ref()
+            .and_then(|source| source.filter.as_ref())
+            .and_then(|filter| match filter.get(amqp_client_constants::SESSION_FILTER_NAME) {
+                Some(Some(described)) => Some(described),
+                _ => None,
+            })
+            .and_then(|described| match described.value {
+                Value::String(ref string) => Some(string.as_str()),
+                _ => None,
+            })
+    }
+
     fn session_locked_until(&self) -> Option<OffsetDateTime> {
         self.inner.receiver.properties(get_session_locked_until)
     }

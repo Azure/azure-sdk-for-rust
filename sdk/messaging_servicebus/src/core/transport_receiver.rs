@@ -21,6 +21,9 @@ pub trait TransportSessionReceiver: TransportReceiver {
     // ///
     // fn is_session_link_closed(&self) -> bool;
 
+    /// Gets the session id for the current session.
+    fn session_id(&self) -> Option<&str>;
+
     /// Get locked until time for the session
     fn session_locked_until(&self) -> Option<OffsetDateTime>;
 

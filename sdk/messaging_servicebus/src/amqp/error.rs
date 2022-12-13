@@ -207,7 +207,7 @@ pub enum OpenReceiverError {
     ScopeIsDisposed,
 
     #[error(transparent)]
-    ManagemetnLinkAttach(#[from] AttachError),
+    ManagementLinkAttach(#[from] AttachError),
 
     #[error(transparent)]
     ReceiverAttach(#[from] ReceiverAttachError),
@@ -220,7 +220,7 @@ impl From<OpenMgmtLinkError> for OpenReceiverError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
             OpenMgmtLinkError::ScopeIsDisposed => OpenReceiverError::ScopeIsDisposed,
-            OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagemetnLinkAttach(err),
+            OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenReceiverError::CbsAuth(err),
         }
     }
