@@ -12,6 +12,8 @@ use crate::{
     ServiceBusReceiveMode, ServiceBusReceiverOptions,
 };
 
+use super::DeadLetterOptions;
+
 /// Options for configuring a `ServiceBusSessionReceiver`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ServiceBusSessionReceiverOptions {
@@ -186,16 +188,14 @@ where
     pub async fn dead_letter_message(
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
-        dead_letter_reason: Option<String>,
-        dead_letter_error_description: Option<String>,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
+        options: DeadLetterOptions,
     ) -> Result<(), R::DispositionError> {
         self.inner
             .dead_letter(
                 message.as_ref(),
-                dead_letter_reason,
-                dead_letter_error_description,
-                properties_to_modify,
+                options.dead_letter_reason,
+                options.dead_letter_error_description,
+                options.properties_to_modify,
                 Some(&self.session_id),
             )
             .await
