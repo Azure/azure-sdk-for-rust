@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions};
+use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions, ServiceBusReceiverOptions, SubQueue};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -9,7 +9,7 @@ async fn main() -> Result<(), anyhow::Error> {
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
     let mut receiver = client
-        .create_receiver_for_queue(queue_name, Default::default())
+        .create_receiver_for_queue(&queue_name, Default::default())
         .await?;
 
     // Try to receive a message with a default max wait time
@@ -20,8 +20,21 @@ async fn main() -> Result<(), anyhow::Error> {
             .dead_letter_message(&message, Default::default())
             .await?;
     }
-
     receiver.dispose().await?;
+
+    // Create a separate deadletter receiver to receive the dead-lettered message
+    let options = ServiceBusReceiverOptions {
+        sub_queue: SubQueue::DeadLetter,
+        ..Default::default()
+    };
+    let mut dlq_receiver = client.create_receiver_for_queue(queue_name, options).await?;
+    let message = dlq_receiver.receive_message_with_max_wait_time(None).await?;
+    if let Some(message) = message {
+        // Complete the message
+        dlq_receiver.complete_message(&message).await?;
+    }
+    dlq_receiver.dispose().await?;
+
     client.dispose().await?;
     Ok(())
 }
