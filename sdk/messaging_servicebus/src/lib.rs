@@ -112,7 +112,7 @@ pub mod client;
 pub mod core;
 pub mod primitives;
 pub mod receiver;
-pub mod sender; // TODO: change to pub(crate)?
+pub mod sender;
 
 // pub mod prelude;
 // pub mod service_bus;

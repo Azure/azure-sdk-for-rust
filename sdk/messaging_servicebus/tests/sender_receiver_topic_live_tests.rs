@@ -6,6 +6,36 @@ use common::setup_dotenv;
 
 #[tokio::test]
 #[serial]
+async fn drain_subscription() {
+    use azure_messaging_servicebus::prelude::*;
+
+    setup_dotenv();
+
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
+    let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION").unwrap();
+    let max_messages = 4;
+
+    let mut client = ServiceBusClient::new(connection_string, Default::default())
+        .await
+        .unwrap();
+    let options = ServiceBusReceiverOptions {
+        sub_queue: SubQueue::DeadLetter,
+        ..Default::default()
+    };
+    let mut receiver = client.create_receiver_for_subscription(topic_name, subscription_name, options).await.unwrap();
+    let received = receiver.receive_messages(max_messages).await.unwrap();
+    for message in &received {
+        println!("Received message: {}", message);
+        receiver.complete_message(message).await.unwrap();
+    }
+
+    receiver.dispose().await.unwrap();
+    client.dispose().await.unwrap();
+}
+
+#[tokio::test]
+#[serial]
 async fn send_and_receive_one_message() {
     setup_dotenv();
 
@@ -141,10 +171,10 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
 
 #[tokio::test]
 #[serial]
-async fn send_and_receive_sessionful_messages() {
+async fn send_and_receive_session_messages() {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
+    let topic_name = std::env::var("SERVICE_BUS_SESSION_TOPIC").unwrap();
     let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION").unwrap();
 
     let expected_for_session_id_1 = ["test message 1", "test message 2", "test message 3"];

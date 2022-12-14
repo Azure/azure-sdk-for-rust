@@ -1,3 +1,5 @@
+//! Authorization types for Service Bus.
+
 mod azure_named_key_credential;
 mod azure_sas_credential;
 pub(crate) mod service_bus_claim;
