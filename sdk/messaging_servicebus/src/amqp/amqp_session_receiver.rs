@@ -19,7 +19,7 @@ use crate::{
 };
 
 use super::{
-    amqp_client_constants::{LOCKED_UNTIL_UTC, self},
+    amqp_client_constants::{self, LOCKED_UNTIL_UTC},
     amqp_receiver::AmqpReceiver,
     amqp_request_message::{
         get_session_state::GetSessionStateRequest, renew_session_lock::RenewSessionLockRequest,
@@ -170,7 +170,8 @@ where
     RP: ServiceBusRetryPolicy + Send + Sync,
 {
     fn session_id(&self) -> Option<&str> {
-        self.inner.receiver
+        self.inner
+            .receiver
             .source()
             .as_ref()
             .and_then(|source| source.filter.as_ref())

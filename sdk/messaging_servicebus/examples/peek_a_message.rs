@@ -8,7 +8,9 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut client =
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
-    let mut receiver = client.create_receiver_for_queue(queue_name, Default::default()).await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, Default::default())
+        .await?;
 
     let peeked = receiver.peek_message(None).await?;
     if let Some(peeked) = peeked {

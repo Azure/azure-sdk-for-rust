@@ -20,7 +20,7 @@ use super::{
     amqp_receiver::AmqpReceiver,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
-    error::{OpenReceiverError, OpenSenderError, AmqpClientError},
+    error::{AmqpClientError, OpenReceiverError, OpenSenderError},
 };
 
 // TODO: current implementation doesn't support running callback in the background to refresh the
@@ -260,11 +260,7 @@ where
             //         .await
             //         .map_err(Into::into),
             // }
-            self
-                .connection_scope
-                .dispose()
-                .await
-                .map_err(Into::into)
+            self.connection_scope.dispose().await.map_err(Into::into)
         }
     }
 }

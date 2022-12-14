@@ -1,13 +1,10 @@
 use std::time::Duration as StdDuration;
 
 use azure_messaging_servicebus::{
-    ServiceBusClient, ServiceBusClientOptions,
-    ServiceBusPeekedMessage,
-    ServiceBusReceivedMessage,
-    ServiceBusRetryOptions,
+    core::TransportSender, ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage,
+    ServiceBusPeekedMessage, ServiceBusReceivedMessage, ServiceBusReceiverOptions,
+    ServiceBusRetryOptions, ServiceBusSender, ServiceBusSenderOptions,
     ServiceBusSessionReceiverOptions,
-    ServiceBusMessage, ServiceBusReceiverOptions, ServiceBusSender, ServiceBusSenderOptions,
-    core::{TransportSender},
 };
 use time::OffsetDateTime;
 
@@ -42,7 +39,10 @@ pub async fn drain_queue(
         .create_receiver_for_queue(queue_name, receiver_options)
         .await
         .unwrap();
-    let messages = receiver.receive_messages_with_max_wait_time(max_messages, None).await.unwrap();
+    let messages = receiver
+        .receive_messages_with_max_wait_time(max_messages, None)
+        .await
+        .unwrap();
 
     for message in messages {
         receiver.complete_message(&message).await.unwrap();
@@ -61,7 +61,9 @@ pub async fn create_client_and_send_messages_separately_to_queue_or_topic(
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
 ) -> Result<(), anyhow::Error> {
     let mut client = ServiceBusClient::new(connection_string, client_options).await?;
-    let mut sender = client.create_sender(queue_or_topic_name, sender_options).await?;
+    let mut sender = client
+        .create_sender(queue_or_topic_name, sender_options)
+        .await?;
 
     send_messages_separately(&mut sender, messages).await?;
 
@@ -123,12 +125,16 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
     let mut client = ServiceBusClient::new(connection_string, client_options).await?;
     let mut receiver = match session_id {
-        Some(session_id) => client
-            .accept_session_for_queue(queue_name, session_id, receiver_options)
-            .await?,
-        None => client
-            .accept_next_session_for_queue(queue_name, receiver_options)
-            .await?,
+        Some(session_id) => {
+            client
+                .accept_session_for_queue(queue_name, session_id, receiver_options)
+                .await?
+        }
+        None => {
+            client
+                .accept_next_session_for_queue(queue_name, receiver_options)
+                .await?
+        }
     };
 
     let messages = receiver

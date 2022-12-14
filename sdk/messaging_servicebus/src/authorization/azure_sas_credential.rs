@@ -1,4 +1,3 @@
-
 #[derive(Debug)]
 pub struct AzureSasCredential(String);
 

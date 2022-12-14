@@ -20,7 +20,8 @@ async fn send_to_queue_every_minute_for_two_hour() {
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
 
     let mut client = azure_messaging_servicebus::client::ServiceBusClient::new(
-        &connection_string, Default::default(),
+        &connection_string,
+        Default::default(),
     )
     .await
     .unwrap();
@@ -57,8 +58,7 @@ async fn send_to_queue_every_minute_for_two_hour() {
         total_received
     };
 
-    let result = tokio::time::timeout(std::time::Duration::from_secs(60 * 10), receive_all())
-        .await;
+    let result = tokio::time::timeout(std::time::Duration::from_secs(60 * 10), receive_all()).await;
     assert_eq!(result, Ok(total));
 
     sender.dispose().await.unwrap();

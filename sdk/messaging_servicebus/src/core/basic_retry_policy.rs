@@ -19,7 +19,7 @@ pub enum BasicRetryPolicyState {
     /// The server is busy.
     ServerBusy {
         /// The error message if the server is busy.
-        error_message: String
+        error_message: String,
     },
 }
 

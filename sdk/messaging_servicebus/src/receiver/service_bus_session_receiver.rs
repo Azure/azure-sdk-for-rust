@@ -97,12 +97,12 @@ where
     /// ```rust
     /// let received = receiver.receive_message().await.unwrap();
     /// ```
-    pub async fn receive_message(
-        &mut self,
-    ) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
-        self.receive_messages(1)
-            .await
-            .map(|mut v| v.drain(..).next().expect("At least one message should be received."))
+    pub async fn receive_message(&mut self) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
+        self.receive_messages(1).await.map(|mut v| {
+            v.drain(..)
+                .next()
+                .expect("At least one message should be received.")
+        })
     }
 
     /// Receive messages from the entity using the receiver's receive mode.
@@ -111,9 +111,7 @@ where
         &mut self,
         max_messages: u32,
     ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
-        self.inner
-            .receive_messages(max_messages)
-            .await
+        self.inner.receive_messages(max_messages).await
     }
 
     /// Receive a single message from the entity using the receiver's receive mode with a maximum wait time.
@@ -153,7 +151,9 @@ where
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
     ) -> Result<(), R::DispositionError> {
-        self.inner.complete(message.as_ref(), Some(&self.session_id)).await
+        self.inner
+            .complete(message.as_ref(), Some(&self.session_id))
+            .await
     }
 
     /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for immediate processing as the lock on the message held by the receiver will be released.
@@ -163,7 +163,11 @@ where
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
         self.inner
-            .abandon(message.as_ref(), properties_to_modify, Some(&self.session_id))
+            .abandon(
+                message.as_ref(),
+                properties_to_modify,
+                Some(&self.session_id),
+            )
             .await
     }
 
@@ -180,7 +184,11 @@ where
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
         self.inner
-            .defer(message.as_ref(), properties_to_modify, Some(&self.session_id))
+            .defer(
+                message.as_ref(),
+                properties_to_modify,
+                Some(&self.session_id),
+            )
             .await
     }
 

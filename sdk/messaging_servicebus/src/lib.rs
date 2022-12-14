@@ -106,8 +106,8 @@ pub(crate) mod constants;
 pub(crate) mod diagnostics;
 pub(crate) mod entity_name_formatter;
 
-pub mod authorization;
 pub mod amqp;
+pub mod authorization;
 pub mod client;
 pub mod core;
 pub mod primitives;

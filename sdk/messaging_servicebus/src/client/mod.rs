@@ -5,7 +5,7 @@ use std::{borrow::Cow, marker::PhantomData};
 use azure_core::{auth::TokenCredential, Url};
 
 use crate::{
-    amqp::{amqp_client::AmqpClient},
+    amqp::amqp_client::AmqpClient,
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential, AzureNamedKeyCredential,
@@ -420,8 +420,7 @@ where
     ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
         let entity_path = queue_name.into();
         let session_id = session_id.into();
-        self.accept_session(entity_path, session_id, options)
-            .await
+        self.accept_session(entity_path, session_id, options).await
     }
 
     /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving
@@ -442,8 +441,7 @@ where
             subscription_name.as_ref(),
         );
         let session_id = session_id.into();
-        self.accept_session(entity_path, session_id, options)
-            .await
+        self.accept_session(entity_path, session_id, options).await
     }
 
     async fn accept_session(
@@ -481,7 +479,6 @@ where
     }
 }
 
-
 impl<C> ServiceBusClient<C>
 where
     C: TransportClient + Send + Sync + 'static,
@@ -493,8 +490,7 @@ where
         options: ServiceBusSessionReceiverOptions,
     ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, AcceptNextSessionError> {
         let entity_path = queue_name.into();
-        self.accept_next_session(entity_path, options)
-            .await
+        self.accept_next_session(entity_path, options).await
     }
 
     pub async fn accept_next_session_for_subscription(
@@ -507,8 +503,7 @@ where
             topic_name.as_ref(),
             subscription_name.as_ref(),
         );
-        self.accept_next_session(entity_path, options)
-            .await
+        self.accept_next_session(entity_path, options).await
     }
 
     async fn accept_next_session(
@@ -536,7 +531,8 @@ where
             )
             .await?;
 
-        let session_id = inner.session_id()
+        let session_id = inner
+            .session_id()
             .ok_or(AcceptNextSessionError::SessionIdNotSet)?
             .to_string();
 

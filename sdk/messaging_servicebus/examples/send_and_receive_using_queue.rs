@@ -9,8 +9,12 @@ async fn main() -> Result<(), anyhow::Error> {
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
     // Create a sender and receiver
-    let mut sender = client.create_sender(&queue_name, Default::default()).await?;
-    let mut receiver = client.create_receiver_for_queue(queue_name, Default::default()).await?;
+    let mut sender = client
+        .create_sender(&queue_name, Default::default())
+        .await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, Default::default())
+        .await?;
 
     // Send one message
     sender.send_message("Hello World").await?;

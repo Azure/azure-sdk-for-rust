@@ -32,7 +32,6 @@ pub(crate) enum AmqpConnectionScopeError {
     ReceiverAttach(#[from] ReceiverAttachError),
 }
 
-
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpClientError {
     #[error(transparent)]

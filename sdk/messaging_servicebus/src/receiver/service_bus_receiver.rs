@@ -77,12 +77,12 @@ where
 
     /// Receive a single message from the entity using the receiver's receive mode.
     /// This method will wait indefinitely until at least one message is received.
-    pub async fn receive_message(
-        &mut self,
-    ) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
-        self.receive_messages(1)
-            .await
-            .map(|mut v| v.drain(..).next().expect("At least one message should be received."))
+    pub async fn receive_message(&mut self) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
+        self.receive_messages(1).await.map(|mut v| {
+            v.drain(..)
+                .next()
+                .expect("At least one message should be received.")
+        })
     }
 
     /// Receive messages from the entity using the receiver's receive mode.
@@ -91,9 +91,7 @@ where
         &mut self,
         max_messages: u32,
     ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
-        self.inner
-            .receive_messages(max_messages)
-            .await
+        self.inner.receive_messages(max_messages).await
     }
 
     /// Receive a single message from the entity using the receiver's receive mode with a maximum wait time.
@@ -170,7 +168,9 @@ where
         message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
     ) -> Result<(), R::DispositionError> {
-        self.inner.defer(message.as_ref(), properties_to_modify, None).await
+        self.inner
+            .defer(message.as_ref(), properties_to_modify, None)
+            .await
     }
 
     /// Fetches the next active [`ServiceBusPeekedMessage`] without changing the state of the receiver or the message source.

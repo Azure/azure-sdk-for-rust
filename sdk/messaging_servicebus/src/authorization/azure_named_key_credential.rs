@@ -1,4 +1,3 @@
-
 /// TODO: move to azure_core?
 #[derive(Debug)]
 pub struct AzureNamedKeyCredential {

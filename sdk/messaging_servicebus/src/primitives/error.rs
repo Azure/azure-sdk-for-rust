@@ -1,9 +1,12 @@
 //! Error types for the service bus primitives.
 
-use fe2o3_amqp::{connection::OpenError, session::BeginError, link::SenderAttachError};
+use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 use tokio::time::error::Elapsed;
 
-use crate::{authorization::shared_access_signature::SasSignatureError, amqp::error::{DisposeError, AmqpClientError}};
+use crate::{
+    amqp::error::{AmqpClientError, DisposeError},
+    authorization::shared_access_signature::SasSignatureError,
+};
 
 use super::service_bus_connection_string_properties::FormatError;
 

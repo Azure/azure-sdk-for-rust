@@ -8,7 +8,9 @@ async fn main() -> Result<(), anyhow::Error> {
 
     let mut client =
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
-    let mut sender = client.create_sender(&queue_name, Default::default()).await?;
+    let mut sender = client
+        .create_sender(&queue_name, Default::default())
+        .await?;
 
     // Schedule a message and then cancel it
     let enqueue_time = OffsetDateTime::now_utc() + time::Duration::minutes(10);

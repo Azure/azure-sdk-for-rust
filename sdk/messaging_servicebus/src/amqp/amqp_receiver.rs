@@ -17,10 +17,10 @@ use crate::{
     core::TransportReceiver,
     primitives::{
         disposition_status::DispositionStatus,
+        error::RetryError,
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::{ReceivedMessageLockToken, ServiceBusReceivedMessage},
         service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
-        error::RetryError,
     },
     ServiceBusReceiveMode,
 };

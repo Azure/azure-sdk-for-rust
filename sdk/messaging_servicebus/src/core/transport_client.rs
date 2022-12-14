@@ -1,4 +1,4 @@
-use std::{time::Duration as StdDuration};
+use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
 use azure_core::Url;
@@ -13,8 +13,8 @@ use crate::{
 };
 
 use super::{
-    transport_receiver::TransportReceiver,
-    transport_sender::TransportSender, TransportSessionReceiver,
+    transport_receiver::TransportReceiver, transport_sender::TransportSender,
+    TransportSessionReceiver,
 };
 
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated

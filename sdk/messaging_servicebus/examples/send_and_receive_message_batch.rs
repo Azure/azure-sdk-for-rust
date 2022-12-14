@@ -1,4 +1,6 @@
-use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions, CreateMessageBatchOptions, ServiceBusMessage};
+use azure_messaging_servicebus::{
+    CreateMessageBatchOptions, ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -9,7 +11,9 @@ async fn main() -> Result<(), anyhow::Error> {
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
     // Create a sender and then send a batch of messages
-    let mut sender = client.create_sender(&queue_name, Default::default()).await?;
+    let mut sender = client
+        .create_sender(&queue_name, Default::default())
+        .await?;
     let mut batch = sender.create_message_batch(CreateMessageBatchOptions::default())?;
 
     // Add messages to the batch
@@ -22,7 +26,9 @@ async fn main() -> Result<(), anyhow::Error> {
     sender.send_message_batch(batch).await?;
 
     // Create a receiver and then receive the messages
-    let mut receiver = client.create_receiver_for_queue(queue_name, Default::default()).await?;
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, Default::default())
+        .await?;
     // This will wait indefinitely until at least one message is received
     let received = receiver.receive_messages(3).await?;
     for message in received {

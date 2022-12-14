@@ -224,12 +224,18 @@ async fn send_and_receive_sessionful_messages() {
     assert_eq!(received_1.len(), expected_for_session_id_1.len());
     for (i, message) in received_1.iter().enumerate() {
         let received_message_body = message.body().unwrap();
-        assert_eq!(received_message_body, expected_for_session_id_1[i].as_bytes());
+        assert_eq!(
+            received_message_body,
+            expected_for_session_id_1[i].as_bytes()
+        );
     }
 
     assert_eq!(received_2.len(), expected_for_session_id_2.len());
     for (i, message) in received_2.iter().enumerate() {
         let received_message_body = message.body().unwrap();
-        assert_eq!(received_message_body, expected_for_session_id_2[i].as_bytes());
+        assert_eq!(
+            received_message_body,
+            expected_for_session_id_2[i].as_bytes()
+        );
     }
 }

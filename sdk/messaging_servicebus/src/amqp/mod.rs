@@ -20,9 +20,9 @@ pub(crate) mod scheduled_message;
 pub(crate) mod token_type;
 
 pub mod amqp_client;
-pub mod amqp_session_receiver;
 pub mod amqp_receiver;
 pub mod amqp_sender;
+pub mod amqp_session_receiver;
 pub mod error;
 
 // TODO:

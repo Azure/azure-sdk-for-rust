@@ -1,7 +1,7 @@
 use fe2o3_amqp::link::ReceiverAttachError;
 use fe2o3_amqp_management::error::AttachError;
 
-use crate::amqp::error::{OpenReceiverError, CbsAuthError};
+use crate::amqp::error::{CbsAuthError, OpenReceiverError};
 
 /// Error with accepting next session
 #[derive(Debug, thiserror::Error)]

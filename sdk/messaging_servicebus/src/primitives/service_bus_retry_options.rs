@@ -19,14 +19,14 @@ pub enum OutOfRange<T> {
         /// The value that was provided.
         value: T,
         /// The minimum allowed value.
-        minimum_allowed: T
+        minimum_allowed: T,
     },
     /// The value is greater than the maximum allowed value.
     GreaterThanAllowed {
         /// The value that was provided.
         value: T,
         /// The maximum allowed value.
-        maximum_allowed: T
+        maximum_allowed: T,
     },
 }
 

@@ -3,8 +3,7 @@
 use time::OffsetDateTime;
 
 use crate::{
-    core::{TransportSender},
-    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
+    core::TransportSender, CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
 /// The set of options that can be specified when creating a [`ServiceBusSender`]

@@ -3,8 +3,11 @@ use std::{sync::Mutex, time::Duration};
 use azure_core::auth::{AccessToken, TokenResponse};
 use time::OffsetDateTime;
 
-use super::{shared_access_signature::{SasSignatureError, SharedAccessSignature}, azure_named_key_credential::AzureNamedKeyCredential, AzureSasCredential};
-
+use super::{
+    azure_named_key_credential::AzureNamedKeyCredential,
+    shared_access_signature::{SasSignatureError, SharedAccessSignature},
+    AzureSasCredential,
+};
 
 /// TODO: visibility?
 #[derive(Debug)]

@@ -8,8 +8,9 @@ use crate::{
         shared_access_credential::SharedAccessCredential,
         shared_access_signature::SharedAccessSignature,
     },
+    client::ServiceBusClientOptions,
     core::TransportClient,
-    ServiceBusReceiveMode, client::ServiceBusClientOptions,
+    ServiceBusReceiveMode,
 };
 
 use super::{
@@ -34,7 +35,6 @@ macro_rules! ok_if_not_none_or_empty {
     };
 }
 
-
 /// <summary>
 ///   Builds the audience of the connection for use in the signature.
 /// </summary>
@@ -52,16 +52,15 @@ pub(crate) fn build_connection_resource(
 ) -> Result<String, Error> {
     match fully_qualified_namespace {
         Some(fqn) => {
-            let mut builder =
-                Url::parse(&format!("{}://{}", transport_type.url_scheme(), fqn))?;
+            let mut builder = Url::parse(&format!("{}://{}", transport_type.url_scheme(), fqn))?;
             builder.set_path(&entity_name.unwrap_or_default());
             builder
                 .set_port(None)
                 .map_err(|_| Error::ArgumentError("Unable to set port to None".to_string()))?;
             builder.set_fragment(None);
-            builder.set_password(None).map_err(|_| {
-                Error::ArgumentError("Unable to set password to None".to_string())
-            })?;
+            builder
+                .set_password(None)
+                .map_err(|_| Error::ArgumentError("Unable to set password to None".to_string()))?;
             builder.set_username("").map_err(|_| {
                 Error::ArgumentError("Unable to set username to empty string".to_string())
             })?;
