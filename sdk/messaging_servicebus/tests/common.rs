@@ -253,7 +253,7 @@ pub async fn create_client_and_deadletter_messages_from_queue(
 
     for message in &messages {
         receiver
-            .dead_letter_message(message, None, None, None)
+            .dead_letter_message(message, Default::default())
             .await?;
     }
 
