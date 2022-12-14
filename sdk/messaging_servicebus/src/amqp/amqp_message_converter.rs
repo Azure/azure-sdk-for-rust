@@ -29,16 +29,9 @@ pub(crate) fn batch_service_bus_messages_as_amqp_message(
     build_amqp_batch_from_messages(batch_messages, force_batch)
 }
 
-/// Builds a batch from a set of messages.
+/// Builds a batch from a set of messages. Returns the batch containing the source messages.
 ///
-/// # Parameters
-///
-/// * `source` - The set of messages to use as the body of the batch message.
-/// * `force_batch` - Set to true to force creating as a batch even when only one message.
-///
-/// # Returns
-///
-/// The batch containing the source messages
+/// If `force_batch` is set to true, then a batch will be created even if there is only one message.
 pub(crate) fn build_amqp_batch_from_messages(
     mut source: impl Iterator<Item = Message<Data>> + ExactSizeIterator,
     force_batch: bool,

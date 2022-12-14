@@ -107,10 +107,6 @@ pub trait TransportClient: Sized {
     // ///   is bound.
     // /// * `retry_policy` - The policy which governs retry behavior and try timeouts.
     // /// * `identifier` - The identifier for the rule manager.
-    // ///
-    // /// # Returns
-    // ///
-    // /// A [TransportRuleManager] configured in the requested manner.
     // async fn create_rule_manager(
     //     &mut self,
     //     subscription_path: String,

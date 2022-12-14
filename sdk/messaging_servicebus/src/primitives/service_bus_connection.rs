@@ -85,10 +85,6 @@ where
     C: TransportClient,
 {
     /// Indicates whether or not this [`ServiceBusConnection`] has been closed.
-    ///
-    /// # Value
-    ///
-    /// `true` if the connection is closed; otherwise, `false`.
     pub fn is_closed(&self) -> bool {
         self.inner_client.is_closed()
     }

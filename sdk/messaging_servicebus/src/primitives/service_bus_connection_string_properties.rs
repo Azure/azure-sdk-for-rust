@@ -66,21 +66,12 @@ impl<'a> ServiceBusConnectionStringProperties<'a> {
     const SHARED_ACCESS_SIGNATURE_TOKEN: &'static str = "SharedAccessSignature";
 
     /// The fully qualified Service Bus namespace that the consumer is associated with.  This is
-    /// likely to be similar to `{yournamespace}.servicebus.windows.net`.
-    ///
-    /// # Value
-    ///
-    /// The namespace of the Service Bus, as derived from the endpoint address of the connection
-    /// string.
+    /// likely to be similar to `"{yournamespace}.servicebus.windows.net"`.
     pub fn fully_qualified_namespace(&self) -> Option<&str> {
         self.endpoint.as_ref().and_then(|url| url.host_str())
     }
 
     /// The endpoint to be used for connecting to the Service Bus namespace.
-    ///
-    /// # Value
-    ///
-    /// The endpoint address, including protocol, from the connection string.
     pub fn endpoint(&self) -> Option<&Url> {
         self.endpoint.as_ref()
     }

@@ -35,10 +35,6 @@ impl ServiceBusPeekedMessage {
     /// Gets the raw Amqp message data that was transmitted over the wire. This can be used to
     /// enable scenarios that require reading AMQP header, footer, property, or annotation data that
     /// is not exposed as top level properties in the [`ServiceBusReceivedMessage`].
-    ///
-    /// # Returns
-    ///
-    /// The raw Amqp message.
     pub fn raw_amqp_message(&self) -> &Message<Body<Value>> {
         &self.raw_amqp_message
     }
