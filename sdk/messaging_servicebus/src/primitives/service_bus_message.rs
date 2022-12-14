@@ -203,12 +203,6 @@ impl ServiceBusMessage {
 
     /// Gets the partition key for sending a message to a partitioned entity.
     ///
-    /// # Value
-    ///
-    /// The partition key. Maximum length is 128 characters.
-    ///
-    /// # Remarks
-    ///
     /// For [partitioned
     /// entities](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-partitioning),
     /// setting this value enables assigning related messages to the same internal partition, so
@@ -219,7 +213,7 @@ impl ServiceBusMessage {
         self.amqp_message.partition_key()
     }
 
-    /// Sets a partition key for sending a message to a partitioned entity.
+    /// Sets a partition key for sending a message to a partitioned entity. Maximum length is 128 characters.
     pub fn set_partition_key(
         &mut self,
         key: impl Into<Option<String>>,
@@ -229,12 +223,6 @@ impl ServiceBusMessage {
 
     /// Gets a partition key for sending a message into an entity via a partitioned transfer
     /// queue.
-    ///
-    /// # Value
-    ///
-    /// The partition key. Maximum length is 128 characters.
-    ///
-    /// # Remarks
     ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
     /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
@@ -246,7 +234,8 @@ impl ServiceBusMessage {
         self.amqp_message.via_partition_key()
     }
 
-    /// Sets a partition key for sending a message into an entity via a partitioned transfer
+    /// Sets a partition key for sending a message into an entity via a partitioned transfer.
+    /// Maximum length is 128 characters.
     #[cfg(feature = "transaction")]
     pub fn set_transaction_partition_key(
         &mut self,
@@ -257,12 +246,6 @@ impl ServiceBusMessage {
 
     /// Gets the session identifier for a session-aware entity.
     ///
-    /// # Value
-    ///
-    /// The session identifier. Maximum length is 128 characters.
-    ///
-    /// # Remarks
-    ///
     /// For session-aware entities, this application-defined value specifies the session affiliation
     /// of the message. Messages with the same session identifier are subject to summary locking and
     /// enable exact in-order processing and demultiplexing. For session-unaware entities, this
@@ -272,7 +255,7 @@ impl ServiceBusMessage {
         self.amqp_message.session_id()
     }
 
-    /// Sets the session identifier for a session-aware entity.
+    /// Sets the session identifier for a session-aware entity. Maximum length is 128 characters.
     pub fn set_session_id(
         &mut self,
         session_id: impl Into<Option<String>>,
@@ -282,12 +265,6 @@ impl ServiceBusMessage {
 
     /// Gets session identifier augmenting the [`reply_to()`] address.
     ///
-    /// # Value
-    ///
-    /// Session identifier. Maximum length is 128 characters.
-    ///
-    /// # Remarks
-    ///
     /// This value augments the ReplyTo information and specifies which SessionId should be set for
     /// the reply when sent to the reply entity. See [Message Routing and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation)
@@ -295,7 +272,7 @@ impl ServiceBusMessage {
         self.amqp_message.reply_to_session_id()
     }
 
-    /// Sets a session identifier augmenting the [`reply_to()`] address.
+    /// Sets a session identifier augmenting the [`reply_to()`] address. Maximum length is 128 characters.
     pub fn set_reply_to_session_id(
         &mut self,
         session_id: impl Into<Option<String>>,
@@ -304,12 +281,6 @@ impl ServiceBusMessage {
     }
 
     /// Gets the message’s "time to live" value.
-    ///
-    /// # Value
-    ///
-    /// The message’s time to live value.
-    ///
-    /// # Remarks
     ///
     /// This value is the relative duration after which the message expires. When not set
     /// explicitly, the assumed value is the DefaultTimeToLive for the respective queue or topic. A
@@ -330,12 +301,6 @@ impl ServiceBusMessage {
 
     /// Gets the correlation identifier.
     ///
-    /// # Value
-    ///
-    /// Correlation identifier.
-    ///
-    /// # Remarks
-    ///
     /// Allows an application to specify a context for the message for the purposes of correlation,
     /// for example reflecting the MessageId of a message that is being replied to. See [Message
     /// Routing and
@@ -351,12 +316,6 @@ impl ServiceBusMessage {
 
     /// Gets application specific subject.
     ///
-    /// # Value
-    ///
-    /// The application specific subject.
-    ///
-    /// # Remarks
-    ///
     /// This property enables the application to indicate the purpose of the message to the receiver
     /// in a standardized fashion, similar to an email subject line. The mapped AMQP property is
     /// "subject".
@@ -370,12 +329,6 @@ impl ServiceBusMessage {
     }
 
     /// Gets the "to" address.
-    ///
-    /// # Value
-    ///
-    /// The "to" address.
-    ///
-    /// # Remarks
     ///
     /// This property is reserved for future use in routing scenarios and presently ignored by the
     /// broker itself. Applications can use this value in rule-driven [auto-forward
@@ -392,12 +345,6 @@ impl ServiceBusMessage {
 
     /// Gets the content type descriptor.
     ///
-    /// # Value
-    ///
-    /// RFC2045 Content-Type descriptor.
-    ///
-    /// # Remarks
-    ///
     /// Optionally describes the payload of the message, with a descriptor following the format of
     /// RFC2045, Section 5, for example "application/json".
     pub fn content_type(&self) -> Option<&str> {
@@ -411,18 +358,11 @@ impl ServiceBusMessage {
 
     /// Gets the address of an entity to send replies to.
     ///
-    /// # Value
-    ///
-    /// The reply entity address.
-    ///
-    /// # Remarks
-    ///
     /// This optional and application-defined value is a standard way to express a reply path to the
     /// receiver of the message. When a sender expects a reply, it sets the value to the absolute or
     /// relative path of the queue or topic it expects the reply to be sent to. See [Message Routing
     /// and
     /// Correlation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads?#message-routing-and-correlation).
-    /// </remarks>
     pub fn reply_to(&self) -> Option<&str> {
         self.amqp_message.reply_to()
     }
@@ -432,16 +372,9 @@ impl ServiceBusMessage {
         self.amqp_message.set_reply_to(reply_to)
     }
 
-    /// Gets the date and time in UTC at which the message will be enqueued. This property
-    /// returns the time in UTC; when setting the property, the supplied DateTime value must also be
-    /// in UTC.
-    ///
-    /// # Value
-    ///
-    /// The scheduled enqueue time in UTC. This value is for delayed message sending. It is utilized
-    /// to delay messages sending to a specific time in the future.
-    ///
-    /// # Remarks
+    /// Gets the date and time in UTC at which the message will be enqueued. This property returns
+    /// the time in UTC; when setting the property, the supplied `OffsetDateTime` value must also be
+    /// in UTC. It is utilized to delay messages sending to a specific time in the future.
     ///
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will
     /// get enqueued, but the actual sending time depends on the queue's workload and its state.

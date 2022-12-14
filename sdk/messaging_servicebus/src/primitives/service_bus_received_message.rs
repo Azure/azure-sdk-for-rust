@@ -450,12 +450,6 @@ impl ServiceBusReceivedMessage {
 
     /// Gets the state of the message.
     ///
-    /// # Value
-    ///
-    /// The state of the message. </value>
-    ///
-    /// # Remarks
-    ///
     /// The state of the message can be Active, Deferred, or Scheduled. Deferred messages have
     /// Deferred state, scheduled messages have Scheduled state, all other messages have Active
     /// state.

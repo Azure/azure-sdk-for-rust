@@ -56,8 +56,6 @@ impl ServiceBusPeekedMessage {
 
     /// Gets the MessageId to identify the message.
     ///
-    /// # Remarks
-    ///
     /// The message identifier is an application-defined value that uniquely identifies the message
     /// and its payload. The identifier is a free-form string and can reflect a GUID or an
     /// identifier derived from the application context. If enabled, the [duplicate
@@ -69,12 +67,6 @@ impl ServiceBusPeekedMessage {
     }
 
     /// Gets a partition key for sending a message to a partitioned entity.
-    ///
-    /// # Value
-    ///
-    /// The partition key. Maximum length is 128 characters.
-    ///
-    /// # Remarks
     ///
     /// For [partitioned
     /// entities](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-partitioning),
@@ -88,12 +80,6 @@ impl ServiceBusPeekedMessage {
 
     /// Gets a partition key for sending a message into an entity via a partitioned transfer queue.
     ///
-    /// # Value
-    ///
-    /// The partition key. Maximum length is 128 characters.
-    ///
-    /// # Remarks
-    ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
     /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
     /// and ensures that messages are kept together and in order as they are transferred. See
@@ -104,12 +90,6 @@ impl ServiceBusPeekedMessage {
     }
 
     /// Gets the session identifier for a session-aware entity.
-    ///
-    /// # Value
-    ///
-    /// The session identifier. Maximum length is 128 characters.
-    ///
-    /// # Remarks
     ///
     /// For session-aware entities, this application-defined value specifies the session affiliation
     /// of the message. Messages with the same session identifier are subject to summary locking and
@@ -142,12 +122,6 @@ impl ServiceBusPeekedMessage {
 
     /// Gets the correlation identifier.
     ///
-    /// # Value
-    ///
-    /// Correlation identifier.
-    ///
-    /// # Remarks
-    ///
     /// Allows an application to specify a context for the message for the purposes of correlation,
     /// for example reflecting the MessageId of a message that is being replied to. See [Message
     /// Routing and
@@ -158,11 +132,6 @@ impl ServiceBusPeekedMessage {
 
     /// Gets an application specific label.
     ///
-    /// # Value
-    ///
-    /// The application specific label
-    ///
-    /// # Remarks
     /// This property enables the application to indicate the purpose of the message to the receiver
     /// in a standardized fashion, similar to an email subject line. The mapped AMQP property is
     /// "subject".
@@ -171,12 +140,6 @@ impl ServiceBusPeekedMessage {
     }
 
     /// Gets the "to" address.
-    ///
-    /// # Value
-    ///
-    /// The "to" address.
-    ///
-    /// # Remarks
     ///
     /// This property is reserved for future use in routing scenarios and presently ignored by the
     /// broker itself. Applications can use this value in rule-driven [auto-forward
@@ -188,12 +151,6 @@ impl ServiceBusPeekedMessage {
 
     /// Gets the content type descriptor.
     ///
-    /// # Value
-    ///
-    /// RFC2045 Content-Type descriptor.
-    ///
-    /// # Remarks
-    ///
     /// Optionally describes the payload of the message, with a descriptor following the format of
     /// RFC2045, Section 5, for example "application/json".
     pub fn content_type(&self) -> Option<&str> {
@@ -201,12 +158,6 @@ impl ServiceBusPeekedMessage {
     }
 
     /// Gets the address of an entity to send replies to.
-    ///
-    /// # Value
-    ///
-    /// The reply entity address.
-    ///
-    /// # Remarks
     ///
     /// This optional and application-defined value is a standard way to express a reply path to the
     /// receiver of the message. When a sender expects a reply, it sets the value to the absolute or
@@ -220,13 +171,6 @@ impl ServiceBusPeekedMessage {
     /// Gets the date and time in UTC at which the message will be enqueued. This property returns
     /// the time in UTC; when setting the property, the supplied DateTime value must also be in UTC.
     ///
-    /// # Value
-    ///
-    /// The scheduled enqueue time in UTC. This value is for delayed message sending. It is utilized
-    /// to delay messages sending to a specific time in the future.
-    ///
-    /// # Remarks
-    ///
     /// Message enqueuing time does not mean that the message will be sent at the same time. It will
     /// get enqueued, but the actual sending time depends on the queue's workload and its state.
     pub fn scheduled_enqueue_time(&self) -> OffsetDateTime {
@@ -235,7 +179,6 @@ impl ServiceBusPeekedMessage {
 
     /// Gets the application properties bag, which can be used for custom message metadata.
     ///
-    /// # Remarks
     /// Only the following value types are supported: byte, sbyte, char, short, ushort, int, uint,
     /// long, ulong, float, double, decimal, bool, Guid, string, Uri, DateTime, DateTimeOffset,
     /// TimeSpan
@@ -243,13 +186,9 @@ impl ServiceBusPeekedMessage {
         self.raw_amqp_message.application_properties.as_ref()
     }
 
-    /// Get the current delivery count.
+    /// Get the current delivery count. This value starts at 1. This number is off by one from the
+    /// raw amqp message delivery count
     ///
-    /// # Value
-    ///
-    /// This value starts at 1. This number is off by one from the raw amqp message delivery count
-    ///
-    /// # Remarks
     /// Number of deliveries that have been attempted for this message. The count is incremented
     /// when a message lock expires, or the message is explicitly abandoned by the receiver. This
     /// property is read-only.
@@ -260,25 +199,7 @@ impl ServiceBusPeekedMessage {
             .map(|h| h.delivery_count + 1)
     }
 
-    // /// # Panic
-    // ///
-    // /// Panics if timestamp exceeds the valid range of i64
-    // pub(crate) fn set_locked_until(&mut self, value: OffsetDateTime) {
-    //     let timespan = value - OffsetDateTime::UNIX_EPOCH;
-    //     let millis = timespan.whole_milliseconds();
-    //     assert!(millis <= i64::MAX as i128 && millis >= i64::MIN as i128);
-    //     let millis = Timestamp::from_milliseconds(millis as i64);
-
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(LOCKED_UNTIL_NAME.into(), millis.into());
-    // }
-
     /// Gets the unique number assigned to a message by Service Bus.
-    ///
-    /// # Remarks
     ///
     /// The sequence number is a unique 64-bit integer assigned to a message as it is accepted and
     /// stored by the broker and functions as its true identifier. For partitioned entities, the
@@ -296,18 +217,8 @@ impl ServiceBusPeekedMessage {
             .unwrap_or(Default::default())
     }
 
-    // pub(crate) fn set_sequence_number(&mut self, value: i64) {
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(SEQUENCE_NUMBER_NAME.into(), value.into());
-    // }
-
     /// Gets the name of the queue or subscription that this message was enqueued on, before it was
     /// dead-lettered.
-    ///
-    /// # Remarks
     ///
     /// Only set in messages that have been dead-lettered and subsequently auto-forwarded from the
     /// dead-letter queue to another entity. Indicates the entity in which the message was
@@ -323,22 +234,7 @@ impl ServiceBusPeekedMessage {
             })
     }
 
-    // pub(crate) fn set_dead_letter_source(&mut self, value: impl Into<String>) {
-    //     let value = value.into();
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(DEAD_LETTER_SOURCE_NAME.into(), value.into());
-    // }
-
     /// Gets the original sequence number of the message.
-    ///
-    /// # Value
-    ///
-    /// The enqueued sequence number of the message.
-    ///
-    /// # Remarks
     ///
     /// For messages that have been auto-forwarded, this property reflects the sequence number that
     /// had first been assigned to the message at its original point of submission. This property is
@@ -355,21 +251,7 @@ impl ServiceBusPeekedMessage {
             .unwrap_or(Default::default())
     }
 
-    // pub(crate) fn set_enqueued_sequence_number(&mut self, value: i64) {
-    //     self.delivery
-    //         .message()
-    //         .message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(ENQUEUE_SEQUENCE_NUMBER_NAME.into(), value.into());
-    // }
-
     /// Gets the date and time of the sent time in UTC.
-    ///
-    /// # Value
-    ///
-    /// The enqueue time in UTC.
-    ///
-    /// # Remarks
     ///
     /// The UTC instant at which the message has been accepted and stored in the entity. This value
     /// can be used as an authoritative and neutral arrival time indicator when the receiver does
@@ -391,12 +273,6 @@ impl ServiceBusPeekedMessage {
     }
 
     /// Gets the date and time in UTC at which the message is set to expire.
-    ///
-    /// # Value
-    ///
-    /// The message expiration time in UTC. This property is read-only.
-    ///
-    /// # Remarks
     ///
     /// The UTC instant at which the message is marked for removal and no longer available for
     /// retrieval from the entity due to expiration. Expiry is controlled by the
@@ -454,12 +330,6 @@ impl ServiceBusPeekedMessage {
     }
 
     /// Gets the state of the message.
-    ///
-    /// # Value
-    ///
-    /// The state of the message. </value>
-    ///
-    /// # Remarks
     ///
     /// The state of the message can be Active, Deferred, or Scheduled. Deferred messages have
     /// Deferred state, scheduled messages have Scheduled state, all other messages have Active

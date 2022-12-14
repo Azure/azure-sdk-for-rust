@@ -44,19 +44,10 @@ impl ServiceBusTokenCredential {
         source.into()
     }
 
-    /// <summary>
-    ///   Indicates whether the credential is based on an Service Bus
-    ///   shared access policy.
-    /// </summary>
-    ///
-    /// <value><c>true</c> if the credential should be considered a SAS credential; otherwise,
-    /// <c>false</c>.</value>
-    ///
+    /// Indicates whether the credential is based on an Service Bus
+    /// shared access policy.
     pub fn is_shared_access_credential(&self) -> bool {
-        match self {
-            ServiceBusTokenCredential::SharedAccessCredential(_) => true,
-            ServiceBusTokenCredential::Other(_) => false,
-        }
+        matches!(self, ServiceBusTokenCredential::SharedAccessCredential(_))
     }
 }
 

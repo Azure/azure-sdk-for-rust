@@ -35,16 +35,7 @@ macro_rules! ok_if_not_none_or_empty {
     };
 }
 
-/// <summary>
-///   Builds the audience of the connection for use in the signature.
-/// </summary>
-///
-/// <param name="transportType">The type of protocol and transport that will be used for communicating with the Service Bus service.</param>
-/// <param name="fullyQualifiedNamespace">The fully qualified Service Bus namespace.  This is likely to be similar to <c>{yournamespace}.servicebus.windows.net</c>.</param>
-/// <param name="entityName">The name of the specific entity to connect the client to.</param>
-///
-/// <returns>The value to use as the audience of the signature.</returns>
-///
+/// Builds the audience of the connection for use in the signature.
 pub(crate) fn build_connection_resource(
     transport_type: &ServiceBusTransportType,
     fully_qualified_namespace: Option<&str>,
