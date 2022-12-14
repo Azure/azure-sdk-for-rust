@@ -3,7 +3,7 @@ use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions, Serv
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
-    // The queue must be created with sessions enabled
+    // The queue must have session enabled
     let queue_name = std::env::var("SERVICE_BUS_SESSION_QUEUE")?;
     let session_id = "session1";
 
