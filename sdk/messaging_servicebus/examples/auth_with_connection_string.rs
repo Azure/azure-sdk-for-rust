@@ -4,11 +4,13 @@ use azure_messaging_servicebus::{
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    // The connection string should look like:
+    // "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=<your-policy>;SharedAccessKey=<your-key>"
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 
     let mut client =
-        ServiceBusClient::new(&connection_string, ServiceBusClientOptions::default()).await?;
+        ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
     // Create a sender for authentication purpose only
     let sender = client
