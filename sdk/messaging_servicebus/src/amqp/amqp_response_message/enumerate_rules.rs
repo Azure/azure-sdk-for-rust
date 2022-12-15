@@ -1,9 +1,10 @@
 use fe2o3_amqp_management::response::Response;
-use fe2o3_amqp_types::primitives::{Array, OrderedMap};
+use fe2o3_amqp_types::{primitives::{OrderedMap}};
 
-use crate::{administration::{RuleDescription}, amqp::management_constants};
+use crate::{administration::{RuleDescription, RuleProperties}, amqp::management_constants};
 
-type Rules = Array<OrderedMap<String, RuleDescription>>;
+// type RuleDescriptionValue = Described<Value>;
+type Rules = Vec<OrderedMap<String, RuleDescription>>;
 type EnumerateRulesResponseBody = OrderedMap<String, Rules>;
 
 pub(crate) struct EnumerateRulesResponse {
@@ -13,15 +14,15 @@ pub(crate) struct EnumerateRulesResponse {
 }
 
 impl EnumerateRulesResponse {
-    pub fn into_get_rules_response(mut self) -> Vec<RuleDescription> {
+    pub fn into_get_rules_response(mut self) -> Vec<RuleProperties> {
         let rules = self.body.remove(management_constants::properties::RULES)
-            .map(|array| array.into_inner())
             .unwrap_or(Vec::with_capacity(0));
 
         rules.into_iter()
             .filter_map(|mut entry| {
                 entry.remove(management_constants::properties::RULE_DESCRIPTION)
         })
+        .map(RuleProperties::from)
         .collect()
     }
 }
@@ -40,4 +41,14 @@ impl Response for EnumerateRulesResponse {
             body: message.body.ok_or(Self::Error::DecodeError(None))?,
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn decode_response() {
+
+    }
+
 }

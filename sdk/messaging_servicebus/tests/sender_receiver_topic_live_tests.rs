@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{ServiceBusMessage, ServiceBusReceiverOptions};
+use azure_messaging_servicebus::{ServiceBusMessage, ServiceBusReceiverOptions, administration::{RuleProperties, filters::CorrelationRuleFilter}};
 use serial_test::serial;
 
 mod common;
@@ -268,4 +268,34 @@ async fn send_and_receive_session_messages() {
             expected_for_session_id_2[i].as_bytes()
         );
     }
+}
+
+#[tokio::test]
+#[serial]
+async fn create_rule_manager() {
+    use azure_messaging_servicebus::prelude::*;
+
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
+    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION").unwrap();
+
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
+    let mut rule_manager = client.create_rule_manager(topic_name, subscription_name).await.unwrap();
+
+    let rules = rule_manager.get_rules().await.unwrap();
+    println!("rules: {:?}", rules);
+
+    for rule in rules {
+        let name = rule.name;
+        rule_manager.delete_rule(name).await.unwrap();
+    }
+
+    let correlation_filter = CorrelationRuleFilter::builder()
+        .subject("subject")
+        .build();
+    rule_manager.create_rule("brand-filter", correlation_filter, None).await.unwrap();
+
+    rule_manager.dispose().await.unwrap();
+    client.dispose().await.unwrap();
 }

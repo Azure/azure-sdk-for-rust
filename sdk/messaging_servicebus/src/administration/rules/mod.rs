@@ -1,9 +1,44 @@
 pub mod filters;
 
-use fe2o3_amqp_types::primitives::Array;
+use fe2o3_amqp_types::primitives::{Timestamp};
 use serde_amqp::{DeserializeComposite, SerializeComposite};
 
 use filters::RuleFilter;
+use time::OffsetDateTime;
+
+#[derive(Debug, Clone)]
+pub struct RuleProperties {
+    pub filters: RuleFilter,
+    pub actions: RuleAction,
+    pub name: String,
+    pub created_at: Option<OffsetDateTime>, // TODO: This is not indicated in the docs
+}
+
+impl RuleProperties {
+    pub const DEFAULT_RULE_NAME: &str = "$Default";
+}
+
+impl From<RuleDescription> for RuleProperties {
+    fn from(desc: RuleDescription) -> Self {
+        Self {
+            filters: desc.filters,
+            actions: desc.actions,
+            name: desc.name,
+            created_at: desc.created_at.map(|t| t.into()),
+        }
+    }
+}
+
+impl From<RuleProperties> for RuleDescription {
+    fn from(props: RuleProperties) -> Self {
+        Self {
+            filters: props.filters,
+            actions: props.actions,
+            name: props.name,
+            created_at: props.created_at.map(|t| t.into()),
+        }
+    }
+}
 
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
 #[amqp_contract(
@@ -12,10 +47,11 @@ use filters::RuleFilter;
     encoding = "list",
     rename_all = "kebab-case" // This should not matter because we're using the list encoding
 )]
-pub struct RuleDescription {
-    pub filters: Array<RuleFilter>,
-    pub actions: Array<RuleAction>,
+pub(crate) struct RuleDescription {
+    pub filters: RuleFilter,
+    pub actions: RuleAction,
     pub name: String,
+    pub created_at: Option<Timestamp>, // TODO: This is not indicated in the docs
 }
 
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]

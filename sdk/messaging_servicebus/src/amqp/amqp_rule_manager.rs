@@ -4,7 +4,7 @@ use fe2o3_amqp::link::DetachError;
 use std::time::Duration as StdDuration;
 
 use crate::{
-    administration::{RuleDescription}, core::TransportRuleManager, ServiceBusRetryPolicy,
+    administration::{RuleProperties}, core::TransportRuleManager, ServiceBusRetryPolicy,
     primitives::{error::RetryError, service_bus_retry_policy::run_operation}, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
 };
 
@@ -101,7 +101,7 @@ where
         &mut self,
         skip: i32,
         top: i32,
-    ) -> Result<Vec<RuleDescription>, Self::RequestResponseError> {
+    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError> {
         let mut request = EnumerateRulesRequest::new(skip, top, None);
         let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;

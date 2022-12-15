@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{administration::{RuleDescription}, amqp::amqp_request_message::add_rule::SupportedRuleFilter};
+use crate::{administration::{RuleProperties}, amqp::amqp_request_message::add_rule::SupportedRuleFilter};
 
 #[async_trait]
 pub trait TransportRuleManager {
@@ -66,7 +66,7 @@ pub trait TransportRuleManager {
         &mut self,
         skip: i32,
         top: i32,
-    ) -> Result<Vec<RuleDescription>, Self::RequestResponseError>;
+    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError>;
 
     /// Closes the connection to the transport rule manager instance.
     async fn close(

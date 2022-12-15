@@ -1,28 +1,7 @@
 use crate::{
     amqp::amqp_request_message::add_rule::SupportedRuleFilter, core::TransportRuleManager,
-    administration::RuleDescription,
+    administration::{RuleDescription, RuleProperties},
 };
-
-#[derive(Debug)]
-pub struct CreateRuleOptions {
-    pub name: String,
-    pub filter: SupportedRuleFilter,
-    pub sql_rule_action: Option<String>,
-}
-
-impl CreateRuleOptions {
-    pub fn new(
-        name: impl Into<String>,
-        filter: impl Into<SupportedRuleFilter>,
-        sql_rule_action: impl Into<Option<String>>,
-    ) -> Self {
-        Self {
-            name: name.into(),
-            filter: filter.into(),
-            sql_rule_action: sql_rule_action.into(),
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct ServiceBusRuleManager<T> {
@@ -51,16 +30,18 @@ where
 
     pub async fn create_rule(
         &mut self,
-        options: CreateRuleOptions,
+        name: impl Into<String>,
+        filter: impl Into<SupportedRuleFilter>,
+        sql_rule_action: impl Into<Option<String>>,
     ) -> Result<(), T::CreateRuleError> {
-        self.inner.create_rule(options.name, options.filter, options.sql_rule_action).await
+        self.inner.create_rule(name.into(), filter.into(), sql_rule_action.into()).await
     }
 
     pub async fn delete_rule(&mut self, rule_name: impl Into<String>) -> Result<(), T::RequestResponseError> {
         self.inner.delete_rule(rule_name.into()).await
     }
 
-    pub async fn get_rules(&mut self) -> Result<Vec<RuleDescription>, T::RequestResponseError> {
+    pub async fn get_rules(&mut self) -> Result<Vec<RuleProperties>, T::RequestResponseError> {
         let mut skip = 0;
         let mut buffer = Vec::new();
         loop {

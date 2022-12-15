@@ -15,23 +15,23 @@ use crate::amqp::{
 };
 
 use crate::administration::{
-    filters::SqlFilter, filters::CorrelationFilter,
+    filters::SqlRuleFilter, filters::CorrelationRuleFilter,
 };
 
 #[derive(Debug, Clone)]
 pub enum SupportedRuleFilter {
-    Sql(SqlFilter),
-    Correlation(CorrelationFilter),
+    Sql(SqlRuleFilter),
+    Correlation(CorrelationRuleFilter),
 }
 
-impl From<SqlFilter> for SupportedRuleFilter {
-    fn from(sql_filter: SqlFilter) -> Self {
+impl From<SqlRuleFilter> for SupportedRuleFilter {
+    fn from(sql_filter: SqlRuleFilter) -> Self {
         SupportedRuleFilter::Sql(sql_filter)
     }
 }
 
-impl From<CorrelationFilter> for SupportedRuleFilter {
-    fn from(correlation_filter: CorrelationFilter) -> Self {
+impl From<CorrelationRuleFilter> for SupportedRuleFilter {
+    fn from(correlation_filter: CorrelationRuleFilter) -> Self {
         SupportedRuleFilter::Correlation(correlation_filter)
     }
 }
