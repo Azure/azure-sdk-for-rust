@@ -173,6 +173,20 @@ where
 
         Ok(receiver)
     }
+
+    pub(crate) async fn create_transport_rule_manager(
+        &mut self,
+        susbcription_path: &str,
+        identifier: &str,
+        retry_options: ServiceBusRetryOptions,
+    ) -> Result<C::RuleManager, C::CreateRuleManagerError> {
+        let rule_manager = self
+            .inner_client
+            .create_rule_manager(susbcription_path, identifier, retry_options)
+            .await?;
+
+        Ok(rule_manager)
+    }
 }
 
 impl<C> ServiceBusConnection<C>
@@ -269,7 +283,7 @@ where
         })
     }
 
-    pub async fn dispose(&mut self) -> Result<(), C::DisposeError> {
+    pub async fn dispose(self) -> Result<(), C::DisposeError> {
         self.inner_client.dispose().await.map_err(Into::into)
     }
 }

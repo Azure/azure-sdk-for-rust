@@ -20,7 +20,8 @@ use super::{
     amqp_receiver::AmqpReceiver,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
-    error::{AmqpClientError, OpenReceiverError, OpenSenderError},
+    error::{AmqpClientError, OpenReceiverError, OpenSenderError, OpenRuleManagerError},
+    amqp_rule_manager::AmqpRuleManager,
 };
 
 // TODO: current implementation doesn't support running callback in the background to refresh the
@@ -53,8 +54,8 @@ where
     type Receiver = AmqpReceiver<RP>;
     type SessionReceiver = AmqpSessionReceiver<RP>;
 
-    // type CreateRuleManagerError = AmqpClientError;
-    // type RuleManager = AmqpRuleManager;
+    type CreateRuleManagerError = OpenRuleManagerError;
+    type RuleManager = AmqpRuleManager<RP>;
 
     async fn create_transport_client(
         host: &str,
@@ -228,38 +229,29 @@ where
         Ok(AmqpSessionReceiver { inner })
     }
 
-    // TODO:
-    // async fn create_rule_manager(
-    //     &mut self,
-    //     _subscription_path: String,
-    //     _retry_options: ServiceBusRetryOptions,
-    //     _identifier: String,
-    // ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
-    //     todo!()
-    // }
+    async fn create_rule_manager(
+        &mut self,
+        subscription_path: &str,
+        identifier: &str,
+        retry_options: ServiceBusRetryOptions,
+    ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
+        let retry_policy = RP::new(retry_options);
+        let management_client = self
+            .connection_scope
+            .open_management_link(subscription_path, identifier)
+            .await?;
+        Ok(AmqpRuleManager {
+            retry_policy,
+            management_client,
+        })
+    }
 
     async fn close(
         &mut self,
-        // cancellation_token: Option<CancellationToken>,
     ) -> Result<(), Self::DisposeError> {
         if self.is_closed() {
             Ok(())
         } else {
-            // match cancellation_token {
-            //     Some(token) => {
-            //         tokio::select! {
-            //             _cancel = token.cancelled() => Err(Self::DisposeError::Cancelled),
-            //             result = self.connection_scope.dispose() => {
-            //                 result.map_err(Into::into)
-            //             }
-            //         }
-            //     }
-            //     None => self
-            //         .connection_scope
-            //         .dispose()
-            //         .await
-            //         .map_err(Into::into),
-            // }
             self.connection_scope.dispose().await.map_err(Into::into)
         }
     }

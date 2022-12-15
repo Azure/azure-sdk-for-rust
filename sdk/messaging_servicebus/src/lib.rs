@@ -113,13 +113,13 @@ pub mod core;
 pub mod primitives;
 pub mod receiver;
 pub mod sender;
+pub mod administration;
 
 // pub mod prelude;
 // pub mod service_bus;
 // pub mod utils;
 
 // TODO: reserved for future use
-// pub mod administration;
 // pub mod processor;
 
 // =============================================================================

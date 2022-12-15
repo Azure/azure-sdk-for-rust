@@ -5,7 +5,6 @@ use serde_amqp::Value;
 use crate::amqp::{
     amqp_response_message::add_rule::AddRuleResponse,
     error::CorrelationFilterError,
-    filters::{CorrelationFilter, SqlFilter},
     management_constants::{
         operations::ADD_RULE_OPERATION,
         properties::{
@@ -15,20 +14,25 @@ use crate::amqp::{
     },
 };
 
-pub enum RuleFilter {
+use crate::administration::{
+    filters::SqlFilter, filters::CorrelationFilter,
+};
+
+#[derive(Debug, Clone)]
+pub(crate) enum SupportedRuleFilter {
     Sql(SqlFilter),
     Correlation(CorrelationFilter),
 }
 
-impl From<SqlFilter> for RuleFilter {
+impl From<SqlFilter> for SupportedRuleFilter {
     fn from(sql_filter: SqlFilter) -> Self {
-        RuleFilter::Sql(sql_filter)
+        SupportedRuleFilter::Sql(sql_filter)
     }
 }
 
-impl From<CorrelationFilter> for RuleFilter {
+impl From<CorrelationFilter> for SupportedRuleFilter {
     fn from(correlation_filter: CorrelationFilter) -> Self {
-        RuleFilter::Correlation(correlation_filter)
+        SupportedRuleFilter::Correlation(correlation_filter)
     }
 }
 
@@ -41,21 +45,21 @@ pub(crate) struct AddRuleRequest<'a> {
 }
 
 impl<'a> AddRuleRequest<'a> {
-    pub fn new(
+    pub(crate) fn new(
         rule_name: String,
-        filter: impl Into<RuleFilter>,
+        filter: impl Into<SupportedRuleFilter>,
         sql_rule_action: String,
         associated_link_name: Option<&'a str>,
     ) -> Result<Self, CorrelationFilterError> {
         let filter = filter.into();
         let mut rule_description: OrderedMap<Value, Value> = OrderedMap::new();
         match filter {
-            RuleFilter::Sql(sql_filter) => {
+            SupportedRuleFilter::Sql(sql_filter) => {
                 let mut sql_filter_map: OrderedMap<Value, Value> = OrderedMap::new();
                 sql_filter_map.insert(EXPRESSION.into(), sql_filter.expression.into());
                 rule_description.insert(SQL_RULE_FILTER.into(), sql_filter_map.into());
             }
-            RuleFilter::Correlation(correlation_filter) => {
+            SupportedRuleFilter::Correlation(correlation_filter) => {
                 let correlation_filter = OrderedMap::try_from(correlation_filter)?;
                 rule_description.insert(CORRELATION_RULE_FILTER.into(), correlation_filter.into());
             }

@@ -1,7 +1,7 @@
 use fe2o3_amqp_management::response::Response;
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
-use crate::amqp::rules::RuleDescription;
+use crate::administration::RuleDescription;
 
 type Rules = Array<OrderedMap<String, RuleDescription>>;
 type EnumerateRulesResponseBody = OrderedMap<String, Rules>;

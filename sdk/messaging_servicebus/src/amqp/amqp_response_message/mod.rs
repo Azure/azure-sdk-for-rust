@@ -18,9 +18,9 @@ pub(crate) mod set_session_state;
 pub(crate) mod update_disposition;
 
 // // TODO: unused mods
-// pub(crate) mod add_rule;
-// pub(crate) mod enumerate_rules;
-// pub(crate) mod remove_rule;
+pub(crate) mod add_rule;
+pub(crate) mod enumerate_rules;
+pub(crate) mod remove_rule;
 
 const HTTP_STATUS_CODE_OK: u16 = 200;
 const HTTP_STATUS_CODE_NO_CONTENT: u16 = 204;

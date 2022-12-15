@@ -229,6 +229,29 @@ impl From<OpenMgmtLinkError> for OpenReceiverError {
 }
 
 #[derive(Debug, thiserror::Error)]
+pub enum OpenRuleManagerError {
+    #[error("The connection scope is disposed")]
+    ScopeIsDisposed,
+
+    #[error(transparent)]
+    ManagementLinkAttach(#[from] AttachError),
+
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+}
+
+
+impl From<OpenMgmtLinkError> for OpenRuleManagerError {
+    fn from(err: OpenMgmtLinkError) -> Self {
+        match err {
+            OpenMgmtLinkError::ScopeIsDisposed => OpenRuleManagerError::ScopeIsDisposed,
+            OpenMgmtLinkError::Attach(err) => OpenRuleManagerError::ManagementLinkAttach(err),
+            OpenMgmtLinkError::CbsAuth(err) => OpenRuleManagerError::CbsAuth(err),
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
 pub enum AmqpSendError {
     #[error(transparent)]
     Send(#[from] fe2o3_amqp::link::SendError),

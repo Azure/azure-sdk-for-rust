@@ -294,7 +294,7 @@ where
 {
     /// Performs the task needed to clean up resources used by the [`ServiceBusClient`],
     /// including ensuring that the client itself has been closed.
-    pub async fn dispose(&mut self) -> Result<(), C::DisposeError> {
+    pub async fn dispose(mut self) -> Result<(), C::DisposeError> {
         self.connection.dispose().await?;
         Ok(())
     }

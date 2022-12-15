@@ -14,9 +14,9 @@ pub(crate) mod set_session_state;
 pub(crate) mod update_disposition;
 
 // // TODO: unused mods
-// pub(crate) mod add_rule;
-// pub(crate) mod enumerate_rules;
-// pub(crate) mod remove_rule;
+pub(crate) mod add_rule;
+pub(crate) mod enumerate_rules;
+pub(crate) mod remove_rule;
 
 fn encode_application_properties(
     server_timeout: Option<u32>,

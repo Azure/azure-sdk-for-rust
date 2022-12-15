@@ -3,7 +3,7 @@ use serde_amqp::{
     described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite, Value,
 };
 
-use super::{
+use crate::amqp::{
     error::CorrelationFilterError,
     management_constants::properties::{
         CONTENT_TYPE, CORRELATION_ID, CORRELATION_RULE_FILTER_PROPERTIES, LABEL, MESSAGE_ID,
@@ -11,46 +11,7 @@ use super::{
     },
 };
 
-// <type name="com.microsoft:session-filter" class="restricted" source="string" provides="filter">
-//     <descriptor name="com.microsoft:session-filter" code="0x00000137:000000C"/>
-// </type>
-#[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, SerializeComposite, DeserializeComposite,
-)]
-#[amqp_contract(
-    name = "com.microsoft:session-filter",
-    code = "0x0000_0013_7000_000c",
-    encoding = "basic"
-)]
-pub struct SessionFilter(pub String);
-
-impl From<SessionFilter> for Described<String> {
-    fn from(filter: SessionFilter) -> Self {
-        Self {
-            descriptor: Descriptor::Code(0x0000_0013_7000_000c), // FIXME: descriptor code doesn't work yet
-            // descriptor: Descriptor::Name(Symbol::from("com.microsoft:session-filter")),
-            value: filter.0,
-        }
-    }
-}
-
-impl From<SessionFilter> for Described<Value> {
-    fn from(filter: SessionFilter) -> Self {
-        let described: Described<String> = filter.into();
-        Self {
-            descriptor: described.descriptor,
-            value: described.value.into(),
-        }
-    }
-}
-
-impl From<SessionFilter> for Option<Described<Value>> {
-    fn from(filter: SessionFilter) -> Self {
-        Some(filter.into())
-    }
-}
-
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
+#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[amqp_contract(
     name = "com.microsoft:sql-filter:list",
     code = "0x0000_0013_7000_0006",
@@ -61,7 +22,7 @@ pub struct SqlFilter {
     pub expression: String,
 }
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
+#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[amqp_contract(
     name = "com.microsoft:correlation-filter:list",
     code = "0x0000_0013_7000_0009",
@@ -138,7 +99,7 @@ impl TryFrom<CorrelationFilter> for OrderedMap<Value, Value> {
     }
 }
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
+#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[amqp_contract(
     name = "com.microsoft:true-filter:list",
     code = "0x0000_0013_7000_0007",
@@ -146,7 +107,7 @@ impl TryFrom<CorrelationFilter> for OrderedMap<Value, Value> {
 )]
 pub struct TrueFilter {}
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite)]
+#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[amqp_contract(
     name = "com.microsoft:false-filter:list",
     code = "0x0000_0013_7000_0008",
@@ -154,7 +115,7 @@ pub struct TrueFilter {}
 )]
 pub struct FalseFilter {}
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RuleFilter {
     Sql(SqlFilter),
     Correlation(CorrelationFilter),

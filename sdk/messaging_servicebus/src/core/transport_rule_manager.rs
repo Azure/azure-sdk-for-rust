@@ -1,18 +1,19 @@
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
 
-use crate::administration::RuleProperties;
+use crate::{administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter};
 
 #[async_trait]
 pub trait TransportRuleManager {
-    type Error: Send;
+    type RequestResponseError: Send;
+    type CloseError: Send;
 
-    /// Indicates whether or not this rule manager has been closed.
-    ///
-    /// # Return
-    ///
-    /// `true` if the rule manager is closed; otherwise, `false`.
-    fn is_closed(&self) -> bool;
+    // /// Indicates whether or not this rule manager has been closed.
+    // ///
+    // /// # Return
+    // ///
+    // /// `true` if the rule manager is closed; otherwise, `false`.
+    // fn is_closed(&self) -> bool; // TODO: there is currently no good way to detect remote close without polling
 
     /// Adds a rule to the current subscription to filter the messages reaching from topic to the
     /// subscription.
@@ -28,9 +29,10 @@ pub trait TransportRuleManager {
     /// A future that represents the asynchronous add rule operation.
     async fn create_rule(
         &mut self,
-        properties: RuleProperties,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+        rule_name: String,
+        filter: impl Into<SupportedRuleFilter>,
+        sql_rule_action: String,
+    ) -> Result<(), Self::RequestResponseError>;
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
     ///
@@ -46,8 +48,7 @@ pub trait TransportRuleManager {
     async fn delete_rule(
         &mut self,
         rule_name: impl Into<String> + Send,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+    ) -> Result<(), Self::RequestResponseError>;
 
     /// Get all rules associated with the subscription.
     ///
@@ -65,17 +66,10 @@ pub trait TransportRuleManager {
         &mut self,
         skip: i32,
         top: i32,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<Vec<RuleProperties>, Self::Error>;
+    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError>;
 
     /// Closes the connection to the transport rule manager instance.
-    ///
-    /// # Parameters
-    ///
-    /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
-    ///   cancel the operation.
     async fn close(
-        &mut self,
-        cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error>;
+        mut self,
+    ) -> Result<(), Self::CloseError>;
 }

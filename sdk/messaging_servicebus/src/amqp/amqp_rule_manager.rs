@@ -1,22 +1,34 @@
 use async_trait::async_trait;
 use tokio_util::sync::CancellationToken;
+use fe2o3_amqp_management::client::MgmtClient;
+use fe2o3_amqp::link::DetachError;
+use std::time::Duration as StdDuration;
 
-use crate::{administration::RuleProperties, core::TransportRuleManager};
+use crate::{
+    administration::RuleProperties, core::TransportRuleManager, ServiceBusRetryPolicy,
+    primitives::error::RetryError
+};
 
-pub struct AmqpRuleManager {}
+use super::{error::AmqpRequestResponseError, amqp_request_message::add_rule::AddRuleRequest, amqp_response_message::add_rule::AddRuleResponse};
+
+#[derive(Debug)]
+pub struct AmqpRuleManager<RP> {
+    pub(crate) management_client: MgmtClient,
+    pub(crate) retry_policy: RP,
+}
 
 #[async_trait]
-impl TransportRuleManager for AmqpRuleManager {
-    type Error = ();
+impl<RP> TransportRuleManager for AmqpRuleManager<RP>
+where
+    RP: ServiceBusRetryPolicy + Send,
+{
+    type RequestResponseError = RetryError<AmqpRequestResponseError>;
+    type CloseError = DetachError;
 
-    /// Indicates whether or not this rule manager has been closed.
-    ///
-    /// # Return
-    ///
-    /// `true` if the rule manager is closed; otherwise, `false`.
-    fn is_closed(&self) -> bool {
-        todo!()
-    }
+    // /// Indicates whether or not this rule manager has been closed.
+    // fn is_closed(&self) -> bool {
+    //     todo!()
+    // }
 
     /// Adds a rule to the current subscription to filter the messages reaching from topic to the
     /// subscription.
@@ -33,8 +45,7 @@ impl TransportRuleManager for AmqpRuleManager {
     async fn create_rule(
         &mut self,
         _properties: RuleProperties,
-        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::RequestResponseError> {
         todo!()
     }
 
@@ -52,8 +63,7 @@ impl TransportRuleManager for AmqpRuleManager {
     async fn delete_rule(
         &mut self,
         _rule_name: impl Into<String> + Send,
-        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error> {
+    ) -> Result<(), Self::RequestResponseError> {
         todo!()
     }
 
@@ -73,21 +83,26 @@ impl TransportRuleManager for AmqpRuleManager {
         &mut self,
         _skip: i32,
         _top: i32,
-        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<Vec<RuleProperties>, Self::Error> {
+    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError> {
         todo!()
     }
 
     /// Closes the connection to the transport rule manager instance.
-    ///
-    /// # Parameters
-    ///
-    /// * `cancellation_token` - An optional [CancellationToken] instance to signal the request to
-    ///   cancel the operation.
     async fn close(
-        &mut self,
-        _cancellation_token: impl Into<Option<CancellationToken>> + Send,
-    ) -> Result<(), Self::Error> {
-        todo!()
+        mut self,
+    ) -> Result<(), Self::CloseError> {
+        self.management_client.close().await
     }
+}
+
+async fn create_rule<'a>(
+    mgmt_client: &mut MgmtClient,
+    request: &mut AddRuleRequest<'a>,
+    try_timeout: &StdDuration,
+) -> Result<AddRuleResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
 }

@@ -39,7 +39,7 @@ use super::{
         AmqpConnectionScopeError, CbsAuthError, DisposeError, OpenMgmtLinkError, OpenReceiverError,
         OpenSenderError,
     },
-    filters::SessionFilter,
+    session_filter::SessionFilter,
     LINK_IDENTIFIER,
 };
 
