@@ -1,14 +1,28 @@
 use async_trait::async_trait;
-use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp::link::DetachError;
+use fe2o3_amqp_management::client::MgmtClient;
 use std::time::Duration as StdDuration;
 
 use crate::{
-    administration::{RuleProperties}, core::TransportRuleManager, ServiceBusRetryPolicy,
-    primitives::{error::RetryError, service_bus_retry_policy::run_operation}, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+    administration::RuleProperties,
+    amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+    core::TransportRuleManager,
+    primitives::{error::RetryError, service_bus_retry_policy::run_operation},
+    ServiceBusRetryPolicy,
 };
 
-use super::{error::{AmqpRequestResponseError, CreateRuleError}, amqp_request_message::{add_rule::AddRuleRequest, remove_rule::RemoveRuleRequest, enumerate_rules::EnumerateRulesRequest}, amqp_response_message::{add_rule::AddRuleResponse, remove_rule::RemoveRuleResponse, enumerate_rules::EnumerateRulesResponse}, amqp_management_link::AmqpManagementLink};
+use super::{
+    amqp_management_link::AmqpManagementLink,
+    amqp_request_message::{
+        add_rule::AddRuleRequest, enumerate_rules::EnumerateRulesRequest,
+        remove_rule::RemoveRuleRequest,
+    },
+    amqp_response_message::{
+        add_rule::AddRuleResponse, enumerate_rules::EnumerateRulesResponse,
+        remove_rule::RemoveRuleResponse,
+    },
+    error::{AmqpRequestResponseError, CreateRuleError},
+};
 
 #[derive(Debug)]
 pub struct AmqpRuleManager<RP> {
@@ -66,10 +80,7 @@ where
     }
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
-    async fn delete_rule(
-        &mut self,
-        rule_name: String,
-    ) -> Result<(), Self::RequestResponseError> {
+    async fn delete_rule(&mut self, rule_name: String) -> Result<(), Self::RequestResponseError> {
         let mut request = RemoveRuleRequest::new(rule_name, None);
         let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;
@@ -118,9 +129,7 @@ where
     }
 
     /// Closes the connection to the transport rule manager instance.
-    async fn close(
-        mut self,
-    ) -> Result<(), Self::CloseError> {
+    async fn close(mut self) -> Result<(), Self::CloseError> {
         self.management_link.close().await
     }
 }

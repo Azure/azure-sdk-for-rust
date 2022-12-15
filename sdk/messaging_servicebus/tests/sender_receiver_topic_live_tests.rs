@@ -1,4 +1,6 @@
-use azure_messaging_servicebus::{ServiceBusMessage, ServiceBusReceiverOptions, administration::{RuleProperties, filters::CorrelationRuleFilter}};
+use azure_messaging_servicebus::{
+    administration::filters::CorrelationRuleFilter, ServiceBusMessage, ServiceBusReceiverOptions,
+};
 use serial_test::serial;
 
 mod common;
@@ -23,7 +25,10 @@ async fn drain_subscription() {
         sub_queue: SubQueue::DeadLetter,
         ..Default::default()
     };
-    let mut receiver = client.create_receiver_for_subscription(topic_name, subscription_name, options).await.unwrap();
+    let mut receiver = client
+        .create_receiver_for_subscription(topic_name, subscription_name, options)
+        .await
+        .unwrap();
     let received = receiver.receive_messages(max_messages).await.unwrap();
     for message in &received {
         println!("Received message: {}", message);
@@ -280,8 +285,13 @@ async fn create_rule_manager() {
     let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
     let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION").unwrap();
 
-    let mut client = ServiceBusClient::new(connection_string, Default::default()).await.unwrap();
-    let mut rule_manager = client.create_rule_manager(topic_name, subscription_name).await.unwrap();
+    let mut client = ServiceBusClient::new(connection_string, Default::default())
+        .await
+        .unwrap();
+    let mut rule_manager = client
+        .create_rule_manager(topic_name, subscription_name)
+        .await
+        .unwrap();
 
     let rules = rule_manager.get_rules().await.unwrap();
     println!("rules: {:?}", rules);
@@ -291,10 +301,11 @@ async fn create_rule_manager() {
         rule_manager.delete_rule(name).await.unwrap();
     }
 
-    let correlation_filter = CorrelationRuleFilter::builder()
-        .subject("subject")
-        .build();
-    rule_manager.create_rule("brand-filter", correlation_filter, None).await.unwrap();
+    let correlation_filter = CorrelationRuleFilter::builder().subject("subject").build();
+    rule_manager
+        .create_rule("brand-filter", correlation_filter, None)
+        .await
+        .unwrap();
 
     rule_manager.dispose().await.unwrap();
     client.dispose().await.unwrap();

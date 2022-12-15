@@ -1,6 +1,6 @@
 pub mod filters;
 
-use fe2o3_amqp_types::primitives::{Timestamp};
+use fe2o3_amqp_types::primitives::Timestamp;
 use serde_amqp::{DeserializeComposite, SerializeComposite};
 
 use filters::RuleFilter;
@@ -54,7 +54,9 @@ pub(crate) struct RuleDescription {
     pub created_at: Option<Timestamp>, // TODO: This is not indicated in the docs
 }
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[amqp_contract(
     name = "com.microsoft:empty-rule-action:list",
     code = "0x0000_0137_0000_0005",
@@ -63,7 +65,9 @@ pub(crate) struct RuleDescription {
 )]
 pub struct EmptyRuleAction {}
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[amqp_contract(
     name = "com.microsoft:sql-rule-action:list",
     code = "0x0000_0137_0000_0006",

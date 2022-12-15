@@ -18,10 +18,10 @@ use crate::{
 use super::{
     amqp_connection_scope::{AmqpConnectionScope, ReceiverType},
     amqp_receiver::AmqpReceiver,
+    amqp_rule_manager::AmqpRuleManager,
     amqp_sender::AmqpSender,
     amqp_session_receiver::AmqpSessionReceiver,
-    error::{AmqpClientError, OpenReceiverError, OpenSenderError, OpenRuleManagerError},
-    amqp_rule_manager::AmqpRuleManager,
+    error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError},
 };
 
 // TODO: current implementation doesn't support running callback in the background to refresh the
@@ -246,9 +246,7 @@ where
         })
     }
 
-    async fn close(
-        &mut self,
-    ) -> Result<(), Self::DisposeError> {
+    async fn close(&mut self) -> Result<(), Self::DisposeError> {
         if self.is_closed() {
             Ok(())
         } else {

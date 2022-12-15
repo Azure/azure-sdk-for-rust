@@ -1,4 +1,6 @@
-use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions, ServiceBusReceiverOptions, SubQueue};
+use azure_messaging_servicebus::{
+    ServiceBusClient, ServiceBusClientOptions, ServiceBusReceiverOptions, SubQueue,
+};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -27,8 +29,12 @@ async fn main() -> Result<(), anyhow::Error> {
         sub_queue: SubQueue::DeadLetter,
         ..Default::default()
     };
-    let mut dlq_receiver = client.create_receiver_for_queue(queue_name, options).await?;
-    let message = dlq_receiver.receive_message_with_max_wait_time(None).await?;
+    let mut dlq_receiver = client
+        .create_receiver_for_queue(queue_name, options)
+        .await?;
+    let message = dlq_receiver
+        .receive_message_with_max_wait_time(None)
+        .await?;
     if let Some(message) = message {
         // Complete the message
         dlq_receiver.complete_message(&message).await?;

@@ -106,15 +106,15 @@ pub(crate) mod constants;
 pub(crate) mod diagnostics;
 pub(crate) mod entity_name_formatter;
 
+pub mod administration;
 pub mod amqp;
 pub mod authorization;
 pub mod client;
 pub mod core;
 pub mod primitives;
 pub mod receiver;
-pub mod sender;
-pub mod administration;
 pub mod rule_manager;
+pub mod sender;
 
 // pub mod prelude;
 // pub mod service_bus;
@@ -146,12 +146,12 @@ pub mod prelude {
         service_bus_session_receiver::ServiceBusSessionReceiver,
         service_bus_session_receiver::ServiceBusSessionReceiverOptions,
     };
+    pub use crate::rule_manager::ServiceBusRuleManager;
     pub use crate::sender::{
         service_bus_message_batch::CreateMessageBatchOptions,
         service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
         service_bus_sender::ServiceBusSenderOptions,
     };
-    pub use crate::rule_manager::ServiceBusRuleManager;
 }
 
 // TODO: Re-export again to allow user to selectively import components

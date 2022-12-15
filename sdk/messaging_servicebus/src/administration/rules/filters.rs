@@ -1,7 +1,5 @@
 use fe2o3_amqp_types::primitives::OrderedMap;
-use serde_amqp::{
-    DeserializeComposite, SerializeComposite, Value,
-};
+use serde_amqp::{DeserializeComposite, SerializeComposite, Value};
 use std::marker::PhantomData;
 
 use crate::amqp::{
@@ -12,7 +10,9 @@ use crate::amqp::{
     },
 };
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[amqp_contract(
     name = "com.microsoft:sql-filter:list",
     code = "0x0000_0013_7000_0006",
@@ -23,7 +23,9 @@ pub struct SqlRuleFilter {
     pub expression: String,
 }
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[amqp_contract(
     name = "com.microsoft:correlation-filter:list",
     code = "0x0000_0013_7000_0009",
@@ -64,7 +66,7 @@ pub struct CorrelationRuleFilterBuilder<T> {
     pub content_type: Option<String>,
     pub properties: Option<OrderedMap<String, Value>>,
 
-    marker: PhantomData<T>
+    marker: PhantomData<T>,
 }
 
 impl<T> CorrelationRuleFilterBuilder<T> {
@@ -79,16 +81,22 @@ impl<T> CorrelationRuleFilterBuilder<T> {
             reply_to_session_id: self.reply_to_session_id,
             content_type: self.content_type,
             properties: self.properties,
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
 
-    pub fn correlation_id(mut self, correlation_id: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn correlation_id(
+        mut self,
+        correlation_id: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.correlation_id = Some(correlation_id.into());
         self.map_to_initialized()
     }
 
-    pub fn message_id(mut self, message_id: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn message_id(
+        mut self,
+        message_id: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.message_id = Some(message_id.into());
         self.map_to_initialized()
     }
@@ -98,32 +106,50 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
-    pub fn reply_to(mut self, reply_to: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn reply_to(
+        mut self,
+        reply_to: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.reply_to = Some(reply_to.into());
         self.map_to_initialized()
     }
 
-    pub fn subject(mut self, subject: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn subject(
+        mut self,
+        subject: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.subject = Some(subject.into());
         self.map_to_initialized()
     }
 
-    pub fn session_id(mut self, session_id: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn session_id(
+        mut self,
+        session_id: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.session_id = Some(session_id.into());
         self.map_to_initialized()
     }
 
-    pub fn reply_to_session_id(mut self, reply_to_session_id: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn reply_to_session_id(
+        mut self,
+        reply_to_session_id: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.reply_to_session_id = Some(reply_to_session_id.into());
         self.map_to_initialized()
     }
 
-    pub fn content_type(mut self, content_type: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn content_type(
+        mut self,
+        content_type: impl Into<String>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.content_type = Some(content_type.into());
         self.map_to_initialized()
     }
 
-    pub fn properties(mut self, properties: OrderedMap<String, Value>) -> CorrelationRuleFilterBuilder<Initialized> {
+    pub fn properties(
+        mut self,
+        properties: OrderedMap<String, Value>,
+    ) -> CorrelationRuleFilterBuilder<Initialized> {
         self.properties = Some(properties);
         self.map_to_initialized()
     }
@@ -203,7 +229,9 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
     }
 }
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[amqp_contract(
     name = "com.microsoft:true-filter:list",
     code = "0x0000_0013_7000_0007",
@@ -211,7 +239,9 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
 )]
 pub struct TrueRuleFilter {}
 
-#[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[amqp_contract(
     name = "com.microsoft:false-filter:list",
     code = "0x0000_0013_7000_0008",

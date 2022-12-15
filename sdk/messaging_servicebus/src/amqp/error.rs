@@ -240,7 +240,6 @@ pub enum OpenRuleManagerError {
     CbsAuth(#[from] CbsAuthError),
 }
 
-
 impl From<OpenMgmtLinkError> for OpenRuleManagerError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {

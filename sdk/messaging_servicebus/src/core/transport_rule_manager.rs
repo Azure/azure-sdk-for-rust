@@ -1,6 +1,8 @@
 use async_trait::async_trait;
 
-use crate::{administration::{RuleProperties}, amqp::amqp_request_message::add_rule::SupportedRuleFilter};
+use crate::{
+    administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+};
 
 #[async_trait]
 pub trait TransportRuleManager {
@@ -45,10 +47,7 @@ pub trait TransportRuleManager {
     /// # Returns
     ///
     /// A future that represents the asynchronous remove rule operation.
-    async fn delete_rule(
-        &mut self,
-        rule_name: String,
-    ) -> Result<(), Self::RequestResponseError>;
+    async fn delete_rule(&mut self, rule_name: String) -> Result<(), Self::RequestResponseError>;
 
     /// Get all rules associated with the subscription.
     ///
@@ -69,7 +68,5 @@ pub trait TransportRuleManager {
     ) -> Result<Vec<RuleProperties>, Self::RequestResponseError>;
 
     /// Closes the connection to the transport rule manager instance.
-    async fn close(
-        mut self,
-    ) -> Result<(), Self::CloseError>;
+    async fn close(mut self) -> Result<(), Self::CloseError>;
 }

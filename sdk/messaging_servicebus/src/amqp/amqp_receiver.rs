@@ -28,6 +28,7 @@ use crate::{
 use super::{
     amqp_cbs_link,
     amqp_client_constants::DEAD_LETTER_NAME,
+    amqp_management_link::AmqpManagementLink,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
     amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
     amqp_request_message::{
@@ -39,7 +40,7 @@ use super::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
-    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_management_link::AmqpManagementLink,
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
 #[derive(Debug)]

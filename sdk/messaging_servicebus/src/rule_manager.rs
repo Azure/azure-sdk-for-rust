@@ -1,6 +1,6 @@
 use crate::{
-    amqp::amqp_request_message::add_rule::SupportedRuleFilter, core::TransportRuleManager,
-    administration::{RuleDescription, RuleProperties},
+    administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+    core::TransportRuleManager,
 };
 
 #[derive(Debug)]
@@ -34,10 +34,15 @@ where
         filter: impl Into<SupportedRuleFilter>,
         sql_rule_action: impl Into<Option<String>>,
     ) -> Result<(), T::CreateRuleError> {
-        self.inner.create_rule(name.into(), filter.into(), sql_rule_action.into()).await
+        self.inner
+            .create_rule(name.into(), filter.into(), sql_rule_action.into())
+            .await
     }
 
-    pub async fn delete_rule(&mut self, rule_name: impl Into<String>) -> Result<(), T::RequestResponseError> {
+    pub async fn delete_rule(
+        &mut self,
+        rule_name: impl Into<String>,
+    ) -> Result<(), T::RequestResponseError> {
         self.inner.delete_rule(rule_name.into()).await
     }
 
@@ -45,7 +50,10 @@ where
         let mut skip = 0;
         let mut buffer = Vec::new();
         loop {
-            let rule_descriptions = self.inner.get_rules(skip, Self::MAX_RULES_PER_REQUEST).await?;
+            let rule_descriptions = self
+                .inner
+                .get_rules(skip, Self::MAX_RULES_PER_REQUEST)
+                .await?;
             let len = rule_descriptions.len();
             skip += len as i32;
 

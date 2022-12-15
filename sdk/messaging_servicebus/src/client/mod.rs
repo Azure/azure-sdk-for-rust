@@ -23,8 +23,8 @@ use crate::{
     receiver::service_bus_session_receiver::{
         ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
     },
-    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRetryPolicy, ServiceBusSender,
-    ServiceBusSenderOptions, ServiceBusRuleManager,
+    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRetryPolicy, ServiceBusRuleManager,
+    ServiceBusSender, ServiceBusSenderOptions,
 };
 
 use self::error::AcceptNextSessionError;

@@ -13,8 +13,8 @@ use crate::{
 };
 
 use super::{
-    transport_receiver::TransportReceiver, transport_sender::TransportSender,
-    TransportSessionReceiver, TransportRuleManager,
+    transport_receiver::TransportReceiver, transport_sender::TransportSender, TransportRuleManager,
+    TransportSessionReceiver,
 };
 
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated

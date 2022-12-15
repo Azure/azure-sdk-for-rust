@@ -1,5 +1,5 @@
-use fe2o3_amqp_management::MgmtClient;
 use fe2o3_amqp::link::DetachError;
+use fe2o3_amqp_management::MgmtClient;
 use tokio::sync::mpsc;
 
 use super::amqp_cbs_link;
