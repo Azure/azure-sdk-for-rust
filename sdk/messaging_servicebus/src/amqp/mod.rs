@@ -17,6 +17,7 @@ pub(crate) mod management_constants;
 pub(crate) mod scheduled_message;
 pub(crate) mod token_type;
 pub(crate) mod session_filter;
+pub(crate) mod amqp_management_link;
 
 pub mod amqp_client;
 pub mod amqp_receiver;

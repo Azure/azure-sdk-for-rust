@@ -18,6 +18,15 @@ async fn client_can_connect_using_connection_string_over_amqp_tcp() {
     let mut client = ServiceBusClient::new(&connection_string, option)
         .await
         .unwrap();
+
+    // Create a sender for authentication purpose only.
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+    let sender = client
+        .create_sender(queue_name, Default::default())
+        .await
+        .unwrap();
+    sender.dispose().await.unwrap();
+
     client.dispose().await.unwrap();
 }
 
@@ -32,6 +41,14 @@ async fn client_can_connect_using_connection_string_over_amqp_websockets() {
     let mut client = ServiceBusClient::new(&connection_string, option)
         .await
         .unwrap();
+
+    // Create a sender for authentication purpose only.
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+    let sender = client
+        .create_sender(queue_name, Default::default())
+        .await
+        .unwrap();
+    sender.dispose().await.unwrap();
 
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
     client.dispose().await.unwrap();

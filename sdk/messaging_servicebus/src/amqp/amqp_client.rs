@@ -137,7 +137,7 @@ where
             .connection_scope
             .open_sender_link(entity_path, identifier)
             .await?;
-        let management_client = self
+        let management_link = self
             .connection_scope
             .open_management_link(entity_path, identifier)
             .await?;
@@ -146,7 +146,7 @@ where
             identifier: link_identifier,
             retry_policy,
             sender,
-            management_client,
+            management_link,
             cbs_command_sender,
         })
     }
@@ -170,7 +170,7 @@ where
                 prefetch_count,
             )
             .await?;
-        let management_client = self
+        let management_link = self
             .connection_scope
             .open_management_link(&entity_path, &identifier)
             .await?;
@@ -182,7 +182,7 @@ where
             receive_mode,
             _is_processor: is_processor,
             prefetch_count,
-            management_client,
+            management_link,
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
             cbs_command_sender,
@@ -209,7 +209,7 @@ where
                 prefetch_count,
             )
             .await?;
-        let management_client = self
+        let management_link = self
             .connection_scope
             .open_management_link(&entity_path, &identifier)
             .await?;
@@ -221,7 +221,7 @@ where
             receive_mode,
             _is_processor: is_processor,
             prefetch_count,
-            management_client,
+            management_link,
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
             cbs_command_sender,
@@ -236,13 +236,13 @@ where
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
         let retry_policy = RP::new(retry_options);
-        let management_client = self
+        let management_link = self
             .connection_scope
             .open_management_link(subscription_path, identifier)
             .await?;
         Ok(AmqpRuleManager {
             retry_policy,
-            management_client,
+            management_link,
         })
     }
 

@@ -18,6 +18,7 @@ use crate::{
 };
 
 use super::amqp_cbs_link;
+use super::amqp_management_link::AmqpManagementLink;
 use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
 use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequest;
@@ -35,7 +36,7 @@ pub struct AmqpSender<RP> {
     pub(crate) identifier: u32,
     pub(crate) retry_policy: RP,
     pub(crate) sender: fe2o3_amqp::Sender,
-    pub(crate) management_client: MgmtClient,
+    pub(crate) management_link: AmqpManagementLink,
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
 }
 
@@ -143,7 +144,7 @@ where
                 let mut try_timeout = policy.calculate_try_timeout(0);
                 let mut request = ScheduleMessageRequest::new(messages, Some(self.sender.name()));
 
-                let management_client = &mut self.management_client;
+                let management_client = self.management_link.client_mut();
                 run_operation! {
                     policy,
                     RP,
@@ -170,7 +171,7 @@ where
 
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
-        let management_client = &mut self.management_client;
+        let management_client = self.management_link.client_mut();
 
         run_operation!(
             policy,
@@ -191,7 +192,7 @@ where
             ))
             .await;
         self.sender.close().await?;
-        self.management_client.close().await?;
+        self.management_link.close().await?;
         Ok(())
     }
 }

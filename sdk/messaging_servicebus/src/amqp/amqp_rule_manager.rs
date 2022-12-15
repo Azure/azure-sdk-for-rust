@@ -8,11 +8,11 @@ use crate::{
     primitives::{error::RetryError, service_bus_retry_policy::run_operation}, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
 };
 
-use super::{error::{AmqpRequestResponseError, CreateRuleError}, amqp_request_message::{add_rule::AddRuleRequest, remove_rule::RemoveRuleRequest, enumerate_rules::EnumerateRulesRequest}, amqp_response_message::{add_rule::AddRuleResponse, remove_rule::RemoveRuleResponse, enumerate_rules::EnumerateRulesResponse}};
+use super::{error::{AmqpRequestResponseError, CreateRuleError}, amqp_request_message::{add_rule::AddRuleRequest, remove_rule::RemoveRuleRequest, enumerate_rules::EnumerateRulesRequest}, amqp_response_message::{add_rule::AddRuleResponse, remove_rule::RemoveRuleResponse, enumerate_rules::EnumerateRulesResponse}, amqp_management_link::AmqpManagementLink};
 
 #[derive(Debug)]
 pub struct AmqpRuleManager<RP> {
-    pub(crate) management_client: MgmtClient,
+    pub(crate) management_link: AmqpManagementLink,
     pub(crate) retry_policy: RP,
 }
 
@@ -45,13 +45,13 @@ where
     async fn create_rule(
         &mut self,
         rule_name: String,
-        filter: impl Into<SupportedRuleFilter> + Send,
+        filter: SupportedRuleFilter,
         sql_rule_action: Option<String>,
     ) -> Result<(), Self::CreateRuleError> {
         let mut request = AddRuleRequest::new(rule_name, filter, sql_rule_action, None)
             .map_err(CreateRuleError::from)
             .map_err(RetryError::Operation)?;
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -71,7 +71,7 @@ where
         rule_name: String,
     ) -> Result<(), Self::RequestResponseError> {
         let mut request = RemoveRuleRequest::new(rule_name, None);
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -103,7 +103,7 @@ where
         top: i32,
     ) -> Result<Vec<RuleDescription>, Self::RequestResponseError> {
         let mut request = EnumerateRulesRequest::new(skip, top, None);
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -121,7 +121,7 @@ where
     async fn close(
         mut self,
     ) -> Result<(), Self::CloseError> {
-        self.management_client.close().await
+        self.management_link.close().await
     }
 }
 

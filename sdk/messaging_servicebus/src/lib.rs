@@ -114,6 +114,7 @@ pub mod primitives;
 pub mod receiver;
 pub mod sender;
 pub mod administration;
+pub mod rule_manager;
 
 // pub mod prelude;
 // pub mod service_bus;
@@ -150,6 +151,7 @@ pub mod prelude {
         service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
         service_bus_sender::ServiceBusSenderOptions,
     };
+    pub use crate::rule_manager::ServiceBusRuleManager;
 }
 
 // TODO: Re-export again to allow user to selectively import components

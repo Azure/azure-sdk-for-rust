@@ -47,11 +47,10 @@ pub(crate) struct AddRuleRequest<'a> {
 impl<'a> AddRuleRequest<'a> {
     pub(crate) fn new(
         rule_name: String,
-        filter: impl Into<SupportedRuleFilter>,
+        filter: SupportedRuleFilter,
         sql_rule_action: Option<String>,
         associated_link_name: Option<&'a str>,
     ) -> Result<Self, CorrelationFilterError> {
-        let filter = filter.into();
         let mut rule_description: OrderedMap<Value, Value> = OrderedMap::new();
         match filter {
             SupportedRuleFilter::Sql(sql_filter) => {

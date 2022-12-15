@@ -30,7 +30,7 @@ pub trait TransportRuleManager {
     async fn create_rule(
         &mut self,
         rule_name: String,
-        filter: impl Into<SupportedRuleFilter> + Send,
+        filter: SupportedRuleFilter,
         sql_rule_action: Option<String>,
     ) -> Result<(), Self::CreateRuleError>;
 

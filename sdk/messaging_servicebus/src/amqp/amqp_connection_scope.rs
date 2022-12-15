@@ -33,6 +33,7 @@ use super::{
     amqp_client_constants::{self, MANAGEMENT_ADDRESS},
     amqp_connection::AmqpConnection,
     amqp_constants,
+    amqp_management_link::AmqpManagementLink,
     amqp_session::AmqpSession,
     cbs_token_provider::CbsTokenProvider,
     error::{
@@ -226,8 +227,8 @@ impl AmqpConnectionScope {
     pub(crate) async fn open_management_link(
         &mut self,
         entity_path: &str,
-        _identifier: &str,
-    ) -> Result<MgmtClient, OpenMgmtLinkError> {
+        _identifier: &str, // TODO: logging using the identifier
+    ) -> Result<AmqpManagementLink, OpenMgmtLinkError> {
         if self.is_disposed {
             return Err(OpenMgmtLinkError::ScopeIsDisposed);
         }
@@ -260,6 +261,11 @@ impl AmqpConnectionScope {
             .management_node_address(entity_path)
             .attach(&mut self.session.handle)
             .await?;
+        let mgmt_link = AmqpManagementLink::new(
+            link_identifier,
+            mgmt_link,
+            self.cbs_link.command_sender().clone(),
+        );
         Ok(mgmt_link)
     }
 

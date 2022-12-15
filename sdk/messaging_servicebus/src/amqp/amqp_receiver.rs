@@ -39,7 +39,7 @@ use super::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
-    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_management_link::AmqpManagementLink,
 };
 
 #[derive(Debug)]
@@ -52,7 +52,7 @@ pub struct AmqpReceiver<RP> {
     pub(crate) receive_mode: ServiceBusReceiveMode,
     pub(crate) _is_processor: bool, // TODO: implement processor
 
-    pub(crate) management_client: MgmtClient,
+    pub(crate) management_link: AmqpManagementLink,
     pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,
     pub(crate) last_peeked_sequence_number: i64,
 
@@ -156,7 +156,7 @@ where
             .await;
         self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
         self.receiver.close().await?;
-        self.management_client.close().await?;
+        self.management_link.close().await?;
         Ok(())
     }
 
@@ -172,7 +172,7 @@ where
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
                 if self.request_response_locked_messages.contains(&lock_token) {
-                    let mgmt_client = &mut self.management_client;
+                    let mgmt_client = self.management_link.client_mut();
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Completed,
                         Array(vec![lock_token.clone()]), // TODO: reduce clone
@@ -222,7 +222,7 @@ where
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
                 if self.request_response_locked_messages.contains(&lock_token) {
-                    let mgmt_client = &mut self.management_client;
+                    let mgmt_client = self.management_link.client_mut();
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Defered,
                         Array(vec![lock_token.clone()]), // TODO: reduce clone
@@ -268,7 +268,7 @@ where
             Some(self.receiver.name()),
         );
 
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -304,7 +304,7 @@ where
             Some(self.receiver.name()),
         );
 
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &mut self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -341,7 +341,7 @@ where
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
                 if self.request_response_locked_messages.contains(&lock_token) {
-                    let mgmt_client = &mut self.management_client;
+                    let mgmt_client = self.management_link.client_mut();
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Abandoned,
                         Array(vec![lock_token.clone()]), // TODO: reduce clone
@@ -390,7 +390,7 @@ where
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
                 if self.request_response_locked_messages.contains(lock_token) {
-                    let mgmt_client = &mut self.management_client;
+                    let mgmt_client = self.management_link.client_mut();
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Suspended,
                         Array(vec![lock_token.clone()]),
@@ -451,7 +451,7 @@ where
             Some(self.receiver.name()),
         );
 
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -484,7 +484,7 @@ where
         lock_tokens: Vec<Uuid>,
     ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
         let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name()));
-        let mgmt_client = &mut self.management_client;
+        let mgmt_client = self.management_link.client_mut();
         let policy = &self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 

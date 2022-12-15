@@ -206,7 +206,7 @@ where
     ) -> Result<OffsetDateTime, Self::RequestResponseError> {
         let mut request =
             RenewSessionLockRequest::new(session_id, Some(self.inner.receiver.name()));
-        let mgmt_client = &mut self.inner.management_client;
+        let mgmt_client = self.inner.management_link.client_mut();
         let policy = &self.inner.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -226,7 +226,7 @@ where
         session_id: &str,
     ) -> Result<Vec<u8>, Self::RequestResponseError> {
         let mut request = GetSessionStateRequest::new(session_id, Some(self.inner.receiver.name()));
-        let mgmt_client = &mut self.inner.management_client;
+        let mgmt_client = self.inner.management_link.client_mut();
         let policy = &self.inner.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
@@ -251,7 +251,7 @@ where
             Binary::from(session_state),
             Some(self.inner.receiver.name()),
         );
-        let mgmt_client = &mut self.inner.management_client;
+        let mgmt_client = self.inner.management_link.client_mut();
         let policy = &self.inner.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 

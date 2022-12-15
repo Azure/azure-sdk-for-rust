@@ -24,7 +24,7 @@ use crate::{
         ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
     },
     ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRetryPolicy, ServiceBusSender,
-    ServiceBusSenderOptions,
+    ServiceBusSenderOptions, ServiceBusRuleManager,
 };
 
 use self::error::AcceptNextSessionError;
@@ -541,6 +541,39 @@ where
             entity_path,
             identifier,
             session_id,
+        })
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                             Create RuleManager                             */
+/* -------------------------------------------------------------------------- */
+
+impl<C> ServiceBusClient<C>
+where
+    C: TransportClient + Send + Sync + 'static,
+{
+    pub async fn create_rule_manager(
+        &mut self,
+        topic_name: impl AsRef<str>,
+        subscription_name: impl AsRef<str>,
+    ) -> Result<ServiceBusRuleManager<C::RuleManager>, C::CreateRuleManagerError> {
+        let subscription_path = entity_name_formatter::format_subscription_path(
+            topic_name.as_ref(),
+            subscription_name.as_ref(),
+        );
+        let identifier = diagnostics::utilities::generate_identifier(&subscription_path);
+        let retry_options = self.connection.retry_options().clone();
+
+        let inner = self
+            .connection
+            .create_transport_rule_manager(&subscription_path, &identifier, retry_options)
+            .await?;
+
+        Ok(ServiceBusRuleManager {
+            identifier,
+            subscription_path,
+            inner,
         })
     }
 }
