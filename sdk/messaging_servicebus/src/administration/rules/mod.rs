@@ -1,5 +1,3 @@
-mod rule_properties;
-pub use rule_properties::*;
 pub mod filters;
 
 use fe2o3_amqp_types::primitives::Array;
@@ -15,9 +13,9 @@ use filters::RuleFilter;
     rename_all = "kebab-case" // This should not matter because we're using the list encoding
 )]
 pub struct RuleDescription {
-    filters: Array<RuleFilter>,
-    actions: Array<RuleAction>,
-    name: String,
+    pub filters: Array<RuleFilter>,
+    pub actions: Array<RuleAction>,
+    pub name: String,
 }
 
 #[derive(Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]

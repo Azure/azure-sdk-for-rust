@@ -18,10 +18,10 @@ pub(crate) struct EnumerateRulesRequest<'a> {
 }
 
 impl<'a> EnumerateRulesRequest<'a> {
-    pub fn new(top: i32, skip: i32, associated_link_name: Option<&'a str>) -> Self {
+    pub fn new(skip: i32, top: i32, associated_link_name: Option<&'a str>) -> Self {
         let mut body = OrderedMap::new();
-        body.insert(TOP.to_string(), top);
         body.insert(SKIP.to_string(), skip);
+        body.insert(TOP.to_string(), top);
 
         Self {
             server_timeout: None,

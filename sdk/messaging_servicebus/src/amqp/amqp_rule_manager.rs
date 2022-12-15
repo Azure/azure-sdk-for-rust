@@ -1,15 +1,14 @@
 use async_trait::async_trait;
-use tokio_util::sync::CancellationToken;
 use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp::link::DetachError;
 use std::time::Duration as StdDuration;
 
 use crate::{
-    administration::RuleProperties, core::TransportRuleManager, ServiceBusRetryPolicy,
-    primitives::error::RetryError
+    administration::{RuleDescription}, core::TransportRuleManager, ServiceBusRetryPolicy,
+    primitives::{error::RetryError, service_bus_retry_policy::run_operation}, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
 };
 
-use super::{error::AmqpRequestResponseError, amqp_request_message::add_rule::AddRuleRequest, amqp_response_message::add_rule::AddRuleResponse};
+use super::{error::{AmqpRequestResponseError, CreateRuleError}, amqp_request_message::{add_rule::AddRuleRequest, remove_rule::RemoveRuleRequest, enumerate_rules::EnumerateRulesRequest}, amqp_response_message::{add_rule::AddRuleResponse, remove_rule::RemoveRuleResponse, enumerate_rules::EnumerateRulesResponse}};
 
 #[derive(Debug)]
 pub struct AmqpRuleManager<RP> {
@@ -22,6 +21,7 @@ impl<RP> TransportRuleManager for AmqpRuleManager<RP>
 where
     RP: ServiceBusRetryPolicy + Send,
 {
+    type CreateRuleError = RetryError<CreateRuleError>;
     type RequestResponseError = RetryError<AmqpRequestResponseError>;
     type CloseError = DetachError;
 
@@ -44,27 +44,45 @@ where
     /// A future that represents the asynchronous add rule operation.
     async fn create_rule(
         &mut self,
-        _properties: RuleProperties,
-    ) -> Result<(), Self::RequestResponseError> {
-        todo!()
+        rule_name: String,
+        filter: impl Into<SupportedRuleFilter> + Send,
+        sql_rule_action: Option<String>,
+    ) -> Result<(), Self::CreateRuleError> {
+        let mut request = AddRuleRequest::new(rule_name, filter, sql_rule_action, None)
+            .map_err(CreateRuleError::from)
+            .map_err(RetryError::Operation)?;
+        let mgmt_client = &mut self.management_client;
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        let _response = run_operation!(
+            policy,
+            RP,
+            CreateRuleError,
+            try_timeout,
+            create_rule(mgmt_client, &mut request, &try_timeout).await
+        )?;
+        Ok(())
     }
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
-    ///
-    /// # Parameters
-    ///
-    /// * `rule_name` - Name of the rule
-    /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
-    ///   request to cancel the operation.
-    ///
-    /// # Returns
-    ///
-    /// A future that represents the asynchronous remove rule operation.
     async fn delete_rule(
         &mut self,
-        _rule_name: impl Into<String> + Send,
+        rule_name: String,
     ) -> Result<(), Self::RequestResponseError> {
-        todo!()
+        let mut request = RemoveRuleRequest::new(rule_name, None);
+        let mgmt_client = &mut self.management_client;
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        let _response = run_operation!(
+            policy,
+            RP,
+            AmqpRequestResponseError,
+            try_timeout,
+            delete_rule(mgmt_client, &mut request, &try_timeout).await
+        )?;
+        Ok(())
     }
 
     /// Get all rules associated with the subscription.
@@ -81,10 +99,22 @@ where
     /// Returns a list of rules description
     async fn get_rules(
         &mut self,
-        _skip: i32,
-        _top: i32,
-    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError> {
-        todo!()
+        skip: i32,
+        top: i32,
+    ) -> Result<Vec<RuleDescription>, Self::RequestResponseError> {
+        let mut request = EnumerateRulesRequest::new(skip, top, None);
+        let mgmt_client = &mut self.management_client;
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        let response = run_operation!(
+            policy,
+            RP,
+            AmqpRequestResponseError,
+            try_timeout,
+            get_rules(mgmt_client, &mut request, &try_timeout).await
+        )?;
+        Ok(response.into_get_rules_response())
     }
 
     /// Closes the connection to the transport rule manager instance.
@@ -100,6 +130,30 @@ async fn create_rule<'a>(
     request: &mut AddRuleRequest<'a>,
     try_timeout: &StdDuration,
 ) -> Result<AddRuleResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
+}
+
+async fn delete_rule<'a>(
+    mgmt_client: &mut MgmtClient,
+    request: &mut RemoveRuleRequest<'a>,
+    try_timeout: &StdDuration,
+) -> Result<RemoveRuleResponse, AmqpRequestResponseError> {
+    let server_timeout = try_timeout.as_millis() as u32;
+    request.set_server_timeout(Some(server_timeout));
+
+    let response = mgmt_client.call(request).await?;
+    Ok(response)
+}
+
+async fn get_rules<'a>(
+    mgmt_client: &mut MgmtClient,
+    request: &mut EnumerateRulesRequest<'a>,
+    try_timeout: &StdDuration,
+) -> Result<EnumerateRulesResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
     request.set_server_timeout(Some(server_timeout));
 

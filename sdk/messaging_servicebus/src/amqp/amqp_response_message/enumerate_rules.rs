@@ -1,7 +1,7 @@
 use fe2o3_amqp_management::response::Response;
 use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
-use crate::administration::RuleDescription;
+use crate::{administration::{RuleDescription}, amqp::management_constants};
 
 type Rules = Array<OrderedMap<String, RuleDescription>>;
 type EnumerateRulesResponseBody = OrderedMap<String, Rules>;
@@ -10,6 +10,20 @@ pub(crate) struct EnumerateRulesResponse {
     // TODO: The documentation is confusing. It says "an array of described objects" while
     // the dotnet sdk only decodes one described object. This needs to be investigated.
     pub body: EnumerateRulesResponseBody,
+}
+
+impl EnumerateRulesResponse {
+    pub fn into_get_rules_response(mut self) -> Vec<RuleDescription> {
+        let rules = self.body.remove(management_constants::properties::RULES)
+            .map(|array| array.into_inner())
+            .unwrap_or(Vec::with_capacity(0));
+
+        rules.into_iter()
+            .filter_map(|mut entry| {
+                entry.remove(management_constants::properties::RULE_DESCRIPTION)
+        })
+        .collect()
+    }
 }
 
 impl Response for EnumerateRulesResponse {

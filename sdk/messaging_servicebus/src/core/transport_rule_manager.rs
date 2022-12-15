@@ -1,10 +1,10 @@
 use async_trait::async_trait;
-use tokio_util::sync::CancellationToken;
 
-use crate::{administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter};
+use crate::{administration::{RuleDescription}, amqp::amqp_request_message::add_rule::SupportedRuleFilter};
 
 #[async_trait]
 pub trait TransportRuleManager {
+    type CreateRuleError: Send;
     type RequestResponseError: Send;
     type CloseError: Send;
 
@@ -30,9 +30,9 @@ pub trait TransportRuleManager {
     async fn create_rule(
         &mut self,
         rule_name: String,
-        filter: impl Into<SupportedRuleFilter>,
-        sql_rule_action: String,
-    ) -> Result<(), Self::RequestResponseError>;
+        filter: impl Into<SupportedRuleFilter> + Send,
+        sql_rule_action: Option<String>,
+    ) -> Result<(), Self::CreateRuleError>;
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
     ///
@@ -47,7 +47,7 @@ pub trait TransportRuleManager {
     /// A future that represents the asynchronous remove rule operation.
     async fn delete_rule(
         &mut self,
-        rule_name: impl Into<String> + Send,
+        rule_name: String,
     ) -> Result<(), Self::RequestResponseError>;
 
     /// Get all rules associated with the subscription.
@@ -66,7 +66,7 @@ pub trait TransportRuleManager {
         &mut self,
         skip: i32,
         top: i32,
-    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError>;
+    ) -> Result<Vec<RuleDescription>, Self::RequestResponseError>;
 
     /// Closes the connection to the transport rule manager instance.
     async fn close(

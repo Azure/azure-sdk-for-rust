@@ -76,7 +76,7 @@ pub mod properties {
     pub const RULES: &str = "rules";
     pub const RULE_NAME: &str = "rule-name";
     pub const RULE_DESCRIPTION: &str = "rule-description";
-    pub const RULE_CREATED_AT: &str = "rule-created-at";
+    // pub const RULE_CREATED_AT: &str = "rule-created-at";
     pub const SQL_RULE_FILTER: &str = "sql-filter";
     pub const SQL_RULE_ACTION: &str = "sql-rule-action";
     pub const CORRELATION_RULE_FILTER: &str = "correlation-filter";

@@ -1,6 +1,6 @@
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::{
-    described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite, Value,
+    DeserializeComposite, SerializeComposite, Value,
 };
 
 use crate::amqp::{

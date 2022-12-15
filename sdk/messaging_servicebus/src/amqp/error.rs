@@ -397,3 +397,44 @@ impl std::fmt::Display for AmqpCbsEventLoopStopped {
 }
 
 impl std::error::Error for AmqpCbsEventLoopStopped {}
+
+#[derive(Debug, thiserror::Error)]
+pub enum CreateRuleError {
+    /// The correlation filter must have at least one entry
+    #[error("The correlation filter must have at least one entry")]
+    EmptyCorrelationFilter,
+
+    /// Error while performing request/response operation
+    #[error(transparent)]
+    RequestResponse(#[from] ManagementError),
+
+    /// Operation timed out
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl From<CorrelationFilterError> for CreateRuleError {
+    fn from(err: CorrelationFilterError) -> Self {
+        match err {
+            CorrelationFilterError::EmptyFilter => Self::EmptyCorrelationFilter,
+        }
+    }
+}
+
+impl From<AmqpRequestResponseError> for CreateRuleError {
+    fn from(err: AmqpRequestResponseError) -> Self {
+        match err {
+            AmqpRequestResponseError::RequestResponse(err) => Self::RequestResponse(err),
+            AmqpRequestResponseError::Elapsed(err) => Self::Elapsed(err),
+        }
+    }
+}
+
+impl ServiceBusRetryPolicyError for CreateRuleError {
+    fn is_scope_disposed(&self) -> bool {
+        match self {
+            Self::RequestResponse(err) => err.is_scope_disposed(),
+            _ => false,
+        }
+    }
+}

@@ -19,7 +19,7 @@ use crate::administration::{
 };
 
 #[derive(Debug, Clone)]
-pub(crate) enum SupportedRuleFilter {
+pub enum SupportedRuleFilter {
     Sql(SqlFilter),
     Correlation(CorrelationFilter),
 }
@@ -48,7 +48,7 @@ impl<'a> AddRuleRequest<'a> {
     pub(crate) fn new(
         rule_name: String,
         filter: impl Into<SupportedRuleFilter>,
-        sql_rule_action: String,
+        sql_rule_action: Option<String>,
         associated_link_name: Option<&'a str>,
     ) -> Result<Self, CorrelationFilterError> {
         let filter = filter.into();
@@ -65,7 +65,11 @@ impl<'a> AddRuleRequest<'a> {
             }
         }
 
-        rule_description.insert(SQL_RULE_ACTION.into(), sql_rule_action.into());
+        let mut rule_action_map = OrderedMap::new();
+        if let Some(sql_rule_action) = sql_rule_action {
+            rule_action_map.insert(EXPRESSION.into(), sql_rule_action.into());
+        }
+        rule_description.insert(SQL_RULE_ACTION.into(), Value::Map(rule_action_map));
 
         let mut body = OrderedMap::new();
         body.insert(RULE_NAME.into(), rule_name.into());
