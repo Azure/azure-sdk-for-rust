@@ -68,7 +68,7 @@ impl Spec {
             let ref_files = openapi::get_reference_file_paths(file_path, &doc);
             docs.insert(Utf8PathBuf::from(file_path), doc);
             for ref_file in ref_files {
-                let child_path = io::join(file_path, &ref_file)?;
+                let child_path = io::join(file_path, ref_file)?;
                 Self::read_file(docs, &child_path)?;
             }
         }
@@ -189,7 +189,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match reference.file {
             None => doc_file.to_owned(),
-            Some(file) => io::join(doc_file, &file)?,
+            Some(file) => io::join(doc_file, file)?,
         };
         let name = reference.name.ok_or_else(|| Error::message(ErrorKind::Parse, "no name in ref"))?;
         let ref_key = RefKey {
@@ -223,7 +223,7 @@ impl Spec {
         let mut resolved = IndexMap::new();
         let doc_file = doc_file.into();
         for (name, schema) in ref_or_schemas {
-            resolved.insert(name.clone(), self.resolve_schema(&doc_file, schema)?);
+            resolved.insert(name.clone(), self.resolve_schema(doc_file.clone(), schema)?);
         }
         Ok(resolved)
     }
