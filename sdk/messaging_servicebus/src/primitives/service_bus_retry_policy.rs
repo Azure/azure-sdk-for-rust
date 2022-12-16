@@ -13,6 +13,9 @@ pub(crate) static SERVER_BUSY_BASE_SLEEP_TIME: StdDuration = StdDuration::from_s
 
 /// Trait for operation errors that can be retried.
 pub trait ServiceBusRetryPolicyError: std::error::Error + Send + Sync + 'static {
+    /// Returns true if the error is recoverable by recovering the connection scope.
+    fn is_recoverable(&self) -> bool;
+
     /// Returns true if the connection scope is disposed.
     fn is_scope_disposed(&self) -> bool;
 }
