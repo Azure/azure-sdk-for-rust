@@ -30,6 +30,9 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error(transparent)]
     ReceiverAttach(#[from] ReceiverAttachError),
+
+    #[error("The connection scope is disposed")]
+    Disposed,
 }
 
 #[derive(Debug, thiserror::Error)]
