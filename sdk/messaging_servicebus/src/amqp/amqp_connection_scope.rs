@@ -23,7 +23,7 @@ use tokio::{sync::mpsc, time::timeout};
 
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
-    core::TransportConnectionScope,
+    core::{TransportConnectionScope, RecoverableTransport},
     primitives::service_bus_transport_type::ServiceBusTransportType,
     ServiceBusReceiveMode,
 };
@@ -344,17 +344,6 @@ impl AmqpConnectionScope {
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
-        // let filter_set = match session_id {
-        //     Some(session_id) => {
-        //         let mut filter_set = FilterSet::with_capacity(1);
-        //         filter_set.insert(
-        //             Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
-        //             SessionFilter(session_id).into(),
-        //         );
-        //         filter_set
-        //     }
-        //     None => FilterSet::with_capacity(0),
-        // };
         let filter_set = match receiver_type {
             ReceiverType::NonSession => FilterSet::with_capacity(0),
             ReceiverType::Session { session_id } => {
@@ -470,6 +459,15 @@ impl TransportConnectionScope for AmqpConnectionScope {
             (Ok(_), Err(e)) => Err(DisposeError::ConnectionCloseError(e)),
             (Err(e), _) => Err(DisposeError::SessionCloseError(e)),
         }
+    }
+}
+
+#[async_trait]
+impl RecoverableTransport for AmqpConnectionScope {
+    type RecoverError = AmqpConnectionScopeError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        todo!()
     }
 }
 
