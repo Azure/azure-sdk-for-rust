@@ -58,6 +58,10 @@ pub enum Error {
     /// Error disposing the connection
     #[error(transparent)]
     Dispose(#[from] DisposeError),
+
+    /// Client is disposed
+    #[error("Client is disposed")]
+    ClientDisposed,
 }
 
 impl From<AmqpClientError> for Error {
@@ -71,6 +75,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpClientError::Dispose(err) => Self::Dispose(err),
             AmqpClientError::ReceiverAttach(err) => Self::ReceiverAttach(err),
+            AmqpClientError::ClientDisposed => Self::ClientDisposed,
         }
     }
 }

@@ -62,13 +62,6 @@ pub(crate) struct AmqpCbsLinkHandle {
 }
 
 impl AmqpCbsLinkHandle {
-    pub(crate) fn is_stopped(&self) -> bool {
-        // The mpsc::Sender is used instead of the CancellationToken
-        self.command_sender.is_closed()
-    }
-}
-
-impl AmqpCbsLinkHandle {
     pub(crate) fn command_sender(&self) -> &mpsc::Sender<Command> {
         &self.command_sender
     }
