@@ -1526,7 +1526,7 @@ pub struct KeyCreateParameters {
     #[doc = "The key size in bits. For example: 2048, 3072, or 4096 for RSA."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key_size: Option<i32>,
-    #[doc = "The public exponent for a RSA key."]
+    #[doc = "The public exponent for a RSA key. This applies only to keys created in a Managed HSM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub public_exponent: Option<i32>,
     #[serde(

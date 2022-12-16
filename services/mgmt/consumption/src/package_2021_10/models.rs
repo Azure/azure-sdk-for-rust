@@ -1796,7 +1796,7 @@ impl ModernReservationRecommendation {
     }
 }
 #[doc = "The properties of the reservation recommendation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernReservationRecommendationProperties {
     #[doc = "Resource Location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1841,8 +1841,7 @@ pub struct ModernReservationRecommendationProperties {
     #[serde(rename = "firstUsageDate", default, with = "azure_core::date::rfc3339::option")]
     pub first_usage_date: Option<time::OffsetDateTime>,
     #[doc = "Shared or single recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
+    pub scope: String,
     #[doc = "List of sku properties"]
     #[serde(
         rename = "skuProperties",
@@ -1854,13 +1853,28 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "This is the ARM Sku name."]
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
-    #[doc = "Subscription ID"]
-    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
-    pub subscription_id: Option<String>,
 }
 impl ModernReservationRecommendationProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(scope: String) -> Self {
+        Self {
+            location: None,
+            look_back_period: None,
+            instance_flexibility_ratio: None,
+            instance_flexibility_group: None,
+            normalized_size: None,
+            recommended_quantity_normalized: None,
+            meter_id: None,
+            term: None,
+            cost_with_no_reserved_instances: None,
+            recommended_quantity: None,
+            resource_type: None,
+            total_cost_with_reserved_instances: None,
+            net_savings: None,
+            first_usage_date: None,
+            scope,
+            sku_properties: Vec::new(),
+            sku_name: None,
+        }
     }
 }
 #[doc = "Modern Reservation transaction resource."]
@@ -1971,6 +1985,36 @@ impl azure_core::Continuable for ModernReservationTransactionsListResult {
 impl ModernReservationTransactionsListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The properties of the modern reservation recommendation for shared scope."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ModernSharedScopeReservationRecommendationProperties {
+    #[serde(flatten)]
+    pub modern_reservation_recommendation_properties: ModernReservationRecommendationProperties,
+}
+impl ModernSharedScopeReservationRecommendationProperties {
+    pub fn new(modern_reservation_recommendation_properties: ModernReservationRecommendationProperties) -> Self {
+        Self {
+            modern_reservation_recommendation_properties,
+        }
+    }
+}
+#[doc = "The properties of the modern reservation recommendation for single scope."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ModernSingleScopeReservationRecommendationProperties {
+    #[serde(flatten)]
+    pub modern_reservation_recommendation_properties: ModernReservationRecommendationProperties,
+    #[doc = "Subscription ID associated with single scoped recommendation."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+}
+impl ModernSingleScopeReservationRecommendationProperties {
+    pub fn new(modern_reservation_recommendation_properties: ModernReservationRecommendationProperties) -> Self {
+        Self {
+            modern_reservation_recommendation_properties,
+            subscription_id: None,
+        }
     }
 }
 #[doc = "Modern usage detail."]

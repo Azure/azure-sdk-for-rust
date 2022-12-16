@@ -3895,7 +3895,7 @@ pub mod services {
                 data_source: None,
             }
         }
-        #[doc = "Checks if the tenant, to which a service is registered, is whitelisted to use a feature."]
+        #[doc = "Checks if the tenant, to which a service is registered, is listed as allowed to use a feature."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `service_name`: The name of the service."]

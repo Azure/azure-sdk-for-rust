@@ -105,6 +105,14 @@ pub struct CentralServerVmDetails {
     pub type_: Option<CentralServerVirtualMachineType>,
     #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_id: Option<String>,
+    #[doc = "Storage details of all the Storage Accounts attached to the ASCS Virtual Machine. For e.g. NFS on AFS Shared Storage."]
+    #[serde(
+        rename = "storageDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub storage_details: Vec<StorageInformation>,
 }
 impl CentralServerVmDetails {
     pub fn new() -> Self {
@@ -148,6 +156,27 @@ impl Serialize for ConfigurationType {
             Self::Discovery => serializer.serialize_unit_variant("ConfigurationType", 1u32, "Discovery"),
             Self::DeploymentWithOsConfig => serializer.serialize_unit_variant("ConfigurationType", 2u32, "DeploymentWithOSConfig"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Gets or sets the file share configuration where the transport directory fileshare is created and mounted as a part of the create infra flow."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateAndMountFileShareConfiguration {
+    #[serde(flatten)]
+    pub file_share_configuration: FileShareConfiguration,
+    #[doc = "The name of file share resource group. The app rg is used in case of missing input."]
+    #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
+    pub resource_group: Option<String>,
+    #[doc = "The name of file share storage account name . A custom name is used in case of missing input."]
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_name: Option<String>,
+}
+impl CreateAndMountFileShareConfiguration {
+    pub fn new(file_share_configuration: FileShareConfiguration) -> Self {
+        Self {
+            file_share_configuration,
+            resource_group: None,
+            storage_account_name: None,
         }
     }
 }
@@ -215,6 +244,9 @@ pub struct DatabaseConfiguration {
     #[doc = "The number of database VMs."]
     #[serde(rename = "instanceCount")]
     pub instance_count: i64,
+    #[doc = "The Disk Configuration Details."]
+    #[serde(rename = "diskConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub disk_configuration: Option<DiskConfiguration>,
 }
 impl DatabaseConfiguration {
     pub fn new(subnet_id: String, virtual_machine_configuration: VirtualMachineConfiguration, instance_count: i64) -> Self {
@@ -223,6 +255,7 @@ impl DatabaseConfiguration {
             subnet_id,
             virtual_machine_configuration,
             instance_count,
+            disk_configuration: None,
         }
     }
 }
@@ -269,6 +302,14 @@ pub struct DatabaseVmDetails {
     #[doc = "Defines the SAP Instance status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
+    #[doc = "Storage details of all the Storage Accounts attached to the Database Virtual Machine. For e.g. NFS on AFS Shared Storage."]
+    #[serde(
+        rename = "storageDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub storage_details: Vec<StorageInformation>,
 }
 impl DatabaseVmDetails {
     pub fn new() -> Self {
@@ -400,6 +441,102 @@ impl DiscoveryConfiguration {
             central_server_vm_id: None,
             app_location: None,
         }
+    }
+}
+#[doc = "The Disk Configuration Details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DiskConfiguration {
+    #[doc = "The disk configuration for the db volume. For HANA, Required volumes are: ['hana/data', 'hana/log', hana/shared', 'usr/sap', 'os'], Optional volume : ['backup']."]
+    #[serde(rename = "diskVolumeConfigurations", default, skip_serializing_if = "Option::is_none")]
+    pub disk_volume_configurations: Option<serde_json::Value>,
+}
+impl DiskConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The disk sku."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DiskSku {
+    #[doc = "Defines the disk sku name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<DiskSkuName>,
+}
+impl DiskSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Defines the disk sku name."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DiskSkuName")]
+pub enum DiskSkuName {
+    #[serde(rename = "Standard_LRS")]
+    StandardLrs,
+    #[serde(rename = "Premium_LRS")]
+    PremiumLrs,
+    #[serde(rename = "StandardSSD_LRS")]
+    StandardSsdLrs,
+    #[serde(rename = "UltraSSD_LRS")]
+    UltraSsdLrs,
+    #[serde(rename = "Premium_ZRS")]
+    PremiumZrs,
+    #[serde(rename = "StandardSSD_ZRS")]
+    StandardSsdZrs,
+    #[serde(rename = "PremiumV2_LRS")]
+    PremiumV2Lrs,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DiskSkuName {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DiskSkuName {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DiskSkuName {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::StandardLrs => serializer.serialize_unit_variant("DiskSkuName", 0u32, "Standard_LRS"),
+            Self::PremiumLrs => serializer.serialize_unit_variant("DiskSkuName", 1u32, "Premium_LRS"),
+            Self::StandardSsdLrs => serializer.serialize_unit_variant("DiskSkuName", 2u32, "StandardSSD_LRS"),
+            Self::UltraSsdLrs => serializer.serialize_unit_variant("DiskSkuName", 3u32, "UltraSSD_LRS"),
+            Self::PremiumZrs => serializer.serialize_unit_variant("DiskSkuName", 4u32, "Premium_ZRS"),
+            Self::StandardSsdZrs => serializer.serialize_unit_variant("DiskSkuName", 5u32, "StandardSSD_ZRS"),
+            Self::PremiumV2Lrs => serializer.serialize_unit_variant("DiskSkuName", 6u32, "PremiumV2_LRS"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The disk configuration required for the selected volume."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DiskVolumeConfiguration {
+    #[doc = "The total number of disks required for the concerned volume."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[doc = "The disk size in GB."]
+    #[serde(rename = "sizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub size_gb: Option<i64>,
+    #[doc = "The disk sku."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<DiskSku>,
+}
+impl DiskVolumeConfiguration {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Defines the SAP Enqueue Replication Server (ERS) properties."]
@@ -675,6 +812,57 @@ impl ExternalInstallationSoftwareConfiguration {
         }
     }
 }
+#[doc = "File Share configuration details, populated with information on storage configuration mounted on the VIS. The createAndMount option is selected in case of missing input."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileShareConfiguration {
+    #[doc = "The type of file share config."]
+    #[serde(rename = "configurationType")]
+    pub configuration_type: FileShareConfigurationType,
+}
+impl FileShareConfiguration {
+    pub fn new(configuration_type: FileShareConfigurationType) -> Self {
+        Self { configuration_type }
+    }
+}
+#[doc = "The type of file share config."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "FileShareConfigurationType")]
+pub enum FileShareConfigurationType {
+    Skip,
+    CreateAndMount,
+    Mount,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for FileShareConfigurationType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for FileShareConfigurationType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for FileShareConfigurationType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Skip => serializer.serialize_unit_variant("FileShareConfigurationType", 0u32, "Skip"),
+            Self::CreateAndMount => serializer.serialize_unit_variant("FileShareConfigurationType", 1u32, "CreateAndMount"),
+            Self::Mount => serializer.serialize_unit_variant("FileShareConfigurationType", 2u32, "Mount"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Defines the SAP Gateway Server properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayServerProperties {
@@ -925,6 +1113,17 @@ impl LinuxConfiguration {
         }
     }
 }
+#[doc = "The Load Balancer details such as Load Balancer ID."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LoadBalancerDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl LoadBalancerDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Managed resource group configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedRgConfiguration {
@@ -1173,6 +1372,26 @@ pub mod monitor_properties {
                 Self::RouteAll => serializer.serialize_unit_variant("RoutingPreference", 1u32, "RouteAll"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "Gets or sets the file share configuration where the transport directory fileshare already exists, and user wishes to mount the fileshare as a part of the create infra flow."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MountFileShareConfiguration {
+    #[serde(flatten)]
+    pub file_share_configuration: FileShareConfiguration,
+    #[doc = "The fileshare resource ID"]
+    pub id: String,
+    #[doc = "The private endpoint resource ID"]
+    #[serde(rename = "privateEndpointId")]
+    pub private_endpoint_id: String,
+}
+impl MountFileShareConfiguration {
+    pub fn new(file_share_configuration: FileShareConfiguration, id: String, private_endpoint_id: String) -> Self {
+        Self {
+            file_share_configuration,
+            id,
+            private_endpoint_id,
         }
     }
 }
@@ -2053,6 +2272,14 @@ pub struct SapApplicationServerProperties {
     #[doc = "Defines the SAP Instance status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
+    #[doc = "Storage details of all the Storage Accounts attached to the App Virtual Machine. For e.g. NFS on AFS Shared Storage."]
+    #[serde(
+        rename = "storageDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub storage_details: Vec<StorageInformation>,
     #[doc = "Defines the health of SAP Instances."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
@@ -2191,6 +2418,9 @@ pub struct SapCentralServerProperties {
     #[doc = "The central services instance Kernel Patch level."]
     #[serde(rename = "kernelPatch", default, skip_serializing_if = "Option::is_none")]
     pub kernel_patch: Option<String>,
+    #[doc = "The Load Balancer details such as Load Balancer ID."]
+    #[serde(rename = "loadBalancerDetails", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_details: Option<LoadBalancerDetails>,
     #[doc = "The list of virtual machines corresponding to the Central Services instance."]
     #[serde(
         rename = "vmDetails",
@@ -2286,6 +2516,9 @@ pub struct SapDatabaseProperties {
     #[doc = "Database IP Address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "The Load Balancer details such as Load Balancer ID."]
+    #[serde(rename = "loadBalancerDetails", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_details: Option<LoadBalancerDetails>,
     #[doc = "The list of virtual machines corresponding to the Database resource."]
     #[serde(
         rename = "vmDetails",
@@ -3034,6 +3267,9 @@ pub struct SingleServerConfiguration {
     #[doc = "Defines the virtual machine configuration."]
     #[serde(rename = "virtualMachineConfiguration")]
     pub virtual_machine_configuration: VirtualMachineConfiguration,
+    #[doc = "The Disk Configuration Details."]
+    #[serde(rename = "dbDiskConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub db_disk_configuration: Option<DiskConfiguration>,
 }
 impl SingleServerConfiguration {
     pub fn new(
@@ -3047,6 +3283,7 @@ impl SingleServerConfiguration {
             database_type: None,
             subnet_id,
             virtual_machine_configuration,
+            db_disk_configuration: None,
         }
     }
 }
@@ -3065,6 +3302,17 @@ impl SingleServerRecommendationResult {
             sap_sizing_recommendation_result,
             vm_sku: None,
         }
+    }
+}
+#[doc = "Gets or sets the file share configuration for scenarios where transport directory fileshare is not created or required."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkipFileShareConfiguration {
+    #[serde(flatten)]
+    pub file_share_configuration: FileShareConfiguration,
+}
+impl SkipFileShareConfiguration {
+    pub fn new(file_share_configuration: FileShareConfiguration) -> Self {
+        Self { file_share_configuration }
     }
 }
 #[doc = "The resource model definition representing SKU"]
@@ -3619,6 +3867,29 @@ impl StopRequest {
         Self::default()
     }
 }
+#[doc = "Gets or sets the storage configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageConfiguration {
+    #[doc = "File Share configuration details, populated with information on storage configuration mounted on the VIS. The createAndMount option is selected in case of missing input."]
+    #[serde(rename = "transportFileShareConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub transport_file_share_configuration: Option<FileShareConfiguration>,
+}
+impl StorageConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Storage details of all the Storage accounts attached to the VM. For e.g. NFS on AFS Shared Storage. "]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageInformation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl StorageInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Tags field of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
@@ -3651,6 +3922,9 @@ pub struct ThreeTierConfiguration {
     #[doc = "Gets or sets the high availability configuration."]
     #[serde(rename = "highAvailabilityConfig", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_config: Option<HighAvailabilityConfiguration>,
+    #[doc = "Gets or sets the storage configuration."]
+    #[serde(rename = "storageConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub storage_configuration: Option<StorageConfiguration>,
 }
 impl ThreeTierConfiguration {
     pub fn new(
@@ -3666,6 +3940,7 @@ impl ThreeTierConfiguration {
             application_server,
             database_server,
             high_availability_config: None,
+            storage_configuration: None,
         }
     }
 }

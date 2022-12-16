@@ -1184,25 +1184,18 @@ pub struct SavingsPlanModelProperties {
     #[doc = "Savings plan utilization"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub utilization: Option<Utilization>,
+    #[doc = "SavingsPlan Id of the SavingsPlan from which this SavingsPlan is renewed."]
+    #[serde(rename = "renewSource", default, skip_serializing_if = "Option::is_none")]
+    pub renew_source: Option<RenewSource>,
+    #[doc = "SavingsPlan Id of the SavingsPlan which is purchased because of renew."]
+    #[serde(rename = "renewDestination", default, skip_serializing_if = "Option::is_none")]
+    pub renew_destination: Option<RenewDestination>,
     #[serde(rename = "renewProperties", default, skip_serializing_if = "Option::is_none")]
-    pub renew_properties: Option<savings_plan_model_properties::RenewProperties>,
+    pub renew_properties: Option<RenewProperties>,
 }
 impl SavingsPlanModelProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod savings_plan_model_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct RenewProperties {
-        #[serde(rename = "purchaseProperties", default, skip_serializing_if = "Option::is_none")]
-        pub purchase_properties: Option<PurchaseRequest>,
-    }
-    impl RenewProperties {
-        pub fn new() -> Self {
-            Self::default()
-        }
     }
 }
 #[doc = "Savings plan order alias"]

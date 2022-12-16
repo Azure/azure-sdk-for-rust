@@ -1877,7 +1877,7 @@ pub struct IpAddressAggregate {
     #[doc = "The duration of the event"]
     #[serde(rename = "timeSpan", default, skip_serializing_if = "Option::is_none")]
     pub time_span: Option<String>,
-    #[doc = "A value indicating whether the IP address has been whitelisted."]
+    #[doc = "A value indicating whether the IP address has been listed as allowed."]
     #[serde(rename = "isWhitelistedIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub is_whitelisted_ip_address: Option<bool>,
     #[doc = "The network location"]

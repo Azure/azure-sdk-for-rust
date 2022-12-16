@@ -140,10 +140,10 @@ impl ExecuteGovernanceRuleParams {
         Self::default()
     }
 }
-#[doc = "Execute status of Security GovernanceRule over a given scope"]
+#[doc = "Execute status of governance rule over a given scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExecuteRuleStatus {
-    #[doc = "Unique key for the execution of GovernanceRule"]
+    #[doc = "Unique key for the execution of governance rule"]
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
 }
@@ -152,7 +152,7 @@ impl ExecuteRuleStatus {
         Self::default()
     }
 }
-#[doc = "Security GovernanceAssignment over a given scope"]
+#[doc = "Governance assignment over a given scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceAssignment {
     #[serde(flatten)]
@@ -166,16 +166,16 @@ impl GovernanceAssignment {
         Self::default()
     }
 }
-#[doc = "Describe the additional data of GovernanceAssignment - optional"]
+#[doc = "Describe the additional data of governance assignment - optional"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceAssignmentAdditionalData {
-    #[doc = "Ticket number associated with this GovernanceAssignment"]
+    #[doc = "Ticket number associated with this governance assignment"]
     #[serde(rename = "ticketNumber", default, skip_serializing_if = "Option::is_none")]
     pub ticket_number: Option<i32>,
-    #[doc = "Ticket link associated with this GovernanceAssignment - for example: https://snow.com"]
+    #[doc = "Ticket link associated with this governance assignment - for example: https://snow.com"]
     #[serde(rename = "ticketLink", default, skip_serializing_if = "Option::is_none")]
     pub ticket_link: Option<String>,
-    #[doc = "The ticket status associated with this GovernanceAssignment - for example: Active"]
+    #[doc = "The ticket status associated with this governance assignment - for example: Active"]
     #[serde(rename = "ticketStatus", default, skip_serializing_if = "Option::is_none")]
     pub ticket_status: Option<String>,
 }
@@ -202,7 +202,7 @@ pub struct GovernanceAssignmentProperties {
     #[doc = "The governance email weekly notification configuration."]
     #[serde(rename = "governanceEmailNotification", default, skip_serializing_if = "Option::is_none")]
     pub governance_email_notification: Option<GovernanceEmailNotification>,
-    #[doc = "Describe the additional data of GovernanceAssignment - optional"]
+    #[doc = "Describe the additional data of governance assignment - optional"]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<GovernanceAssignmentAdditionalData>,
 }
@@ -218,7 +218,7 @@ impl GovernanceAssignmentProperties {
         }
     }
 }
-#[doc = "Page of a security governance assignments list"]
+#[doc = "Page of a governance assignments list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceAssignmentsList {
     #[doc = "Collection of governance assignments in this page"]
@@ -258,12 +258,12 @@ impl GovernanceEmailNotification {
         Self::default()
     }
 }
-#[doc = "Security GovernanceRule over a given scope"]
+#[doc = "Governance rule over a given scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceRule {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Describes properties of an governanceRule"]
+    #[doc = "Describes properties of an governance rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GovernanceRuleProperties>,
 }
@@ -280,13 +280,13 @@ impl GovernanceRuleConditionSets {
         Self::default()
     }
 }
-#[doc = "The governance email weekly notification configuration."]
+#[doc = "The governance email weekly notification configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceRuleEmailNotification {
-    #[doc = "Defines whether manager email notifications are disabled."]
+    #[doc = "Defines whether manager email notifications are disabled"]
     #[serde(rename = "disableManagerEmailNotification", default, skip_serializing_if = "Option::is_none")]
     pub disable_manager_email_notification: Option<bool>,
-    #[doc = "Defines whether owner email notifications are disabled."]
+    #[doc = "Defines whether owner email notifications are disabled"]
     #[serde(rename = "disableOwnerEmailNotification", default, skip_serializing_if = "Option::is_none")]
     pub disable_owner_email_notification: Option<bool>,
 }
@@ -295,10 +295,10 @@ impl GovernanceRuleEmailNotification {
         Self::default()
     }
 }
-#[doc = "Page of a security governanceRules list"]
+#[doc = "Page of a governance rules list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceRuleList {
-    #[doc = "Collection of governanceRules in this page"]
+    #[doc = "Collection of governance rules in this page"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -316,6 +316,27 @@ impl azure_core::Continuable for GovernanceRuleList {
     }
 }
 impl GovernanceRuleList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The governance rule metadata"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GovernanceRuleMetadata {
+    #[doc = "Governance rule Created by object id (GUID)"]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "Governance rule creation date"]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<time::OffsetDateTime>,
+    #[doc = "Governance rule last updated by object id (GUID)"]
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<String>,
+    #[doc = "Governance rule last update date"]
+    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub updated_on: Option<time::OffsetDateTime>,
+}
+impl GovernanceRuleMetadata {
     pub fn new() -> Self {
         Self::default()
     }
@@ -375,13 +396,16 @@ pub mod governance_rule_owner_source {
         }
     }
 }
-#[doc = "Describes properties of an governanceRule"]
+#[doc = "Describes properties of an governance rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GovernanceRuleProperties {
-    #[doc = "display name of the governanceRule"]
+    #[doc = "The tenantId (GUID)"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Display name of the governance rule"]
     #[serde(rename = "displayName")]
     pub display_name: String,
-    #[doc = "description of the governanceRule"]
+    #[doc = "Description of the governance rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Governance rule remediation timeframe - this is the time that will affect on the grace-period duration e.g. 7.00:00:00 - means 7 days"]
@@ -402,15 +426,29 @@ pub struct GovernanceRuleProperties {
     #[doc = "The governance rule source, what the rule affects, e.g. Assessments"]
     #[serde(rename = "sourceResourceType")]
     pub source_resource_type: governance_rule_properties::SourceResourceType,
+    #[doc = "Excluded scopes, filter out the descendants of the scope (on management scopes)"]
+    #[serde(
+        rename = "excludedScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub excluded_scopes: Vec<String>,
     #[doc = "The governance rule conditionSets - see examples"]
     #[serde(rename = "conditionSets")]
     pub condition_sets: Vec<GovernanceRuleConditionSets>,
+    #[doc = "Defines whether the rule is management scope rule (master connector as a single scope or management scope)"]
+    #[serde(rename = "includeMemberScopes", default, skip_serializing_if = "Option::is_none")]
+    pub include_member_scopes: Option<bool>,
     #[doc = "Describe the owner source of governance rule"]
     #[serde(rename = "ownerSource")]
     pub owner_source: GovernanceRuleOwnerSource,
-    #[doc = "The governance email weekly notification configuration."]
+    #[doc = "The governance email weekly notification configuration"]
     #[serde(rename = "governanceEmailNotification", default, skip_serializing_if = "Option::is_none")]
     pub governance_email_notification: Option<GovernanceRuleEmailNotification>,
+    #[doc = "The governance rule metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<GovernanceRuleMetadata>,
 }
 impl GovernanceRuleProperties {
     pub fn new(
@@ -422,6 +460,7 @@ impl GovernanceRuleProperties {
         owner_source: GovernanceRuleOwnerSource,
     ) -> Self {
         Self {
+            tenant_id: None,
             display_name,
             description: None,
             remediation_timeframe: None,
@@ -430,9 +469,12 @@ impl GovernanceRuleProperties {
             is_disabled: None,
             rule_type,
             source_resource_type,
+            excluded_scopes: Vec::new(),
             condition_sets,
+            include_member_scopes: None,
             owner_source,
             governance_email_notification: None,
+            metadata: None,
         }
     }
 }

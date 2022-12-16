@@ -2035,8 +2035,9 @@ pub struct OutputProperties {
     pub datasource: Option<OutputDataSource>,
     #[serde(rename = "timeWindow", default, skip_serializing_if = "Option::is_none")]
     pub time_window: Option<String>,
+    #[doc = "The size window to constrain a Stream Analytics output to."]
     #[serde(rename = "sizeWindow", default, skip_serializing_if = "Option::is_none")]
-    pub size_window: Option<f64>,
+    pub size_window: Option<i32>,
     #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub serialization: Option<Serialization>,
