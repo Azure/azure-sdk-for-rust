@@ -62,7 +62,10 @@ pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
     /// complete before considering it to be timed out.
     fn calculate_try_timeout(&self, attempt_count: u32) -> StdDuration;
 
-    /// Calculates the amount of time to wait before another attempt should be made.
+    /// Calculates the amount of time to wait before another attempt should be made and whether
+    /// or not another attempt should be made.
+    ///
+    /// Returns None if no more attempts should be made.
     fn calculate_retry_delay<E: ServiceBusRetryPolicyError>(
         &self,
         last_error: &E,
