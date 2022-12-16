@@ -38,31 +38,38 @@ impl AutoRefreshingTokenCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AutoRefreshingTokenCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+        // if the current cached token is good, return that.
         if let Some(Ok(token)) = self.current_token.read().await.as_ref() {
             if !is_expired(token) {
                 return Ok(token.clone());
             }
         }
-        loop {
-            let mut guard = self.current_token.write().await;
-            match guard.as_ref() {
-                None => {
-                    let res = self.credential.get_token(resource).await;
-                    *guard = Some(res);
-                }
-                Some(Err(err)) => {
-                    return Err(Error::with_message(ErrorKind::Credential, || {
-                        err.to_string()
-                    }));
-                }
-                Some(Ok(token)) => {
-                    if is_expired(token) {
-                        *guard = None;
-                    } else {
-                        return Ok(token.clone());
-                    };
-                }
+
+        let mut guard = self.current_token.write().await;
+
+        // check again in case another thread refreshed the token while we were
+        // waiting on the write lock
+        if let Some(Ok(token)) = guard.as_ref() {
+            if !is_expired(token) {
+                return Ok(token.clone());
             }
         }
+
+        let res = self.credential.get_token(resource).await;
+
+        // NOTE: we do not check to see if the token is expired here, as at
+        // least one credential, `AzureCliCredential`, specifies the token is
+        // immediately expired after it is returned, which indicates the token
+        // should always be refreshed upon use.
+        let result = match &res {
+            Ok(token) => Ok(token.clone()),
+            Err(err) => Err(Error::with_message(ErrorKind::Credential, || {
+                err.to_string()
+            })),
+        };
+
+        *guard = Some(res);
+
+        result
     }
 }
