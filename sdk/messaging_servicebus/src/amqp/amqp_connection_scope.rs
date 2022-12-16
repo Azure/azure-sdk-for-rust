@@ -58,9 +58,6 @@ pub(crate) struct AmqpConnectionScope {
     /// The unique identifier of the scope.
     id: String,
 
-    /// The endpoint for the Service Bus service to which the scope is associated.
-    service_endpoint: Url,
-
     /// The endpoint for the Service Bus service to be used when establishing the connection.
     connection_endpoint: Url,
 
@@ -107,16 +104,12 @@ impl AmqpConnectionScope {
     /// amount, ensuring that it is renewed before it has expired.
     const AUTHORIZATION_TOKEN_EXPIRATION_BUFFER: TimeSpan =
         TimeSpan::seconds(AUTHORIZATION_REFRESH_BUFFER_SECONDS as i64 + 2 * 60);
-
-    pub fn service_endpoint(&self) -> &Url {
-        &self.service_endpoint
-    }
 }
 
 impl AmqpConnectionScope {
     /// Initializes a new instance of the [`AmqpConnectionScope`] class.
     pub(crate) async fn new(
-        service_endpoint: Url,
+        service_endpoint: &Url,
         connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
         credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
@@ -156,7 +149,6 @@ impl AmqpConnectionScope {
         Ok(Self {
             is_disposed: false,
             id,
-            service_endpoint,
             connection_endpoint,
             transport_type,
             connection,
@@ -170,7 +162,6 @@ impl AmqpConnectionScope {
     }
 
     async fn open_connection(
-        // service_endpoint: Url,
         connection_endpoint: &Url,
         transport_type: &ServiceBusTransportType,
         scope_identifier: &str,
@@ -234,6 +225,7 @@ impl AmqpConnectionScope {
 
     pub(crate) async fn open_management_link(
         &mut self,
+        service_endpoint: &Url,
         entity_path: &str,
         _identifier: &str, // TODO: logging using the identifier
     ) -> Result<AmqpManagementLink, OpenMgmtLinkError> {
@@ -249,7 +241,7 @@ impl AmqpConnectionScope {
             service_bus_claim::LISTEN.to_string(),
             service_bus_claim::SEND.to_string(),
         ];
-        let endpoint = format!("{}/{}", self.service_endpoint, entity_path);
+        let endpoint = format!("{}/{}", service_endpoint, entity_path);
         let resource = endpoint.clone();
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         self.request_refreshable_authorization_using_cbs(
@@ -279,6 +271,7 @@ impl AmqpConnectionScope {
 
     pub(crate) async fn open_sender_link(
         &mut self,
+        service_endpoint: &Url,
         entity_path: &str,
         identifier: &str,
     ) -> Result<
@@ -293,7 +286,7 @@ impl AmqpConnectionScope {
             return Err(OpenSenderError::ScopeIsDisposed);
         }
 
-        let endpoint = format!("{}/{}", self.service_endpoint, entity_path);
+        let endpoint = format!("{}/{}", service_endpoint, entity_path);
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
@@ -329,6 +322,7 @@ impl AmqpConnectionScope {
     /// filter set.
     pub(crate) async fn open_receiver_link(
         &mut self,
+        service_endpoint: &Url,
         entity_path: &str,
         identifier: &str,
         receive_mode: &ServiceBusReceiveMode,
@@ -348,7 +342,7 @@ impl AmqpConnectionScope {
             return Err(OpenReceiverError::ScopeIsDisposed);
         }
 
-        let endpoint = format!("{}/{}", self.service_endpoint, entity_path);
+        let endpoint = format!("{}/{}", service_endpoint, entity_path);
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
@@ -453,6 +447,10 @@ impl TransportConnectionScope for AmqpConnectionScope {
     }
 
     async fn dispose(&mut self) -> Result<(), Self::Error> {
+        if self.is_disposed {
+            return Ok(());
+        }
+
         // TODO: handle link close?
         self.is_disposed = true;
 

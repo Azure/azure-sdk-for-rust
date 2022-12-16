@@ -1,5 +1,5 @@
 use azure_messaging_servicebus::{
-    administration::filters::CorrelationRuleFilter, ServiceBusMessage, ServiceBusReceiverOptions,
+    administration::CorrelationRuleFilter, ServiceBusMessage, ServiceBusReceiverOptions,
 };
 use serial_test::serial;
 

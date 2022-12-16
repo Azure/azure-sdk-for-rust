@@ -1,7 +1,8 @@
-use std::{marker::PhantomData, time::Duration};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 use azure_core::Url;
+use tokio::sync::Mutex;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
@@ -33,11 +34,26 @@ use super::{
 /// See also [`TransportClient`]
 #[derive(Debug)]
 pub struct AmqpClient<RP> {
+    /// The endpoint for the Service Bus service to which the scope is associated.
+    service_endpoint: Url,
+
     /// The AMQP connection scope responsible for managing transport constructs for this instance.
-    connection_scope: AmqpConnectionScope,
+    ///
+    /// There isn't much read operations on this so it's fine to use a Mutex.
+    connection_scope: Arc<Mutex<AmqpConnectionScope>>,
+
+    /// Keep a copy of the transport type to avoid having to lock the connection_scope
+    transport_type: ServiceBusTransportType,
 
     /// Retry policy phantom
     retry_policy: PhantomData<RP>,
+
+    /// Keep track of whether the client has been disposed.
+    ///
+    /// TODO: this is duplicated as the connection scope also keeps track of that. The reason is that
+    /// the connection scope is shared between the client and the receivers/senders. The client
+    /// shouldn't have to .await for a lock on the connection scope to check if it's been disposed.
+    is_connection_scope_disposed: bool,
 }
 
 #[async_trait]
@@ -101,30 +117,34 @@ where
 
         // Create AmqpConnectionScope
         let connection_scope = AmqpConnectionScope::new(
-            service_endpoint,
+            &service_endpoint,
             connection_endpoint,
             credential,
-            transport_type,
+            transport_type.clone(), // A simple enum, cloning should be cheap
             retry_timeout,
         )
         .await?;
 
         Ok(Self {
-            connection_scope,
+            service_endpoint,
+            connection_scope: Arc::new(Mutex::new(connection_scope)),
+            transport_type,
             retry_policy: PhantomData,
+            is_connection_scope_disposed: false,
         })
     }
 
     fn transport_type(&self) -> ServiceBusTransportType {
-        self.connection_scope.transport_type()
+        // `transport_type` is a simple enum, cloning should be cheap
+        self.transport_type.clone()
     }
 
     fn is_closed(&self) -> bool {
-        self.connection_scope.is_disposed()
+        self.is_connection_scope_disposed
     }
 
     fn service_endpoint(&self) -> &Url {
-        self.connection_scope.service_endpoint()
+        &self.service_endpoint
     }
 
     async fn create_sender(
@@ -133,13 +153,13 @@ where
         identifier: &str,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
-        let (link_identifier, sender, cbs_command_sender) = self
-            .connection_scope
-            .open_sender_link(entity_path, identifier)
+        let mut connection_scope = self.connection_scope.lock().await;
+
+        let (link_identifier, sender, cbs_command_sender) = connection_scope
+            .open_sender_link(&self.service_endpoint, entity_path, identifier)
             .await?;
-        let management_link = self
-            .connection_scope
-            .open_management_link(entity_path, identifier)
+        let management_link = connection_scope
+            .open_management_link(&self.service_endpoint, entity_path, identifier)
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpSender {
@@ -160,9 +180,11 @@ where
         prefetch_count: u32,
         is_processor: bool,
     ) -> Result<Self::Receiver, Self::CreateReceiverError> {
-        let (link_identifier, receiver, cbs_command_sender) = self
-            .connection_scope
+        let mut connection_scope = self.connection_scope.lock().await;
+
+        let (link_identifier, receiver, cbs_command_sender) = connection_scope
             .open_receiver_link(
+                &self.service_endpoint,
                 entity_path,
                 identifier,
                 &receive_mode,
@@ -170,9 +192,8 @@ where
                 prefetch_count,
             )
             .await?;
-        let management_link = self
-            .connection_scope
-            .open_management_link(&entity_path, &identifier)
+        let management_link = connection_scope
+            .open_management_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpReceiver {
@@ -199,9 +220,10 @@ where
         prefetch_count: u32,
         is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError> {
-        let (link_identifier, receiver, cbs_command_sender) = self
-            .connection_scope
+        let mut connection_scope = self.connection_scope.lock().await;
+        let (link_identifier, receiver, cbs_command_sender) = connection_scope
             .open_receiver_link(
+                &self.service_endpoint,
                 entity_path,
                 identifier,
                 &receive_mode,
@@ -209,9 +231,8 @@ where
                 prefetch_count,
             )
             .await?;
-        let management_link = self
-            .connection_scope
-            .open_management_link(&entity_path, &identifier)
+        let management_link = connection_scope
+            .open_management_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
         let retry_policy = RP::new(retry_options);
         let inner = AmqpReceiver {
@@ -235,10 +256,10 @@ where
         identifier: &str,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
+        let mut connection_scope = self.connection_scope.lock().await;
         let retry_policy = RP::new(retry_options);
-        let management_link = self
-            .connection_scope
-            .open_management_link(subscription_path, identifier)
+        let management_link = connection_scope
+            .open_management_link(&self.service_endpoint, subscription_path, identifier)
             .await?;
         Ok(AmqpRuleManager {
             retry_policy,
@@ -247,10 +268,16 @@ where
     }
 
     async fn close(&mut self) -> Result<(), Self::DisposeError> {
-        if self.is_closed() {
+        if self.is_connection_scope_disposed {
             Ok(())
         } else {
-            self.connection_scope.dispose().await.map_err(Into::into)
+            self.is_connection_scope_disposed = true;
+            self.connection_scope
+                .lock()
+                .await
+                .dispose()
+                .await
+                .map_err(Into::into)
         }
     }
 }
