@@ -1,4 +1,4 @@
-pub mod filters;
+//! This module contains the types for working with Service Bus rules.
 
 use fe2o3_amqp_types::primitives::Timestamp;
 use serde_amqp::{DeserializeComposite, SerializeComposite};
@@ -6,15 +6,31 @@ use serde_amqp::{DeserializeComposite, SerializeComposite};
 use filters::RuleFilter;
 use time::OffsetDateTime;
 
+mod filters;
+pub use filters::*; // re-export to match the namespace
+
+/// Properties of a rule.
 #[derive(Debug, Clone)]
 pub struct RuleProperties {
+    /// The filter expression used to match messages.
     pub filters: RuleFilter,
+
+    /// The action to perform if the message matches the filter expression.
     pub actions: RuleAction,
+
+    /// The name of the rule.
     pub name: String,
+
+    /// The time the rule was created.
     pub created_at: Option<OffsetDateTime>, // TODO: This is not indicated in the docs
+
+    // Prevents construction outside of this crate
+    // TODO: is this necessary?
+    _sealed: (),
 }
 
 impl RuleProperties {
+    /// The name of the default rule.
     pub const DEFAULT_RULE_NAME: &str = "$Default";
 }
 
@@ -25,6 +41,8 @@ impl From<RuleDescription> for RuleProperties {
             actions: desc.actions,
             name: desc.name,
             created_at: desc.created_at.map(|t| t.into()),
+
+            _sealed: (),
         }
     }
 }
@@ -54,6 +72,7 @@ pub(crate) struct RuleDescription {
     pub created_at: Option<Timestamp>, // TODO: This is not indicated in the docs
 }
 
+/// No rule action present
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
@@ -65,6 +84,7 @@ pub(crate) struct RuleDescription {
 )]
 pub struct EmptyRuleAction {}
 
+/// SQL rule action
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
@@ -75,12 +95,18 @@ pub struct EmptyRuleAction {}
     rename_all = "kebab-case"
 )]
 pub struct SqlRuleAction {
+    /// SQL rule action's expression.
     pub expression: String,
 }
 
+/// Represents the filter actions which are allowed for the transformation
+/// of a message that have been matched by a filter expression.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RuleAction {
+    /// No rule action present
     Empty(EmptyRuleAction),
+
+    /// SQL rule action
     Sql(SqlRuleAction),
 }
 

@@ -1,3 +1,5 @@
+//! Rule filters
+
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::{DeserializeComposite, SerializeComposite, Value};
 use std::marker::PhantomData;
@@ -10,6 +12,13 @@ use crate::amqp::{
     },
 };
 
+/// A [`SqlRuleFilter`] holds a SQL-like condition expression that is evaluated in the broker
+/// against the arriving messages' user-defined properties and system properties. All system
+/// properties (which are all properties explicitly listed on the [`erviceBusMessage`]
+/// class) must be prefixed with `sys.` in the condition expression. The SQL subset
+/// implements testing for existence of properties (EXISTS), testing for null-values (IS NULL),
+/// logical NOT/AND/OR, relational operators, numeric arithmetic, and simple text pattern matching
+/// with LIKE.
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
@@ -20,9 +29,33 @@ use crate::amqp::{
     rename_all = "kebab-case" // This shouldn't matter because we're using the list encoding
 )]
 pub struct SqlRuleFilter {
+    /// SQL rule filter's expression.
     pub expression: String,
 }
 
+/// Represents the correlation rule filter expression.
+///
+/// A CorrelationRuleFilter holds a set of conditions that are matched against one of more of an
+/// arriving message's user and system properties. A common use is a match against the
+/// [`ServiceBusMessage::correlation_id()`] property, but the application can also choose to match
+/// against [`ServiceBusMessage::content_type()`], [`ServiceBusMessage::subject()`],
+/// [`ServiceBusMessage::message_id()`], [`ServiceBusMessage::reply_to`],
+/// [`ServiceBusMessage::reply_to_session_id()`], [`ServiceBusMessage.session_id()`],
+/// [`ServiceBusMessage.to()`, and any user-defined properties. A match exists when an arriving
+/// message's value for a property is equal to the value specified in the correlation filter. For
+/// string expressions, the comparison is case-sensitive. When specifying multiple match properties,
+/// the filter combines them as a logical AND condition, meaning all conditions must match for the
+/// filter to match.
+///
+/// The CorrelationRuleFilter provides an efficient shortcut for declarations of filters that deal
+/// only with correlation equality. In this case the cost of the lexicographical analysis of the
+/// expression can be avoided. Not only will correlation filters be optimized at declaration time,
+/// but they will also be optimized at runtime. Correlation filter matching can be reduced to a
+/// hashtable lookup, which aggregates the complexity of the set of defined correlation filters to
+/// O(1).
+///
+/// The user needs to make sure that at least one of the properties is set. Because of this, it is
+/// recommended to use the [`CorrelationRuleFilter::builder()`] to construct the filter.
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
@@ -33,18 +66,36 @@ pub struct SqlRuleFilter {
     rename_all = "kebab-case" // This shouldn't matter because we're using the list encoding
 )]
 pub struct CorrelationRuleFilter {
+    /// Identifier of the correlation.
     pub correlation_id: Option<String>,
+
+    /// Identifier of the message.
     pub message_id: Option<String>,
+
+    /// Address of the queue to send the message to.
     pub to: Option<String>,
+
+    /// Address of the queue to send the reply to.
     pub reply_to: Option<String>,
+
+    /// Application specific subject.
     pub subject: Option<String>,
+
+    /// Session identifier.
     pub session_id: Option<String>,
+
+    /// Session identifier to reply to.
     pub reply_to_session_id: Option<String>,
+
+    /// Content type of the message.
     pub content_type: Option<String>,
+
+    /// Application specific properties.
     pub properties: Option<OrderedMap<String, Value>>,
 }
 
 impl CorrelationRuleFilter {
+    /// Creates a new builder for a correlation filter.
     pub fn builder() -> CorrelationRuleFilterBuilder<()> {
         CorrelationRuleFilterBuilder::default()
     }
@@ -54,16 +105,37 @@ impl CorrelationRuleFilter {
 #[derive(Debug, Clone)]
 pub struct Initialized {}
 
+/// Builder for [`CorrelationRuleFilter`].
+///
+/// The builder uses a type state to keep track of whether at least one field has been set, and thus
+/// please use the builder's methods to set the fields.
 #[derive(Debug, Default, Clone)]
 pub struct CorrelationRuleFilterBuilder<T> {
+    /// Identifier of the correlation.
     pub correlation_id: Option<String>,
+
+    /// Identifier of the message.
     pub message_id: Option<String>,
+
+    /// Address of the queue to send the message to.
     pub to: Option<String>,
+
+    /// Address of the queue to send the reply to.
     pub reply_to: Option<String>,
+
+    /// Application specific subject.
     pub subject: Option<String>,
+
+    /// Session identifier.
     pub session_id: Option<String>,
+
+    /// Session identifier to reply to.
     pub reply_to_session_id: Option<String>,
+
+    /// Content type of the message.
     pub content_type: Option<String>,
+
+    /// Application specific properties.
     pub properties: Option<OrderedMap<String, Value>>,
 
     marker: PhantomData<T>,
@@ -85,6 +157,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         }
     }
 
+    /// Sets the correlation id.
     pub fn correlation_id(
         mut self,
         correlation_id: impl Into<String>,
@@ -93,6 +166,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the message id.
     pub fn message_id(
         mut self,
         message_id: impl Into<String>,
@@ -101,11 +175,13 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the address of the queue to send the message to.
     pub fn to(mut self, to: impl Into<String>) -> CorrelationRuleFilterBuilder<Initialized> {
         self.to = Some(to.into());
         self.map_to_initialized()
     }
 
+    /// Sets the address of the queue to send the reply to.
     pub fn reply_to(
         mut self,
         reply_to: impl Into<String>,
@@ -114,6 +190,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the application specific subject.
     pub fn subject(
         mut self,
         subject: impl Into<String>,
@@ -122,6 +199,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the session identifier.
     pub fn session_id(
         mut self,
         session_id: impl Into<String>,
@@ -130,6 +208,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the session identifier to reply to.
     pub fn reply_to_session_id(
         mut self,
         reply_to_session_id: impl Into<String>,
@@ -138,6 +217,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the content type of the message.
     pub fn content_type(
         mut self,
         content_type: impl Into<String>,
@@ -146,6 +226,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
         self.map_to_initialized()
     }
 
+    /// Sets the application specific properties.
     pub fn properties(
         mut self,
         properties: OrderedMap<String, Value>,
@@ -156,6 +237,7 @@ impl<T> CorrelationRuleFilterBuilder<T> {
 }
 
 impl CorrelationRuleFilterBuilder<Initialized> {
+    /// Builds the filter.
     pub fn build(self) -> CorrelationRuleFilter {
         CorrelationRuleFilter {
             correlation_id: self.correlation_id,
@@ -229,6 +311,7 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
     }
 }
 
+/// A TrueRuleFilter. Matches all messages.
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
@@ -239,6 +322,7 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
 )]
 pub struct TrueRuleFilter {}
 
+/// A FalseRuleFilter. Matches no messages.
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]

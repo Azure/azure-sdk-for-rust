@@ -14,7 +14,7 @@ use crate::amqp::{
     },
 };
 
-use crate::administration::{filters::CorrelationRuleFilter, filters::SqlRuleFilter};
+use crate::administration::{CorrelationRuleFilter, SqlRuleFilter};
 
 #[derive(Debug, Clone)]
 pub enum SupportedRuleFilter {
