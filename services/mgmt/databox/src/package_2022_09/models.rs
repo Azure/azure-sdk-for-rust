@@ -3243,25 +3243,21 @@ impl ResourceIdentity {
     }
 }
 #[doc = "Reverse Shipping Address and contact details for a job."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReverseShippingDetails {
     #[doc = "Contact Info."]
-    #[serde(rename = "contactDetails")]
-    pub contact_details: ContactInfo,
+    #[serde(rename = "contactDetails", default, skip_serializing_if = "Option::is_none")]
+    pub contact_details: Option<ContactInfo>,
     #[doc = "Shipping address where customer wishes to receive the device."]
-    #[serde(rename = "shippingAddress")]
-    pub shipping_address: ShippingAddress,
+    #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
+    pub shipping_address: Option<ShippingAddress>,
     #[doc = "A flag to indicate whether Reverse Shipping details are updated or not after device has been prepared.\r\nRead only field"]
     #[serde(rename = "isUpdated", default, skip_serializing_if = "Option::is_none")]
     pub is_updated: Option<bool>,
 }
 impl ReverseShippingDetails {
-    pub fn new(contact_details: ContactInfo, shipping_address: ShippingAddress) -> Self {
-        Self {
-            contact_details,
-            shipping_address,
-            is_updated: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Request body to get the availability for scheduling orders."]

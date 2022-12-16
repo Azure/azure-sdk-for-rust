@@ -10,8 +10,8 @@ The default tag is `package-2022-06`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-preview-2022-10` has 51 operations from 1 API versions: `2022-10-01-preview`. Use crate feature `package-preview-2022-10` to enable. The operations will be in the `package_preview_2022_10` module.
 - `package-preview-2022-01` has 46 operations from 1 API versions: `2022-01-31-preview`. Use crate feature `package-preview-2022-01` to enable. The operations will be in the `package_preview_2022_01` module.
 - `package-preview-2021-06` has 40 operations from 1 API versions: `2021-06-01-preview`. Use crate feature `package-preview-2021-06` to enable. The operations will be in the `package_preview_2021_06` module.
 - `package-2022-06` has 46 operations from 1 API versions: `2022-06-01`. Use crate feature `package-2022-06` to enable. The operations will be in the `package_2022_06` module.
 - `package-2022-05` has 46 operations from 1 API versions: `2022-05-15`. Use crate feature `package-2022-05` to enable. The operations will be in the `package_2022_05` module.
-- `package-2021-11` has 46 operations from 1 API versions: `2021-11-01`. Use crate feature `package-2021-11` to enable. The operations will be in the `package_2021_11` module.

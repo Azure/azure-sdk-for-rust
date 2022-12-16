@@ -796,7 +796,7 @@ pub mod azure_dev_ops_repo {
                 azure_dev_ops_repo: azure_dev_ops_repo.into(),
             }
         }
-        #[doc = "Update monitored AzureDevOps Project details."]
+        #[doc = "Update monitored AzureDevOps Repo details."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -1187,7 +1187,7 @@ pub mod azure_dev_ops_repo {
             pub(crate) azure_dev_ops_repo: Option<models::AzureDevOpsRepo>,
         }
         impl RequestBuilder {
-            #[doc = "Azure DevOps Org resource payload."]
+            #[doc = "Azure DevOps Repo resource payload."]
             pub fn azure_dev_ops_repo(mut self, azure_dev_ops_repo: impl Into<models::AzureDevOpsRepo>) -> Self {
                 self.azure_dev_ops_repo = Some(azure_dev_ops_repo.into());
                 self
@@ -2101,7 +2101,7 @@ pub mod azure_dev_ops_project {
             pub(crate) azure_dev_ops_project: Option<models::AzureDevOpsProject>,
         }
         impl RequestBuilder {
-            #[doc = "Azure DevOps Org resource payload."]
+            #[doc = "Azure DevOps Project resource payload."]
             pub fn azure_dev_ops_project(mut self, azure_dev_ops_project: impl Into<models::AzureDevOpsProject>) -> Self {
                 self.azure_dev_ops_project = Some(azure_dev_ops_project.into());
                 self
@@ -2798,7 +2798,7 @@ pub mod git_hub_repo {
                 git_hub_repo: git_hub_repo.into(),
             }
         }
-        #[doc = "Patch a monitored GitHub repository."]
+        #[doc = "Update a monitored GitHub repository."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -3392,7 +3392,7 @@ pub mod git_hub_owner {
                 git_hub_owner: git_hub_owner.into(),
             }
         }
-        #[doc = "Patch a monitored GitHub repository."]
+        #[doc = "Update a monitored GitHub repository."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]

@@ -499,6 +499,28 @@ pub mod afd_profiles {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
+        #[doc = "Check the availability of an afdx endpoint name, and return the globally unique endpoint host name."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `check_endpoint_name_availability_input`: Input to check."]
+        #[doc = "* `subscription_id`: Azure Subscription ID."]
+        #[doc = "* `resource_group_name`: Name of the Resource group within the Azure subscription."]
+        #[doc = "* `profile_name`: Name of the Azure Front Door Standard or Azure Front Door Premium which is unique within the resource group."]
+        pub fn check_endpoint_name_availability(
+            &self,
+            check_endpoint_name_availability_input: impl Into<models::CheckEndpointNameAvailabilityInput>,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            profile_name: impl Into<String>,
+        ) -> check_endpoint_name_availability::RequestBuilder {
+            check_endpoint_name_availability::RequestBuilder {
+                client: self.0.clone(),
+                check_endpoint_name_availability_input: check_endpoint_name_availability_input.into(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                profile_name: profile_name.into(),
+            }
+        }
         #[doc = "Checks the quota and actual usage of endpoints under the given Azure Front Door profile."]
         #[doc = ""]
         #[doc = "Arguments:"]
@@ -582,6 +604,78 @@ pub mod afd_profiles {
                 profile_name: profile_name.into(),
                 profile_upgrade_parameters: profile_upgrade_parameters.into(),
                 subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod check_endpoint_name_availability {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::CheckEndpointNameAvailabilityOutput> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::CheckEndpointNameAvailabilityOutput = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) check_endpoint_name_availability_input: models::CheckEndpointNameAvailabilityInput,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) profile_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/checkEndpointNameAvailability",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.profile_name
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-11-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.check_endpoint_name_availability_input)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckEndpointNameAvailabilityOutput>> {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

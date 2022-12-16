@@ -124,6 +124,12 @@ impl Client {
     pub fn private_link_resources_client(&self) -> private_link_resources::Client {
         private_link_resources::Client(self.clone())
     }
+    pub fn solutions_client(&self) -> solutions::Client {
+        solutions::Client(self.clone())
+    }
+    pub fn solutions_discoverability_client(&self) -> solutions_discoverability::Client {
+        solutions_discoverability::Client(self.clone())
+    }
 }
 pub mod extensions {
     use super::models;
@@ -2182,6 +2188,729 @@ pub mod private_link_resources {
             }
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::PrivateLinkResource>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod solutions {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get installed Solution details by Solution id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `solution_id`: Solution Id of the solution."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            farm_beats_resource_name: impl Into<String>,
+            solution_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                farm_beats_resource_name: farm_beats_resource_name.into(),
+                solution_id: solution_id.into(),
+            }
+        }
+        #[doc = "Install Or Update Solution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `solution_id`: Solution Id of the solution."]
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            farm_beats_resource_name: impl Into<String>,
+            solution_id: impl Into<String>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                farm_beats_resource_name: farm_beats_resource_name.into(),
+                solution_id: solution_id.into(),
+                body: None,
+            }
+        }
+        #[doc = "Uninstall Solution."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        #[doc = "* `solution_id`: Solution Id of the solution."]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            farm_beats_resource_name: impl Into<String>,
+            solution_id: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                farm_beats_resource_name: farm_beats_resource_name.into(),
+                solution_id: solution_id.into(),
+            }
+        }
+        #[doc = "Get installed Solutions details."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            farm_beats_resource_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                farm_beats_resource_name: farm_beats_resource_name.into(),
+                solution_ids: Vec::new(),
+                ids: Vec::new(),
+                names: Vec::new(),
+                property_filters: Vec::new(),
+                statuses: Vec::new(),
+                min_created_date_time: None,
+                max_created_date_time: None,
+                min_last_modified_date_time: None,
+                max_last_modified_date_time: None,
+                max_page_size: None,
+                skip_token: None,
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::Solution> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::Solution = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) farm_beats_resource_name: String,
+            pub(crate) solution_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.farm_beats_resource_name,
+                            &this.solution_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Solution>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::Solution> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::Solution = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) farm_beats_resource_name: String,
+            pub(crate) solution_id: String,
+            pub(crate) body: Option<models::SolutionInstallationRequest>,
+        }
+        impl RequestBuilder {
+            #[doc = "Solution resource request body."]
+            pub fn body(mut self, body: impl Into<models::SolutionInstallationRequest>) -> Self {
+                self.body = Some(body.into());
+                self
+            }
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.farm_beats_resource_name,
+                            &this.solution_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                        let req_body = if let Some(body) = &this.body {
+                            req.insert_header("content-type", "application/json");
+                            azure_core::to_json(body)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Solution>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) farm_beats_resource_name: String,
+            pub(crate) solution_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions/{}",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.farm_beats_resource_name,
+                            &this.solution_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::SolutionListResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::SolutionListResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) farm_beats_resource_name: String,
+            pub(crate) solution_ids: Vec<String>,
+            pub(crate) ids: Vec<String>,
+            pub(crate) names: Vec<String>,
+            pub(crate) property_filters: Vec<String>,
+            pub(crate) statuses: Vec<String>,
+            pub(crate) min_created_date_time: Option<time::OffsetDateTime>,
+            pub(crate) max_created_date_time: Option<time::OffsetDateTime>,
+            pub(crate) min_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) max_last_modified_date_time: Option<time::OffsetDateTime>,
+            pub(crate) max_page_size: Option<i32>,
+            pub(crate) skip_token: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Installed Solution ids."]
+            pub fn solution_ids(mut self, solution_ids: Vec<String>) -> Self {
+                self.solution_ids = solution_ids;
+                self
+            }
+            #[doc = "Ids of the resource."]
+            pub fn ids(mut self, ids: Vec<String>) -> Self {
+                self.ids = ids;
+                self
+            }
+            #[doc = "Names of the resource."]
+            pub fn names(mut self, names: Vec<String>) -> Self {
+                self.names = names;
+                self
+            }
+            #[doc = "Filters on key-value pairs within the Properties object.\r\neg. \"{testKey} eq {testValue}\"."]
+            pub fn property_filters(mut self, property_filters: Vec<String>) -> Self {
+                self.property_filters = property_filters;
+                self
+            }
+            #[doc = "Statuses of the resource."]
+            pub fn statuses(mut self, statuses: Vec<String>) -> Self {
+                self.statuses = statuses;
+                self
+            }
+            #[doc = "Minimum creation date of resource (inclusive)."]
+            pub fn min_created_date_time(mut self, min_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+                self.min_created_date_time = Some(min_created_date_time.into());
+                self
+            }
+            #[doc = "Maximum creation date of resource (inclusive)."]
+            pub fn max_created_date_time(mut self, max_created_date_time: impl Into<time::OffsetDateTime>) -> Self {
+                self.max_created_date_time = Some(max_created_date_time.into());
+                self
+            }
+            #[doc = "Minimum last modified date of resource (inclusive)."]
+            pub fn min_last_modified_date_time(mut self, min_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+                self.min_last_modified_date_time = Some(min_last_modified_date_time.into());
+                self
+            }
+            #[doc = "Maximum last modified date of resource (inclusive)."]
+            pub fn max_last_modified_date_time(mut self, max_last_modified_date_time: impl Into<time::OffsetDateTime>) -> Self {
+                self.max_last_modified_date_time = Some(max_last_modified_date_time.into());
+                self
+            }
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
+            pub fn max_page_size(mut self, max_page_size: i32) -> Self {
+                self.max_page_size = Some(max_page_size);
+                self
+            }
+            #[doc = "Skip token for getting next set of results."]
+            pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
+                self.skip_token = Some(skip_token.into());
+                self
+            }
+            pub fn into_stream(self) -> azure_core::Pageable<models::SolutionListResponse, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/solutions",
+                            this.client.endpoint(),
+                            &this.subscription_id,
+                            &this.resource_group_name,
+                            &this.farm_beats_resource_name
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                                let solution_ids = &this.solution_ids;
+                                for value in &this.solution_ids {
+                                    req.url_mut().query_pairs_mut().append_pair("solutionIds", &value.to_string());
+                                }
+                                let ids = &this.ids;
+                                for value in &this.ids {
+                                    req.url_mut().query_pairs_mut().append_pair("ids", &value.to_string());
+                                }
+                                let names = &this.names;
+                                for value in &this.names {
+                                    req.url_mut().query_pairs_mut().append_pair("names", &value.to_string());
+                                }
+                                let property_filters = &this.property_filters;
+                                for value in &this.property_filters {
+                                    req.url_mut().query_pairs_mut().append_pair("propertyFilters", &value.to_string());
+                                }
+                                let statuses = &this.statuses;
+                                for value in &this.statuses {
+                                    req.url_mut().query_pairs_mut().append_pair("statuses", &value.to_string());
+                                }
+                                if let Some(min_created_date_time) = &this.min_created_date_time {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("minCreatedDateTime", &min_created_date_time.to_string());
+                                }
+                                if let Some(max_created_date_time) = &this.max_created_date_time {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("maxCreatedDateTime", &max_created_date_time.to_string());
+                                }
+                                if let Some(min_last_modified_date_time) = &this.min_last_modified_date_time {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("minLastModifiedDateTime", &min_last_modified_date_time.to_string());
+                                }
+                                if let Some(max_last_modified_date_time) = &this.max_last_modified_date_time {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("maxLastModifiedDateTime", &max_last_modified_date_time.to_string());
+                                }
+                                if let Some(max_page_size) = &this.max_page_size {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("$maxPageSize", &max_page_size.to_string());
+                                }
+                                if let Some(skip_token) = &this.skip_token {
+                                    req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+}
+pub mod solutions_discoverability {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get list of farmBeats solutions."]
+        pub fn list(&self) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                farm_beats_solution_ids: Vec::new(),
+                farm_beats_solution_names: Vec::new(),
+                max_page_size: None,
+            }
+        }
+        #[doc = "Get farmBeats solution by id."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `farm_beats_solution_id`: farmBeatsSolutionId to be queried."]
+        pub fn get(&self, farm_beats_solution_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                farm_beats_solution_id: farm_beats_solution_id.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::FarmBeatsSolutionListResponse> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::FarmBeatsSolutionListResponse = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) farm_beats_solution_ids: Vec<String>,
+            pub(crate) farm_beats_solution_names: Vec<String>,
+            pub(crate) max_page_size: Option<i32>,
+        }
+        impl RequestBuilder {
+            #[doc = "Ids of FarmBeats Solutions which the customer requests to fetch."]
+            pub fn farm_beats_solution_ids(mut self, farm_beats_solution_ids: Vec<String>) -> Self {
+                self.farm_beats_solution_ids = farm_beats_solution_ids;
+                self
+            }
+            #[doc = "Names of FarmBeats Solutions which the customer requests to fetch."]
+            pub fn farm_beats_solution_names(mut self, farm_beats_solution_names: Vec<String>) -> Self {
+                self.farm_beats_solution_names = farm_beats_solution_names;
+                self
+            }
+            #[doc = "Maximum number of items needed (inclusive).\r\nMinimum = 10, Maximum = 1000, Default value = 50."]
+            pub fn max_page_size(mut self, max_page_size: i32) -> Self {
+                self.max_page_size = Some(max_page_size);
+                self
+            }
+            pub fn into_stream(self) -> azure_core::Pageable<models::FarmBeatsSolutionListResponse, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.AgFoodPlatform/farmBeatsSolutionDefinitions",
+                            this.client.endpoint(),
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                                let farm_beats_solution_ids = &this.farm_beats_solution_ids;
+                                for value in &this.farm_beats_solution_ids {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("farmBeatsSolutionIds", &value.to_string());
+                                }
+                                let farm_beats_solution_names = &this.farm_beats_solution_names;
+                                for value in &this.farm_beats_solution_names {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("farmBeatsSolutionNames", &value.to_string());
+                                }
+                                if let Some(max_page_size) = &this.max_page_size {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair("$maxPageSize", &max_page_size.to_string());
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::FarmBeatsSolution> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::FarmBeatsSolution = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) farm_beats_solution_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.AgFoodPlatform/farmBeatsSolutionDefinitions/{}",
+                            this.client.endpoint(),
+                            &this.farm_beats_solution_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-09-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::FarmBeatsSolution>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }

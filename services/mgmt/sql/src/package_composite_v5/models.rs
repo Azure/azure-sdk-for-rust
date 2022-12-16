@@ -1981,6 +1981,9 @@ pub struct DatabaseProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
+    #[doc = "Type of enclave requested on the database i.e. Default or VBS enclaves."]
+    #[serde(rename = "preferredEnclaveType", default, skip_serializing_if = "Option::is_none")]
+    pub preferred_enclave_type: Option<database_properties::PreferredEnclaveType>,
     #[doc = "The resource identifier of the source associated with the create operation of this database.\r\n\r\nThis property is only supported for DataWarehouse edition and allows to restore across subscriptions.\r\n\r\nWhen sourceResourceId is specified, sourceDatabaseId, recoverableDatabaseId, restorableDroppedDatabaseId and sourceDatabaseDeletionDate must not be specified and CreateMode must be PointInTimeRestore, Restore or Recover.\r\n\r\nWhen createMode is PointInTimeRestore, sourceResourceId must be the resource ID of the existing database or existing sql pool, and restorePointInTime must be specified.\r\n\r\nWhen createMode is Restore, sourceResourceId must be the resource ID of restorable dropped database or restorable dropped sql pool.\r\n\r\nWhen createMode is Recover, sourceResourceId must be the resource ID of recoverable database or recoverable sql pool.\r\n\r\nWhen source subscription belongs to a different tenant than target subscription, “x-ms-authorization-auxiliary” header must contain authentication token for the source tenant. For more details about “x-ms-authorization-auxiliary” header see https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/authenticate-multi-tenant "]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
@@ -2406,6 +2409,44 @@ pub mod database_properties {
                 Self::Local => serializer.serialize_unit_variant("RequestedBackupStorageRedundancy", 1u32, "Local"),
                 Self::Zone => serializer.serialize_unit_variant("RequestedBackupStorageRedundancy", 2u32, "Zone"),
                 Self::GeoZone => serializer.serialize_unit_variant("RequestedBackupStorageRedundancy", 3u32, "GeoZone"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Type of enclave requested on the database i.e. Default or VBS enclaves."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PreferredEnclaveType")]
+    pub enum PreferredEnclaveType {
+        Default,
+        #[serde(rename = "VBS")]
+        Vbs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PreferredEnclaveType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PreferredEnclaveType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PreferredEnclaveType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("PreferredEnclaveType", 0u32, "Default"),
+                Self::Vbs => serializer.serialize_unit_variant("PreferredEnclaveType", 1u32, "VBS"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2893,6 +2934,9 @@ pub struct DatabaseUpdateProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
+    #[doc = "Type of enclave requested on the database i.e. Default or VBS enclaves."]
+    #[serde(rename = "preferredEnclaveType", default, skip_serializing_if = "Option::is_none")]
+    pub preferred_enclave_type: Option<database_update_properties::PreferredEnclaveType>,
 }
 impl DatabaseUpdateProperties {
     pub fn new() -> Self {
@@ -3315,6 +3359,44 @@ pub mod database_update_properties {
                 Self::Local => serializer.serialize_unit_variant("RequestedBackupStorageRedundancy", 1u32, "Local"),
                 Self::Zone => serializer.serialize_unit_variant("RequestedBackupStorageRedundancy", 2u32, "Zone"),
                 Self::GeoZone => serializer.serialize_unit_variant("RequestedBackupStorageRedundancy", 3u32, "GeoZone"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Type of enclave requested on the database i.e. Default or VBS enclaves."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PreferredEnclaveType")]
+    pub enum PreferredEnclaveType {
+        Default,
+        #[serde(rename = "VBS")]
+        Vbs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PreferredEnclaveType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PreferredEnclaveType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PreferredEnclaveType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("PreferredEnclaveType", 0u32, "Default"),
+                Self::Vbs => serializer.serialize_unit_variant("PreferredEnclaveType", 1u32, "VBS"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

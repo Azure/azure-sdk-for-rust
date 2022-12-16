@@ -103,14 +103,14 @@ impl Client {
             pipeline,
         }
     }
-    pub fn test_client(&self) -> test::Client {
-        test::Client(self.clone())
+    pub fn load_test_administration_client(&self) -> load_test_administration::Client {
+        load_test_administration::Client(self.clone())
     }
-    pub fn test_run_client(&self) -> test_run::Client {
-        test_run::Client(self.clone())
+    pub fn load_test_run_client(&self) -> load_test_run::Client {
+        load_test_run::Client(self.clone())
     }
 }
-pub mod test {
+pub mod load_test_administration {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
@@ -118,8 +118,8 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn get(&self, test_id: impl Into<String>) -> get::RequestBuilder {
-            get::RequestBuilder {
+        pub fn get_test(&self, test_id: impl Into<String>) -> get_test::RequestBuilder {
+            get_test::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
@@ -129,8 +129,12 @@ pub mod test {
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
         #[doc = "* `body`: Load test model"]
-        pub fn create_or_update(&self, test_id: impl Into<String>, body: impl Into<models::Test>) -> create_or_update::RequestBuilder {
-            create_or_update::RequestBuilder {
+        pub fn create_or_update_test(
+            &self,
+            test_id: impl Into<String>,
+            body: impl Into<models::Test>,
+        ) -> create_or_update_test::RequestBuilder {
+            create_or_update_test::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 body: body.into(),
@@ -140,15 +144,15 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn delete(&self, test_id: impl Into<String>) -> delete::RequestBuilder {
-            delete::RequestBuilder {
+        pub fn delete_test(&self, test_id: impl Into<String>) -> delete_test::RequestBuilder {
+            delete_test::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
         }
         #[doc = "Get all load tests by the fully qualified resource Id e.g subscriptions/{subId}/resourceGroups/{rg}/providers/Microsoft.LoadTestService/loadtests/{resName}."]
-        pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder {
+        pub fn list_tests(&self) -> list_tests::RequestBuilder {
+            list_tests::RequestBuilder {
                 client: self.0.clone(),
                 orderby: None,
                 search: None,
@@ -163,8 +167,8 @@ pub mod test {
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
         #[doc = "* `file_name`: File name with file extension like app.jmx"]
-        pub fn get_file(&self, test_id: impl Into<String>, file_name: impl Into<String>) -> get_file::RequestBuilder {
-            get_file::RequestBuilder {
+        pub fn get_test_file(&self, test_id: impl Into<String>, file_name: impl Into<String>) -> get_test_file::RequestBuilder {
+            get_test_file::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 file_name: file_name.into(),
@@ -176,13 +180,13 @@ pub mod test {
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
         #[doc = "* `file_name`: Unique name for test file with file extension like : App.jmx"]
         #[doc = "* `body`: The file content as application/octet-stream."]
-        pub fn upload_file(
+        pub fn upload_test_file(
             &self,
             test_id: impl Into<String>,
             file_name: impl Into<String>,
             body: impl Into<String>,
-        ) -> upload_file::RequestBuilder {
-            upload_file::RequestBuilder {
+        ) -> upload_test_file::RequestBuilder {
+            upload_test_file::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 file_name: file_name.into(),
@@ -195,8 +199,8 @@ pub mod test {
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
         #[doc = "* `file_name`: File name with file extension like app.jmx"]
-        pub fn delete_file(&self, test_id: impl Into<String>, file_name: impl Into<String>) -> delete_file::RequestBuilder {
-            delete_file::RequestBuilder {
+        pub fn delete_test_file(&self, test_id: impl Into<String>, file_name: impl Into<String>) -> delete_test_file::RequestBuilder {
+            delete_test_file::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 file_name: file_name.into(),
@@ -206,8 +210,8 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn list_files(&self, test_id: impl Into<String>) -> list_files::RequestBuilder {
-            list_files::RequestBuilder {
+        pub fn list_test_files(&self, test_id: impl Into<String>) -> list_test_files::RequestBuilder {
+            list_test_files::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
                 continuation_token: None,
@@ -217,8 +221,8 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn list_app_components(&self, test_id: impl Into<String>) -> list_app_components::RequestBuilder {
-            list_app_components::RequestBuilder {
+        pub fn get_app_components(&self, test_id: impl Into<String>) -> get_app_components::RequestBuilder {
+            get_app_components::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
@@ -243,8 +247,8 @@ pub mod test {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_id`: Unique name for the load test, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn list_server_metrics_config(&self, test_id: impl Into<String>) -> list_server_metrics_config::RequestBuilder {
-            list_server_metrics_config::RequestBuilder {
+        pub fn get_server_metrics_config(&self, test_id: impl Into<String>) -> get_server_metrics_config::RequestBuilder {
+            get_server_metrics_config::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
             }
@@ -266,7 +270,7 @@ pub mod test {
             }
         }
     }
-    pub mod get {
+    pub mod get_test {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -326,7 +330,7 @@ pub mod test {
             }
         }
     }
-    pub mod create_or_update {
+    pub mod create_or_update_test {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -388,7 +392,7 @@ pub mod test {
             }
         }
     }
-    pub mod delete {
+    pub mod delete_test {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
@@ -421,7 +425,7 @@ pub mod test {
             }
         }
     }
-    pub mod list {
+    pub mod list_tests {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -567,7 +571,7 @@ pub mod test {
             }
         }
     }
-    pub mod get_file {
+    pub mod get_test_file {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -633,7 +637,7 @@ pub mod test {
             }
         }
     }
-    pub mod upload_file {
+    pub mod upload_test_file {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -710,7 +714,7 @@ pub mod test {
             }
         }
     }
-    pub mod delete_file {
+    pub mod delete_test_file {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
@@ -749,7 +753,7 @@ pub mod test {
             }
         }
     }
-    pub mod list_files {
+    pub mod list_test_files {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -847,7 +851,7 @@ pub mod test {
             }
         }
     }
-    pub mod list_app_components {
+    pub mod get_app_components {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -969,7 +973,7 @@ pub mod test {
             }
         }
     }
-    pub mod list_server_metrics_config {
+    pub mod get_server_metrics_config {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1094,7 +1098,7 @@ pub mod test {
         }
     }
 }
-pub mod test_run {
+pub mod load_test_run {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
@@ -1102,8 +1106,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn get(&self, test_run_id: impl Into<String>) -> get::RequestBuilder {
-            get::RequestBuilder {
+        pub fn get_test_run(&self, test_run_id: impl Into<String>) -> get_test_run::RequestBuilder {
+            get_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1113,12 +1117,12 @@ pub mod test_run {
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
         #[doc = "* `body`: Load test run model"]
-        pub fn create_or_update(
+        pub fn create_or_update_test_run(
             &self,
             test_run_id: impl Into<String>,
             body: impl Into<models::TestRun>,
-        ) -> create_or_update::RequestBuilder {
-            create_or_update::RequestBuilder {
+        ) -> create_or_update_test_run::RequestBuilder {
+            create_or_update_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
                 body: body.into(),
@@ -1129,8 +1133,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn delete(&self, test_run_id: impl Into<String>) -> delete::RequestBuilder {
-            delete::RequestBuilder {
+        pub fn delete_test_run(&self, test_run_id: impl Into<String>) -> delete_test_run::RequestBuilder {
+            delete_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1140,16 +1144,16 @@ pub mod test_run {
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
         #[doc = "* `file_name`: Test run file name with file extension"]
-        pub fn get_file(&self, test_run_id: impl Into<String>, file_name: impl Into<String>) -> get_file::RequestBuilder {
-            get_file::RequestBuilder {
+        pub fn get_test_run_file(&self, test_run_id: impl Into<String>, file_name: impl Into<String>) -> get_test_run_file::RequestBuilder {
+            get_test_run_file::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
                 file_name: file_name.into(),
             }
         }
         #[doc = "Get all test runs with given filters"]
-        pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder {
+        pub fn list_test_runs(&self) -> list_test_runs::RequestBuilder {
+            list_test_runs::RequestBuilder {
                 client: self.0.clone(),
                 orderby: None,
                 continuation_token: None,
@@ -1165,8 +1169,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn stop(&self, test_run_id: impl Into<String>) -> stop::RequestBuilder {
-            stop::RequestBuilder {
+        pub fn stop_test_run(&self, test_run_id: impl Into<String>) -> stop_test_run::RequestBuilder {
+            stop_test_run::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1252,8 +1256,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn list_app_components(&self, test_run_id: impl Into<String>) -> list_app_components::RequestBuilder {
-            list_app_components::RequestBuilder {
+        pub fn get_app_components(&self, test_run_id: impl Into<String>) -> get_app_components::RequestBuilder {
+            get_app_components::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1278,8 +1282,8 @@ pub mod test_run {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `test_run_id`: Unique name for the load test run, must contain only lower-case alphabetic, numeric, underscore or hyphen characters."]
-        pub fn list_server_metrics_config(&self, test_run_id: impl Into<String>) -> list_server_metrics_config::RequestBuilder {
-            list_server_metrics_config::RequestBuilder {
+        pub fn get_server_metrics_config(&self, test_run_id: impl Into<String>) -> get_server_metrics_config::RequestBuilder {
+            get_server_metrics_config::RequestBuilder {
                 client: self.0.clone(),
                 test_run_id: test_run_id.into(),
             }
@@ -1301,7 +1305,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod get {
+    pub mod get_test_run {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1361,7 +1365,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod create_or_update {
+    pub mod create_or_update_test_run {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1432,7 +1436,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod delete {
+    pub mod delete_test_run {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
@@ -1465,7 +1469,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod get_file {
+    pub mod get_test_run_file {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1531,7 +1535,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod list {
+    pub mod list_test_runs {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1695,7 +1699,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod stop {
+    pub mod stop_test_run {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1940,48 +1944,78 @@ pub mod test_run {
                 self.body = Some(body.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::Metrics, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/test-runs/{}/metrics", this.client.endpoint(), &this.test_run_id))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
-                        if let Some(aggregation) = &this.aggregation {
-                            req.url_mut().query_pairs_mut().append_pair("aggregation", aggregation);
-                        }
-                        if let Some(interval) = &this.interval {
-                            req.url_mut().query_pairs_mut().append_pair("interval", interval);
-                        }
-                        let metricname = &this.metricname;
-                        req.url_mut().query_pairs_mut().append_pair("metricname", metricname);
-                        let metric_namespace = &this.metric_namespace;
-                        req.url_mut().query_pairs_mut().append_pair("metricNamespace", metric_namespace);
-                        let timespan = &this.timespan;
-                        req.url_mut().query_pairs_mut().append_pair("timespan", timespan);
-                        let req_body = if let Some(body) = &this.body {
-                            req.insert_header("content-type", "application/json");
-                            azure_core::to_json(body)?
-                        } else {
-                            azure_core::EMPTY_BODY
+                        let mut url =
+                            azure_core::Url::parse(&format!("{}/test-runs/{}/metrics", this.client.endpoint(), &this.test_run_id))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
+                                if let Some(aggregation) = &this.aggregation {
+                                    req.url_mut().query_pairs_mut().append_pair("aggregation", aggregation);
+                                }
+                                if let Some(interval) = &this.interval {
+                                    req.url_mut().query_pairs_mut().append_pair("interval", interval);
+                                }
+                                let metricname = &this.metricname;
+                                req.url_mut().query_pairs_mut().append_pair("metricname", metricname);
+                                let metric_namespace = &this.metric_namespace;
+                                req.url_mut().query_pairs_mut().append_pair("metricNamespace", metric_namespace);
+                                let timespan = &this.timespan;
+                                req.url_mut().query_pairs_mut().append_pair("timespan", timespan);
+                                let req_body = if let Some(body) = &this.body {
+                                    req.insert_header("content-type", "application/json");
+                                    azure_core::to_json(body)?
+                                } else {
+                                    azure_core::EMPTY_BODY
+                                };
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
                         };
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Metrics>> {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
@@ -2027,49 +2061,78 @@ pub mod test_run {
                 self.interval = Some(interval.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::DimensionValueList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/test-runs/{}/metric-dimensions/{}/values",
                             this.client.endpoint(),
                             &this.test_run_id,
                             &this.name
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
-                        if let Some(interval) = &this.interval {
-                            req.url_mut().query_pairs_mut().append_pair("interval", interval);
-                        }
-                        let metricname = &this.metricname;
-                        req.url_mut().query_pairs_mut().append_pair("metricname", metricname);
-                        let metric_namespace = &this.metric_namespace;
-                        req.url_mut().query_pairs_mut().append_pair("metricNamespace", metric_namespace);
-                        let timespan = &this.timespan;
-                        req.url_mut().query_pairs_mut().append_pair("timespan", timespan);
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
+                                if let Some(interval) = &this.interval {
+                                    req.url_mut().query_pairs_mut().append_pair("interval", interval);
+                                }
+                                let metricname = &this.metricname;
+                                req.url_mut().query_pairs_mut().append_pair("metricname", metricname);
+                                let metric_namespace = &this.metric_namespace;
+                                req.url_mut().query_pairs_mut().append_pair("metricNamespace", metric_namespace);
+                                let timespan = &this.timespan;
+                                req.url_mut().query_pairs_mut().append_pair("timespan", timespan);
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DimensionValueList>> {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }
-    pub mod list_app_components {
+    pub mod get_app_components {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -2199,7 +2262,7 @@ pub mod test_run {
             }
         }
     }
-    pub mod list_server_metrics_config {
+    pub mod get_server_metrics_config {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {

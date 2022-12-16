@@ -1739,6 +1739,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_labservices
 
+  azure_mgmt_liftrqumulo:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_liftrqumulo
+
   azure_mgmt_loadtestservice:
     if: always()
     runs-on: ubuntu-latest
@@ -2986,6 +3002,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_servicemap
+
+  azure_mgmt_servicenetworking:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_servicenetworking
 
   azure_mgmt_signalr:
     if: always()
