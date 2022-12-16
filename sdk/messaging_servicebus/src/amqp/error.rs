@@ -32,7 +32,7 @@ pub(crate) enum AmqpConnectionScopeError {
     ReceiverAttach(#[from] ReceiverAttachError),
 
     #[error("The connection scope is disposed")]
-    Disposed,
+    ScopeDisposed,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -60,6 +60,9 @@ pub enum AmqpClientError {
 
     #[error(transparent)]
     Dispose(#[from] DisposeError),
+
+    #[error("The client is disposed")]
+    ClientDisposed,
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -71,6 +74,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
             AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
+            AmqpConnectionScopeError::ScopeDisposed => Self::ClientDisposed,
         }
     }
 }

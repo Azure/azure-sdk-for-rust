@@ -2,7 +2,7 @@ use azure_core::auth::TokenResponse;
 use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
 use futures_util::{pin_mut, ready};
-use std::{future::Future, task::Poll};
+use std::{future::Future, task::Poll, sync::Arc};
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 
@@ -22,7 +22,7 @@ pub(crate) struct CbsTokenProvider {
 
 impl CbsTokenProvider {
     /// Initializes a new instance of the [`CbsTokenProvider`] class.
-    pub fn new(credential: ServiceBusTokenCredential, token_expiration_buffer: TimeSpan) -> Self {
+    pub fn new(credential: Arc<ServiceBusTokenCredential>, token_expiration_buffer: TimeSpan) -> Self {
         let token_type = if credential.is_shared_access_credential() {
             TokenType::SharedAccessToken { credential }
         } else {
@@ -128,7 +128,7 @@ impl AsyncCbsTokenProvider for CbsTokenProvider {
 
 #[cfg(test)]
 mod tests {
-
+    use std::sync::Arc;
     use fe2o3_amqp_cbs::AsyncCbsTokenProvider;
     use time::Duration as TimeSpan;
 
@@ -158,7 +158,7 @@ mod tests {
             });
 
         let credential = ServiceBusTokenCredential::from(mock_credential);
-        let mut provider = super::CbsTokenProvider::new(credential, TimeSpan::seconds(0));
+        let mut provider = super::CbsTokenProvider::new(Arc::new(credential), TimeSpan::seconds(0));
 
         let token = provider
             .get_token_async("http://www.here.com", "nobody", Vec::<String>::new())
@@ -190,7 +190,7 @@ mod tests {
             });
 
         let credential = ServiceBusTokenCredential::from(mock_credential);
-        let mut provider = super::CbsTokenProvider::new(credential, TimeSpan::seconds(0));
+        let mut provider = super::CbsTokenProvider::new(Arc::new(credential), TimeSpan::seconds(0));
 
         let (first_token_value, first_token_type, first_token_expires_at) = {
             let token = provider
@@ -237,7 +237,7 @@ mod tests {
             });
 
         let credential = ServiceBusTokenCredential::from(mock_credential);
-        let mut provider = super::CbsTokenProvider::new(credential, buffer);
+        let mut provider = super::CbsTokenProvider::new(Arc::new(credential), buffer);
 
         let (first_token_value, first_token_type, first_token_expires_at) = {
             let token = provider

@@ -1,5 +1,6 @@
 use azure_core::auth::TokenResponse;
 use tokio::sync::Semaphore;
+use std::sync::Arc;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
@@ -10,11 +11,11 @@ use crate::{
 pub(crate) enum TokenType {
     /// The type to consider a token if it is based on an Service Bus shared access signature.
     SharedAccessToken {
-        credential: ServiceBusTokenCredential,
+        credential: Arc<ServiceBusTokenCredential>,
     },
     /// The type to consider a token if not based on a shared access signature.
     JsonWebToken {
-        credential: ServiceBusTokenCredential,
+        credential: Arc<ServiceBusTokenCredential>,
 
         /// Tokens are only cached for JWT-based credentials; no need
         /// to instantiate the semaphore if no caching is taking place.

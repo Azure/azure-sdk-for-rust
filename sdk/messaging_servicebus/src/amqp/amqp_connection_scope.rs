@@ -1,4 +1,4 @@
-use std::{sync::atomic::Ordering, time::Duration as StdDuration};
+use std::{sync::{atomic::Ordering, Arc}, time::Duration as StdDuration};
 
 use async_trait::async_trait;
 use azure_core::Url;
@@ -23,7 +23,7 @@ use tokio::{sync::mpsc, time::timeout};
 
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
-    core::{TransportConnectionScope, RecoverableTransport},
+    core::{RecoverableTransport, TransportConnectionScope},
     primitives::service_bus_transport_type::ServiceBusTransportType,
     ServiceBusReceiveMode,
 };
@@ -62,7 +62,7 @@ pub(crate) struct AmqpConnectionScope {
     service_endpoint: Url,
 
     /// The endpoint for the Service Bus service to be used when establishing the connection.
-    _connection_endpoint: Url,
+    connection_endpoint: Url,
 
     /// The type of transport to use for communication.
     transport_type: ServiceBusTransportType,
@@ -73,14 +73,19 @@ pub(crate) struct AmqpConnectionScope {
     /// A handle to the AMQP session that is active for the current connection
     session: AmqpSession,
 
+    /// CBS client
+    cbs_link: AmqpCbsLinkHandle,
+
+    recover_operation_timeout: StdDuration,
+
+    // Keep a copy for recovering
+    credential: Arc<ServiceBusTokenCredential>,
+
     /// The controller responsible for managing transactions.
     ///
     /// TODO: transactions?
     #[cfg(feature = "transaction")]
-    _transaction_controller: Controller,
-
-    /// CBS client
-    cbs_link: AmqpCbsLinkHandle,
+    transaction_controller: Controller,
 }
 
 impl std::fmt::Debug for AmqpConnectionScope {
@@ -125,8 +130,7 @@ impl AmqpConnectionScope {
         // 4.4. The returned Guid is guaranteed to not equal Guid.Empty.
         let uuid = uuid::Uuid::new_v4();
         let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
-        let cbs_token_provider =
-            CbsTokenProvider::new(credential, Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
+        let credential = Arc::new(credential);
 
         let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
         let connection_handle = timeout(operation_timeout, fut).await??;
@@ -145,19 +149,23 @@ impl AmqpConnectionScope {
         .await??;
 
         let cbs_client = attach_cbs_client(&mut session.handle).await?;
+        let cbs_token_provider =
+            CbsTokenProvider::new(credential.clone(), Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
         let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
 
         Ok(Self {
             is_disposed: false,
             id,
             service_endpoint,
-            _connection_endpoint: connection_endpoint,
+            connection_endpoint,
             transport_type,
             connection,
             session,
             cbs_link,
+            recover_operation_timeout: operation_timeout,
+            credential,
             #[cfg(feature = "transaction")]
-            _transaction_controller: transaction_controller,
+            transaction_controller,
         })
     }
 
@@ -456,7 +464,8 @@ impl TransportConnectionScope for AmqpConnectionScope {
 
         match (session_close_err, connection_close_err) {
             (Ok(_), Ok(_)) => Ok(()),
-            (Ok(_), Err(e)) => Err(DisposeError::ConnectionCloseError(e)),
+            // Connection error has priority
+            (_, Err(e)) => Err(DisposeError::ConnectionCloseError(e)),
             (Err(e), _) => Err(DisposeError::SessionCloseError(e)),
         }
     }
@@ -467,7 +476,77 @@ impl RecoverableTransport for AmqpConnectionScope {
     type RecoverError = AmqpConnectionScopeError;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
-        todo!()
+        // Perform some state checks before attempting to recover
+        if self.is_disposed {
+            return Err(AmqpConnectionScopeError::ScopeDisposed);
+        }
+
+        // Session and connection event loops are still running
+        if !self.session.handle.is_ended() && !self.connection.handle.is_closed() {
+            return Ok(());
+        }
+
+        // Recover connection first
+        if self.connection.handle.is_closed() {
+            // TODO: Must make sure this is not called after user actively disposes the scope
+            // because calling close on a closed connection will result in a panic
+            let result = self.connection.handle.close().await;
+
+            // TODO: log error
+            if let Err(err) = result {
+                log::error!("Error closing connection during recovering: {:?}", err);
+            }
+
+            // recover
+            let fut =
+                Self::open_connection(&self.connection_endpoint, &self.transport_type, &self.id);
+            let connection_handle = timeout(self.recover_operation_timeout, fut).await??;
+            self.connection.handle = connection_handle;
+        }
+
+        // Recover session
+        if self.session.handle.is_ended() {
+            let result = self.session.handle.end().await;
+            if let Err(err) = result {
+                log::error!("Error ending session during recovering: {:?}", err);
+            }
+
+            let session_handle = timeout(
+                self.recover_operation_timeout,
+                Session::begin(&mut self.connection.handle),
+            )
+            .await??;
+            self.session.handle = session_handle;
+
+            // Transaction controller link must be re-created
+            // TODO: can txn controller be re-attached?
+            #[cfg(feature = "transaction")]
+            {
+                let txn_controller = timeout(
+                    self.recover_operation_timeout,
+                    Self::attach_txn_controller(&mut self.session.handle, &self.id),
+                )
+                .await??;
+                let prev_txn_controller =
+                    std::mem::replace(&mut self.transaction_controller, txn_controller);
+
+                // TODO: Is it necessary to close the old txn controller?
+                if let Err(err) = prev_txn_controller.close().await {
+                    log::error!("Error closing transaction controller: {:?}", err);
+                }
+            }
+
+            // TODO: recover CBS link only if session was recovered
+            let _ = self.cbs_link.stop();
+            let _cbs_close_result = self.cbs_link.join_handle_mut().await;
+            let cbs_client = attach_cbs_client(&mut self.session.handle).await?;
+            let cbs_token_provider =
+                CbsTokenProvider::new(self.credential.clone(), Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
+            let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+            self.cbs_link = cbs_link;
+        }
+
+        Ok(())
     }
 }
 
