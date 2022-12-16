@@ -454,13 +454,12 @@ impl TransportConnectionScope for AmqpConnectionScope {
 
     async fn dispose(&mut self) -> Result<(), Self::Error> {
         // TODO: handle link close?
+        self.is_disposed = true;
 
         let _ = self.cbs_link.stop();
         let _cbs_close_result = self.cbs_link.join_handle_mut().await;
         let session_close_err = self.session.handle.close().await;
         let connection_close_err = self.connection.handle.close().await;
-
-        self.is_disposed = true;
 
         match (session_close_err, connection_close_err) {
             (Ok(_), Ok(_)) => Ok(()),
@@ -506,6 +505,8 @@ impl RecoverableTransport for AmqpConnectionScope {
 
         // Recover session
         if self.session.handle.is_ended() {
+            // TODO: Must make sure this is not called after user actively disposes the scope
+            // because calling end on an ended session will result in a panic
             let result = self.session.handle.end().await;
             if let Err(err) = result {
                 log::error!("Error ending session during recovering: {:?}", err);
