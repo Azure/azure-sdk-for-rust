@@ -110,14 +110,14 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
     if crate_config.should_run(&Runs::Models) {
         let models = codegen_models::create_models(&cg)?;
         let models_path = io::join(&crate_config.output_folder, "models.rs")?;
-        write_file(&models_path, &models, crate_config.print_writing_file())?;
+        write_file(models_path, &models, crate_config.print_writing_file())?;
     }
 
     // create api client from operations
     if crate_config.should_run(&Runs::Operations) {
         let operations = codegen_operations::create_operations(&cg)?;
         let operations_path = io::join(&crate_config.output_folder, "mod.rs")?;
-        write_file(&operations_path, &operations, crate_config.print_writing_file())?;
+        write_file(operations_path, &operations, crate_config.print_writing_file())?;
     }
 
     Ok(cg)
