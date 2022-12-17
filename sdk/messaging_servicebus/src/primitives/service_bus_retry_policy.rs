@@ -14,7 +14,7 @@ pub(crate) static SERVER_BUSY_BASE_SLEEP_TIME: StdDuration = StdDuration::from_s
 /// Trait for operation errors that can be retried.
 pub trait ServiceBusRetryPolicyError: std::error::Error + Send + Sync + 'static {
     /// Returns true if the error is recoverable by recovering the connection scope.
-    fn is_recoverable(&self) -> bool;
+    fn should_try_recover(&self) -> bool;
 
     /// Returns true if the connection scope is disposed.
     fn is_scope_disposed(&self) -> bool;
@@ -194,6 +194,7 @@ macro_rules! run_operation {
                 Err(error) => {
                     failed_attempt_count += 1;
                     let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
+                    // TODO: check if the error is recoverable
 
                     match (
                         retry_delay,
