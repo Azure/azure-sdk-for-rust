@@ -192,6 +192,17 @@ macro_rules! run_operation {
             match outcome {
                 Ok(outcome) => break outcome,
                 Err(error) => {
+                    // TODO: error handling strategy
+                    // 1. check if the transport object should try to recover
+                    //    An error is recoverable if it indicates the session/connection event loop
+                    //    has stopped.
+                    // 2. if not recoverable, the error is simply retried until the retry policy
+                    //    is exhausted.
+                    // 3. if recoverable, the transport is recovered before retrying the operation.
+                    //    If the recover operation fails, then try to see if the connection scope is
+                    //    disposed. If it is, then the error is not recoverable and the retry policy
+                    //    is exhausted.
+
                     failed_attempt_count += 1;
                     let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
                     // TODO: check if the error is recoverable
