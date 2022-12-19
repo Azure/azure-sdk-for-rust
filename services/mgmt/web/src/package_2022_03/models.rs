@@ -802,7 +802,7 @@ pub struct AppServiceEnvironment {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub cluster_settings: Vec<NameValuePair>,
-    #[doc = "User added ip ranges to whitelist on ASE db"]
+    #[doc = "User added list of IP Ranges allowed on ASE db"]
     #[serde(
         rename = "userWhitelistedIpRanges",
         default,
@@ -9638,7 +9638,7 @@ pub mod push_settings {
         #[doc = "Gets or sets a flag indicating whether the Push endpoint is enabled."]
         #[serde(rename = "isPushEnabled")]
         pub is_push_enabled: bool,
-        #[doc = "Gets or sets a JSON string containing a list of tags that are whitelisted for use by the push registration endpoint."]
+        #[doc = "Gets or sets a JSON string containing a list of tags that are in the allowed list for use by the push registration endpoint."]
         #[serde(rename = "tagWhitelistJson", default, skip_serializing_if = "Option::is_none")]
         pub tag_whitelist_json: Option<String>,
         #[doc = "Gets or sets a JSON string containing a list of tags that require user authentication to be used in the push registration endpoint.\nTags can consist of alphanumeric characters and the following:\n'_', '@', '#', '.', ':', '-'. \nValidation should be performed at the PushRequestHandler."]

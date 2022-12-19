@@ -243,20 +243,11 @@ impl CertificateClient {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn delete<N>(&self, name: N) -> azure_core::Result<()>
+    pub fn delete<N>(&self, name: N) -> DeleteCertificateBuilder
     where
         N: Into<String>,
     {
-        // let mut uri = self.vault_url.clone();
-        // uri.set_path(&format!("certificates/{}", certificate_name));
-
-        // self.delete_authed(uri.to_string()).await?;
-
-        // Ok(())
-
-        let _name = name.into();
-
-        todo!("See issue #174 at: https://github.com/Azure/azure-sdk-for-rust/issues/174.")
+        DeleteCertificateBuilder::new(self.clone(), name.into())
     }
 
     /// Lists all the certificates in the Key Vault.

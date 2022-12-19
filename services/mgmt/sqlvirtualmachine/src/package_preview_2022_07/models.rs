@@ -1493,6 +1493,7 @@ pub mod sql_virtual_machine_properties {
     #[serde(remote = "LeastPrivilegeMode")]
     pub enum LeastPrivilegeMode {
         Enabled,
+        NotSet,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1519,8 +1520,14 @@ pub mod sql_virtual_machine_properties {
         {
             match self {
                 Self::Enabled => serializer.serialize_unit_variant("LeastPrivilegeMode", 0u32, "Enabled"),
+                Self::NotSet => serializer.serialize_unit_variant("LeastPrivilegeMode", 1u32, "NotSet"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for LeastPrivilegeMode {
+        fn default() -> Self {
+            Self::NotSet
         }
     }
     #[doc = "SQL Server edition type."]

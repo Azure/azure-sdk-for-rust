@@ -2014,7 +2014,7 @@ pub mod databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2030,7 +2030,7 @@ pub mod databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 if let Some(skip_token) = &this.skip_token {
                                     req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
                                 }
@@ -2110,7 +2110,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2182,7 +2182,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2255,7 +2255,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2304,7 +2304,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2372,7 +2372,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2427,7 +2427,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         if let Some(replica_type) = &this.replica_type {
                             req.url_mut().query_pairs_mut().append_pair("replicaType", replica_type);
                         }
@@ -2499,7 +2499,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2548,7 +2548,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -2616,7 +2616,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2688,7 +2688,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2737,7 +2737,7 @@ pub mod databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2810,7 +2810,7 @@ pub mod databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2826,7 +2826,7 @@ pub mod databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2907,7 +2907,7 @@ pub mod databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2923,7 +2923,7 @@ pub mod databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-02-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?

@@ -118,6 +118,9 @@ impl Client {
     pub fn extended_sql_pool_blob_auditing_policies_client(&self) -> extended_sql_pool_blob_auditing_policies::Client {
         extended_sql_pool_blob_auditing_policies::Client(self.clone())
     }
+    pub fn get_client(&self) -> get::Client {
+        get::Client(self.clone())
+    }
     pub fn integration_runtime_auth_keys_client(&self) -> integration_runtime_auth_keys::Client {
         integration_runtime_auth_keys::Client(self.clone())
     }
@@ -17655,6 +17658,194 @@ pub mod integration_runtime_status {
             }
             #[doc = "Send the request and return the response body."]
             pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IntegrationRuntimeStatusResponse>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod get {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get integration runtime start operation status"]
+        #[doc = "Get an integration runtime start operation status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `integration_runtime_name`: Integration runtime name"]
+        #[doc = "* `integration_runtime_operation_id`: Integration runtime Operation Id"]
+        pub fn integration_runtime_start(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            integration_runtime_name: impl Into<String>,
+            integration_runtime_operation_id: impl Into<String>,
+        ) -> integration_runtime_start::RequestBuilder {
+            integration_runtime_start::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                integration_runtime_name: integration_runtime_name.into(),
+                integration_runtime_operation_id: integration_runtime_operation_id.into(),
+            }
+        }
+        #[doc = "Get integration runtime stop operation status"]
+        #[doc = "Get an integration runtime stop operation status"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `integration_runtime_name`: Integration runtime name"]
+        #[doc = "* `integration_runtime_operation_id`: Integration runtime Operation Id"]
+        pub fn integration_runtime_stop(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            integration_runtime_name: impl Into<String>,
+            integration_runtime_operation_id: impl Into<String>,
+        ) -> integration_runtime_stop::RequestBuilder {
+            integration_runtime_stop::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                integration_runtime_name: integration_runtime_name.into(),
+                integration_runtime_operation_id: integration_runtime_operation_id.into(),
+            }
+        }
+    }
+    pub mod integration_runtime_start {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::IntegrationRuntimeOperationStatus> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::IntegrationRuntimeOperationStatus = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) integration_runtime_name: String,
+            pub(crate) integration_runtime_operation_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/start/operationstatuses/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . workspace_name , & this . integration_runtime_name , & this . integration_runtime_operation_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::IntegrationRuntimeOperationStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod integration_runtime_stop {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::IntegrationRuntimeStopOperationStatus> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::IntegrationRuntimeStopOperationStatus = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) integration_runtime_name: String,
+            pub(crate) integration_runtime_operation_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Synapse/workspaces/{}/integrationRuntimes/{}/stop/operationstatuses/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . workspace_name , & this . integration_runtime_name , & this . integration_runtime_operation_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2021-06-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::IntegrationRuntimeStopOperationStatus>> {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }

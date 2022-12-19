@@ -375,6 +375,17 @@ impl ConfigurationName {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConfigurationNameItem {
+    #[doc = "The configuration names which will be set based on specific target resource, client type, auth type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ConfigurationNames>,
+}
+impl ConfigurationNameItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Configuration Name list which will be set based on different target resource, client type, auth type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationNameResult {
@@ -384,7 +395,7 @@ pub struct ConfigurationNameResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ConfigurationNames>,
+    pub value: Vec<ConfigurationNameItem>,
     #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

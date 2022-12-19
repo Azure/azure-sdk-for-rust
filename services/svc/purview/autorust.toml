@@ -22,3 +22,8 @@ boxed = [
     ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "DateFormat", "dateTimeInstance"],
     ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "DateFormat", "timeInstance"],
 ]
+[tags]
+deny = [
+   # https://github.com/Azure/azure-sdk-for-rust/issues/1179
+  "package-2022-11-01-preview"
+]

@@ -491,6 +491,102 @@ pub mod farm_beats_properties {
         }
     }
 }
+#[doc = "FarmBeats solution resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FarmBeatsSolution {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "FarmBeatsSolution properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FarmBeatsSolutionProperties>,
+}
+impl FarmBeatsSolution {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Paged response contains list of requested objects and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FarmBeatsSolutionListResponse {
+    #[doc = "List of requested objects."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<FarmBeatsSolution>,
+    #[doc = "Token used in retrieving the next page. If null, there are no additional pages."]
+    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<String>,
+    #[doc = "Continuation link (absolute URI) to the next page of results in the list."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FarmBeatsSolutionListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl FarmBeatsSolutionListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "FarmBeatsSolution properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FarmBeatsSolutionProperties {
+    #[doc = "Solution Partner Id."]
+    #[serde(rename = "partnerId", default, skip_serializing_if = "Option::is_none")]
+    pub partner_id: Option<String>,
+    #[doc = "Solution Partner Tenant Id."]
+    #[serde(rename = "partnerTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub partner_tenant_id: Option<String>,
+    #[doc = "Gets scope of the FarmBeats data access that's required for processing solution request to partner.\r\nExample: For gdd they might need weatherScope and satelliteScope."]
+    #[serde(
+        rename = "dataAccessScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub data_access_scopes: Vec<String>,
+    #[serde(rename = "marketplaceOfferDetails", default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_offer_details: Option<MarketplaceOfferDetails>,
+    #[doc = "Gets scope of the FarmBeats related parameters that need to be validated in apiInputParameters.\r\nExample: For if 'FarmHierarchy' is the input scope for 'WeatherScope' data access\r\nFor working with WeatherScope we need FarmHierarchy info implies 'farmerId', 'resourceId', 'resourceType' in request body."]
+    #[serde(
+        rename = "inputParametersValidationScopes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub input_parameters_validation_scopes: Vec<ResourceParameter>,
+    #[doc = "Gets apiVersion: Swagger Document Dictionary to capture all api versions of swagger exposed by partner to farmbeats."]
+    #[serde(rename = "openApiSpecsDictionary", default, skip_serializing_if = "Option::is_none")]
+    pub open_api_specs_dictionary: Option<serde_json::Value>,
+    #[doc = "Gets example name: insight sample response Dictionary to capture all variations of computed results ingested by partner."]
+    #[serde(rename = "evaluatedOutputsDictionary", default, skip_serializing_if = "Option::is_none")]
+    pub evaluated_outputs_dictionary: Option<serde_json::Value>,
+    #[doc = "Application id of the multi tenant application to be used by partner to access FarmBeats data."]
+    #[serde(rename = "accessFBApplicationId", default, skip_serializing_if = "Option::is_none")]
+    pub access_fb_application_id: Option<String>,
+    #[doc = "Role Id of the SaaS multi tenant application to access relevant fb data."]
+    #[serde(rename = "roleId", default, skip_serializing_if = "Option::is_none")]
+    pub role_id: Option<String>,
+    #[doc = "Role Name of the SaaS multi tenant application to access relevant fb data."]
+    #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
+    pub role_name: Option<String>,
+    #[doc = "Application name of the multi tenant application to be used by partner to access FarmBeatsData."]
+    #[serde(rename = "accessFBApplicationName", default, skip_serializing_if = "Option::is_none")]
+    pub access_fb_application_name: Option<String>,
+}
+impl FarmBeatsSolutionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "FarmBeats ARM Resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsUpdateProperties {
@@ -551,6 +647,106 @@ pub mod identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Insight {
+    #[serde(rename = "farmerId", default, skip_serializing_if = "Option::is_none")]
+    pub farmer_id: Option<String>,
+    #[serde(rename = "modelId", default, skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "modelVersion", default, skip_serializing_if = "Option::is_none")]
+    pub model_version: Option<String>,
+    #[serde(rename = "insightStartDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub insight_start_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "insightEndDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub insight_end_date_time: Option<time::OffsetDateTime>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub measures: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub created_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub modified_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+impl Insight {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InsightAttachment {
+    #[serde(rename = "insightId", default, skip_serializing_if = "Option::is_none")]
+    pub insight_id: Option<String>,
+    #[serde(rename = "modelId", default, skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "fileLink", default, skip_serializing_if = "Option::is_none")]
+    pub file_link: Option<String>,
+    #[serde(rename = "originalFileName", default, skip_serializing_if = "Option::is_none")]
+    pub original_file_name: Option<String>,
+    #[serde(rename = "farmerId", default, skip_serializing_if = "Option::is_none")]
+    pub farmer_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub created_date_time: Option<time::OffsetDateTime>,
+    #[serde(rename = "modifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub modified_date_time: Option<time::OffsetDateTime>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+}
+impl InsightAttachment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MarketplaceOfferDetails {
+    #[serde(rename = "saasOfferId", default, skip_serializing_if = "Option::is_none")]
+    pub saas_offer_id: Option<String>,
+    #[serde(rename = "publisherId", default, skip_serializing_if = "Option::is_none")]
+    pub publisher_id: Option<String>,
+}
+impl MarketplaceOfferDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Measure {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+}
+impl Measure {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Details of a REST API operation, returned from the Resource Provider Operations API"]
@@ -1013,6 +1209,18 @@ impl Resource {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceParameter {
+    #[serde(rename = "resourceIdName", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id_name: Option<String>,
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+}
+impl ResourceParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Sensor integration request model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensorIntegration {
@@ -1074,6 +1282,127 @@ pub mod sensor_integration {
                 Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "Solution resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Solution {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Solution resource properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SolutionProperties>,
+    #[doc = "The ETag value to implement optimistic concurrency."]
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+}
+impl Solution {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SolutionEvaluatedOutput {
+    #[serde(rename = "insightResponse", default, skip_serializing_if = "Option::is_none")]
+    pub insight_response: Option<Insight>,
+    #[serde(rename = "insightAttachmentResponse", default, skip_serializing_if = "Option::is_none")]
+    pub insight_attachment_response: Option<InsightAttachment>,
+}
+impl SolutionEvaluatedOutput {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Solution Installation Request Body."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SolutionInstallationRequest {
+    #[doc = "Solution resource properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SolutionProperties>,
+}
+impl SolutionInstallationRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Paged response contains list of requested objects and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SolutionListResponse {
+    #[doc = "List of requested objects."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<Solution>,
+    #[doc = "Token used in retrieving the next page. If null, there are no additional pages."]
+    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<String>,
+    #[doc = "Continuation link (absolute URI) to the next page of results in the list."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for SolutionListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl SolutionListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Solution resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SolutionProperties {
+    #[doc = "Solution Id."]
+    #[serde(rename = "solutionId", default, skip_serializing_if = "Option::is_none")]
+    pub solution_id: Option<String>,
+    #[doc = "Partner Id of the Solution."]
+    #[serde(rename = "partnerId", default, skip_serializing_if = "Option::is_none")]
+    pub partner_id: Option<String>,
+    #[doc = "SaaS subscriptionId of the installed SaaS application."]
+    #[serde(rename = "saasSubscriptionId")]
+    pub saas_subscription_id: String,
+    #[doc = "SaaS subscription name of the installed SaaS application."]
+    #[serde(rename = "saasSubscriptionName")]
+    pub saas_subscription_name: String,
+    #[doc = "SaaS application Publisher Id."]
+    #[serde(rename = "marketplacePublisherId")]
+    pub marketplace_publisher_id: String,
+    #[doc = "SaaS application Plan Id."]
+    #[serde(rename = "planId")]
+    pub plan_id: String,
+    #[doc = "SaaS application Offer Id."]
+    #[serde(rename = "offerId")]
+    pub offer_id: String,
+    #[doc = "SaaS application Term Id."]
+    #[serde(rename = "termId")]
+    pub term_id: String,
+}
+impl SolutionProperties {
+    pub fn new(
+        saas_subscription_id: String,
+        saas_subscription_name: String,
+        marketplace_publisher_id: String,
+        plan_id: String,
+        offer_id: String,
+        term_id: String,
+    ) -> Self {
+        Self {
+            solution_id: None,
+            partner_id: None,
+            saas_subscription_id,
+            saas_subscription_name,
+            marketplace_publisher_id,
+            plan_id,
+            offer_id,
+            term_id,
         }
     }
 }

@@ -112,6 +112,18 @@ impl Client {
     pub fn governance_rules_client(&self) -> governance_rules::Client {
         governance_rules::Client(self.clone())
     }
+    pub fn management_group_governance_rule_client(&self) -> management_group_governance_rule::Client {
+        management_group_governance_rule::Client(self.clone())
+    }
+    pub fn management_group_governance_rules_client(&self) -> management_group_governance_rules::Client {
+        management_group_governance_rules::Client(self.clone())
+    }
+    pub fn management_group_governance_rules_delete_status_client(&self) -> management_group_governance_rules_delete_status::Client {
+        management_group_governance_rules_delete_status::Client(self.clone())
+    }
+    pub fn management_group_governance_rules_execute_status_client(&self) -> management_group_governance_rules_execute_status::Client {
+        management_group_governance_rules_execute_status::Client(self.clone())
+    }
     pub fn security_connector_governance_rule_client(&self) -> security_connector_governance_rule::Client {
         security_connector_governance_rule::Client(self.clone())
     }
@@ -129,7 +141,7 @@ pub mod governance_rule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a list of all relevant governanceRules over a subscription level scope"]
+        #[doc = "Get a list of the governance rules on the subscription level scope"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
@@ -238,11 +250,11 @@ pub mod governance_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a specific governanceRule for the requested scope by ruleId"]
+        #[doc = "Get a specific governance rule for the requested scope by ruleId"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
         pub fn get(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
                 client: self.0.clone(),
@@ -250,12 +262,12 @@ pub mod governance_rules {
                 rule_id: rule_id.into(),
             }
         }
-        #[doc = "Creates or update a security GovernanceRule on the given subscription."]
+        #[doc = "Creates or updates a governance rule on a subscription"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
-        #[doc = "* `governance_rule`: GovernanceRule over a subscription scope"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `governance_rule`: Governance rule over a given scope"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -269,11 +281,11 @@ pub mod governance_rules {
                 governance_rule: governance_rule.into(),
             }
         }
-        #[doc = "Delete a GovernanceRule over a given scope"]
+        #[doc = "Delete a Governance rule over a given scope"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
         pub fn delete(&self, subscription_id: impl Into<String>, rule_id: impl Into<String>) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
@@ -281,11 +293,11 @@ pub mod governance_rules {
                 rule_id: rule_id.into(),
             }
         }
-        #[doc = "Execute a security GovernanceRule on the given subscription."]
+        #[doc = "Execute a governance rule on a subscription"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
         pub fn rule_id_execute_single_subscription(
             &self,
             subscription_id: impl Into<String>,
@@ -298,13 +310,13 @@ pub mod governance_rules {
                 execute_governance_rule_params: None,
             }
         }
-        #[doc = "Execute a security GovernanceRule on the given security connector."]
+        #[doc = "Execute a governance rule on the given security connector"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         #[doc = "* `security_connector_name`: The security connector name."]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
         pub fn rule_id_execute_single_security_connector(
             &self,
             subscription_id: impl Into<String>,
@@ -317,6 +329,23 @@ pub mod governance_rules {
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 security_connector_name: security_connector_name.into(),
+                rule_id: rule_id.into(),
+                execute_governance_rule_params: None,
+            }
+        }
+        #[doc = "Execute governance rule on the given management group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        pub fn rule_id_execute_single_management_group(
+            &self,
+            management_group_id: impl Into<String>,
+            rule_id: impl Into<String>,
+        ) -> rule_id_execute_single_management_group::RequestBuilder {
+            rule_id_execute_single_management_group::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
                 rule_id: rule_id.into(),
                 execute_governance_rule_params: None,
             }
@@ -506,7 +535,7 @@ pub mod governance_rules {
             pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
         }
         impl RequestBuilder {
-            #[doc = "GovernanceRule over a subscription scope"]
+            #[doc = "Execute governance rule over a given scope"]
             pub fn execute_governance_rule_params(
                 mut self,
                 execute_governance_rule_params: impl Into<models::ExecuteGovernanceRuleParams>,
@@ -562,7 +591,7 @@ pub mod governance_rules {
             pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
         }
         impl RequestBuilder {
-            #[doc = "GovernanceRule over a subscription scope"]
+            #[doc = "Execute governance rule over a given scope"]
             pub fn execute_governance_rule_params(
                 mut self,
                 execute_governance_rule_params: impl Into<models::ExecuteGovernanceRuleParams>,
@@ -600,12 +629,66 @@ pub mod governance_rules {
             }
         }
     }
+    pub mod rule_id_execute_single_management_group {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+            pub(crate) rule_id: String,
+            pub(crate) execute_governance_rule_params: Option<models::ExecuteGovernanceRuleParams>,
+        }
+        impl RequestBuilder {
+            #[doc = "Execute governance rule over a given scope"]
+            pub fn execute_governance_rule_params(
+                mut self,
+                execute_governance_rule_params: impl Into<models::ExecuteGovernanceRuleParams>,
+            ) -> Self {
+                self.execute_governance_rule_params = Some(execute_governance_rule_params.into());
+                self
+            }
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules/{}/execute",
+                            this.client.endpoint(),
+                            &this.management_group_id,
+                            &this.rule_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                        let req_body = if let Some(execute_governance_rule_params) = &this.execute_governance_rule_params {
+                            req.insert_header("content-type", "application/json");
+                            azure_core::to_json(execute_governance_rule_params)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
 }
 pub mod security_connector_governance_rule {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a list of all relevant governanceRules over a security connector level scope"]
+        #[doc = "Get a list of all relevant governance rules over a security connector level scope"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
@@ -721,13 +804,13 @@ pub mod security_connector_governance_rules {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a specific governanceRule for the requested scope by ruleId"]
+        #[doc = "Get a specific governance rule for the requested scope by ruleId"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         #[doc = "* `security_connector_name`: The security connector name."]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -743,14 +826,14 @@ pub mod security_connector_governance_rules {
                 rule_id: rule_id.into(),
             }
         }
-        #[doc = "Creates or update a security GovernanceRule on the given security connector."]
+        #[doc = "Creates or updates a governance rule on the given security connector"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         #[doc = "* `security_connector_name`: The security connector name."]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
-        #[doc = "* `governance_rule`: GovernanceRule over a subscription scope"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `governance_rule`: Governance rule over a given scope"]
         pub fn create_or_update(
             &self,
             subscription_id: impl Into<String>,
@@ -768,13 +851,13 @@ pub mod security_connector_governance_rules {
                 governance_rule: governance_rule.into(),
             }
         }
-        #[doc = "Delete a GovernanceRule over a given scope"]
+        #[doc = "Delete a Governance rule over a given scope"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         #[doc = "* `security_connector_name`: The security connector name."]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
@@ -931,6 +1014,7 @@ pub mod security_connector_governance_rules {
             pub(crate) rule_id: String,
         }
         impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -956,16 +1040,348 @@ pub mod security_connector_governance_rules {
         }
     }
 }
+pub mod management_group_governance_rule {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get a list of all relevant governance rules over a management group level scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        pub fn list(&self, management_group_id: impl Into<String>) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRuleList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::GovernanceRuleList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::GovernanceRuleList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules",
+                            this.client.endpoint(),
+                            &this.management_group_id
+                        ))?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+}
+pub mod management_group_governance_rules {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get a specific governance rule for the requested scope by ruleId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        pub fn get(&self, management_group_id: impl Into<String>, rule_id: impl Into<String>) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
+                rule_id: rule_id.into(),
+            }
+        }
+        #[doc = "Creates or updates governance rule on the given management group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `governance_rule`: Governance rule over a given scope"]
+        pub fn create_or_update(
+            &self,
+            management_group_id: impl Into<String>,
+            rule_id: impl Into<String>,
+            governance_rule: impl Into<models::GovernanceRule>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
+                rule_id: rule_id.into(),
+                governance_rule: governance_rule.into(),
+            }
+        }
+        #[doc = "Delete a Governance rule over a given scope"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        pub fn delete(&self, management_group_id: impl Into<String>, rule_id: impl Into<String>) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
+                rule_id: rule_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRule> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::GovernanceRule = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+            pub(crate) rule_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules/{}",
+                            this.client.endpoint(),
+                            &this.management_group_id,
+                            &this.rule_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::GovernanceRule> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::GovernanceRule = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+            pub(crate) rule_id: String,
+            pub(crate) governance_rule: models::GovernanceRule,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules/{}",
+                            this.client.endpoint(),
+                            &this.management_group_id,
+                            &this.rule_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.governance_rule)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::GovernanceRule>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+            pub(crate) rule_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core::Url::parse(&format!(
+                            "{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules/{}",
+                            this.client.endpoint(),
+                            &this.management_group_id,
+                            &this.rule_id
+                        ))?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+}
 pub mod subscription_governance_rules_execute_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a specific governanceRule execution status for the requested scope by ruleId and operationId"]
+        #[doc = "Get a specific governance rule execution status for the requested scope by ruleId and operationId"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
-        #[doc = "* `operation_id`: The security GovernanceRule execution key - unique key for the execution of GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `operation_id`: The governance rule execution key - unique key for the execution of governance rule"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1024,7 +1440,6 @@ pub mod subscription_governance_rules_execute_status {
             pub(crate) operation_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1064,14 +1479,14 @@ pub mod security_connector_governance_rules_execute_status {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a specific governanceRule execution status for the requested scope by ruleId and operationId"]
+        #[doc = "Get a specific governance rule execution status for the requested scope by ruleId and operationId"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: Azure subscription ID"]
         #[doc = "* `resource_group_name`: The name of the resource group within the user's subscription. The name is case insensitive."]
         #[doc = "* `security_connector_name`: The security connector name."]
-        #[doc = "* `rule_id`: The security GovernanceRule key - unique key for the standard GovernanceRule"]
-        #[doc = "* `operation_id`: The security GovernanceRule execution key - unique key for the execution of GovernanceRule"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `operation_id`: The governance rule execution key - unique key for the execution of governance rule"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -1136,7 +1551,6 @@ pub mod security_connector_governance_rules_execute_status {
             pub(crate) operation_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Send the request and returns the response."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
@@ -1166,15 +1580,172 @@ pub mod security_connector_governance_rules_execute_status {
         }
     }
 }
+pub mod management_group_governance_rules_execute_status {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get a specific governance rule execution status for the requested scope by ruleId and operationId"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `operation_id`: The governance rule execution key - unique key for the execution of governance rule"]
+        pub fn get(
+            &self,
+            management_group_id: impl Into<String>,
+            rule_id: impl Into<String>,
+            operation_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
+                rule_id: rule_id.into(),
+                operation_id: operation_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::ExecuteRuleStatus> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::ExecuteRuleStatus = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+            pub fn headers(&self) -> Headers {
+                Headers(self.0.headers())
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        pub struct Headers<'a>(&'a azure_core::headers::Headers);
+        impl<'a> Headers<'a> {
+            #[doc = "Location URL for the execution status"]
+            pub fn location(&self) -> azure_core::Result<&str> {
+                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
+            }
+        }
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+            pub(crate) rule_id: String,
+            pub(crate) operation_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules/{}/execute/operationResults/{}" , this . client . endpoint () , & this . management_group_id , & this . rule_id , & this . operation_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            #[doc = "Send the request and return the response body."]
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ExecuteRuleStatus>> {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod management_group_governance_rules_delete_status {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get a specific governance rule deletion status for the requested scope by rule ID and operation ID"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `management_group_id`: Azure Management Group ID"]
+        #[doc = "* `rule_id`: The governance rule key - unique key for the standard governance rule (GUID)"]
+        #[doc = "* `operation_id`: The governance rule execution key - unique key for the execution of governance rule"]
+        pub fn get(
+            &self,
+            management_group_id: impl Into<String>,
+            rule_id: impl Into<String>,
+            operation_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                management_group_id: management_group_id.into(),
+                rule_id: rule_id.into(),
+                operation_id: operation_id.into(),
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) management_group_id: String,
+            pub(crate) rule_id: String,
+            pub(crate) operation_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Send the request and returns the response."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/providers/Microsoft.Management/managementGroups/{}/providers/Microsoft.Security/governanceRules/{}/delete/operationResults/{}" , this . client . endpoint () , & this . management_group_id , & this . rule_id , & this . operation_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-01-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+}
 pub mod governance_assignments {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get security governanceAssignments on all your resources inside a scope"]
+        #[doc = "Get governance assignments on all of your resources inside a scope"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
-        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
+        #[doc = "* `assessment_name`: The Assessment Key - A unique key for the assessment type"]
         pub fn list(&self, scope: impl Into<String>, assessment_name: impl Into<String>) -> list::RequestBuilder {
             list::RequestBuilder {
                 client: self.0.clone(),
@@ -1186,8 +1757,8 @@ pub mod governance_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
-        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
-        #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
+        #[doc = "* `assessment_name`: The Assessment Key - A unique key for the assessment type"]
+        #[doc = "* `assignment_key`: The governance assignment key - the assessment key of the required governance assignment"]
         pub fn get(
             &self,
             scope: impl Into<String>,
@@ -1201,13 +1772,13 @@ pub mod governance_assignments {
                 assignment_key: assignment_key.into(),
             }
         }
-        #[doc = "Creates or update a security GovernanceAssignment on the given subscription."]
+        #[doc = "Creates or updates a governance assignment on the given subscription."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
-        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
-        #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
-        #[doc = "* `governance_assignment`: GovernanceAssignment over a subscription scope"]
+        #[doc = "* `assessment_name`: The Assessment Key - A unique key for the assessment type"]
+        #[doc = "* `assignment_key`: The governance assignment key - the assessment key of the required governance assignment"]
+        #[doc = "* `governance_assignment`: Governance assignment over a subscription scope"]
         pub fn create_or_update(
             &self,
             scope: impl Into<String>,
@@ -1227,8 +1798,8 @@ pub mod governance_assignments {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `scope`: Scope of the query, can be subscription (/subscriptions/0b06d9ea-afe6-4779-bd59-30e5c2d9d13f) or management group (/providers/Microsoft.Management/managementGroups/mgName)."]
-        #[doc = "* `assessment_name`: The Assessment Key - Unique key for the assessment type"]
-        #[doc = "* `assignment_key`: The security governance assignment key - the assessment key of the required governance assignment"]
+        #[doc = "* `assessment_name`: The Assessment Key - A unique key for the assessment type"]
+        #[doc = "* `assignment_key`: The governance assignment key - the assessment key of the required governance assignment"]
         pub fn delete(
             &self,
             scope: impl Into<String>,

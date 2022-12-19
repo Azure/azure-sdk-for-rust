@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionableRemediation {
+    #[doc = "ActionableRemediation Setting.\r\nNone - the setting was never set.\r\nEnabled - ActionableRemediation is enabled.\r\nDisabled - ActionableRemediation is disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ActionableRemediationState>,
     #[serde(
@@ -29,6 +30,7 @@ impl ActionableRemediation {
         Self::default()
     }
 }
+#[doc = "ActionableRemediation Setting.\r\nNone - the setting was never set.\r\nEnabled - ActionableRemediation is enabled.\r\nDisabled - ActionableRemediation is disabled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ActionableRemediationState")]
 pub enum ActionableRemediationState {
@@ -69,7 +71,7 @@ impl Serialize for ActionableRemediationState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationInfo {
-    #[doc = "Gets or sets one-time OAuth code to exchange for refresh and access tokens."]
+    #[doc = "Gets or sets one-time OAuth code to exchange for refresh and access tokens.\r\n\r\nOnly used during PUT operations. The secret is cleared during GET.\r\nIn general, RPaaS does not return any property marked as a secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }
@@ -356,12 +358,12 @@ impl AzureDevOpsProjectMetadata {
 pub struct AzureDevOpsProjectProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Gets or sets AzureDevOps org Name."]
+    #[serde(rename = "orgName", default, skip_serializing_if = "Option::is_none")]
+    pub org_name: Option<String>,
     #[doc = "Gets or sets AzureDevOps Project Id."]
     #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
-    #[doc = "Gets or sets AzureDevOps Org Name."]
-    #[serde(rename = "orgName", default, skip_serializing_if = "Option::is_none")]
-    pub org_name: Option<String>,
     #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
     pub auto_discovery: Option<AutoDiscovery>,
 }
@@ -413,18 +415,18 @@ impl AzureDevOpsRepoListResponse {
 pub struct AzureDevOpsRepoProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Gets or sets AzureDevOps org Name."]
+    #[serde(rename = "orgName", default, skip_serializing_if = "Option::is_none")]
+    pub org_name: Option<String>,
+    #[doc = "Gets or sets AzureDevOps project Name."]
+    #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
+    pub project_name: Option<String>,
     #[doc = "Gets or sets Azure DevOps repo id."]
     #[serde(rename = "repoId", default, skip_serializing_if = "Option::is_none")]
     pub repo_id: Option<String>,
     #[doc = "Gets or sets AzureDevOps repo url."]
     #[serde(rename = "repoUrl", default, skip_serializing_if = "Option::is_none")]
     pub repo_url: Option<String>,
-    #[doc = "Gets or sets AzureDevOps Org Name."]
-    #[serde(rename = "orgName", default, skip_serializing_if = "Option::is_none")]
-    pub org_name: Option<String>,
-    #[doc = "Gets or sets AzureDevOps Project Name."]
-    #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
-    pub project_name: Option<String>,
     #[doc = "Gets or sets AzureDevOps repo visibility, whether it is public or private etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<String>,
@@ -548,7 +550,7 @@ impl GitHubConnectorListResponse {
 pub struct GitHubConnectorProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[doc = "Gets or sets one-time OAuth code to exchange for refresh and access tokens."]
+    #[doc = "Gets or sets one-time OAuth code to exchange for refresh and access tokens.\r\n\r\nOnly used during PUT operations. The secret is cleared during GET.\r\nIn general, RPaaS does not return any property marked as a secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }

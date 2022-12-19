@@ -138,6 +138,12 @@ pub struct DimensionValueList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for DimensionValueList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
 impl DimensionValueList {
     pub fn new() -> Self {
         Self::default()
@@ -647,10 +653,16 @@ pub struct Metrics {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub timeseries: Vec<TimeSeriesElement>,
+    pub value: Vec<TimeSeriesElement>,
     #[doc = "Link for the next set of timeseries in case of paginated results, if applicable"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for Metrics {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
 }
 impl Metrics {
     pub fn new() -> Self {
@@ -852,10 +864,10 @@ pub mod pass_fail_metric {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Action")]
     pub enum Action {
-        #[serde(rename = "stop")]
-        Stop,
         #[serde(rename = "continue")]
         Continue,
+        #[serde(rename = "stop")]
+        Stop,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -881,8 +893,8 @@ pub mod pass_fail_metric {
             S: Serializer,
         {
             match self {
-                Self::Stop => serializer.serialize_unit_variant("Action", 0u32, "stop"),
-                Self::Continue => serializer.serialize_unit_variant("Action", 1u32, "continue"),
+                Self::Continue => serializer.serialize_unit_variant("Action", 0u32, "continue"),
+                Self::Stop => serializer.serialize_unit_variant("Action", 1u32, "stop"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

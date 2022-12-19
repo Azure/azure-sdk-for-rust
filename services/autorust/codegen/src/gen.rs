@@ -53,7 +53,7 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
     let mut has_xml = false;
     for tag in tags {
         println!("  {}", tag.name());
-        let output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
+        let output_folder = io::join(&src_folder, tag.rust_mod_name())?;
         let input_files: Result<Vec<_>> = tag
             .input_files()
             .iter()
