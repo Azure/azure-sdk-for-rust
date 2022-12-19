@@ -64,8 +64,6 @@ impl Resource for &Collection {
 pub enum KeyKind {
     /// useful for equality comparisons
     Hash,
-    /// useful for multi-value lookups
-    MultiHash,
     /// seful for equality, range comparisons and sorting
     Range,
     /// useful for spatial queries
@@ -136,8 +134,6 @@ pub struct PartitionKey {
     pub paths: Vec<String>,
     /// The algorithm used for partitioning
     pub kind: KeyKind,
-    /// The version of the partition key definition
-    pub version: i32,
 }
 
 impl std::default::Default for PartitionKey {
@@ -145,7 +141,6 @@ impl std::default::Default for PartitionKey {
         Self {
             paths: vec![],
             kind: KeyKind::Hash,
-            version: 2,
         }
     }
 }
@@ -158,7 +153,6 @@ where
         Self {
             paths: vec![t.as_ref().to_owned()],
             kind: KeyKind::Hash,
-            version: 2,
         }
     }
 }
