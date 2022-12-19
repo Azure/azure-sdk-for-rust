@@ -20,20 +20,18 @@ pub trait ServiceBusRetryPolicyError: std::error::Error + Send + Sync + 'static 
     fn is_scope_disposed(&self) -> bool;
 }
 
-impl ServiceBusRetryPolicyError for fe2o3_amqp_management::error::Error {
-    fn is_scope_disposed(&self) -> bool {
-        use fe2o3_amqp::link::{LinkStateError, RecvError};
-        match self {
-            ManagementError::Send(error) => match error {
-                SendError::LinkStateError(LinkStateError::IllegalSessionState) => true,
-                _ => false,
-            },
-            ManagementError::Recv(error) => match error {
-                RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
-                _ => false,
-            },
+pub(crate) fn should_try_recover_from_management_error(error: &fe2o3_amqp_management::error::Error) -> bool {
+    use fe2o3_amqp::link::{LinkStateError, RecvError};
+    match error {
+        ManagementError::Send(error) => match error {
+            SendError::LinkStateError(LinkStateError::IllegalSessionState) => true,
             _ => false,
-        }
+        },
+        ManagementError::Recv(error) => match error {
+            RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
+            _ => false,
+        },
+        _ => false,
     }
 }
 
@@ -184,6 +182,9 @@ macro_rules! run_operation {
                 )
                 .await;
             }
+
+            // try recover
+            compile_error!("TODO: implement recover");
 
             let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
                 Ok(result) => result.map_err(<$err_ty>::from),

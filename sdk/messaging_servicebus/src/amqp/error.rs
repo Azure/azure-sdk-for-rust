@@ -9,7 +9,7 @@ use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use tokio::time::error::Elapsed;
 
-use crate::{primitives::service_bus_retry_policy::ServiceBusRetryPolicyError, ServiceBusMessage};
+use crate::{primitives::service_bus_retry_policy::{ServiceBusRetryPolicyError, should_try_recover_from_management_error}, ServiceBusMessage};
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum AmqpConnectionScopeError {
@@ -267,10 +267,13 @@ pub enum AmqpSendError {
 
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
 }
 
 impl ServiceBusRetryPolicyError for AmqpSendError {
-    fn is_scope_disposed(&self) -> bool {
+    fn should_try_recover(&self) -> bool {
         use fe2o3_amqp::link::SendError;
         matches!(
             self,
@@ -278,6 +281,10 @@ impl ServiceBusRetryPolicyError for AmqpSendError {
                 LinkStateError::IllegalSessionState
             ))
         )
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, Self::ConnectionScopeDisposed)
     }
 }
 
@@ -294,10 +301,13 @@ pub enum AmqpRecvError {
 
     #[error("A valid lock token was not found in the message")]
     LockTokenNotFound,
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
 }
 
 impl ServiceBusRetryPolicyError for AmqpRecvError {
-    fn is_scope_disposed(&self) -> bool {
+    fn should_try_recover(&self) -> bool {
         match self {
             Self::Recv(err) => match err {
                 RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
@@ -306,6 +316,10 @@ impl ServiceBusRetryPolicyError for AmqpRecvError {
             Self::LinkState(IllegalLinkStateError::IllegalSessionState) => true,
             _ => false,
         }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, Self::ConnectionScopeDisposed)
     }
 }
 
@@ -319,15 +333,24 @@ pub enum AmqpDispositionError {
 
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
 }
 
 impl ServiceBusRetryPolicyError for AmqpDispositionError {
-    fn is_scope_disposed(&self) -> bool {
+    fn should_try_recover(&self) -> bool {
         match self {
             Self::IllegalState(IllegalLinkStateError::IllegalSessionState) => true,
-            Self::RequestResponse(err) => err.is_scope_disposed(),
-            _ => false,
+            Self::IllegalState(IllegalLinkStateError::IllegalState) => false,
+            Self::RequestResponse(err) => should_try_recover_from_management_error(err),
+            Self::Elapsed(_) => false,
+            Self::ConnectionScopeDisposed => false,
         }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, Self::ConnectionScopeDisposed)
     }
 }
 
@@ -338,14 +361,22 @@ pub enum AmqpRequestResponseError {
 
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
 }
 
 impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
-    fn is_scope_disposed(&self) -> bool {
+    fn should_try_recover(&self) -> bool {
         match self {
-            Self::RequestResponse(err) => err.is_scope_disposed(),
-            _ => false,
+            Self::RequestResponse(err) => should_try_recover_from_management_error(err),
+            Self::Elapsed(_) => false,
+            Self::ConnectionScopeDisposed => false,
         }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, Self::ConnectionScopeDisposed)
     }
 }
 
@@ -417,6 +448,10 @@ pub enum CreateRuleError {
     /// Operation timed out
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
+
+    /// Connection scope is disposed
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
 }
 
 impl From<CorrelationFilterError> for CreateRuleError {
@@ -432,15 +467,22 @@ impl From<AmqpRequestResponseError> for CreateRuleError {
         match err {
             AmqpRequestResponseError::RequestResponse(err) => Self::RequestResponse(err),
             AmqpRequestResponseError::Elapsed(err) => Self::Elapsed(err),
+            AmqpRequestResponseError::ConnectionScopeDisposed => Self::ConnectionScopeDisposed,
         }
     }
 }
 
 impl ServiceBusRetryPolicyError for CreateRuleError {
-    fn is_scope_disposed(&self) -> bool {
+    fn should_try_recover(&self) -> bool {
         match self {
-            Self::RequestResponse(err) => err.is_scope_disposed(),
-            _ => false,
+            Self::RequestResponse(err) => should_try_recover_from_management_error(err),
+            Self::Elapsed(_) => false,
+            Self::ConnectionScopeDisposed => false,
+            Self::EmptyCorrelationFilter => false,
         }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, Self::ConnectionScopeDisposed)
     }
 }
