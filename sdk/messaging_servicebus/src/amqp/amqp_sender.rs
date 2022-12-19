@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
-use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::Outcome;
 use fe2o3_amqp_types::primitives::Array;
@@ -38,6 +37,76 @@ pub struct AmqpSender<RP> {
     pub(crate) sender: fe2o3_amqp::Sender,
     pub(crate) management_link: AmqpManagementLink,
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
+}
+
+impl<RP> AmqpSender<RP> {
+    async fn send_batch_envelope(
+        &mut self,
+        batch: &Option<BatchEnvelope>,
+    ) -> Result<(), AmqpSendError> {
+        if let Some(batch) = batch {
+            let outcome = match &batch.sendable {
+                SendableEnvelope::Single(sendable) => match batch.batchable {
+                    true => {
+                        let fut = self.sender.send_batchable_ref(sendable).await?;
+                        fut.await?
+                    }
+                    false => self.sender.send_ref(sendable).await?,
+                },
+                SendableEnvelope::Batch(sendable) => match batch.batchable {
+                    true => {
+                        let fut = self.sender.send_batchable_ref(sendable).await?;
+                        fut.await?
+                    }
+                    false => self.sender.send_ref(sendable).await?,
+                },
+            };
+
+            match outcome {
+                Outcome::Accepted(_) => return Ok(()),
+                Outcome::Rejected(rejected) => {
+                    return Err(AmqpSendError::from(NotAcceptedError::Rejected(rejected)))
+                }
+                Outcome::Released(released) => {
+                    return Err(AmqpSendError::from(NotAcceptedError::Released(released)))
+                }
+                Outcome::Modified(modified) => {
+                    return Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
+                }
+                #[cfg(feature = "transaction")]
+                Outcome::Declared(_) => {
+                    unreachable!("Declared is not expected outside txn-control links")
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn schedule_message_inner(
+        &mut self,
+        request: &mut ScheduleMessageRequest, // Use a reference to avoid repeated serialization
+        try_timeout: StdDuration,
+    ) -> Result<Vec<i64>, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.management_link.client_mut().call(request).await?;
+        Ok(response.into_sequence_numbers())
+    }
+
+    async fn cancel_scheduled_messages_inner(
+        &mut self,
+        request: &mut CancelScheduledMessageRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<(), AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let _response = self.management_link.client_mut().call(request).await?;
+        Ok(())
+    }
+
 }
 
 #[async_trait]
@@ -90,16 +159,14 @@ where
         // ServiceBusRetryPolicyExt::run_operation(&mut , operation, t1, cancellation_token)
         // TODO: retry policy
         let batch = batch_service_bus_messages_as_amqp_message(messages, false);
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-        let sender = &mut self.sender;
-        run_operation! {
-            policy,
-            RP,
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+        let result = run_operation! {
+            {&self.retry_policy},
             AmqpSendError,
             try_timeout,
-            send_batch_envelope(sender, &batch).await
-        }
+            self.send_batch_envelope(&batch)
+        };
+        result
     }
 
     /// Sends [`ServiceBusMessageBatch`] to the associated Queue/Topic.
@@ -108,16 +175,15 @@ where
         message_batch: Self::MessageBatch,
     ) -> Result<(), Self::SendError> {
         let batch = build_amqp_batch_from_messages(message_batch.messages.into_iter(), false);
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-        let sender = &mut self.sender;
-        run_operation! {
-            policy,
-            RP,
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+        let result = run_operation! {
+            {&self.retry_policy},
             AmqpSendError,
             try_timeout,
-            send_batch_envelope(sender, &batch).await
-        }
+            self.send_batch_envelope(&batch)
+        };
+        // TODO: Somehow directly returning the result will lead to an error in the macro
+        result
     }
 
     async fn schedule_messages(
@@ -138,20 +204,18 @@ where
 
         match encoded_messages {
             Some(messages) => {
-                let policy = &mut self.retry_policy;
-
                 // Use a wrapper type to avoid mistakes
-                let mut try_timeout = policy.calculate_try_timeout(0);
-                let mut request = ScheduleMessageRequest::new(messages, Some(self.sender.name()));
+                let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+                let associated_link_name = self.sender.name().to_string();
+                let mut request = ScheduleMessageRequest::new(messages, Some(associated_link_name));
 
-                let management_client = self.management_link.client_mut();
-                run_operation! {
-                    policy,
-                    RP,
+                let result = run_operation! {
+                    {&self.retry_policy},
                     AmqpRequestResponseError,
                     try_timeout,
-                    schedule_message(management_client, &mut request, try_timeout).await
-                }
+                    self.schedule_message_inner(&mut request, try_timeout)
+                };
+                result
             }
             None => Ok(vec![]),
         }
@@ -167,18 +231,14 @@ where
 
         // TODO: solve lifetime issue if link name is borrowed
         let mut request =
-            CancelScheduledMessageRequest::new(Array(sequence_numbers), Some(self.sender.name()));
+            CancelScheduledMessageRequest::new(Array(sequence_numbers), Some(self.sender.name().to_string()));
 
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-        let management_client = self.management_link.client_mut();
-
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         run_operation!(
-            policy,
-            RP,
+            {&self.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            cancel_scheduled_messages(management_client, &mut request, &try_timeout).await
+            self.cancel_scheduled_messages_inner(&mut request, &try_timeout)
         )
     }
 
@@ -195,71 +255,4 @@ where
         self.management_link.close().await?;
         Ok(())
     }
-}
-
-async fn send_batch_envelope(
-    sender: &mut fe2o3_amqp::Sender,
-    batch: &Option<BatchEnvelope>,
-) -> Result<(), AmqpSendError> {
-    if let Some(batch) = batch {
-        let outcome = match &batch.sendable {
-            SendableEnvelope::Single(sendable) => match batch.batchable {
-                true => {
-                    let fut = sender.send_batchable_ref(sendable).await?;
-                    fut.await?
-                }
-                false => sender.send_ref(sendable).await?,
-            },
-            SendableEnvelope::Batch(sendable) => match batch.batchable {
-                true => {
-                    let fut = sender.send_batchable_ref(sendable).await?;
-                    fut.await?
-                }
-                false => sender.send_ref(sendable).await?,
-            },
-        };
-
-        match outcome {
-            Outcome::Accepted(_) => return Ok(()),
-            Outcome::Rejected(rejected) => {
-                return Err(AmqpSendError::from(NotAcceptedError::Rejected(rejected)))
-            }
-            Outcome::Released(released) => {
-                return Err(AmqpSendError::from(NotAcceptedError::Released(released)))
-            }
-            Outcome::Modified(modified) => {
-                return Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
-            }
-            #[cfg(feature = "transaction")]
-            Outcome::Declared(_) => {
-                unreachable!("Declared is not expected outside txn-control links")
-            }
-        }
-    }
-
-    Ok(())
-}
-
-async fn schedule_message<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut ScheduleMessageRequest<'a>, // Use a reference to avoid repeated serialization
-    try_timeout: StdDuration,
-) -> Result<Vec<i64>, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response.into_sequence_numbers())
-}
-
-async fn cancel_scheduled_messages<'a, 'b>(
-    mgmt_client: &'a mut MgmtClient,
-    request: &'a mut CancelScheduledMessageRequest<'b>,
-    try_timeout: &StdDuration,
-) -> Result<(), AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let _response = mgmt_client.call(request).await?;
-    Ok(())
 }

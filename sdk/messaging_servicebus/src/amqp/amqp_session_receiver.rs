@@ -205,17 +205,16 @@ where
         session_id: &str,
     ) -> Result<OffsetDateTime, Self::RequestResponseError> {
         let mut request =
-            RenewSessionLockRequest::new(session_id, Some(self.inner.receiver.name()));
+            RenewSessionLockRequest::new(session_id, Some(self.inner.receiver.name().to_string()));
         let mgmt_client = self.inner.management_link.client_mut();
         let policy = &self.inner.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            renew_session_lock(mgmt_client, &mut request, &try_timeout).await
+            renew_session_lock(mgmt_client, &mut request, &try_timeout)
         )?;
 
         Ok(OffsetDateTime::from(response.expiration))
@@ -225,17 +224,16 @@ where
         &mut self,
         session_id: &str,
     ) -> Result<Vec<u8>, Self::RequestResponseError> {
-        let mut request = GetSessionStateRequest::new(session_id, Some(self.inner.receiver.name()));
+        let mut request = GetSessionStateRequest::new(session_id, Some(self.inner.receiver.name().to_string()));
         let mgmt_client = self.inner.management_link.client_mut();
         let policy = &self.inner.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            get_session_state(mgmt_client, &mut request, &try_timeout).await
+            get_session_state(mgmt_client, &mut request, &try_timeout)
         )?;
 
         Ok(response.session_state.into_vec())
@@ -249,7 +247,7 @@ where
         let mut request = SetSessionStateRequest::new(
             session_id,
             Binary::from(session_state),
-            Some(self.inner.receiver.name()),
+            Some(self.inner.receiver.name().to_string()),
         );
         let mgmt_client = self.inner.management_link.client_mut();
         let policy = &self.inner.retry_policy;
@@ -257,10 +255,9 @@ where
 
         let _response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            set_session_state(mgmt_client, &mut request, &try_timeout).await
+            set_session_state(mgmt_client, &mut request, &try_timeout)
         )?;
         Ok(())
     }
@@ -284,7 +281,7 @@ pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<Of
 
 async fn renew_session_lock<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut RenewSessionLockRequest<'a>,
+    request: &mut RenewSessionLockRequest,
     try_timeout: &StdDuration,
 ) -> Result<RenewSessionLockResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -296,7 +293,7 @@ async fn renew_session_lock<'a>(
 
 async fn set_session_state<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut SetSessionStateRequest<'a>,
+    request: &mut SetSessionStateRequest,
     try_timeout: &StdDuration,
 ) -> Result<SetSessionStateResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -308,7 +305,7 @@ async fn set_session_state<'a>(
 
 async fn get_session_state<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut GetSessionStateRequest<'a>,
+    request: &mut GetSessionStateRequest,
     try_timeout: &StdDuration,
 ) -> Result<GetSessionStateResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;

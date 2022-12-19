@@ -71,10 +71,9 @@ where
 
         let _response = run_operation!(
             policy,
-            RP,
             CreateRuleError,
             try_timeout,
-            create_rule(mgmt_client, &mut request, &try_timeout).await
+            create_rule(mgmt_client, &mut request, &try_timeout)
         )?;
         Ok(())
     }
@@ -88,10 +87,9 @@ where
 
         let _response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            delete_rule(mgmt_client, &mut request, &try_timeout).await
+            delete_rule(mgmt_client, &mut request, &try_timeout)
         )?;
         Ok(())
     }
@@ -120,10 +118,9 @@ where
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            get_rules(mgmt_client, &mut request, &try_timeout).await
+            get_rules(mgmt_client, &mut request, &try_timeout)
         )?;
         Ok(response.into_get_rules_response())
     }
@@ -136,7 +133,7 @@ where
 
 async fn create_rule<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut AddRuleRequest<'a>,
+    request: &mut AddRuleRequest,
     try_timeout: &StdDuration,
 ) -> Result<AddRuleResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -148,7 +145,7 @@ async fn create_rule<'a>(
 
 async fn delete_rule<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut RemoveRuleRequest<'a>,
+    request: &mut RemoveRuleRequest,
     try_timeout: &StdDuration,
 ) -> Result<RemoveRuleResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -160,7 +157,7 @@ async fn delete_rule<'a>(
 
 async fn get_rules<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut EnumerateRulesRequest<'a>,
+    request: &mut EnumerateRulesRequest,
     try_timeout: &StdDuration,
 ) -> Result<EnumerateRulesResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;

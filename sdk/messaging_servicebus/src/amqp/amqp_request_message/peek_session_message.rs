@@ -11,18 +11,18 @@ use crate::amqp::{
 
 type PeekSessionMessageRequestBody = OrderedMap<String, serde_amqp::Value>;
 
-pub(crate) struct PeekSessionMessageRequest<'a> {
+pub(crate) struct PeekSessionMessageRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: PeekSessionMessageRequestBody,
 }
 
-impl<'a> PeekSessionMessageRequest<'a> {
+impl<'a> PeekSessionMessageRequest {
     pub fn new(
         from_sequence_number: i64,
         message_count: i32,
         session_id: &str,
-        associated_link_name: Option<&'a str>,
+        associated_link_name: Option<String>,
     ) -> Self {
         let mut body = OrderedMap::with_capacity(3);
         body.insert(FROM_SEQUENCE_NUMBER.into(), from_sequence_number.into());
@@ -40,7 +40,7 @@ impl<'a> PeekSessionMessageRequest<'a> {
     }
 }
 
-impl<'a> Request for PeekSessionMessageRequest<'a> {
+impl<'a> Request for PeekSessionMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -48,7 +48,7 @@ impl<'a> Request for PeekSessionMessageRequest<'a> {
     type Body = PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -56,7 +56,7 @@ impl<'a> Request for PeekSessionMessageRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest<'b> {
+impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -64,7 +64,7 @@ impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest<'b> {
     type Body = &'a PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -72,7 +72,7 @@ impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a PeekSessionMessageRequest<'b> {
+impl<'a, 'b> Request for &'a PeekSessionMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -80,7 +80,7 @@ impl<'a, 'b> Request for &'a PeekSessionMessageRequest<'b> {
     type Body = &'a PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

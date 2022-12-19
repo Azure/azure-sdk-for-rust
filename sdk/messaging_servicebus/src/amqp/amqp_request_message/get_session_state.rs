@@ -8,14 +8,14 @@ use crate::amqp::{
 
 type GetSessionStateRequestBody = OrderedMap<String, String>;
 
-pub(crate) struct GetSessionStateRequest<'a> {
+pub(crate) struct GetSessionStateRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: GetSessionStateRequestBody,
 }
 
-impl<'a> GetSessionStateRequest<'a> {
-    pub fn new(session_id: &str, associated_link_name: Option<&'a str>) -> Self {
+impl GetSessionStateRequest {
+    pub fn new(session_id: &str, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::new();
         body.insert(SESSION_ID.into(), session_id.into());
         Self {
@@ -30,7 +30,7 @@ impl<'a> GetSessionStateRequest<'a> {
     }
 }
 
-impl<'a> Request for GetSessionStateRequest<'a> {
+impl Request for GetSessionStateRequest {
     const OPERATION: &'static str = GET_SESSION_STATE_OPERATION;
 
     type Response = GetSessionStateResponse;
@@ -40,7 +40,7 @@ impl<'a> Request for GetSessionStateRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -48,7 +48,7 @@ impl<'a> Request for GetSessionStateRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut GetSessionStateRequest<'b> {
+impl<'a> Request for &'a mut GetSessionStateRequest {
     const OPERATION: &'static str = GET_SESSION_STATE_OPERATION;
 
     type Response = GetSessionStateResponse;
@@ -58,7 +58,7 @@ impl<'a, 'b> Request for &'a mut GetSessionStateRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -66,7 +66,7 @@ impl<'a, 'b> Request for &'a mut GetSessionStateRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a GetSessionStateRequest<'b> {
+impl<'a> Request for &'a GetSessionStateRequest {
     const OPERATION: &'static str = GET_SESSION_STATE_OPERATION;
 
     type Response = GetSessionStateResponse;
@@ -76,7 +76,7 @@ impl<'a, 'b> Request for &'a GetSessionStateRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

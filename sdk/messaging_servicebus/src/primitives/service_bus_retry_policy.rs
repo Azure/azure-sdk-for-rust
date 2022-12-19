@@ -88,6 +88,12 @@ pub trait ServiceBusRetryPolicyState {
 
 #[async_trait]
 pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
+    // async fn run_operation<F, Args, Fut, E>(
+    //     &mut self,
+    //     mut operation: F,
+    //     args: Args,
+    // ) -> Result<(),
+
     // async fn run_operation<F, MutArg, Args, Fut>(
     //     &mut self,
     //     mut operation: F,
@@ -163,7 +169,7 @@ pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
 impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + Sync {}
 
 macro_rules! run_operation {
-    ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $op:expr) => {{
+    ($policy:tt, $err_ty:ty, $try_timeout:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
         if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
             && $try_timeout
@@ -184,9 +190,9 @@ macro_rules! run_operation {
             }
 
             // try recover
-            compile_error!("TODO: implement recover");
+            // compile_error!("TODO: implement recover");
 
-            let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
+            let outcome = match tokio::time::timeout($try_timeout, $op).await {
                 Ok(result) => result.map_err(<$err_ty>::from),
                 Err(err) => Err(<$err_ty>::from(err)),
             };
@@ -215,62 +221,6 @@ macro_rules! run_operation {
                         (Some(retry_delay), false) => {
                             log::error!("{}", &error);
                             tokio::time::sleep(retry_delay).await;
-                            $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
-                        }
-                        _ => return Err(crate::primitives::error::RetryError::Operation(error)),
-                    }
-                }
-            }
-        };
-
-        Result::<_, crate::primitives::error::RetryError<$err_ty>>::Ok(outcome)
-    }};
-
-    ($policy:ident, $policy_ty:ty, $err_ty:ty, $try_timeout:ident, $cancellation_token:ident, $op:expr) => {{
-        let mut failed_attempt_count = 0;
-        if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
-            && $try_timeout
-                < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
-        {
-            // We are in a server busy state before we start processing. Since
-            // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
-            // entire Sleep time.
-            tokio::time::timeout($try_timeout, $cancellation_token.cancelled())
-                .await
-                .map_err(|_| crate::primitives::error::RetryError::ServiceBusy)?
-        }
-
-        let outcome = loop {
-            if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state()) {
-                let cancelled_fut = $cancellation_token.cancelled();
-                let _ = tokio::time::timeout(
-                    crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
-                    cancelled_fut,
-                )
-                .await;
-            }
-
-            let outcome = match tokio::time::timeout($try_timeout, async { $op }).await {
-                Ok(result) => result.map_err(<$err_ty>::from),
-                Err(err) => Err(<$err_ty>::from(err)),
-            };
-            match outcome {
-                Ok(outcome) => break outcome,
-                Err(error) => {
-                    failed_attempt_count += 1;
-                    let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
-
-                    match (
-                        retry_delay,
-                        crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error),
-                        $cancellation_token.is_cancelled(),
-                    ) {
-                        (Some(retry_delay), false, false) => {
-                            log::error!("{}", &error);
-
-                            let _ =
-                                tokio::time::timeout(retry_delay, $cancellation_token.cancelled())
-                                    .await;
                             $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
                         }
                         _ => return Err(crate::primitives::error::RetryError::Operation(error)),

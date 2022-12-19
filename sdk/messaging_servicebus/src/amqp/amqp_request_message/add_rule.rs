@@ -36,18 +36,18 @@ impl From<CorrelationRuleFilter> for SupportedRuleFilter {
 
 type AddRuleRequestBody = OrderedMap<String, Value>;
 
-pub(crate) struct AddRuleRequest<'a> {
+pub(crate) struct AddRuleRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: AddRuleRequestBody,
 }
 
-impl<'a> AddRuleRequest<'a> {
+impl<'a> AddRuleRequest {
     pub(crate) fn new(
         rule_name: String,
         filter: SupportedRuleFilter,
         sql_rule_action: Option<String>,
-        associated_link_name: Option<&'a str>,
+        associated_link_name: Option<String>,
     ) -> Result<Self, CorrelationFilterError> {
         let mut rule_description: OrderedMap<Value, Value> = OrderedMap::new();
         match filter {
@@ -84,7 +84,7 @@ impl<'a> AddRuleRequest<'a> {
     }
 }
 
-impl<'a> Request for AddRuleRequest<'a> {
+impl<'a> Request for AddRuleRequest {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;
@@ -94,7 +94,7 @@ impl<'a> Request for AddRuleRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -102,7 +102,7 @@ impl<'a> Request for AddRuleRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a AddRuleRequest<'b> {
+impl<'a> Request for &'a AddRuleRequest {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;
@@ -112,7 +112,7 @@ impl<'a, 'b> Request for &'a AddRuleRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -120,7 +120,7 @@ impl<'a, 'b> Request for &'a AddRuleRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut AddRuleRequest<'b> {
+impl<'a> Request for &'a mut AddRuleRequest {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;
@@ -130,7 +130,7 @@ impl<'a, 'b> Request for &'a mut AddRuleRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

@@ -18,13 +18,13 @@ use crate::{
 
 type UpdateDispositionRequestBody = OrderedMap<String, Value>;
 
-pub(crate) struct UpdateDispositionRequest<'a> {
+pub(crate) struct UpdateDispositionRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: UpdateDispositionRequestBody,
 }
 
-impl<'a> UpdateDispositionRequest<'a> {
+impl<'a> UpdateDispositionRequest {
     pub fn new(
         disposition_status: DispositionStatus,
         lock_tokens: Array<Uuid>,
@@ -32,7 +32,7 @@ impl<'a> UpdateDispositionRequest<'a> {
         dead_letter_description: Option<String>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
         session_id: Option<&str>,
-        associated_link_name: Option<&'a str>,
+        associated_link_name: Option<String>,
     ) -> Self {
         let mut body = UpdateDispositionRequestBody::new();
         body.insert(DISPOSITION_STATUS.into(), disposition_status.into());
@@ -62,7 +62,7 @@ impl<'a> UpdateDispositionRequest<'a> {
     }
 }
 
-impl<'a> Request for UpdateDispositionRequest<'a> {
+impl<'a> Request for UpdateDispositionRequest {
     const OPERATION: &'static str = UPDATE_DISPOSITION_OPERATION;
 
     type Response = UpdateDispositionResponse;
@@ -72,7 +72,7 @@ impl<'a> Request for UpdateDispositionRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -80,7 +80,7 @@ impl<'a> Request for UpdateDispositionRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut UpdateDispositionRequest<'b> {
+impl<'a, 'b> Request for &'a mut UpdateDispositionRequest {
     const OPERATION: &'static str = UPDATE_DISPOSITION_OPERATION;
 
     type Response = UpdateDispositionResponse;
@@ -90,7 +90,7 @@ impl<'a, 'b> Request for &'a mut UpdateDispositionRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -98,7 +98,7 @@ impl<'a, 'b> Request for &'a mut UpdateDispositionRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a UpdateDispositionRequest<'b> {
+impl<'a, 'b> Request for &'a UpdateDispositionRequest {
     const OPERATION: &'static str = UPDATE_DISPOSITION_OPERATION;
 
     type Response = UpdateDispositionResponse;
@@ -108,7 +108,7 @@ impl<'a, 'b> Request for &'a UpdateDispositionRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

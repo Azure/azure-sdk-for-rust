@@ -15,18 +15,18 @@ use crate::amqp::{
 
 type ReceiveBySequenceNumberRequestBody = OrderedMap<String, Value>;
 
-pub(crate) struct ReceiveBySequenceNumberRequest<'a> {
+pub(crate) struct ReceiveBySequenceNumberRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: ReceiveBySequenceNumberRequestBody,
 }
 
-impl<'a> ReceiveBySequenceNumberRequest<'a> {
+impl<'a> ReceiveBySequenceNumberRequest {
     pub fn new(
         sequence_numbers: Array<i64>,
         receiver_settle_mode: ReceiverSettleMode,
         session_id: Option<&str>,
-        associated_link_name: Option<&'a str>,
+        associated_link_name: Option<String>,
     ) -> Self {
         let mut body = OrderedMap::new();
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers.into());
@@ -50,7 +50,7 @@ impl<'a> ReceiveBySequenceNumberRequest<'a> {
     }
 }
 
-impl<'a> Request for ReceiveBySequenceNumberRequest<'a> {
+impl<'a> Request for ReceiveBySequenceNumberRequest {
     const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
 
     type Response = ReceiveBySequenceNumberResponse;
@@ -60,7 +60,7 @@ impl<'a> Request for ReceiveBySequenceNumberRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -68,7 +68,7 @@ impl<'a> Request for ReceiveBySequenceNumberRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest<'b> {
+impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest {
     const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
 
     type Response = ReceiveBySequenceNumberResponse;
@@ -78,7 +78,7 @@ impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -86,7 +86,7 @@ impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a ReceiveBySequenceNumberRequest<'b> {
+impl<'a, 'b> Request for &'a ReceiveBySequenceNumberRequest {
     const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
 
     type Response = ReceiveBySequenceNumberResponse;
@@ -96,7 +96,7 @@ impl<'a, 'b> Request for &'a ReceiveBySequenceNumberRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

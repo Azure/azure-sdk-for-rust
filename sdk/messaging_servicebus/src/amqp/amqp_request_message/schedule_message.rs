@@ -12,14 +12,14 @@ use crate::amqp::{
 type EncodedMessages = Vec<OrderedMap<String, Value>>;
 type ScheduleMessageRequestBody = OrderedMap<String, EncodedMessages>;
 
-pub(crate) struct ScheduleMessageRequest<'a> {
+pub(crate) struct ScheduleMessageRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: OrderedMap<String, EncodedMessages>,
 }
 
-impl<'a> ScheduleMessageRequest<'a> {
-    pub fn new(messages: EncodedMessages, associated_link_name: Option<&'a str>) -> Self {
+impl ScheduleMessageRequest {
+    pub fn new(messages: EncodedMessages, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(MESSAGES.into(), messages);
         Self {
@@ -34,7 +34,7 @@ impl<'a> ScheduleMessageRequest<'a> {
     }
 }
 
-impl<'a> Request for ScheduleMessageRequest<'a> {
+impl Request for ScheduleMessageRequest {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
@@ -44,7 +44,7 @@ impl<'a> Request for ScheduleMessageRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -53,7 +53,7 @@ impl<'a> Request for ScheduleMessageRequest<'a> {
 }
 
 /// This is to avoid repeated serialization of the same messages
-impl<'a, 'b> Request for &'a mut ScheduleMessageRequest<'b> {
+impl<'a> Request for &'a mut ScheduleMessageRequest {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
@@ -61,7 +61,7 @@ impl<'a, 'b> Request for &'a mut ScheduleMessageRequest<'b> {
     type Body = &'a ScheduleMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -69,7 +69,7 @@ impl<'a, 'b> Request for &'a mut ScheduleMessageRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a ScheduleMessageRequest<'b> {
+impl<'a> Request for &'a ScheduleMessageRequest {
     const OPERATION: &'static str = SCHEDULE_MESSAGE_OPERATION;
 
     type Response = ScheduleMessageResponse;
@@ -77,7 +77,7 @@ impl<'a, 'b> Request for &'a ScheduleMessageRequest<'b> {
     type Body = &'a ScheduleMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

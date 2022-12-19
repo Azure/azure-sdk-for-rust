@@ -12,17 +12,17 @@ use crate::amqp::{
 
 type PeekMessageRequestBody = OrderedMap<String, Value>;
 
-pub(crate) struct PeekMessageRequest<'a> {
+pub(crate) struct PeekMessageRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: OrderedMap<String, Value>,
 }
 
-impl<'a> PeekMessageRequest<'a> {
+impl<'a> PeekMessageRequest {
     pub fn new(
         from_sequence_number: i64,
         message_count: i32,
-        associated_link_name: Option<&'a str>,
+        associated_link_name: Option<String>,
     ) -> Self {
         let mut body = OrderedMap::with_capacity(2);
         body.insert(
@@ -42,7 +42,7 @@ impl<'a> PeekMessageRequest<'a> {
     }
 }
 
-impl<'a> Request for PeekMessageRequest<'a> {
+impl<'a> Request for PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -52,7 +52,7 @@ impl<'a> Request for PeekMessageRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -60,7 +60,7 @@ impl<'a> Request for PeekMessageRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut PeekMessageRequest<'b> {
+impl<'a, 'b> Request for &'a mut PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -70,7 +70,7 @@ impl<'a, 'b> Request for &'a mut PeekMessageRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -78,7 +78,7 @@ impl<'a, 'b> Request for &'a mut PeekMessageRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a PeekMessageRequest<'b> {
+impl<'a, 'b> Request for &'a PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -88,7 +88,7 @@ impl<'a, 'b> Request for &'a PeekMessageRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

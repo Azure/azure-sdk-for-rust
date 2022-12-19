@@ -20,7 +20,7 @@ pub(crate) mod remove_rule;
 
 fn encode_application_properties(
     server_timeout: Option<u32>,
-    associated_link_name: Option<&str>,
+    associated_link_name: Option<String>,
 ) -> Option<ApplicationProperties> {
     let mut props = None;
     if let Some(server_timeout) = server_timeout {

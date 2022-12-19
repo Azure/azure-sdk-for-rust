@@ -94,7 +94,6 @@ where
         loop {
             run_operation!(
                 retry_policy,
-                RP,
                 AmqpRecvError,
                 try_timeout,
                 receive_messages_with_timeout(
@@ -105,7 +104,6 @@ where
                     max_messages,
                     default_max_wait_time
                 )
-                .await
             )?;
 
             if !buffer.is_empty() {
@@ -131,7 +129,6 @@ where
         let mut buffer = Vec::with_capacity(max_messages as usize);
         run_operation!(
             retry_policy,
-            RP,
             AmqpRecvError,
             try_timeout,
             receive_messages_with_timeout(
@@ -142,7 +139,6 @@ where
                 max_messages,
                 max_wait_time
             )
-            .await
         )?;
         Ok(buffer)
     }
@@ -181,14 +177,13 @@ where
                         None,
                         None,
                         session_id,
-                        Some(self.receiver.name()),
+                        Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
                         policy,
-                        RP,
                         AmqpDispositionError,
                         try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout).await
+                        update_disposition(mgmt_client, &mut request, &try_timeout)
                     )?;
 
                     self.request_response_locked_messages.remove(&lock_token);
@@ -198,10 +193,9 @@ where
                 let receiver = &mut self.receiver;
                 run_operation!(
                     policy,
-                    RP,
                     AmqpDispositionError,
                     try_timeout,
-                    complete_message(receiver, delivery_info).await
+                    complete_message(receiver, delivery_info)
                 )?;
             }
         };
@@ -231,14 +225,13 @@ where
                         None,
                         properties_to_modify,
                         session_id,
-                        Some(self.receiver.name()),
+                        Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
                         policy,
-                        RP,
                         AmqpDispositionError,
                         try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout).await
+                        update_disposition(mgmt_client, &mut request, &try_timeout)
                     )?;
 
                     self.request_response_locked_messages.remove(&lock_token);
@@ -247,10 +240,9 @@ where
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
                     policy,
-                    RP,
                     AmqpDispositionError,
                     try_timeout,
-                    defer_message(receiver, delivery_info, &properties_to_modify).await
+                    defer_message(receiver, delivery_info, &properties_to_modify)
                 )?;
             }
         };
@@ -266,7 +258,7 @@ where
         let mut request = PeekMessageRequest::new(
             sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
             message_count,
-            Some(self.receiver.name()),
+            Some(self.receiver.name().to_string()),
         );
 
         let mgmt_client = self.management_link.client_mut();
@@ -275,10 +267,9 @@ where
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            peek_message(mgmt_client, &mut request, &try_timeout).await
+            peek_message(mgmt_client, &mut request, &try_timeout)
         )?;
 
         let peeked_messages = response
@@ -302,7 +293,7 @@ where
             sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
             message_count,
             session_id,
-            Some(self.receiver.name()),
+            Some(self.receiver.name().to_string()),
         );
 
         let mgmt_client = self.management_link.client_mut();
@@ -311,10 +302,9 @@ where
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            peek_session_message(mgmt_client, &mut request, &try_timeout).await
+            peek_session_message(mgmt_client, &mut request, &try_timeout)
         )?;
 
         let peeked_messages = response
@@ -350,14 +340,13 @@ where
                         None,
                         properties_to_modify,
                         session_id,
-                        Some(self.receiver.name()),
+                        Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
                         policy,
-                        RP,
                         AmqpDispositionError,
                         try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout).await
+                        update_disposition(mgmt_client, &mut request, &try_timeout)
                     )?;
 
                     self.request_response_locked_messages.remove(&lock_token);
@@ -366,10 +355,9 @@ where
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
                     policy,
-                    RP,
                     AmqpDispositionError,
                     try_timeout,
-                    abandon_message(receiver, delivery_info, &properties_to_modify).await
+                    abandon_message(receiver, delivery_info, &properties_to_modify)
                 )?;
             }
         };
@@ -399,14 +387,13 @@ where
                         dead_letter_error_description,
                         properties_to_modify,
                         session_id,
-                        Some(self.receiver.name()),
+                        Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
                         policy,
-                        RP,
                         AmqpDispositionError,
                         try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout).await
+                        update_disposition(mgmt_client, &mut request, &try_timeout)
                     )?;
 
                     self.request_response_locked_messages.remove(lock_token);
@@ -416,7 +403,6 @@ where
                 let receiver = &mut self.receiver;
                 run_operation!(
                     policy,
-                    RP,
                     AmqpDispositionError,
                     try_timeout,
                     dead_letter_message(
@@ -426,7 +412,6 @@ where
                         &dead_letter_error_description,
                         &properties_to_modify
                     )
-                    .await
                 )?;
             }
         }
@@ -449,7 +434,7 @@ where
             sequence_numbers,
             receiver_settle_mode,
             session_id,
-            Some(self.receiver.name()),
+            Some(self.receiver.name().to_string()),
         );
 
         let mgmt_client = self.management_link.client_mut();
@@ -458,10 +443,9 @@ where
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            receive_by_sequence_number(mgmt_client, &mut request, &try_timeout).await
+            receive_by_sequence_number(mgmt_client, &mut request, &try_timeout)
         )?;
 
         let received_messages = response
@@ -484,17 +468,16 @@ where
         &mut self,
         lock_tokens: Vec<Uuid>,
     ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
-        let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name()));
+        let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name().to_string()));
         let mgmt_client = self.management_link.client_mut();
         let policy = &self.retry_policy;
         let mut try_timeout = policy.calculate_try_timeout(0);
 
         let response = run_operation!(
             policy,
-            RP,
             AmqpRequestResponseError,
             try_timeout,
-            renew_lock(mgmt_client, &mut request, &try_timeout).await
+            renew_lock(mgmt_client, &mut request, &try_timeout)
         )?;
         Ok(response.expirations.into_inner())
     }
@@ -685,7 +668,7 @@ async fn defer_message(
 
 async fn receive_by_sequence_number<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut ReceiveBySequenceNumberRequest<'a>,
+    request: &mut ReceiveBySequenceNumberRequest,
     try_timeout: &StdDuration,
 ) -> Result<ReceiveBySequenceNumberResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -697,7 +680,7 @@ async fn receive_by_sequence_number<'a>(
 
 async fn update_disposition<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut UpdateDispositionRequest<'a>,
+    request: &mut UpdateDispositionRequest,
     try_timeout: &StdDuration,
 ) -> Result<(), fe2o3_amqp_management::error::Error> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -708,7 +691,7 @@ async fn update_disposition<'a>(
 
 async fn peek_message<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut PeekMessageRequest<'a>,
+    request: &mut PeekMessageRequest,
     try_timeout: &StdDuration,
 ) -> Result<PeekMessageResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -720,7 +703,7 @@ async fn peek_message<'a>(
 
 async fn peek_session_message<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut PeekSessionMessageRequest<'a>,
+    request: &mut PeekSessionMessageRequest,
     try_timeout: &StdDuration,
 ) -> Result<PeekSessionMessageResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;
@@ -732,7 +715,7 @@ async fn peek_session_message<'a>(
 
 async fn renew_lock<'a>(
     mgmt_client: &mut MgmtClient,
-    request: &mut RenewLockRequest<'a>,
+    request: &mut RenewLockRequest,
     try_timeout: &StdDuration,
 ) -> Result<RenewLockResponse, AmqpRequestResponseError> {
     let server_timeout = try_timeout.as_millis() as u32;

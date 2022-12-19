@@ -9,14 +9,14 @@ use crate::amqp::{
 pub(super) type LockTokens = Array<serde_amqp::primitives::Uuid>;
 type RenewLockRequestBody = OrderedMap<String, LockTokens>;
 
-pub(crate) struct RenewLockRequest<'a> {
+pub(crate) struct RenewLockRequest {
     server_timeout: Option<u32>,
-    associated_link_name: Option<&'a str>,
+    associated_link_name: Option<String>,
     body: OrderedMap<String, LockTokens>,
 }
 
-impl<'a> RenewLockRequest<'a> {
-    pub fn new(lock_tokens: LockTokens, associated_link_name: Option<&'a str>) -> Self {
+impl<'a> RenewLockRequest {
+    pub fn new(lock_tokens: LockTokens, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(LOCK_TOKENS.into(), lock_tokens);
         Self {
@@ -31,7 +31,7 @@ impl<'a> RenewLockRequest<'a> {
     }
 }
 
-impl<'a> Request for RenewLockRequest<'a> {
+impl<'a> Request for RenewLockRequest {
     const OPERATION: &'static str = RENEW_LOCK_OPERATION;
 
     type Response = RenewLockResponse;
@@ -41,7 +41,7 @@ impl<'a> Request for RenewLockRequest<'a> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -49,7 +49,7 @@ impl<'a> Request for RenewLockRequest<'a> {
     }
 }
 
-impl<'a, 'b> Request for &'a mut RenewLockRequest<'b> {
+impl<'a, 'b> Request for &'a mut RenewLockRequest {
     const OPERATION: &'static str = RENEW_LOCK_OPERATION;
 
     type Response = RenewLockResponse;
@@ -59,7 +59,7 @@ impl<'a, 'b> Request for &'a mut RenewLockRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -67,7 +67,7 @@ impl<'a, 'b> Request for &'a mut RenewLockRequest<'b> {
     }
 }
 
-impl<'a, 'b> Request for &'a RenewLockRequest<'b> {
+impl<'a, 'b> Request for &'a RenewLockRequest {
     const OPERATION: &'static str = RENEW_LOCK_OPERATION;
 
     type Response = RenewLockResponse;
@@ -77,7 +77,7 @@ impl<'a, 'b> Request for &'a RenewLockRequest<'b> {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name)
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
