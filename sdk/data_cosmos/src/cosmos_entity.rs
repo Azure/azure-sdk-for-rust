@@ -44,11 +44,20 @@ impl CosmosEntity for serde_json::Value {
 /// Serialize the partition key in the format CosmosDB expects.
 pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> azure_core::Result<String> {
     use azure_core::error::ResultExt;
-    // this must be serialized as an array even tough CosmosDB supports only a single partition key.
-    serde_json::to_string(&[pk]).context(
+
+    // if pk is array, we dont need to wrap it in an array
+    // if it is not, we need to wrap it in an array
+
+    let serialized_string = serde_json::to_string(pk).context(
         azure_core::error::ErrorKind::DataConversion,
         "could not convert partition_key into String",
-    )
+    )?;
+
+    if serialized_string.starts_with('[') {
+        Ok(serialized_string)
+    } else {
+        Ok(format!("[{}]", serialized_string))
+    }
 }
 
 pub(crate) fn add_as_partition_key_header_serialized(
