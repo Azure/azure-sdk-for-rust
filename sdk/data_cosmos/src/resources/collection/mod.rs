@@ -64,6 +64,8 @@ impl Resource for &Collection {
 pub enum KeyKind {
     /// useful for equality comparisons
     Hash,
+    /// useful for multi-value lookups
+    MultiHash,
     /// seful for equality, range comparisons and sorting
     Range,
     /// useful for spatial queries
