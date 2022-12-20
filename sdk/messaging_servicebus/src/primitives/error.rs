@@ -35,7 +35,7 @@ pub enum Error {
     #[error(transparent)]
     Open(#[from] OpenError),
 
-    /// Error opening the connection over websockets
+    /// Error opening the connection over websocket
     #[error(transparent)]
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 

@@ -31,12 +31,12 @@ async fn client_can_connect_using_connection_string_over_amqp_tcp() {
 }
 
 #[tokio::test]
-async fn client_can_connect_using_connection_string_over_amqp_websockets() {
+async fn client_can_connect_using_connection_string_over_amqp_websocket() {
     setup_dotenv();
 
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let mut option = ServiceBusClientOptions::default();
-    option.transport_type = ServiceBusTransportType::AmqpWebSockets;
+    option.transport_type = ServiceBusTransportType::AmqpWebSocket;
 
     let mut client = ServiceBusClient::new(&connection_string, option)
         .await

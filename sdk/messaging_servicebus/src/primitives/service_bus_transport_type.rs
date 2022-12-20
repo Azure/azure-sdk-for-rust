@@ -8,7 +8,7 @@ pub enum ServiceBusTransportType {
     AmqpTcp,
 
     /// The connection uses the AMQP protocol over web sockets.
-    AmqpWebSockets,
+    AmqpWebSocket,
 }
 
 impl Default for ServiceBusTransportType {
@@ -25,7 +25,7 @@ impl ServiceBusTransportType {
     pub fn url_scheme(&self) -> &str {
         match self {
             ServiceBusTransportType::AmqpTcp => Self::AMQP_URI_SCHEME,
-            ServiceBusTransportType::AmqpWebSockets => Self::WEBSOCKET_SCHEME,
+            ServiceBusTransportType::AmqpWebSocket => Self::WEBSOCKET_SCHEME,
         }
     }
 }

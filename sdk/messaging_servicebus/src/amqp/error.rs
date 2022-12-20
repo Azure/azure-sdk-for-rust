@@ -47,12 +47,15 @@ pub(crate) enum AmqpConnectionScopeError {
 /// Error with AMQP client
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpClientError {
+    /// Error parsing the URL
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
 
+    /// Error with opening the connection
     #[error(transparent)]
     Open(#[from] OpenError),
 
+    /// Error with establishing the WebSocket transport
     #[error(transparent)]
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 

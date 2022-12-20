@@ -191,7 +191,7 @@ impl AmqpConnectionScope {
             ServiceBusTransportType::AmqpTcp => {
                 connection_builder.open(connection_endpoint.clone()).await?
             }
-            ServiceBusTransportType::AmqpWebSockets => {
+            ServiceBusTransportType::AmqpWebSocket => {
                 let (ws_stream, _) = WebSocketStream::connect(connection_endpoint).await?;
                 connection_builder.open_with_stream(ws_stream).await?
             }

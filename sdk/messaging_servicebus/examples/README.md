@@ -29,4 +29,4 @@
 
 ## Configuring the transport
 
-- [AMQP over WebSockets](./amqp_over_websockets.rs)
+- [AMQP over WebSocket](./amqp_over_websocket.rs)

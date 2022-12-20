@@ -10,7 +10,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 
     let options = ServiceBusClientOptions {
-        transport_type: ServiceBusTransportType::AmqpWebSockets,
+        transport_type: ServiceBusTransportType::AmqpWebSocket,
         ..Default::default()
     };
     let mut client = ServiceBusClient::new(connection_string, options).await?;

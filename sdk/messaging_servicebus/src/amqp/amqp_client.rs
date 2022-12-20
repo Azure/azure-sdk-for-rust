@@ -85,7 +85,7 @@ where
                 let addr = format!("{}://{}", transport_type.url_scheme(), host);
                 Url::parse(&addr)?
             }
-            ServiceBusTransportType::AmqpWebSockets => {
+            ServiceBusTransportType::AmqpWebSocket => {
                 let addr = format!(
                     "{}://{}{}",
                     transport_type.url_scheme(),
@@ -102,7 +102,7 @@ where
                     let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
                     Url::parse(&addr)?
                 }
-                ServiceBusTransportType::AmqpWebSockets => {
+                ServiceBusTransportType::AmqpWebSocket => {
                     let addr = format!(
                         "{}://{}{}",
                         service_endpoint.scheme(),
