@@ -41,8 +41,7 @@ pub(crate) fn build_amqp_batch_from_messages(
     match (total, force_batch) {
         (0, _) => None,
         (1, false) => {
-            let mut message = source.next()?;
-            message.properties = message.properties;
+            let message = source.next()?;
             let sendable = Sendable {
                 message,
                 message_format: Default::default(),
@@ -66,7 +65,7 @@ pub(crate) fn build_amqp_batch_from_messages(
             let data = Data::from(to_vec(&Serializable(first_message)).ok()?);
             batch_data.push(data);
 
-            while let Some(message) = source.next() {
+            for message in source {
                 let data = Data::from(to_vec(&Serializable(message)).ok()?);
                 batch_data.push(data);
             }

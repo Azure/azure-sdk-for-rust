@@ -74,7 +74,7 @@ pub(crate) struct AddRuleRequest {
     body: AddRuleRequestBody,
 }
 
-impl<'a> AddRuleRequest {
+impl AddRuleRequest {
     pub(crate) fn new(
         rule_name: String,
         filter: CreateRuleFilter,
@@ -127,7 +127,7 @@ impl<'a> AddRuleRequest {
     }
 }
 
-impl<'a> Request for AddRuleRequest {
+impl Request for AddRuleRequest {
     const OPERATION: &'static str = ADD_RULE_OPERATION;
 
     type Response = AddRuleResponse;

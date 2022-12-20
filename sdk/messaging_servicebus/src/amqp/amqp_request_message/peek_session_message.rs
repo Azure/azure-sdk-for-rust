@@ -17,7 +17,7 @@ pub(crate) struct PeekSessionMessageRequest {
     body: PeekSessionMessageRequestBody,
 }
 
-impl<'a> PeekSessionMessageRequest {
+impl PeekSessionMessageRequest {
     pub fn new(
         from_sequence_number: i64,
         message_count: i32,
@@ -40,7 +40,7 @@ impl<'a> PeekSessionMessageRequest {
     }
 }
 
-impl<'a> Request for PeekSessionMessageRequest {
+impl Request for PeekSessionMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -57,7 +57,7 @@ impl<'a> Request for PeekSessionMessageRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest {
+impl<'a> Request for &'a mut PeekSessionMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;
@@ -74,7 +74,7 @@ impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a PeekSessionMessageRequest {
+impl<'a> Request for &'a PeekSessionMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekSessionMessageResponse;

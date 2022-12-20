@@ -19,7 +19,7 @@ pub(crate) struct CancelScheduledMessageRequest {
     body: OrderedMap<String, Array<i64>>,
 }
 
-impl<'a> CancelScheduledMessageRequest {
+impl CancelScheduledMessageRequest {
     pub fn new(sequence_numbers: SequenceNumbers, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(SEQUENCE_NUMBERS.into(), sequence_numbers);
@@ -35,7 +35,7 @@ impl<'a> CancelScheduledMessageRequest {
     }
 }
 
-impl<'a> fe2o3_amqp_management::request::Request for CancelScheduledMessageRequest {
+impl fe2o3_amqp_management::request::Request for CancelScheduledMessageRequest {
     const OPERATION: &'static str = CANCEL_SCHEDULED_MESSAGE_OPERATION;
 
     type Response = CancelScheduledMessageResponse;
@@ -52,7 +52,7 @@ impl<'a> fe2o3_amqp_management::request::Request for CancelScheduledMessageReque
     }
 }
 
-impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a mut CancelScheduledMessageRequest {
+impl<'a> fe2o3_amqp_management::request::Request for &'a mut CancelScheduledMessageRequest {
     const OPERATION: &'static str = CANCEL_SCHEDULED_MESSAGE_OPERATION;
 
     type Response = CancelScheduledMessageResponse;
@@ -71,7 +71,7 @@ impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a mut CancelScheduled
     }
 }
 
-impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a CancelScheduledMessageRequest {
+impl<'a> fe2o3_amqp_management::request::Request for &'a CancelScheduledMessageRequest {
     const OPERATION: &'static str = CANCEL_SCHEDULED_MESSAGE_OPERATION;
 
     type Response = CancelScheduledMessageResponse;

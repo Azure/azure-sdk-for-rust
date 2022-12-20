@@ -14,7 +14,7 @@ pub(crate) struct RenewSessionLockRequest {
     body: OrderedMap<String, String>,
 }
 
-impl<'a> RenewSessionLockRequest {
+impl RenewSessionLockRequest {
     pub fn new(session_id: &str, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(SESSION_ID.into(), session_id.into());
@@ -30,7 +30,7 @@ impl<'a> RenewSessionLockRequest {
     }
 }
 
-impl<'a> Request for RenewSessionLockRequest {
+impl Request for RenewSessionLockRequest {
     const OPERATION: &'static str = RENEW_SESSION_LOCK_OPERATION;
 
     type Response = RenewSessionLockResponse;
@@ -49,7 +49,7 @@ impl<'a> Request for RenewSessionLockRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut RenewSessionLockRequest {
+impl<'a> Request for &'a mut RenewSessionLockRequest {
     const OPERATION: &'static str = RENEW_SESSION_LOCK_OPERATION;
 
     type Response = RenewSessionLockResponse;
@@ -68,7 +68,7 @@ impl<'a, 'b> Request for &'a mut RenewSessionLockRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a RenewSessionLockRequest {
+impl<'a> Request for &'a RenewSessionLockRequest {
     const OPERATION: &'static str = RENEW_SESSION_LOCK_OPERATION;
 
     type Response = RenewSessionLockResponse;

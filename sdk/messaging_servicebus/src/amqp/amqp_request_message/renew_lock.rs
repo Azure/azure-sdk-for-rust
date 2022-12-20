@@ -15,7 +15,7 @@ pub(crate) struct RenewLockRequest {
     body: OrderedMap<String, LockTokens>,
 }
 
-impl<'a> RenewLockRequest {
+impl RenewLockRequest {
     pub fn new(lock_tokens: LockTokens, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::with_capacity(1);
         body.insert(LOCK_TOKENS.into(), lock_tokens);
@@ -31,7 +31,7 @@ impl<'a> RenewLockRequest {
     }
 }
 
-impl<'a> Request for RenewLockRequest {
+impl Request for RenewLockRequest {
     const OPERATION: &'static str = RENEW_LOCK_OPERATION;
 
     type Response = RenewLockResponse;
@@ -50,7 +50,7 @@ impl<'a> Request for RenewLockRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut RenewLockRequest {
+impl<'a> Request for &'a mut RenewLockRequest {
     const OPERATION: &'static str = RENEW_LOCK_OPERATION;
 
     type Response = RenewLockResponse;
@@ -69,7 +69,7 @@ impl<'a, 'b> Request for &'a mut RenewLockRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a RenewLockRequest {
+impl<'a> Request for &'a RenewLockRequest {
     const OPERATION: &'static str = RENEW_LOCK_OPERATION;
 
     type Response = RenewLockResponse;

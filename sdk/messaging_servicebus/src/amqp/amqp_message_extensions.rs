@@ -127,18 +127,14 @@ impl<B> AmqpMessageExt for Message<B> {
     fn session_id(&self) -> Option<&str> {
         self.properties
             .as_ref()?
-            .group_id
-            .as_ref()
-            .map(|s| s.as_str())
+            .group_id.as_deref()
     }
 
     #[inline]
     fn reply_to_session_id(&self) -> Option<&str> {
         self.properties
             .as_ref()?
-            .reply_to_group_id
-            .as_ref()
-            .map(|s| s.as_str())
+            .reply_to_group_id.as_deref()
     }
 
     #[inline]
@@ -166,14 +162,12 @@ impl<B> AmqpMessageExt for Message<B> {
     fn subject(&self) -> Option<&str> {
         self.properties
             .as_ref()?
-            .subject
-            .as_ref()
-            .map(|s| s.as_str())
+            .subject.as_deref()
     }
 
     #[inline]
     fn to(&self) -> Option<&str> {
-        self.properties.as_ref()?.to.as_ref().map(|s| s.as_str())
+        self.properties.as_ref()?.to.as_deref()
     }
 
     #[inline]
@@ -189,9 +183,7 @@ impl<B> AmqpMessageExt for Message<B> {
     fn reply_to(&self) -> Option<&str> {
         self.properties
             .as_ref()?
-            .reply_to
-            .as_ref()
-            .map(|s| s.as_str())
+            .reply_to.as_deref()
     }
 
     /// The default `DateTimeOffset` value from dotnet is taken as the default value
@@ -276,7 +268,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
 
         match key.as_ref().map(|k| k.len()) {
             Some(len) if len > MAX_PARTITION_KEY_LENGTH => {
-                return Err(MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH).into())
+                return Err(MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH))
             }
             _ => {}
         }
@@ -369,7 +361,7 @@ impl<B> AmqpMessageMutExt for Message<B> {
 
     #[inline]
     fn set_correlation_id(&mut self, id: impl Into<Option<String>>) {
-        let correlation_id = id.into().map(|s| MessageId::String(s));
+        let correlation_id = id.into().map(MessageId::String);
         self.properties
             .get_or_insert(Properties::default())
             .correlation_id = correlation_id;

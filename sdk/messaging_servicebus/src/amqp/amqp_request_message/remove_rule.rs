@@ -14,7 +14,7 @@ pub(crate) struct RemoveRuleRequest {
     body: RemoveRuleRequestBody,
 }
 
-impl<'a> RemoveRuleRequest {
+impl RemoveRuleRequest {
     pub fn new(rule_name: String, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::new();
         body.insert(RULE_NAME.to_string(), rule_name);
@@ -31,7 +31,7 @@ impl<'a> RemoveRuleRequest {
     }
 }
 
-impl<'a> Request for RemoveRuleRequest {
+impl Request for RemoveRuleRequest {
     const OPERATION: &'static str = REMOVE_RULE_OPERATION;
 
     type Response = RemoveRuleResponse;
@@ -50,7 +50,7 @@ impl<'a> Request for RemoveRuleRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a RemoveRuleRequest {
+impl<'a> Request for &'a RemoveRuleRequest {
     const OPERATION: &'static str = REMOVE_RULE_OPERATION;
 
     type Response = RemoveRuleResponse;
@@ -69,7 +69,7 @@ impl<'a, 'b> Request for &'a RemoveRuleRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut RemoveRuleRequest {
+impl<'a> Request for &'a mut RemoveRuleRequest {
     const OPERATION: &'static str = REMOVE_RULE_OPERATION;
 
     type Response = RemoveRuleResponse;

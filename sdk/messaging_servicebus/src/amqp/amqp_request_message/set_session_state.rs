@@ -18,7 +18,7 @@ pub(crate) struct SetSessionStateRequest {
     body: SetSessionStateRequestBody,
 }
 
-impl<'a> SetSessionStateRequest {
+impl SetSessionStateRequest {
     pub fn new(
         session_id: &str,
         session_state: Binary,
@@ -39,7 +39,7 @@ impl<'a> SetSessionStateRequest {
     }
 }
 
-impl<'a> Request for SetSessionStateRequest {
+impl Request for SetSessionStateRequest {
     const OPERATION: &'static str = SET_SESSION_STATE_OPERATION;
 
     type Response = SetSessionStateResponse;
@@ -58,7 +58,7 @@ impl<'a> Request for SetSessionStateRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut SetSessionStateRequest {
+impl<'a> Request for &'a mut SetSessionStateRequest {
     const OPERATION: &'static str = SET_SESSION_STATE_OPERATION;
 
     type Response = SetSessionStateResponse;
@@ -77,7 +77,7 @@ impl<'a, 'b> Request for &'a mut SetSessionStateRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a SetSessionStateRequest {
+impl<'a> Request for &'a SetSessionStateRequest {
     const OPERATION: &'static str = SET_SESSION_STATE_OPERATION;
 
     type Response = SetSessionStateResponse;

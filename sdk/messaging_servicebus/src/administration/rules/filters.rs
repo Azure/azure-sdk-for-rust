@@ -322,7 +322,7 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
 
 /// A TrueRuleFilter. Matches all messages.
 #[derive(
-    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+    Debug, Default, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 #[amqp_contract(
     name = "com.microsoft:true-filter:list",
@@ -330,12 +330,6 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
     encoding = "list"
 )]
 pub struct TrueRuleFilter;
-
-impl Default for TrueRuleFilter {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl TrueRuleFilter {
     /// Creates a new TrueRuleFilter.
@@ -346,7 +340,7 @@ impl TrueRuleFilter {
 
 /// A FalseRuleFilter. Matches no messages.
 #[derive(
-    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+    Debug, Default, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 #[amqp_contract(
     name = "com.microsoft:false-filter:list",
@@ -354,12 +348,6 @@ impl TrueRuleFilter {
     encoding = "list"
 )]
 pub struct FalseRuleFilter;
-
-impl Default for FalseRuleFilter {
-    fn default() -> Self {
-        Self {}
-    }
-}
 
 impl FalseRuleFilter {
     /// Creates a new FalseRuleFilter.

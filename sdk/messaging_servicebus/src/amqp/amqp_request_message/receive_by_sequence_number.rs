@@ -21,7 +21,7 @@ pub(crate) struct ReceiveBySequenceNumberRequest {
     body: ReceiveBySequenceNumberRequestBody,
 }
 
-impl<'a> ReceiveBySequenceNumberRequest {
+impl ReceiveBySequenceNumberRequest {
     pub fn new(
         sequence_numbers: Array<i64>,
         receiver_settle_mode: ReceiverSettleMode,
@@ -50,7 +50,7 @@ impl<'a> ReceiveBySequenceNumberRequest {
     }
 }
 
-impl<'a> Request for ReceiveBySequenceNumberRequest {
+impl Request for ReceiveBySequenceNumberRequest {
     const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
 
     type Response = ReceiveBySequenceNumberResponse;
@@ -69,7 +69,7 @@ impl<'a> Request for ReceiveBySequenceNumberRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest {
+impl<'a> Request for &'a mut ReceiveBySequenceNumberRequest {
     const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
 
     type Response = ReceiveBySequenceNumberResponse;
@@ -88,7 +88,7 @@ impl<'a, 'b> Request for &'a mut ReceiveBySequenceNumberRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a ReceiveBySequenceNumberRequest {
+impl<'a> Request for &'a ReceiveBySequenceNumberRequest {
     const OPERATION: &'static str = RECEIVE_BY_SEQUENCE_NUMBER_OPERATION;
 
     type Response = ReceiveBySequenceNumberResponse;

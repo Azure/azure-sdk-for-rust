@@ -17,7 +17,7 @@ pub(crate) struct EnumerateRulesRequest {
     body: EnumerateRulesRequestBody,
 }
 
-impl<'a> EnumerateRulesRequest {
+impl EnumerateRulesRequest {
     pub fn new(skip: i32, top: i32, associated_link_name: Option<String>) -> Self {
         let mut body = OrderedMap::new();
         body.insert(SKIP.to_string(), skip);
@@ -35,7 +35,7 @@ impl<'a> EnumerateRulesRequest {
     }
 }
 
-impl<'a> Request for EnumerateRulesRequest {
+impl Request for EnumerateRulesRequest {
     const OPERATION: &'static str = ENUMERATE_RULES_OPERATION;
 
     type Response = EnumerateRulesResponse;
@@ -54,7 +54,7 @@ impl<'a> Request for EnumerateRulesRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a EnumerateRulesRequest {
+impl<'a> Request for &'a EnumerateRulesRequest {
     const OPERATION: &'static str = ENUMERATE_RULES_OPERATION;
 
     type Response = EnumerateRulesResponse;
@@ -73,7 +73,7 @@ impl<'a, 'b> Request for &'a EnumerateRulesRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut EnumerateRulesRequest {
+impl<'a> Request for &'a mut EnumerateRulesRequest {
     const OPERATION: &'static str = ENUMERATE_RULES_OPERATION;
 
     type Response = EnumerateRulesResponse;

@@ -18,7 +18,7 @@ pub(crate) struct PeekMessageRequest {
     body: OrderedMap<String, Value>,
 }
 
-impl<'a> PeekMessageRequest {
+impl PeekMessageRequest {
     pub fn new(
         from_sequence_number: i64,
         message_count: i32,
@@ -42,7 +42,7 @@ impl<'a> PeekMessageRequest {
     }
 }
 
-impl<'a> Request for PeekMessageRequest {
+impl Request for PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -61,7 +61,7 @@ impl<'a> Request for PeekMessageRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a mut PeekMessageRequest {
+impl<'a> Request for &'a mut PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;
@@ -80,7 +80,7 @@ impl<'a, 'b> Request for &'a mut PeekMessageRequest {
     }
 }
 
-impl<'a, 'b> Request for &'a PeekMessageRequest {
+impl<'a> Request for &'a PeekMessageRequest {
     const OPERATION: &'static str = PEEK_MESSAGE_OPERATION;
 
     type Response = PeekMessageResponse;

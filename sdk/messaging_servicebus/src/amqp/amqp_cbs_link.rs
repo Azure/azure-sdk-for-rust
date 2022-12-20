@@ -153,10 +153,10 @@ impl AmqpCbsLink {
             .await?;
 
         // find the smallest timeout
-        let expires_at_utc = match token.expires_at_utc() {
-            Some(timestamp) => Some(OffsetDateTime::from(timestamp.clone())),
-            None => None,
-        };
+        let expires_at_utc = token
+            .expires_at_utc()
+            .clone()
+            .map(OffsetDateTime::from);
 
         // TODO: Is there any way to convert directly from OffsetDateTime/Timestamp to StdInstant?
         let expires_at_instant = expires_at_utc.map(|expires_at| {

@@ -99,7 +99,7 @@ impl AmqpConnectionScope {
 
     /// The amount of time to allow an AMQP connection to be idle before considering
     /// it to be timed out.
-    const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(1 * 60);
+    const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(60);
 
     /// The amount of buffer to apply when considering an authorization token
     /// to be expired.  The token's actual expiration will be decreased by this
@@ -559,6 +559,5 @@ async fn attach_cbs_client(
                 AmqpConnectionScopeError::ReceiverAttach(err)
             }
         }
-        .into()
     })
 }
