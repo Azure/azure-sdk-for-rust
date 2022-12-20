@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 
 use crate::{
-    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter,
+    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter, sealed::Sealed,
 };
 
 /// Trait for rule manager implementations.
 #[async_trait]
-pub trait TransportRuleManager {
+pub trait TransportRuleManager: Sealed {
     /// Error with creating a rule
     type CreateRuleError: Send;
 

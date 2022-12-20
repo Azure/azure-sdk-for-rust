@@ -27,7 +27,7 @@ use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::{RecoverableTransport, TransportConnectionScope},
     primitives::service_bus_transport_type::ServiceBusTransportType,
-    ServiceBusReceiveMode,
+    ServiceBusReceiveMode, sealed::Sealed,
 };
 
 use super::{
@@ -426,6 +426,8 @@ fn service_bus_receive_mode_to_amqp(
         ServiceBusReceiveMode::ReceiveAndDelete => (Some(SenderSettleMode::Settled), None),
     }
 }
+
+impl Sealed for AmqpConnectionScope {}
 
 #[async_trait]
 impl TransportConnectionScope for AmqpConnectionScope {

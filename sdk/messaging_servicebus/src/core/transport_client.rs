@@ -9,7 +9,7 @@ use crate::{
         service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    receiver::service_bus_receive_mode::ServiceBusReceiveMode,
+    receiver::service_bus_receive_mode::ServiceBusReceiveMode, sealed::Sealed,
 };
 
 use super::{
@@ -20,7 +20,7 @@ use super::{
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
 /// instance may provide operations for a specific transport.
 #[async_trait]
-pub trait TransportClient: Sized {
+pub trait TransportClient: Sized + Sealed {
     /// Error with creating a client
     type CreateClientError: Send;
 

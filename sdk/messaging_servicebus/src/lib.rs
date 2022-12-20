@@ -103,6 +103,12 @@ pub(crate) mod constants;
 pub(crate) mod diagnostics;
 pub(crate) mod entity_name_formatter;
 
+pub(crate) mod sealed {
+    // This is a marker trait to prevent users from implementing certain traits from this crate.
+    // This should be kept within a `pub(crate) mod` and MUST NOT be re-exported or made public.
+    pub trait Sealed {}
+}
+
 pub mod administration;
 pub mod amqp;
 pub mod authorization;

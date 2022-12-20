@@ -11,6 +11,7 @@ use url::Url;
 use crate::authorization::service_bus_claim;
 use crate::core::RecoverableTransport;
 use crate::primitives::error::RetryError;
+use crate::sealed::Sealed;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
     core::TransportSender,
@@ -167,6 +168,8 @@ impl<RP> AmqpSender<RP> {
         Ok(())
     }
 }
+
+impl<RP> Sealed for AmqpSender<RP> {}
 
 #[async_trait]
 impl<RP> TransportSender for AmqpSender<RP>

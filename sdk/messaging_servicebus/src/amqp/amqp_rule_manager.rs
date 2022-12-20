@@ -9,7 +9,7 @@ use crate::{
     amqp::amqp_request_message::add_rule::CreateRuleFilter,
     core::{RecoverableTransport, TransportRuleManager},
     primitives::{error::RetryError, service_bus_retry_policy::run_operation},
-    ServiceBusRetryPolicy,
+    ServiceBusRetryPolicy, sealed::Sealed,
 };
 
 use super::{
@@ -110,6 +110,8 @@ where
         Ok(response)
     }
 }
+
+impl<RP> Sealed for AmqpRuleManager<RP> {}
 
 #[async_trait]
 impl<RP> TransportRuleManager for AmqpRuleManager<RP>

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{CreateMessageBatchOptions, ServiceBusMessage};
+use crate::{CreateMessageBatchOptions, ServiceBusMessage, sealed::Sealed};
 
 use super::TransportMessageBatch;
 
@@ -9,7 +9,7 @@ use super::TransportMessageBatch;
 /// a transport producer via containment and delegate operations to it rather than understanding protocol-specific details
 /// for different transports.
 #[async_trait]
-pub trait TransportSender {
+pub trait TransportSender: Sealed {
     /// Error with sending a message
     type SendError: std::error::Error + Send;
 

@@ -23,7 +23,7 @@ use crate::{
         service_bus_received_message::{ReceivedMessageLockToken, ServiceBusReceivedMessage},
         service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
     },
-    ServiceBusReceiveMode,
+    ServiceBusReceiveMode, sealed::Sealed,
 };
 
 use super::{
@@ -398,6 +398,8 @@ impl<RP> AmqpReceiver<RP> {
         Ok(response)
     }
 }
+
+impl<RP> Sealed for AmqpReceiver<RP> {}
 
 #[async_trait]
 impl<RP> TransportReceiver for AmqpReceiver<RP>

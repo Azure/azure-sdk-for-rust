@@ -9,7 +9,7 @@ use crate::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
     },
-    ServiceBusReceiveMode,
+    ServiceBusReceiveMode, sealed::Sealed,
 };
 
 /// Trait for session receiver
@@ -52,7 +52,7 @@ pub trait TransportSessionReceiver: TransportReceiver {
 
 /// Trait for a receiver.
 #[async_trait]
-pub trait TransportReceiver {
+pub trait TransportReceiver: Sealed {
     /// Error with request-response operations
     type RequestResponseError;
 

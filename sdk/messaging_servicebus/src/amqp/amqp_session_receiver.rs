@@ -14,7 +14,7 @@ use crate::{
         service_bus_received_message::ServiceBusReceivedMessage,
         service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
     },
-    ServiceBusReceiveMode,
+    ServiceBusReceiveMode, sealed::Sealed,
 };
 
 use super::{
@@ -117,6 +117,8 @@ impl<RP> AmqpSessionReceiver<RP> {
         Ok(response)
     }
 }
+
+impl<RP> Sealed for AmqpSessionReceiver<RP> {}
 
 #[async_trait]
 impl<RP> TransportReceiver for AmqpSessionReceiver<RP>

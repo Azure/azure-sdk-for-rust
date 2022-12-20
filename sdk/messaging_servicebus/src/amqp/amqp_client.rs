@@ -13,7 +13,7 @@ use crate::{
         service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    receiver::service_bus_receive_mode::ServiceBusReceiveMode,
+    receiver::service_bus_receive_mode::ServiceBusReceiveMode, sealed::Sealed,
 };
 
 use super::{
@@ -55,6 +55,8 @@ pub struct AmqpClient<RP> {
     /// shouldn't have to .await for a lock on the connection scope to check if it's been disposed.
     is_connection_scope_disposed: bool,
 }
+
+impl<RP> Sealed for AmqpClient<RP> {}
 
 #[async_trait]
 impl<RP> TransportClient for AmqpClient<RP>

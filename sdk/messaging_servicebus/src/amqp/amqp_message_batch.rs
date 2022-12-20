@@ -1,7 +1,7 @@
 use fe2o3_amqp_types::messaging::{message::__private::Serializable, Data, Message};
 use serde_amqp::serialized_size;
 
-use crate::core::TransportMessageBatch;
+use crate::{core::TransportMessageBatch, sealed::Sealed};
 
 use super::error::TryAddMessageError;
 
@@ -28,6 +28,8 @@ impl AmqpMessageBatch {
         }
     }
 }
+
+impl Sealed for AmqpMessageBatch {}
 
 impl TransportMessageBatch for AmqpMessageBatch {
     type TryAddError = TryAddMessageError;
