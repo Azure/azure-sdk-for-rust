@@ -293,18 +293,48 @@ async fn create_rule_manager() {
         .unwrap();
 
     let rules = rule_manager.get_rules().await.unwrap();
-    println!("rules: {:?}", rules);
 
+    // Remove all existing rules
     for rule in rules {
         let name = rule.name;
         rule_manager.delete_rule(name).await.unwrap();
     }
 
+    // Add a correlation rule filter
     let correlation_filter = CorrelationRuleFilter::builder().subject("subject").build();
     rule_manager
         .create_rule("brand-filter", correlation_filter)
         .await
         .unwrap();
+
+    // Add a SQL rule filter
+    let filter = SqlRuleFilter::new("user.color='red'");
+    let action = SqlRuleAction::new("SET quantity = quantity / 2;");
+    rule_manager
+        .create_rule("color-filter", (filter, action))
+        .await
+        .unwrap();
+
+    // Add a true filter
+    rule_manager
+        .create_rule("true-filter", TrueRuleFilter::new())
+        .await
+        .unwrap();
+
+    // Add a false filter
+    rule_manager
+        .create_rule("false-filter", FalseRuleFilter::new())
+        .await
+        .unwrap();
+
+    // Get the newly added rules
+    let rules = rule_manager.get_rules().await.unwrap();
+    assert_eq!(rules.len(), 4);
+    let rule_names = rules.iter().map(|r| r.name.as_str()).collect::<Vec<_>>();
+    assert!(rule_names.contains(&"brand-filter"));
+    assert!(rule_names.contains(&"color-filter"));
+    assert!(rule_names.contains(&"true-filter"));
+    assert!(rule_names.contains(&"false-filter"));
 
     rule_manager.dispose().await.unwrap();
     client.dispose().await.unwrap();

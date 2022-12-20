@@ -1,6 +1,6 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::OrderedMap;
-use serde_amqp::{described::Described, Value};
+use serde_amqp::{Value};
 
 use crate::{
     administration::{FalseRuleFilter, SqlRuleAction, TrueRuleFilter},
@@ -89,8 +89,7 @@ impl AddRuleRequest {
                 rule_description.insert(SQL_RULE_FILTER.into(), sql_filter_map.into());
 
                 if let Some(sql_rule_action) = action {
-                    let value: Described<_> = sql_rule_action.into();
-                    rule_action_map.insert(EXPRESSION.into(), value.into());
+                    rule_action_map.insert(EXPRESSION.into(), sql_rule_action.expression.into());
                 }
             }
             CreateRuleFilter::Correlation(correlation_filter) => {

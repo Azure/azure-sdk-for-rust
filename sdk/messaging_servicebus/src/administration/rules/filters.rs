@@ -20,7 +20,7 @@ use crate::amqp::{
 /// logical NOT/AND/OR, relational operators, numeric arithmetic, and simple text pattern matching
 /// with LIKE.
 #[derive(
-    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+    Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 #[amqp_contract(
     name = "com.microsoft:sql-filter:list",
@@ -31,6 +31,18 @@ use crate::amqp::{
 pub struct SqlRuleFilter {
     /// SQL rule filter's expression.
     pub expression: String,
+
+    // TODO: there is an unknown integer in the response, and the value is always 20 but it's not
+    // documented
+    _unknown_int: Option<i32>,
+}
+
+impl std::fmt::Debug for SqlRuleFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SqlRuleFilter")
+            .field("expression", &self.expression)
+            .finish()
+    }
 }
 
 impl SqlRuleFilter {
@@ -38,6 +50,10 @@ impl SqlRuleFilter {
     pub fn new(expression: impl Into<String>) -> Self {
         Self {
             expression: expression.into(),
+
+            // Always set it to `None` so that it won't be serialized
+            // Setting it to `Some(20)` seems to work too.
+            _unknown_int: None,
         }
     }
 }

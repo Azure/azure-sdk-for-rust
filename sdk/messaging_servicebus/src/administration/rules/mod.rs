@@ -14,7 +14,7 @@ mod filters;
 pub use filters::*; // re-export to match the namespace
 
 /// Properties of a rule.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RuleProperties {
     /// The filter expression used to match messages.
     pub filters: RuleFilter,
@@ -31,6 +31,18 @@ pub struct RuleProperties {
     // Prevents construction outside of this crate
     // TODO: is this necessary?
     _sealed: PhantomData<()>,
+}
+
+// Manual implementation of Debug to avoid printing the `_sealed` field
+impl std::fmt::Debug for RuleProperties {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RuleProperties")
+            .field("filters", &self.filters)
+            .field("actions", &self.actions)
+            .field("name", &self.name)
+            .field("created_at", &self.created_at)
+            .finish()
+    }
 }
 
 impl RuleProperties {
@@ -90,7 +102,7 @@ pub struct EmptyRuleAction {}
 
 /// SQL rule action
 #[derive(
-    Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
+    Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
 #[amqp_contract(
     name = "com.microsoft:sql-rule-action:list",
@@ -101,6 +113,18 @@ pub struct EmptyRuleAction {}
 pub struct SqlRuleAction {
     /// SQL rule action's expression.
     pub expression: String,
+
+    /// There is an undocumented field here that is present in the responses
+    /// TODO: ask the service about this
+    _unknown_int: Option<i32>,
+}
+
+impl std::fmt::Debug for SqlRuleAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SqlRuleAction")
+            .field("expression", &self.expression)
+            .finish()
+    }
 }
 
 impl SqlRuleAction {
@@ -108,6 +132,9 @@ impl SqlRuleAction {
     pub fn new(expression: impl Into<String>) -> Self {
         Self {
             expression: expression.into(),
+
+            // Set it to `None` so that it is not serialized
+            _unknown_int: None,
         }
     }
 }

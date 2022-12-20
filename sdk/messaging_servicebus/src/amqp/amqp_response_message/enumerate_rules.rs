@@ -6,7 +6,7 @@ use crate::{
     amqp::management_constants,
 };
 
-// type RuleDescriptionValue = Described<Value>;
+// type Rules = Vec<OrderedMap<String, Described<Value>>>;
 type Rules = Vec<OrderedMap<String, RuleDescription>>;
 type EnumerateRulesResponseBody = OrderedMap<String, Rules>;
 
@@ -47,11 +47,4 @@ impl Response for EnumerateRulesResponse {
             body: message.body.ok_or(Self::Error::DecodeError(None))?,
         })
     }
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn decode_response() {}
 }
