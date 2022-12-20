@@ -189,9 +189,6 @@ macro_rules! run_operation {
                 .await;
             }
 
-            // try recover
-            // compile_error!("TODO: implement recover");
-
             let outcome = match tokio::time::timeout($try_timeout, $op).await {
                 Ok(result) => result.map_err(<$err_ty>::from),
                 Err(elapsed) => Err(<$err_ty>::from(elapsed)),
@@ -200,11 +197,11 @@ macro_rules! run_operation {
                 Ok(outcome) => break outcome,
                 Err(error) => {
                     _failed_attempt_count += 1;
-                    let retry_delay = $policy.calculate_retry_delay(&error, _failed_attempt_count);
+                    let _retry_delay = $policy.calculate_retry_delay(&error, _failed_attempt_count);
                     // TODO: check if the error is recoverable
 
                     match (
-                        retry_delay,
+                        _retry_delay,
                         crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error)
                     ) {
                         (Some(retry_delay), false) => {
