@@ -1,7 +1,7 @@
 //! This module contains the types for working with Service Bus rules.
 
 use fe2o3_amqp_types::primitives::Timestamp;
-use serde_amqp::{DeserializeComposite, SerializeComposite};
+use serde_amqp::{DeserializeComposite, SerializeComposite, described::Described, descriptor::Descriptor};
 
 use filters::RuleFilter;
 use time::OffsetDateTime;
@@ -97,6 +97,23 @@ pub struct EmptyRuleAction {}
 pub struct SqlRuleAction {
     /// SQL rule action's expression.
     pub expression: String,
+}
+
+impl SqlRuleAction {
+    pub fn new(expression: impl Into<String>) -> Self {
+        Self {
+            expression: expression.into(),
+        }
+    }
+}
+
+impl From<SqlRuleAction> for Described<String> {
+    fn from(action: SqlRuleAction) -> Self {
+        Described {
+            descriptor: Descriptor::Code(0x0000_0137_0000_0006),
+            value: action.expression,
+        }
+    }
 }
 
 /// Represents the filter actions which are allowed for the transformation

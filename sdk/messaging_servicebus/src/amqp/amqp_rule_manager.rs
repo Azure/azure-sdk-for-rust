@@ -6,7 +6,7 @@ use url::Url;
 
 use crate::{
     administration::RuleProperties,
-    amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+    amqp::amqp_request_message::add_rule::CreateRuleFilter,
     core::{RecoverableTransport, TransportRuleManager},
     primitives::{error::RetryError, service_bus_retry_policy::run_operation},
     ServiceBusRetryPolicy,
@@ -149,10 +149,9 @@ where
     async fn create_rule(
         &mut self,
         rule_name: String,
-        filter: SupportedRuleFilter,
-        sql_rule_action: Option<String>,
+        filter: CreateRuleFilter,
     ) -> Result<(), Self::CreateRuleError> {
-        let mut request = AddRuleRequest::new(rule_name, filter, sql_rule_action, None)
+        let mut request = AddRuleRequest::new(rule_name, filter, None)
             .map_err(CreateRuleError::from)
             .map_err(RetryError::Operation)?;
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);

@@ -1,8 +1,8 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::OrderedMap;
-use serde_amqp::Value;
+use serde_amqp::{Value, described::Described};
 
-use crate::amqp::{
+use crate::{amqp::{
     amqp_response_message::add_rule::AddRuleResponse,
     error::CorrelationFilterError,
     management_constants::{
@@ -12,25 +12,54 @@ use crate::amqp::{
             SQL_RULE_FILTER,
         },
     },
-};
+}, administration::{SqlRuleAction, TrueRuleFilter, FalseRuleFilter}};
 
 use crate::administration::{CorrelationRuleFilter, SqlRuleFilter};
 
 #[derive(Debug, Clone)]
-pub enum SupportedRuleFilter {
-    Sql(SqlRuleFilter),
+pub enum CreateRuleFilter {
+    Sql {
+        filter: SqlRuleFilter,
+        action: Option<SqlRuleAction>,
+    },
     Correlation(CorrelationRuleFilter),
+    True(TrueRuleFilter),
+    False(FalseRuleFilter),
 }
 
-impl From<SqlRuleFilter> for SupportedRuleFilter {
+impl From<SqlRuleFilter> for CreateRuleFilter {
     fn from(sql_filter: SqlRuleFilter) -> Self {
-        SupportedRuleFilter::Sql(sql_filter)
+        CreateRuleFilter::Sql {
+            filter: sql_filter,
+            action: None,
+        }
     }
 }
 
-impl From<CorrelationRuleFilter> for SupportedRuleFilter {
+impl From<(SqlRuleFilter, SqlRuleAction)> for CreateRuleFilter {
+    fn from((sql_filter, sql_action): (SqlRuleFilter, SqlRuleAction)) -> Self {
+        CreateRuleFilter::Sql {
+            filter: sql_filter,
+            action: Some(sql_action),
+        }
+    }
+}
+
+impl From<CorrelationRuleFilter> for CreateRuleFilter {
     fn from(correlation_filter: CorrelationRuleFilter) -> Self {
-        SupportedRuleFilter::Correlation(correlation_filter)
+        CreateRuleFilter::Correlation(correlation_filter)
+    }
+}
+
+impl From<TrueRuleFilter> for CreateRuleFilter {
+    fn from(true_filter: TrueRuleFilter) -> Self {
+        CreateRuleFilter::True(true_filter)
+    }
+}
+
+impl From<FalseRuleFilter> for CreateRuleFilter {
+    fn from(false_filter: FalseRuleFilter) -> Self {
+        CreateRuleFilter::False(false_filter)
     }
 }
 
@@ -45,27 +74,38 @@ pub(crate) struct AddRuleRequest {
 impl<'a> AddRuleRequest {
     pub(crate) fn new(
         rule_name: String,
-        filter: SupportedRuleFilter,
-        sql_rule_action: Option<String>,
+        filter: CreateRuleFilter,
         associated_link_name: Option<String>,
     ) -> Result<Self, CorrelationFilterError> {
         let mut rule_description: OrderedMap<Value, Value> = OrderedMap::new();
+        let mut rule_action_map = OrderedMap::new();
         match filter {
-            SupportedRuleFilter::Sql(sql_filter) => {
+            CreateRuleFilter::Sql {filter, action} => {
                 let mut sql_filter_map: OrderedMap<Value, Value> = OrderedMap::new();
-                sql_filter_map.insert(EXPRESSION.into(), sql_filter.expression.into());
+                sql_filter_map.insert(EXPRESSION.into(), filter.expression.into());
                 rule_description.insert(SQL_RULE_FILTER.into(), sql_filter_map.into());
+
+                if let Some(sql_rule_action) = action {
+                    let value: Described<_> = sql_rule_action.into();
+                    rule_action_map.insert(EXPRESSION.into(), value.into());
+                }
             }
-            SupportedRuleFilter::Correlation(correlation_filter) => {
+            CreateRuleFilter::Correlation(correlation_filter) => {
                 let correlation_filter = OrderedMap::try_from(correlation_filter)?;
                 rule_description.insert(CORRELATION_RULE_FILTER.into(), correlation_filter.into());
             }
+            CreateRuleFilter::True(_) => {
+                let mut sql_filter_map: OrderedMap<Value, Value> = OrderedMap::new();
+                sql_filter_map.insert(EXPRESSION.into(), Value::String(String::from("1=1")));
+                rule_description.insert(SQL_RULE_FILTER.into(), sql_filter_map.into());
+            }
+            CreateRuleFilter::False(_) => {
+                let mut sql_filter_map: OrderedMap<Value, Value> = OrderedMap::new();
+                sql_filter_map.insert(EXPRESSION.into(), Value::String(String::from("1=0")));
+                rule_description.insert(SQL_RULE_FILTER.into(), sql_filter_map.into());
+            }
         }
 
-        let mut rule_action_map = OrderedMap::new();
-        if let Some(sql_rule_action) = sql_rule_action {
-            rule_action_map.insert(EXPRESSION.into(), sql_rule_action.into());
-        }
         rule_description.insert(SQL_RULE_ACTION.into(), Value::Map(rule_action_map));
 
         let mut body = OrderedMap::new();

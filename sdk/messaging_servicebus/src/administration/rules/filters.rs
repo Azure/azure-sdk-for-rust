@@ -33,6 +33,14 @@ pub struct SqlRuleFilter {
     pub expression: String,
 }
 
+impl SqlRuleFilter {
+    pub fn new(expression: impl Into<String>) -> Self {
+        Self {
+            expression: expression.into(),
+        }
+    }
+}
+
 /// Represents the correlation rule filter expression.
 ///
 /// A CorrelationRuleFilter holds a set of conditions that are matched against one of more of an
@@ -322,6 +330,19 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
 )]
 pub struct TrueRuleFilter {}
 
+impl Default for TrueRuleFilter {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl TrueRuleFilter {
+    /// Creates a new TrueRuleFilter.
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
 /// A FalseRuleFilter. Matches no messages.
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
@@ -332,6 +353,19 @@ pub struct TrueRuleFilter {}
     encoding = "list"
 )]
 pub struct FalseRuleFilter {}
+
+impl Default for FalseRuleFilter {
+    fn default() -> Self {
+        Self {}
+    }
+}
+
+impl FalseRuleFilter {
+    /// Creates a new FalseRuleFilter.
+    pub fn new() -> Self {
+        Self {}
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RuleFilter {

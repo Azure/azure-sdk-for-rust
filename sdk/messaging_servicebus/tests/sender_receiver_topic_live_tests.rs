@@ -1,5 +1,5 @@
 use azure_messaging_servicebus::{
-    administration::CorrelationRuleFilter, ServiceBusMessage, ServiceBusReceiverOptions,
+    ServiceBusMessage, ServiceBusReceiverOptions,
 };
 use serial_test::serial;
 
@@ -279,6 +279,7 @@ async fn send_and_receive_session_messages() {
 #[serial]
 async fn create_rule_manager() {
     use azure_messaging_servicebus::prelude::*;
+    use azure_messaging_servicebus::administration::*;
 
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -303,7 +304,7 @@ async fn create_rule_manager() {
 
     let correlation_filter = CorrelationRuleFilter::builder().subject("subject").build();
     rule_manager
-        .create_rule("brand-filter", correlation_filter, None)
+        .create_rule("brand-filter", correlation_filter)
         .await
         .unwrap();
 

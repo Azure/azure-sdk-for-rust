@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::{
-    administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter,
 };
 
 /// Trait for rule manager implementations.
@@ -47,8 +47,7 @@ pub trait TransportRuleManager {
     async fn create_rule(
         &mut self,
         rule_name: String,
-        filter: SupportedRuleFilter,
-        sql_rule_action: Option<String>,
+        filter: CreateRuleFilter,
     ) -> Result<(), Self::CreateRuleError>;
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.

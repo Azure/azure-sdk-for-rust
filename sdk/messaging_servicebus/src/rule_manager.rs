@@ -1,10 +1,11 @@
 //! Implemments `ServiceBusRuleManager`
 
 use crate::{
-    administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
+    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter,
     core::TransportRuleManager,
 };
 
+/// A `ServiceBusRuleManager` is used to manage rules for a subscription.
 #[derive(Debug)]
 pub struct ServiceBusRuleManager<T> {
     pub(crate) inner: T,
@@ -16,26 +17,57 @@ where
 {
     const MAX_RULES_PER_REQUEST: i32 = 100;
 
+    /// Get the ID to identify this client.
     pub fn identifier(&self) -> &str {
         self.inner.identifier()
     }
 
+    /// The path of the Service Bus subscription that the rule manager is connected to, specific to the
+    /// Service Bus namespace that contains it.
     pub fn subscription_path(&self) -> &str {
         self.inner.subscription_path()
     }
 
+    /// Closes the rule manager and perform any cleanup required.
     pub async fn dispose(self) -> Result<(), T::CloseError> {
         self.inner.close().await
     }
 
+    /// Add a rule to the current subscription to filter the messages reaching from topic to the
+    /// subscription.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use azure_messaging_servicebus::administration::{
+    ///     SqlRuleFilter, SqlRuleAction, CorrelationRuleFilter, TrueRuleFilter,
+    /// };
+    ///
+    /// // Create a correlation rule filter
+    /// let filter = CorrelationRuleFilter::builder()
+    ///     .subject("test")
+    ///     .build();
+    /// rule_manager.create_rule("correlation_rule", filter).await.unwrap();
+    ///
+    /// // Create a SQL rule filter without an action
+    /// let filter = SqlRuleFilter::new("user.color='green'");
+    /// rule_manager.create_rule("sql_rule", filter).await.unwrap();
+    ///
+    /// // Create a SQL rule filter with an action
+    /// let filter = SqlRuleFilter::new("user.color='red'");
+    /// let action = SqlRuleAction::new("SET quantity = quantity / 2;");
+    /// rule_manager.create_rule("sql_rule_with_action", (filter, action)).await.unwrap();
+    ///
+    /// // Create a True rule filter
+    /// rule_manager.create_rule("true_rule", TrueRuleFilter::new()).await.unwrap();
+    /// ```
     pub async fn create_rule(
         &mut self,
         name: impl Into<String>,
-        filter: impl Into<SupportedRuleFilter>,
-        sql_rule_action: impl Into<Option<String>>,
+        filter: impl Into<CreateRuleFilter>,
     ) -> Result<(), T::CreateRuleError> {
         self.inner
-            .create_rule(name.into(), filter.into(), sql_rule_action.into())
+            .create_rule(name.into(), filter.into())
             .await
     }
 
