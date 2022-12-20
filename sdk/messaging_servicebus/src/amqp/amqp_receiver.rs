@@ -3,7 +3,6 @@ use fe2o3_amqp::{
     link::{delivery::DeliveryInfo, DetachError, RecvError},
     Delivery, Receiver,
 };
-use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ErrorCondition, Fields, ReceiverSettleMode},
     messaging::{annotations::AnnotationKey, Body, Modified},
@@ -43,463 +42,6 @@ use super::{
     error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
 };
 
-#[derive(Debug)]
-pub struct AmqpReceiver<RP> {
-    pub(crate) identifier: u32, // TODO: should this info be preserved?
-
-    pub(crate) prefetch_count: u32,
-    pub(crate) retry_policy: RP,
-    pub(crate) receiver: fe2o3_amqp::Receiver,
-    pub(crate) receive_mode: ServiceBusReceiveMode,
-    pub(crate) _is_processor: bool, // TODO: implement processor
-
-    pub(crate) management_link: AmqpManagementLink,
-    pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,
-    pub(crate) last_peeked_sequence_number: i64,
-
-    pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
-}
-
-#[async_trait]
-impl<RP> TransportReceiver for AmqpReceiver<RP>
-where
-    RP: ServiceBusRetryPolicy + Send + Sync,
-{
-    type RequestResponseError = RetryError<AmqpRequestResponseError>;
-    type ReceiveError = RetryError<AmqpRecvError>;
-    type DispositionError = RetryError<AmqpDispositionError>;
-    type CloseError = DetachError;
-
-    fn prefetch_count(&self) -> u32 {
-        self.prefetch_count
-    }
-
-    fn receive_mode(&self) -> ServiceBusReceiveMode {
-        self.receive_mode
-    }
-
-    async fn receive_messages(
-        &mut self,
-        max_messages: u32,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
-        let receiver = &mut self.receiver;
-        let prefetch_count = self.prefetch_count;
-        let receive_mode = &self.receive_mode;
-        let retry_policy = &self.retry_policy;
-        let mut try_timeout = retry_policy.calculate_try_timeout(0);
-
-        // TODO: Should this wait indefinitely until all messages are received?
-        let default_max_wait_time = self.retry_policy.options().try_timeout;
-        let mut buffer = Vec::with_capacity(max_messages as usize);
-        loop {
-            run_operation!(
-                retry_policy,
-                AmqpRecvError,
-                try_timeout,
-                receive_messages_with_timeout(
-                    receiver,
-                    prefetch_count,
-                    receive_mode,
-                    &mut buffer,
-                    max_messages,
-                    default_max_wait_time
-                )
-            )?;
-
-            if !buffer.is_empty() {
-                break;
-            }
-        }
-        Ok(buffer)
-    }
-
-    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
-    async fn receive_messages_with_max_wait_time(
-        &mut self,
-        max_messages: u32,
-        max_wait_time: Option<StdDuration>,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
-        let max_wait_time =
-            max_wait_time.unwrap_or_else(|| self.retry_policy.options().try_timeout);
-        let receiver = &mut self.receiver;
-        let prefetch_count = self.prefetch_count;
-        let receive_mode = &self.receive_mode;
-        let retry_policy = &self.retry_policy;
-        let mut try_timeout = retry_policy.calculate_try_timeout(0);
-        let mut buffer = Vec::with_capacity(max_messages as usize);
-        run_operation!(
-            retry_policy,
-            AmqpRecvError,
-            try_timeout,
-            receive_messages_with_timeout(
-                receiver,
-                prefetch_count,
-                receive_mode,
-                &mut buffer,
-                max_messages,
-                max_wait_time
-            )
-        )?;
-        Ok(buffer)
-    }
-
-    /// Closes the connection to the transport consumer instance.
-    async fn close(mut self) -> Result<(), Self::CloseError> {
-        let _ = self
-            .cbs_command_sender
-            .send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(
-                self.identifier,
-            ))
-            .await;
-        self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
-        self.receiver.close().await?;
-        self.management_link.close().await?;
-        Ok(())
-    }
-
-    /// Completes a [`ServiceBusReceivedMessage`]. This will delete the message from the service.
-    async fn complete(
-        &mut self,
-        message: &ServiceBusReceivedMessage,
-        session_id: Option<&str>,
-    ) -> Result<(), Self::DispositionError> {
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        match &message.lock_token {
-            ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(&lock_token) {
-                    let mgmt_client = self.management_link.client_mut();
-                    let mut request = UpdateDispositionRequest::new(
-                        DispositionStatus::Completed,
-                        Array(vec![lock_token.clone()]), // TODO: reduce clone
-                        None,
-                        None,
-                        None,
-                        session_id,
-                        Some(self.receiver.name().to_string()),
-                    );
-                    run_operation!(
-                        policy,
-                        AmqpDispositionError,
-                        try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout)
-                    )?;
-
-                    self.request_response_locked_messages.remove(&lock_token);
-                }
-            }
-            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
-                let receiver = &mut self.receiver;
-                run_operation!(
-                    policy,
-                    AmqpDispositionError,
-                    try_timeout,
-                    complete_message(receiver, delivery_info)
-                )?;
-            }
-        };
-
-        Ok(())
-    }
-
-    /// Indicates that the receiver wants to defer the processing for the message.
-    async fn defer(
-        &mut self,
-        message: &ServiceBusReceivedMessage,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<&str>,
-    ) -> Result<(), Self::DispositionError> {
-        let receiver = &mut self.receiver;
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        match &message.lock_token {
-            ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(&lock_token) {
-                    let mgmt_client = self.management_link.client_mut();
-                    let mut request = UpdateDispositionRequest::new(
-                        DispositionStatus::Defered,
-                        Array(vec![lock_token.clone()]), // TODO: reduce clone
-                        None,
-                        None,
-                        properties_to_modify,
-                        session_id,
-                        Some(self.receiver.name().to_string()),
-                    );
-                    run_operation!(
-                        policy,
-                        AmqpDispositionError,
-                        try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout)
-                    )?;
-
-                    self.request_response_locked_messages.remove(&lock_token);
-                }
-            }
-            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
-                run_operation!(
-                    policy,
-                    AmqpDispositionError,
-                    try_timeout,
-                    defer_message(receiver, delivery_info, &properties_to_modify)
-                )?;
-            }
-        };
-        Ok(())
-    }
-
-    /// Fetches the next batch of active messages without changing the state of the receiver or the message source.
-    async fn peek_message(
-        &mut self,
-        sequence_number: Option<i64>,
-        message_count: i32,
-    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
-        let mut request = PeekMessageRequest::new(
-            sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
-            message_count,
-            Some(self.receiver.name().to_string()),
-        );
-
-        let mgmt_client = self.management_link.client_mut();
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        let response = run_operation!(
-            policy,
-            AmqpRequestResponseError,
-            try_timeout,
-            peek_message(mgmt_client, &mut request, &try_timeout)
-        )?;
-
-        let peeked_messages = response
-            .into_peeked_messages()
-            .map_err(AmqpRequestResponseError::from)
-            .map_err(RetryError::Operation)?;
-
-        if let Some(last) = peeked_messages.last() {
-            self.last_peeked_sequence_number = last.sequence_number();
-        }
-        Ok(peeked_messages)
-    }
-
-    async fn peek_session_message(
-        &mut self,
-        sequence_number: Option<i64>,
-        message_count: i32,
-        session_id: &str,
-    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
-        let mut request = PeekSessionMessageRequest::new(
-            sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
-            message_count,
-            session_id,
-            Some(self.receiver.name().to_string()),
-        );
-
-        let mgmt_client = self.management_link.client_mut();
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        let response = run_operation!(
-            policy,
-            AmqpRequestResponseError,
-            try_timeout,
-            peek_session_message(mgmt_client, &mut request, &try_timeout)
-        )?;
-
-        let peeked_messages = response
-            .into_peeked_messages()
-            .map_err(AmqpRequestResponseError::from)
-            .map_err(RetryError::Operation)?;
-
-        if let Some(last) = peeked_messages.last() {
-            self.last_peeked_sequence_number = last.sequence_number();
-        }
-        Ok(peeked_messages)
-    }
-
-    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for processing.
-    async fn abandon(
-        &mut self,
-        message: &ServiceBusReceivedMessage,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<&str>,
-    ) -> Result<(), Self::DispositionError> {
-        let receiver = &mut self.receiver;
-        let policy = &mut self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        match &message.lock_token {
-            ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(&lock_token) {
-                    let mgmt_client = self.management_link.client_mut();
-                    let mut request = UpdateDispositionRequest::new(
-                        DispositionStatus::Abandoned,
-                        Array(vec![lock_token.clone()]), // TODO: reduce clone
-                        None,
-                        None,
-                        properties_to_modify,
-                        session_id,
-                        Some(self.receiver.name().to_string()),
-                    );
-                    run_operation!(
-                        policy,
-                        AmqpDispositionError,
-                        try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout)
-                    )?;
-
-                    self.request_response_locked_messages.remove(&lock_token);
-                }
-            }
-            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
-                run_operation!(
-                    policy,
-                    AmqpDispositionError,
-                    try_timeout,
-                    abandon_message(receiver, delivery_info, &properties_to_modify)
-                )?;
-            }
-        };
-        Ok(())
-    }
-
-    /// Moves a message to the dead-letter subqueue.
-    async fn dead_letter(
-        &mut self,
-        message: &ServiceBusReceivedMessage,
-        dead_letter_reason: Option<String>,
-        dead_letter_error_description: Option<String>,
-        properties_to_modify: Option<OrderedMap<String, Value>>,
-        session_id: Option<&str>,
-    ) -> Result<(), Self::DispositionError> {
-        let policy = &self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        match &message.lock_token {
-            ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(lock_token) {
-                    let mgmt_client = self.management_link.client_mut();
-                    let mut request = UpdateDispositionRequest::new(
-                        DispositionStatus::Suspended,
-                        Array(vec![lock_token.clone()]),
-                        dead_letter_reason,
-                        dead_letter_error_description,
-                        properties_to_modify,
-                        session_id,
-                        Some(self.receiver.name().to_string()),
-                    );
-                    run_operation!(
-                        policy,
-                        AmqpDispositionError,
-                        try_timeout,
-                        update_disposition(mgmt_client, &mut request, &try_timeout)
-                    )?;
-
-                    self.request_response_locked_messages.remove(lock_token);
-                }
-            }
-            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
-                let receiver = &mut self.receiver;
-                run_operation!(
-                    policy,
-                    AmqpDispositionError,
-                    try_timeout,
-                    dead_letter_message(
-                        receiver,
-                        delivery_info,
-                        &dead_letter_reason,
-                        &dead_letter_error_description,
-                        &properties_to_modify
-                    )
-                )?;
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Receives a [`Vec<ServiceBusReceivedMessages>`] of deferred messages identified by `sequence_numbers`.
-    async fn receive_deferred_messages(
-        &mut self,
-        sequence_numbers: impl Iterator<Item = i64> + Send,
-        session_id: Option<&str>,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
-        let sequence_numbers = sequence_numbers.collect();
-        let receiver_settle_mode = match self.receive_mode {
-            ServiceBusReceiveMode::PeekLock => ReceiverSettleMode::Second,
-            ServiceBusReceiveMode::ReceiveAndDelete => ReceiverSettleMode::First,
-        };
-        let mut request = ReceiveBySequenceNumberRequest::new(
-            sequence_numbers,
-            receiver_settle_mode,
-            session_id,
-            Some(self.receiver.name().to_string()),
-        );
-
-        let mgmt_client = self.management_link.client_mut();
-        let policy = &self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        let response = run_operation!(
-            policy,
-            AmqpRequestResponseError,
-            try_timeout,
-            receive_by_sequence_number(mgmt_client, &mut request, &try_timeout)
-        )?;
-
-        let received_messages = response
-            .into_received_messages()
-            .map_err(AmqpRequestResponseError::from)
-            .map_err(RetryError::Operation)?;
-
-        for message in &received_messages {
-            if let ReceivedMessageLockToken::LockToken(lock_token) = &message.lock_token {
-                self.request_response_locked_messages
-                    .insert(lock_token.clone());
-            }
-        }
-
-        Ok(received_messages)
-    }
-
-    /// Renews the lock on the message. The lock will be renewed based on the setting specified on the queue.
-    async fn renew_message_lock(
-        &mut self,
-        lock_tokens: Vec<Uuid>,
-    ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
-        let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name().to_string()));
-        let mgmt_client = self.management_link.client_mut();
-        let policy = &self.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
-
-        let response = run_operation!(
-            policy,
-            AmqpRequestResponseError,
-            try_timeout,
-            renew_lock(mgmt_client, &mut request, &try_timeout)
-        )?;
-        Ok(response.expirations.into_inner())
-    }
-}
-
-fn lock_token_from_delivery<B>(delivery: &Delivery<B>) -> Option<Uuid> {
-    match delivery
-        .message()
-        .delivery_annotations
-        .as_ref()
-        .and_then(|da| da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey))
-    {
-        Some(Value::Uuid(uuid)) => Some(uuid.clone()),
-        _ => {
-            let delivery_tag = delivery.delivery_tag().as_ref();
-            match Uuid::try_from(delivery_tag) {
-                Ok(uuid) => Some(uuid),
-                _ => None,
-            }
-        }
-    }
-}
 
 async fn receive_messages(
     receiver: &mut Receiver,
@@ -540,40 +82,22 @@ async fn receive_messages(
     Ok(())
 }
 
-async fn receive_messages_with_timeout(
-    receiver: &mut Receiver,
-    prefetch_count: u32,
-    receive_mode: &ServiceBusReceiveMode,
-    buffer: &mut Vec<ServiceBusReceivedMessage>,
-    max_messages: u32,
-    max_wait_time: StdDuration,
-) -> Result<(), AmqpRecvError> {
-    // let mut message_buffer: Vec<ServiceBusReceivedMessage> =
-    //     Vec::with_capacity(max_messages as usize);
-
-    tokio::select! {
-        _ = tokio::time::sleep(max_wait_time) => {
-            if prefetch_count == 0 { // credit mode is manual
-                if let Err(err) = receiver.drain().await {
-                    log::error!("{}", err);
-                }
+fn lock_token_from_delivery<B>(delivery: &Delivery<B>) -> Option<Uuid> {
+    match delivery
+        .message()
+        .delivery_annotations
+        .as_ref()
+        .and_then(|da| da.get(&LOCK_TOKEN_DELIVERY_ANNOTATION as &dyn AnnotationKey))
+    {
+        Some(Value::Uuid(uuid)) => Some(uuid.clone()),
+        _ => {
+            let delivery_tag = delivery.delivery_tag().as_ref();
+            match Uuid::try_from(delivery_tag) {
+                Ok(uuid) => Some(uuid),
+                _ => None,
             }
-            Ok(())
-        }
-        result = receive_messages(receiver, prefetch_count, receive_mode, buffer, max_messages) => {
-            result?;
-            Ok(())
         }
     }
-}
-
-async fn complete_message(
-    receiver: &mut fe2o3_amqp::Receiver,
-    delivery_info: &DeliveryInfo,
-) -> Result<(), AmqpDispositionError> {
-    // TODO: avoid clone
-    receiver.accept(delivery_info.clone()).await?;
-    Ok(())
 }
 
 // TODO: reduce clone
@@ -586,141 +110,588 @@ fn map_properties_to_modify_into_fields(
         .collect()
 }
 
-async fn dead_letter_message(
-    receiver: &mut fe2o3_amqp::Receiver,
-    delivery_info: &DeliveryInfo,
-    dead_letter_reason: &Option<String>,
-    dead_letter_error_description: &Option<String>,
-    properties_to_modify: &Option<OrderedMap<String, Value>>,
-) -> Result<(), AmqpDispositionError> {
-    let mut error = None;
-    if dead_letter_reason.is_some()
-        || dead_letter_error_description.is_some()
-        || properties_to_modify.is_some()
-    {
-        let condition = ErrorCondition::Custom(Symbol::from(DEAD_LETTER_NAME));
-        let mut info = None;
+#[derive(Debug)]
+pub struct AmqpReceiver<RP> {
+    pub(crate) identifier: u32, // TODO: should this info be preserved?
 
-        if let Some(reason) = dead_letter_reason {
-            info.get_or_insert(Fields::default()).insert(
-                DEAD_LETTER_REASON_HEADER.into(),
-                Value::from(reason.as_str()),
-            );
+    pub(crate) prefetch_count: u32,
+    pub(crate) retry_policy: RP,
+    pub(crate) receiver: fe2o3_amqp::Receiver,
+    pub(crate) receive_mode: ServiceBusReceiveMode,
+    pub(crate) _is_processor: bool, // TODO: implement processor
+
+    pub(crate) management_link: AmqpManagementLink,
+    pub(crate) request_response_locked_messages: HashSet<fe2o3_amqp::types::primitives::Uuid>,
+    pub(crate) last_peeked_sequence_number: i64,
+
+    pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
+}
+
+impl<RP> AmqpReceiver<RP> {
+    async fn receive_messages_with_timeout(
+        &mut self,
+        prefetch_count: u32,
+        buffer: &mut Vec<ServiceBusReceivedMessage>,
+        max_messages: u32,
+        max_wait_time: StdDuration,
+    ) -> Result<(), AmqpRecvError> {
+        // let mut message_buffer: Vec<ServiceBusReceivedMessage> =
+        //     Vec::with_capacity(max_messages as usize);
+
+        tokio::select! {
+            _ = tokio::time::sleep(max_wait_time) => {
+                if prefetch_count == 0 { // credit mode is manual
+                    if let Err(err) = self.receiver.drain().await {
+                        log::error!("{}", err);
+                    }
+                }
+                Ok(())
+            }
+            result = receive_messages(&mut self.receiver, prefetch_count, &self.receive_mode, buffer, max_messages) => {
+                result?;
+                Ok(())
+            }
+        }
+    }
+
+    async fn complete_message(
+        &mut self,
+        delivery_info: &DeliveryInfo,
+    ) -> Result<(), AmqpDispositionError> {
+        // TODO: avoid clone
+        self.receiver.accept(delivery_info.clone()).await?;
+        Ok(())
+    }
+
+    async fn dead_letter_message(
+        &mut self,
+        delivery_info: &DeliveryInfo,
+        dead_letter_reason: &Option<String>,
+        dead_letter_error_description: &Option<String>,
+        properties_to_modify: &Option<OrderedMap<String, Value>>,
+    ) -> Result<(), AmqpDispositionError> {
+        let mut error = None;
+        if dead_letter_reason.is_some()
+            || dead_letter_error_description.is_some()
+            || properties_to_modify.is_some()
+        {
+            let condition = ErrorCondition::Custom(Symbol::from(DEAD_LETTER_NAME));
+            let mut info = None;
+
+            if let Some(reason) = dead_letter_reason {
+                info.get_or_insert(Fields::default()).insert(
+                    DEAD_LETTER_REASON_HEADER.into(),
+                    Value::from(reason.as_str()),
+                );
+            }
+
+            if let Some(description) = dead_letter_error_description {
+                info.get_or_insert(Fields::default()).insert(
+                    DEAD_LETTER_ERROR_DESCRIPTION_HEADER.into(),
+                    Value::from(description.as_str()),
+                );
+            }
+
+            if let Some(properties_to_modify) = properties_to_modify {
+                for (k, v) in properties_to_modify {
+                    info.get_or_insert(Fields::default())
+                        .insert(Symbol::from(k.as_str()), v.clone()); // TODO: reduce cloning
+                }
+            }
+
+            error = Some(fe2o3_amqp::types::definitions::Error::new(
+                condition, None, info,
+            ))
         }
 
-        if let Some(description) = dead_letter_error_description {
-            info.get_or_insert(Fields::default()).insert(
-                DEAD_LETTER_ERROR_DESCRIPTION_HEADER.into(),
-                Value::from(description.as_str()),
-            );
-        }
+        // TODO: avoid clone
+        self.receiver.reject(delivery_info.clone(), error).await?;
+        Ok(())
+    }
 
-        if let Some(properties_to_modify) = properties_to_modify {
-            for (k, v) in properties_to_modify {
-                info.get_or_insert(Fields::default())
-                    .insert(Symbol::from(k.as_str()), v.clone()); // TODO: reduce cloning
+    async fn abandon_message(
+        &mut self,
+        delivery_info: &DeliveryInfo,
+        properties_to_modify: &Option<OrderedMap<String, Value>>,
+    ) -> Result<(), AmqpDispositionError> {
+        let modified = Modified {
+            delivery_failed: None,
+            undeliverable_here: None,
+            message_annotations: properties_to_modify
+                .as_ref()
+                .map(map_properties_to_modify_into_fields),
+        };
+
+        self.receiver.modify(delivery_info.clone(), modified).await?;
+        Ok(())
+    }
+
+    async fn defer_message(
+        &mut self,
+        delivery_info: &DeliveryInfo,
+        properties_to_modify: &Option<OrderedMap<String, Value>>,
+    ) -> Result<(), AmqpDispositionError> {
+        let modified = Modified {
+            delivery_failed: None,
+            undeliverable_here: Some(true),
+            message_annotations: properties_to_modify
+                .as_ref()
+                .map(map_properties_to_modify_into_fields),
+        };
+
+        self.receiver.modify(delivery_info.clone(), modified).await?;
+        Ok(())
+    }
+
+    async fn receive_by_sequence_number<'a>(
+        &mut self,
+        request: &mut ReceiveBySequenceNumberRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<ReceiveBySequenceNumberResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
+
+    async fn update_disposition<'a>(
+        &mut self,
+        request: &mut UpdateDispositionRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<(), fe2o3_amqp_management::error::Error> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+        let _response = self.management_link.client_mut().call(request).await?;
+        Ok(())
+    }
+
+    async fn peek_message_inner<'a>(
+        &mut self,
+        request: &mut PeekMessageRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<PeekMessageResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
+
+    async fn peek_session_message_inner<'a>(
+        &mut self,
+        request: &mut PeekSessionMessageRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<PeekSessionMessageResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
+
+    async fn renew_lock<'a>(
+        &mut self,
+        request: &mut RenewLockRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<RenewLockResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
+
+}
+
+#[async_trait]
+impl<RP> TransportReceiver for AmqpReceiver<RP>
+where
+    RP: ServiceBusRetryPolicy + Send + Sync,
+{
+    type RequestResponseError = RetryError<AmqpRequestResponseError>;
+    type ReceiveError = RetryError<AmqpRecvError>;
+    type DispositionError = RetryError<AmqpDispositionError>;
+    type CloseError = DetachError;
+
+    fn prefetch_count(&self) -> u32 {
+        self.prefetch_count
+    }
+
+    fn receive_mode(&self) -> ServiceBusReceiveMode {
+        self.receive_mode
+    }
+
+    async fn receive_messages(
+        &mut self,
+        max_messages: u32,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
+        let prefetch_count = self.prefetch_count;
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+
+        // TODO: Should this wait indefinitely until all messages are received?
+        let default_max_wait_time = self.retry_policy.options().try_timeout;
+        let mut buffer = Vec::with_capacity(max_messages as usize);
+        loop {
+            run_operation!(
+                {&self.retry_policy},
+                AmqpRecvError,
+                try_timeout,
+                self.receive_messages_with_timeout(
+                    prefetch_count,
+                    &mut buffer,
+                    max_messages,
+                    default_max_wait_time
+                )
+            )?;
+
+            if !buffer.is_empty() {
+                break;
+            }
+        }
+        Ok(buffer)
+    }
+
+    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
+    async fn receive_messages_with_max_wait_time(
+        &mut self,
+        max_messages: u32,
+        max_wait_time: Option<StdDuration>,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError> {
+        let max_wait_time =
+            max_wait_time.unwrap_or_else(|| self.retry_policy.options().try_timeout);
+        let prefetch_count = self.prefetch_count;
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+        let mut buffer = Vec::with_capacity(max_messages as usize);
+        run_operation!(
+            {&self.retry_policy},
+            AmqpRecvError,
+            try_timeout,
+            self.receive_messages_with_timeout(
+                prefetch_count,
+                &mut buffer,
+                max_messages,
+                max_wait_time
+            )
+        )?;
+        Ok(buffer)
+    }
+
+    /// Closes the connection to the transport consumer instance.
+    async fn close(mut self) -> Result<(), Self::CloseError> {
+        let _ = self
+            .cbs_command_sender
+            .send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(
+                self.identifier,
+            ))
+            .await;
+        self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
+        self.receiver.close().await?;
+        self.management_link.close().await?;
+        Ok(())
+    }
+
+    /// Completes a [`ServiceBusReceivedMessage`]. This will delete the message from the service.
+    async fn complete(
+        &mut self,
+        message: &ServiceBusReceivedMessage,
+        session_id: Option<&str>,
+    ) -> Result<(), Self::DispositionError> {
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        match &message.lock_token {
+            ReceivedMessageLockToken::LockToken(lock_token) => {
+                if self.request_response_locked_messages.contains(&lock_token) {
+                    let mut request = UpdateDispositionRequest::new(
+                        DispositionStatus::Completed,
+                        Array(vec![lock_token.clone()]), // TODO: reduce clone
+                        None,
+                        None,
+                        None,
+                        session_id,
+                        Some(self.receiver.name().to_string()),
+                    );
+                    run_operation!(
+                        {&self.retry_policy},
+                        AmqpDispositionError,
+                        try_timeout,
+                        self.update_disposition(&mut request, &try_timeout)
+                    )?;
+
+                    self.request_response_locked_messages.remove(&lock_token);
+                }
+            }
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
+                run_operation!(
+                    {&self.retry_policy},
+                    AmqpDispositionError,
+                    try_timeout,
+                    self.complete_message(delivery_info)
+                )?;
+            }
+        };
+
+        Ok(())
+    }
+
+    /// Indicates that the receiver wants to defer the processing for the message.
+    async fn defer(
+        &mut self,
+        message: &ServiceBusReceivedMessage,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<&str>,
+    ) -> Result<(), Self::DispositionError> {
+        let policy = &mut self.retry_policy;
+        let mut try_timeout = policy.calculate_try_timeout(0);
+
+        match &message.lock_token {
+            ReceivedMessageLockToken::LockToken(lock_token) => {
+                if self.request_response_locked_messages.contains(&lock_token) {
+                    let mut request = UpdateDispositionRequest::new(
+                        DispositionStatus::Defered,
+                        Array(vec![lock_token.clone()]), // TODO: reduce clone
+                        None,
+                        None,
+                        properties_to_modify,
+                        session_id,
+                        Some(self.receiver.name().to_string()),
+                    );
+                    run_operation!(
+                        {&self.retry_policy},
+                        AmqpDispositionError,
+                        try_timeout,
+                        self.update_disposition(&mut request, &try_timeout)
+                    )?;
+
+                    self.request_response_locked_messages.remove(&lock_token);
+                }
+            }
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
+                run_operation!(
+                    {&self.retry_policy},
+                    AmqpDispositionError,
+                    try_timeout,
+                    self.defer_message(delivery_info, &properties_to_modify)
+                )?;
+            }
+        };
+        Ok(())
+    }
+
+    /// Fetches the next batch of active messages without changing the state of the receiver or the message source.
+    async fn peek_message(
+        &mut self,
+        sequence_number: Option<i64>,
+        message_count: i32,
+    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
+        let mut request = PeekMessageRequest::new(
+            sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
+            message_count,
+            Some(self.receiver.name().to_string()),
+        );
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+
+        let response = run_operation!(
+            {&self.retry_policy},
+            AmqpRequestResponseError,
+            try_timeout,
+            self.peek_message_inner(&mut request, &try_timeout)
+        )?;
+
+        let peeked_messages = response
+            .into_peeked_messages()
+            .map_err(AmqpRequestResponseError::from)
+            .map_err(RetryError::Operation)?;
+
+        if let Some(last) = peeked_messages.last() {
+            self.last_peeked_sequence_number = last.sequence_number();
+        }
+        Ok(peeked_messages)
+    }
+
+    async fn peek_session_message(
+        &mut self,
+        sequence_number: Option<i64>,
+        message_count: i32,
+        session_id: &str,
+    ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
+        let mut request = PeekSessionMessageRequest::new(
+            sequence_number.unwrap_or(self.last_peeked_sequence_number + 1),
+            message_count,
+            session_id,
+            Some(self.receiver.name().to_string()),
+        );
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+
+        let response = run_operation!(
+            {&self.retry_policy},
+            AmqpRequestResponseError,
+            try_timeout,
+            self.peek_session_message_inner(&mut request, &try_timeout)
+        )?;
+
+        let peeked_messages = response
+            .into_peeked_messages()
+            .map_err(AmqpRequestResponseError::from)
+            .map_err(RetryError::Operation)?;
+
+        if let Some(last) = peeked_messages.last() {
+            self.last_peeked_sequence_number = last.sequence_number();
+        }
+        Ok(peeked_messages)
+    }
+
+    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for processing.
+    async fn abandon(
+        &mut self,
+        message: &ServiceBusReceivedMessage,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<&str>,
+    ) -> Result<(), Self::DispositionError> {
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+
+        match &message.lock_token {
+            ReceivedMessageLockToken::LockToken(lock_token) => {
+                if self.request_response_locked_messages.contains(&lock_token) {
+                    let mut request = UpdateDispositionRequest::new(
+                        DispositionStatus::Abandoned,
+                        Array(vec![lock_token.clone()]), // TODO: reduce clone
+                        None,
+                        None,
+                        properties_to_modify,
+                        session_id,
+                        Some(self.receiver.name().to_string()),
+                    );
+                    run_operation!(
+                        {&self.retry_policy},
+                        AmqpDispositionError,
+                        try_timeout,
+                        self.update_disposition(&mut request, &try_timeout)
+                    )?;
+
+                    self.request_response_locked_messages.remove(&lock_token);
+                }
+            }
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
+                run_operation!(
+                    {&self.retry_policy},
+                    AmqpDispositionError,
+                    try_timeout,
+                    self.abandon_message(delivery_info, &properties_to_modify)
+                )?;
+            }
+        };
+        Ok(())
+    }
+
+    /// Moves a message to the dead-letter subqueue.
+    async fn dead_letter(
+        &mut self,
+        message: &ServiceBusReceivedMessage,
+        dead_letter_reason: Option<String>,
+        dead_letter_error_description: Option<String>,
+        properties_to_modify: Option<OrderedMap<String, Value>>,
+        session_id: Option<&str>,
+    ) -> Result<(), Self::DispositionError> {
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
+
+        match &message.lock_token {
+            ReceivedMessageLockToken::LockToken(lock_token) => {
+                if self.request_response_locked_messages.contains(lock_token) {
+                    let mut request = UpdateDispositionRequest::new(
+                        DispositionStatus::Suspended,
+                        Array(vec![lock_token.clone()]),
+                        dead_letter_reason,
+                        dead_letter_error_description,
+                        properties_to_modify,
+                        session_id,
+                        Some(self.receiver.name().to_string()),
+                    );
+                    run_operation!(
+                        {&self.retry_policy},
+                        AmqpDispositionError,
+                        try_timeout,
+                        self.update_disposition(&mut request, &try_timeout)
+                    )?;
+
+                    self.request_response_locked_messages.remove(lock_token);
+                }
+            }
+            ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
+                run_operation!(
+                    {&self.retry_policy},
+                    AmqpDispositionError,
+                    try_timeout,
+                    self.dead_letter_message(
+                        delivery_info,
+                        &dead_letter_reason,
+                        &dead_letter_error_description,
+                        &properties_to_modify
+                    )
+                )?;
             }
         }
 
-        error = Some(fe2o3_amqp::types::definitions::Error::new(
-            condition, None, info,
-        ))
+        Ok(())
     }
 
-    // TODO: avoid clone
-    receiver.reject(delivery_info.clone(), error).await?;
-    Ok(())
-}
+    /// Receives a [`Vec<ServiceBusReceivedMessages>`] of deferred messages identified by `sequence_numbers`.
+    async fn receive_deferred_messages(
+        &mut self,
+        sequence_numbers: impl Iterator<Item = i64> + Send,
+        session_id: Option<&str>,
+    ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError> {
+        let sequence_numbers = sequence_numbers.collect();
+        let receiver_settle_mode = match self.receive_mode {
+            ServiceBusReceiveMode::PeekLock => ReceiverSettleMode::Second,
+            ServiceBusReceiveMode::ReceiveAndDelete => ReceiverSettleMode::First,
+        };
+        let mut request = ReceiveBySequenceNumberRequest::new(
+            sequence_numbers,
+            receiver_settle_mode,
+            session_id,
+            Some(self.receiver.name().to_string()),
+        );
 
-async fn abandon_message(
-    receiver: &mut Receiver,
-    delivery_info: &DeliveryInfo,
-    properties_to_modify: &Option<OrderedMap<String, Value>>,
-) -> Result<(), AmqpDispositionError> {
-    let modified = Modified {
-        delivery_failed: None,
-        undeliverable_here: None,
-        message_annotations: properties_to_modify
-            .as_ref()
-            .map(map_properties_to_modify_into_fields),
-    };
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
-    receiver.modify(delivery_info.clone(), modified).await?;
-    Ok(())
-}
+        let response = run_operation!(
+            {&self.retry_policy},
+            AmqpRequestResponseError,
+            try_timeout,
+            self.receive_by_sequence_number(&mut request, &try_timeout)
+        )?;
 
-async fn defer_message(
-    receiver: &mut Receiver,
-    delivery_info: &DeliveryInfo,
-    properties_to_modify: &Option<OrderedMap<String, Value>>,
-) -> Result<(), AmqpDispositionError> {
-    let modified = Modified {
-        delivery_failed: None,
-        undeliverable_here: Some(true),
-        message_annotations: properties_to_modify
-            .as_ref()
-            .map(map_properties_to_modify_into_fields),
-    };
+        let received_messages = response
+            .into_received_messages()
+            .map_err(AmqpRequestResponseError::from)
+            .map_err(RetryError::Operation)?;
 
-    receiver.modify(delivery_info.clone(), modified).await?;
-    Ok(())
-}
+        for message in &received_messages {
+            if let ReceivedMessageLockToken::LockToken(lock_token) = &message.lock_token {
+                self.request_response_locked_messages
+                    .insert(lock_token.clone());
+            }
+        }
 
-async fn receive_by_sequence_number<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut ReceiveBySequenceNumberRequest,
-    try_timeout: &StdDuration,
-) -> Result<ReceiveBySequenceNumberResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
+        Ok(received_messages)
+    }
 
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
-}
+    /// Renews the lock on the message. The lock will be renewed based on the setting specified on the queue.
+    async fn renew_message_lock(
+        &mut self,
+        lock_tokens: Vec<Uuid>,
+    ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
+        let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name().to_string()));
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
-async fn update_disposition<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut UpdateDispositionRequest,
-    try_timeout: &StdDuration,
-) -> Result<(), fe2o3_amqp_management::error::Error> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-    let _response = mgmt_client.call(request).await?;
-    Ok(())
-}
-
-async fn peek_message<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut PeekMessageRequest,
-    try_timeout: &StdDuration,
-) -> Result<PeekMessageResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
-}
-
-async fn peek_session_message<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut PeekSessionMessageRequest,
-    try_timeout: &StdDuration,
-) -> Result<PeekSessionMessageResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
-}
-
-async fn renew_lock<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut RenewLockRequest,
-    try_timeout: &StdDuration,
-) -> Result<RenewLockResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
+        let response = run_operation!(
+            {&self.retry_policy},
+            AmqpRequestResponseError,
+            try_timeout,
+            self.renew_lock(&mut request, &try_timeout)
+        )?;
+        Ok(response.expirations.into_inner())
+    }
 }
