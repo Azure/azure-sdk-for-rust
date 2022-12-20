@@ -54,7 +54,7 @@ pub struct AmqpSessionReceiver<RP> {
 }
 
 impl<RP> AmqpSessionReceiver<RP> {
-    async fn renew_session_lock<'a>(
+    async fn renew_session_lock_inner(
         &mut self,
         request: &mut RenewSessionLockRequest,
         try_timeout: &StdDuration,
@@ -66,7 +66,7 @@ impl<RP> AmqpSessionReceiver<RP> {
         Ok(response)
     }
 
-    async fn set_session_state<'a>(
+    async fn set_session_state_inner(
         &mut self,
         request: &mut SetSessionStateRequest,
         try_timeout: &StdDuration,
@@ -78,7 +78,7 @@ impl<RP> AmqpSessionReceiver<RP> {
         Ok(response)
     }
 
-    async fn get_session_state<'a>(
+    async fn get_session_state_inner(
         &mut self,
         request: &mut GetSessionStateRequest,
         try_timeout: &StdDuration,
@@ -266,7 +266,7 @@ where
             {&self.inner.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            self.renew_session_lock(&mut request, &try_timeout)
+            self.renew_session_lock_inner(&mut request, &try_timeout)
         )?;
 
         Ok(OffsetDateTime::from(response.expiration))
@@ -283,7 +283,7 @@ where
             {&self.inner.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            self.get_session_state(&mut request, &try_timeout)
+            self.get_session_state_inner(&mut request, &try_timeout)
         )?;
 
         Ok(response.session_state.into_vec())
@@ -305,7 +305,7 @@ where
             {&self.inner.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            self.set_session_state(&mut request, &try_timeout)
+            self.set_session_state_inner(&mut request, &try_timeout)
         )?;
         Ok(())
     }
