@@ -1,6 +1,4 @@
-use azure_messaging_servicebus::{
-    ServiceBusMessage, ServiceBusReceiverOptions,
-};
+use azure_messaging_servicebus::{ServiceBusMessage, ServiceBusReceiverOptions};
 use serial_test::serial;
 
 mod common;
@@ -278,8 +276,8 @@ async fn send_and_receive_session_messages() {
 #[tokio::test]
 #[serial]
 async fn create_rule_manager() {
-    use azure_messaging_servicebus::prelude::*;
     use azure_messaging_servicebus::administration::*;
+    use azure_messaging_servicebus::prelude::*;
 
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();

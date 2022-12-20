@@ -66,9 +66,7 @@ where
         name: impl Into<String>,
         filter: impl Into<CreateRuleFilter>,
     ) -> Result<(), T::CreateRuleError> {
-        self.inner
-            .create_rule(name.into(), filter.into())
-            .await
+        self.inner.create_rule(name.into(), filter.into()).await
     }
 
     /// Remove a rule from the current subscription.

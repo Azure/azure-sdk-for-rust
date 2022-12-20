@@ -1,7 +1,9 @@
 //! This module contains the types for working with Service Bus rules.
 
 use fe2o3_amqp_types::primitives::Timestamp;
-use serde_amqp::{DeserializeComposite, SerializeComposite, described::Described, descriptor::Descriptor};
+use serde_amqp::{
+    described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite,
+};
 
 use filters::RuleFilter;
 use time::OffsetDateTime;

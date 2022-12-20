@@ -97,10 +97,7 @@ async fn main() -> anyhow::Result<()> {
 ```
 */
 #![recursion_limit = "128"]
-#![deny(
-    missing_docs,
-    missing_debug_implementations
-)]
+#![deny(missing_docs, missing_debug_implementations)]
 
 pub(crate) mod constants;
 pub(crate) mod diagnostics;

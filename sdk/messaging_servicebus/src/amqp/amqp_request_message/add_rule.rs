@@ -1,18 +1,21 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::OrderedMap;
-use serde_amqp::{Value, described::Described};
+use serde_amqp::{described::Described, Value};
 
-use crate::{amqp::{
-    amqp_response_message::add_rule::AddRuleResponse,
-    error::CorrelationFilterError,
-    management_constants::{
-        operations::ADD_RULE_OPERATION,
-        properties::{
-            CORRELATION_RULE_FILTER, EXPRESSION, RULE_DESCRIPTION, RULE_NAME, SQL_RULE_ACTION,
-            SQL_RULE_FILTER,
+use crate::{
+    administration::{FalseRuleFilter, SqlRuleAction, TrueRuleFilter},
+    amqp::{
+        amqp_response_message::add_rule::AddRuleResponse,
+        error::CorrelationFilterError,
+        management_constants::{
+            operations::ADD_RULE_OPERATION,
+            properties::{
+                CORRELATION_RULE_FILTER, EXPRESSION, RULE_DESCRIPTION, RULE_NAME, SQL_RULE_ACTION,
+                SQL_RULE_FILTER,
+            },
         },
     },
-}, administration::{SqlRuleAction, TrueRuleFilter, FalseRuleFilter}};
+};
 
 use crate::administration::{CorrelationRuleFilter, SqlRuleFilter};
 
@@ -80,7 +83,7 @@ impl<'a> AddRuleRequest {
         let mut rule_description: OrderedMap<Value, Value> = OrderedMap::new();
         let mut rule_action_map = OrderedMap::new();
         match filter {
-            CreateRuleFilter::Sql {filter, action} => {
+            CreateRuleFilter::Sql { filter, action } => {
                 let mut sql_filter_map: OrderedMap<Value, Value> = OrderedMap::new();
                 sql_filter_map.insert(EXPRESSION.into(), filter.expression.into());
                 rule_description.insert(SQL_RULE_FILTER.into(), sql_filter_map.into());

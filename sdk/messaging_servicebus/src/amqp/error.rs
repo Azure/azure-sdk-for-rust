@@ -297,7 +297,9 @@ impl From<DetachThenResumeSenderError> for RecoverSenderError {
 impl From<OpenMgmtLinkError> for RecoverSenderError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ConnectionScopeDisposed => RecoverSenderError::ConnectionScopeDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => {
+                RecoverSenderError::ConnectionScopeDisposed
+            }
             OpenMgmtLinkError::Attach(err) => RecoverSenderError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => RecoverSenderError::CbsAuth(err),
         }
@@ -327,7 +329,9 @@ pub enum OpenReceiverError {
 impl From<OpenMgmtLinkError> for OpenReceiverError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ConnectionScopeDisposed => OpenReceiverError::ConnectionScopeDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => {
+                OpenReceiverError::ConnectionScopeDisposed
+            }
             OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenReceiverError::CbsAuth(err),
         }
@@ -381,7 +385,9 @@ impl From<DetachThenResumeReceiverError> for RecoverReceiverError {
 impl From<OpenMgmtLinkError> for RecoverReceiverError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ConnectionScopeDisposed => RecoverReceiverError::ConnectionScopeDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => {
+                RecoverReceiverError::ConnectionScopeDisposed
+            }
             OpenMgmtLinkError::Attach(err) => RecoverReceiverError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => RecoverReceiverError::CbsAuth(err),
         }
@@ -417,7 +423,9 @@ impl ServiceBusRetryPolicyError for OpenRuleManagerError {
 impl From<OpenMgmtLinkError> for OpenRuleManagerError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ConnectionScopeDisposed => OpenRuleManagerError::ConnectionScopeDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => {
+                OpenRuleManagerError::ConnectionScopeDisposed
+            }
             OpenMgmtLinkError::Attach(err) => OpenRuleManagerError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenRuleManagerError::CbsAuth(err),
         }

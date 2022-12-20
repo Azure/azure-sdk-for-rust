@@ -353,12 +353,10 @@ impl AmqpConnectionScope {
 
         source_builder = match receiver_type {
             ReceiverType::NonSession => source_builder.filter(FilterSet::with_capacity(0)),
-            ReceiverType::Session { session_id } => {
-                source_builder.add_to_filter(
-                    amqp_client_constants::SESSION_FILTER_NAME,
-                    session_id.map(SessionFilter).map(|filter| filter.into()),
-                )
-            }
+            ReceiverType::Session { session_id } => source_builder.add_to_filter(
+                amqp_client_constants::SESSION_FILTER_NAME,
+                session_id.map(SessionFilter).map(|filter| filter.into()),
+            ),
         };
 
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
