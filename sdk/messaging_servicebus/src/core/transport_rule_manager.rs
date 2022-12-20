@@ -10,6 +10,10 @@ pub trait TransportRuleManager {
     type RequestResponseError: Send;
     type CloseError: Send;
 
+    fn identifier(&self) -> &str;
+
+    fn subscription_path(&self) -> &str;
+
     // /// Indicates whether or not this rule manager has been closed.
     // ///
     // /// # Return

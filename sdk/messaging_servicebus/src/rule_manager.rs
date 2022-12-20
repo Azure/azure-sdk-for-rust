@@ -5,8 +5,6 @@ use crate::{
 
 #[derive(Debug)]
 pub struct ServiceBusRuleManager<T> {
-    pub(crate) identifier: String,
-    pub(crate) subscription_path: String,
     pub(crate) inner: T,
 }
 
@@ -17,11 +15,11 @@ where
     const MAX_RULES_PER_REQUEST: i32 = 100;
 
     pub fn identifier(&self) -> &str {
-        &self.identifier
+        self.inner.identifier()
     }
 
     pub fn subscription_path(&self) -> &str {
-        &self.subscription_path
+        self.inner.subscription_path()
     }
 
     pub async fn dispose(self) -> Result<(), T::CloseError> {

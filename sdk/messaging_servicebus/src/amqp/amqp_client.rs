@@ -35,7 +35,7 @@ use super::{
 #[derive(Debug)]
 pub struct AmqpClient<RP> {
     /// The endpoint for the Service Bus service to which the scope is associated.
-    service_endpoint: Url,
+    service_endpoint: Arc<Url>,
 
     /// The AMQP connection scope responsible for managing transport constructs for this instance.
     ///
@@ -126,7 +126,7 @@ where
         .await?;
 
         Ok(Self {
-            service_endpoint,
+            service_endpoint: Arc::new(service_endpoint),
             connection_scope: Arc::new(Mutex::new(connection_scope)),
             transport_type,
             retry_policy: PhantomData,
@@ -255,16 +255,19 @@ where
 
     async fn create_rule_manager(
         &mut self,
-        subscription_path: &str,
-        identifier: &str,
+        subscription_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
         let mut connection_scope = self.connection_scope.lock().await;
         let retry_policy = RP::new(retry_options);
         let management_link = connection_scope
-            .open_management_link(&self.service_endpoint, subscription_path, identifier)
+            .open_management_link(&self.service_endpoint, &subscription_path, &identifier)
             .await?;
         Ok(AmqpRuleManager {
+            identifier_str: identifier,
+            service_endpoint: self.service_endpoint.clone(),
+            subscription_path,
             retry_policy,
             management_link,
             connection_scope: self.connection_scope.clone(),

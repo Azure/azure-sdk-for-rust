@@ -1,18 +1,20 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_management::client::MgmtClient;
+use std::{sync::Arc, time::Duration as StdDuration};
 use tokio::sync::Mutex;
-use std::{time::Duration as StdDuration, sync::Arc};
+use url::Url;
 
 use crate::{
     administration::RuleProperties,
     amqp::amqp_request_message::add_rule::SupportedRuleFilter,
-    core::TransportRuleManager,
+    core::{RecoverableTransport, TransportRuleManager},
     primitives::{error::RetryError, service_bus_retry_policy::run_operation},
     ServiceBusRetryPolicy,
 };
 
 use super::{
+    amqp_connection_scope::AmqpConnectionScope,
     amqp_management_link::AmqpManagementLink,
     amqp_request_message::{
         add_rule::AddRuleRequest, enumerate_rules::EnumerateRulesRequest,
@@ -22,16 +24,50 @@ use super::{
         add_rule::AddRuleResponse, enumerate_rules::EnumerateRulesResponse,
         remove_rule::RemoveRuleResponse,
     },
-    error::{AmqpRequestResponseError, CreateRuleError}, amqp_connection_scope::AmqpConnectionScope,
+    error::{AmqpRequestResponseError, CreateRuleError, OpenRuleManagerError},
 };
 
 #[derive(Debug)]
 pub struct AmqpRuleManager<RP> {
+    pub(crate) identifier_str: String,
+    pub(crate) service_endpoint: Arc<Url>,
+    pub(crate) subscription_path: String,
+
     pub(crate) management_link: AmqpManagementLink,
     pub(crate) retry_policy: RP,
 
     /// This is ONLY used for recovery
     pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
+}
+
+#[async_trait]
+impl<RP> RecoverableTransport for AmqpRuleManager<RP>
+where
+    RP: Send,
+{
+    type RecoverError = OpenRuleManagerError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        let mut scope = self.connection_scope.lock().await;
+
+        scope
+            .recover()
+            .await
+            // Unable to recover the connection scope
+            .map_err(|conn_scope_error| {
+                log::error!("Unable to recover connection scope: {:?}", conn_scope_error);
+                Self::RecoverError::ScopeIsDisposed
+            })?;
+
+        self.management_link = scope
+            .open_management_link(
+                &self.service_endpoint,
+                &self.subscription_path,
+                &self.identifier_str,
+            )
+            .await?;
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -42,6 +78,14 @@ where
     type CreateRuleError = RetryError<CreateRuleError>;
     type RequestResponseError = RetryError<AmqpRequestResponseError>;
     type CloseError = DetachError;
+
+    fn identifier(&self) -> &str {
+        &self.identifier_str
+    }
+
+    fn subscription_path(&self) -> &str {
+        &self.subscription_path
+    }
 
     // /// Indicates whether or not this rule manager has been closed.
     // fn is_closed(&self) -> bool {

@@ -109,8 +109,8 @@ pub trait TransportClient: Sized {
     /// * `identifier` - The identifier for the rule manager.
     async fn create_rule_manager(
         &mut self,
-        subscription_path: &str,
-        identifier: &str,
+        subscription_path: String,
+        identifier: String,
         retry_policy: ServiceBusRetryOptions,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError>;
 
