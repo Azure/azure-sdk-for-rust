@@ -29,7 +29,7 @@ pub(crate) enum AmqpConnectionScopeError {
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 
     #[error(transparent)]
-    TimeoutElapsed(#[from] Elapsed),
+    Elapsed(#[from] Elapsed),
 
     #[error(transparent)]
     Begin(#[from] BeginError),
@@ -59,21 +59,27 @@ pub enum AmqpClientError {
     #[error(transparent)]
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 
+    /// Operation timed out
     #[error(transparent)]
-    TimeoutElapsed(#[from] Elapsed),
+    Elapsed(#[from] Elapsed),
 
+    /// Error beginning the AMQP session
     #[error(transparent)]
     Begin(#[from] BeginError),
 
+    /// Error attaching the sender
     #[error(transparent)]
     SenderAttach(#[from] SenderAttachError),
 
+    /// Error attaching the receiver
     #[error(transparent)]
     ReceiverAttach(#[from] ReceiverAttachError),
 
+    /// Error closing the AMQP client
     #[error(transparent)]
     Dispose(#[from] DisposeError),
 
+    /// Client is already disposed
     #[error("The client is disposed")]
     ClientDisposed,
 }
@@ -83,7 +89,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
         match err {
             AmqpConnectionScopeError::Open(err) => Self::Open(err),
             AmqpConnectionScopeError::WebSocket(err) => Self::WebSocket(err),
-            AmqpConnectionScopeError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
+            AmqpConnectionScopeError::Elapsed(err) => Self::Elapsed(err),
             AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
@@ -92,6 +98,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
     }
 }
 
+/// The value exceeds the maximum length allowed
 #[derive(Debug)]
 pub struct MaxLengthExceededError {
     pub(crate) message: String,
@@ -116,24 +123,31 @@ impl std::fmt::Display for MaxLengthExceededError {
 
 impl std::error::Error for MaxLengthExceededError {}
 
+/// Error setting the message ID
 #[derive(Debug, thiserror::Error)]
 pub enum SetMessageIdError {
+    /// Value cannot be empty
     #[error("Value cannot be empty")]
     Empty,
 
+    /// Max allowed length exceeded
     #[error(transparent)]
     MaxLengthExceeded(#[from] MaxLengthExceededError),
 }
 
+/// Error setting the partition key
 #[derive(Debug, thiserror::Error)]
 pub enum SetPartitionKeyError {
+    /// Max allowed length exceeded
     #[error(transparent)]
     MaxLengthExceeded(#[from] MaxLengthExceededError),
 
-    #[error("PartitionKey cannot be set to a different value than SessionId")]
+    /// PartitionKey cannot be set to a different value from SessionId
+    #[error("PartitionKey cannot be set to a different value from SessionId")]
     PartitionKeyAndSessionIdAreDifferent,
 }
 
+///
 #[derive(Debug)]
 pub struct MaxAllowedTtlExceededError {}
 
@@ -162,6 +176,7 @@ impl std::fmt::Display for RawAmqpMessageError {
 
 impl std::error::Error for RawAmqpMessageError {}
 
+/// The sent message is not accepted by the service
 #[derive(Debug, thiserror::Error)]
 pub enum NotAcceptedError {
     /// 3.4.2 Rejected
@@ -177,38 +192,50 @@ pub enum NotAcceptedError {
     Modified(Modified),
 }
 
+/// Error closing the AMQP connection and AMQP session
 #[derive(Debug, thiserror::Error)]
 pub enum DisposeError {
+    /// Error closing the AMQP session
     #[error(transparent)]
     SessionCloseError(#[from] session::Error),
 
+    /// Error closing the AMQP connection
     #[error(transparent)]
     ConnectionCloseError(#[from] connection::Error),
 }
 
+/// Error opening a management link
 #[derive(Debug, thiserror::Error)]
 pub enum OpenMgmtLinkError {
+    /// Connection scope is disposed
     #[error("Scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
+    /// Error attaching the management link
     #[error(transparent)]
     Attach(#[from] AttachError),
 
+    /// Error with CBS auth the management link
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 }
 
+/// Error opening a sender link
 #[derive(Debug, thiserror::Error)]
 pub enum OpenSenderError {
+    /// Connection scope is disposed
     #[error("The connection scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
+    /// Error attaching the management link
     #[error(transparent)]
     ManagementLinkAttach(#[from] AttachError),
 
+    /// Error attaching the sender link
     #[error(transparent)]
     SenderAttach(#[from] SenderAttachError),
 
+    /// Error with CBS auth the sender link
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 }
@@ -216,27 +243,33 @@ pub enum OpenSenderError {
 impl From<OpenMgmtLinkError> for OpenSenderError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ScopeIsDisposed => OpenSenderError::ScopeIsDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => OpenSenderError::ConnectionScopeDisposed,
             OpenMgmtLinkError::Attach(err) => OpenSenderError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenSenderError::CbsAuth(err),
         }
     }
 }
 
+/// Error recovering a sender link
 #[derive(Debug, thiserror::Error)]
 pub enum RecoverSenderError {
+    /// Connection scope is disposed
     #[error("The connection scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
+    /// Error attaching the management link
     #[error(transparent)]
     ManagementLinkAttach(#[from] AttachError),
 
+    /// Error detaching the current sender link
     #[error(transparent)]
     SenderDetach(#[from] DetachError),
 
+    /// Error attaching the sender link to new session
     #[error(transparent)]
     SenderResume(#[from] SenderResumeErrorKind),
 
+    /// Error with CBS auth the recovering sender link
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 }
@@ -248,7 +281,7 @@ impl ServiceBusRetryPolicyError for RecoverSenderError {
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, RecoverSenderError::ScopeIsDisposed)
+        matches!(self, RecoverSenderError::ConnectionScopeDisposed)
     }
 }
 
@@ -264,24 +297,29 @@ impl From<DetachThenResumeSenderError> for RecoverSenderError {
 impl From<OpenMgmtLinkError> for RecoverSenderError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ScopeIsDisposed => RecoverSenderError::ScopeIsDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => RecoverSenderError::ConnectionScopeDisposed,
             OpenMgmtLinkError::Attach(err) => RecoverSenderError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => RecoverSenderError::CbsAuth(err),
         }
     }
 }
 
+/// Error opening a receiver link
 #[derive(Debug, thiserror::Error)]
 pub enum OpenReceiverError {
+    /// Connection scope is disposed
     #[error("The connection scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
+    /// Error attaching the management link
     #[error(transparent)]
     ManagementLinkAttach(#[from] AttachError),
 
+    /// Error attaching the receiver link
     #[error(transparent)]
     ReceiverAttach(#[from] ReceiverAttachError),
 
+    /// Error with CBS auth the receiver link
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 }
@@ -289,27 +327,33 @@ pub enum OpenReceiverError {
 impl From<OpenMgmtLinkError> for OpenReceiverError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ScopeIsDisposed => OpenReceiverError::ScopeIsDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => OpenReceiverError::ConnectionScopeDisposed,
             OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenReceiverError::CbsAuth(err),
         }
     }
 }
 
+/// Error recovering a receiver link
 #[derive(Debug, thiserror::Error)]
 pub enum RecoverReceiverError {
+    /// Connection scope is disposed
     #[error("The connection scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
+    /// Error attaching the management link
     #[error(transparent)]
     ManagementLinkAttach(#[from] AttachError),
 
+    /// Error detaching the current receiver link
     #[error(transparent)]
     ReceiverDetach(#[from] DetachError),
 
+    /// Error attaching the receiver link to new session
     #[error(transparent)]
     ReceiverResume(#[from] ReceiverResumeErrorKind),
 
+    /// Error with CBS auth the recovering receiver link
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 }
@@ -321,7 +365,7 @@ impl ServiceBusRetryPolicyError for RecoverReceiverError {
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, RecoverReceiverError::ScopeIsDisposed)
+        matches!(self, RecoverReceiverError::ConnectionScopeDisposed)
     }
 }
 
@@ -337,21 +381,25 @@ impl From<DetachThenResumeReceiverError> for RecoverReceiverError {
 impl From<OpenMgmtLinkError> for RecoverReceiverError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ScopeIsDisposed => RecoverReceiverError::ScopeIsDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => RecoverReceiverError::ConnectionScopeDisposed,
             OpenMgmtLinkError::Attach(err) => RecoverReceiverError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => RecoverReceiverError::CbsAuth(err),
         }
     }
 }
 
+/// Error opening a rule manager
 #[derive(Debug, thiserror::Error)]
 pub enum OpenRuleManagerError {
+    /// Connection scope is disposed
     #[error("The connection scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
+    /// Error attaching the management link
     #[error(transparent)]
     ManagementLinkAttach(#[from] AttachError),
 
+    /// Error with CBS auth the rule manager
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 }
@@ -362,31 +410,36 @@ impl ServiceBusRetryPolicyError for OpenRuleManagerError {
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, OpenRuleManagerError::ScopeIsDisposed)
+        matches!(self, OpenRuleManagerError::ConnectionScopeDisposed)
     }
 }
 
 impl From<OpenMgmtLinkError> for OpenRuleManagerError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
-            OpenMgmtLinkError::ScopeIsDisposed => OpenRuleManagerError::ScopeIsDisposed,
+            OpenMgmtLinkError::ConnectionScopeDisposed => OpenRuleManagerError::ConnectionScopeDisposed,
             OpenMgmtLinkError::Attach(err) => OpenRuleManagerError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenRuleManagerError::CbsAuth(err),
         }
     }
 }
 
+/// Error sending message to the service
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpSendError {
+    /// Error with sending the message
     #[error(transparent)]
     Send(#[from] fe2o3_amqp::link::SendError),
 
+    /// The sent message is not accepted by the service
     #[error(transparent)]
     NotAccepted(#[from] NotAcceptedError),
 
+    /// The operation timed out
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
 
+    /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
 }
@@ -407,20 +460,26 @@ impl ServiceBusRetryPolicyError for AmqpSendError {
     }
 }
 
+/// Error receiving message from the service
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpRecvError {
+    /// Error with receiving the message
     #[error(transparent)]
     Recv(#[from] RecvError),
 
+    /// Wrong link state
     #[error(transparent)]
     LinkState(#[from] IllegalLinkStateError),
 
+    /// The operation timed out
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
 
+    /// The lock token is not found in the message
     #[error("A valid lock token was not found in the message")]
     LockTokenNotFound,
 
+    /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
 }
@@ -442,17 +501,22 @@ impl ServiceBusRetryPolicyError for AmqpRecvError {
     }
 }
 
+/// Error with message disposition
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpDispositionError {
+    /// Error with the link state
     #[error(transparent)]
     IllegalState(#[from] IllegalLinkStateError),
 
+    /// Error with the request-response operation on the management link
     #[error(transparent)]
     RequestResponse(#[from] ManagementError),
 
+    /// The operation timed out
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
 
+    /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
 }
@@ -473,14 +537,18 @@ impl ServiceBusRetryPolicyError for AmqpDispositionError {
     }
 }
 
+/// Error with request-response operation
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpRequestResponseError {
+    /// Error with the request-response operation on the management link
     #[error(transparent)]
     RequestResponse(#[from] ManagementError),
 
+    /// The operation timed out
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
 
+    /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
 }
@@ -505,27 +573,36 @@ impl From<serde_amqp::Error> for AmqpRequestResponseError {
     }
 }
 
+/// Error with CBS auth
 #[derive(Debug, thiserror::Error)]
 pub enum CbsAuthError {
+    /// Error with the token provider
     #[error(transparent)]
     TokenCredential(#[from] azure_core::Error),
 
+    /// Error with the CBS link
     #[error(transparent)]
     Cbs(#[from] ManagementError),
 }
 
+/// Error with adding a message to a batch
 #[derive(Debug, thiserror::Error)]
 pub enum TryAddMessageError {
+    /// The message is too large to fit in a batch
     #[error("Message is too large to fit in a batch")]
     BatchFull(ServiceBusMessage),
 
+    /// The message cannot be serialized
     #[error("Cannot serialize message")]
     Codec {
+        /// The error from the codec
         source: serde_amqp::Error,
+        /// The message that could not be serialized
         message: ServiceBusMessage,
     },
 }
 
+/// The requested message batch size is out of range
 #[derive(Debug)]
 pub struct RequestedSizeOutOfRange {}
 
@@ -537,14 +614,17 @@ impl std::fmt::Display for RequestedSizeOutOfRange {
 
 impl std::error::Error for RequestedSizeOutOfRange {}
 
+/// The correlation rule filter must have at least one non-empty entry
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum CorrelationFilterError {
+    /// The correlation filter must have at least one non-empty entry
     #[error("Correlation filter must include at least one entry")]
     EmptyFilter,
 }
 
+/// The CBS event loop has stopped
 #[derive(Debug)]
-pub struct AmqpCbsEventLoopStopped {}
+pub(crate) struct AmqpCbsEventLoopStopped {}
 
 impl std::fmt::Display for AmqpCbsEventLoopStopped {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -554,6 +634,7 @@ impl std::fmt::Display for AmqpCbsEventLoopStopped {
 
 impl std::error::Error for AmqpCbsEventLoopStopped {}
 
+/// Error with creating a rule
 #[derive(Debug, thiserror::Error)]
 pub enum CreateRuleError {
     /// The correlation filter must have at least one entry

@@ -56,7 +56,7 @@ where
             // Unable to recover the connection scope
             .map_err(|conn_scope_error| {
                 log::error!("Unable to recover connection scope: {:?}", conn_scope_error);
-                Self::RecoverError::ScopeIsDisposed
+                Self::RecoverError::ConnectionScopeDisposed
             })?;
 
         self.management_link = scope

@@ -10,7 +10,7 @@ use crate::amqp::error::{CbsAuthError, OpenReceiverError};
 pub enum AcceptNextSessionError {
     /// The connection scope is disposed
     #[error("The connection scope is disposed")]
-    ScopeIsDisposed,
+    ConnectionScopeDisposed,
 
     /// Error with management link attach
     #[error(transparent)]
@@ -20,7 +20,7 @@ pub enum AcceptNextSessionError {
     #[error(transparent)]
     ReceiverAttach(#[from] ReceiverAttachError),
 
-    /// Error with CBS authentication
+    /// Error with CBS auth
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 
@@ -32,7 +32,7 @@ pub enum AcceptNextSessionError {
 impl From<OpenReceiverError> for AcceptNextSessionError {
     fn from(error: OpenReceiverError) -> Self {
         match error {
-            OpenReceiverError::ScopeIsDisposed => Self::ScopeIsDisposed,
+            OpenReceiverError::ConnectionScopeDisposed => Self::ConnectionScopeDisposed,
             OpenReceiverError::ManagementLinkAttach(error) => Self::ManagementLinkAttach(error),
             OpenReceiverError::ReceiverAttach(error) => Self::ReceiverAttach(error),
             OpenReceiverError::CbsAuth(error) => Self::CbsAuth(error),

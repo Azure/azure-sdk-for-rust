@@ -41,7 +41,7 @@ pub enum Error {
 
     /// Opening the connection timed out
     #[error(transparent)]
-    TimeoutElapsed(#[from] Elapsed),
+    Elapsed(#[from] Elapsed),
 
     /// Error beginning the AMQP session
     #[error(transparent)]
@@ -70,7 +70,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::UrlParseError(err) => Self::UrlParseError(err),
             AmqpClientError::Open(err) => Self::Open(err),
             AmqpClientError::WebSocket(err) => Self::WebSocket(err),
-            AmqpClientError::TimeoutElapsed(err) => Self::TimeoutElapsed(err),
+            AmqpClientError::Elapsed(err) => Self::Elapsed(err),
             AmqpClientError::Begin(err) => Self::Begin(err),
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpClientError::Dispose(err) => Self::Dispose(err),

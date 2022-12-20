@@ -153,7 +153,7 @@ where
                     "Failed to recover connection scope: {}",
                     connection_scope_error
                 );
-                Self::RecoverError::ScopeIsDisposed
+                Self::RecoverError::ConnectionScopeDisposed
             })?;
 
         // Auth with CBS

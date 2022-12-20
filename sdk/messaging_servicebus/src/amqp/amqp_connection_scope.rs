@@ -223,7 +223,8 @@ impl AmqpConnectionScope {
         self.cbs_link
             .request_refreshable_authorization(link_identifier, endpoint, resource, required_claims)
             .await
-            .map_err(|_| ManagementError::Send(LinkStateError::IllegalSessionState.into()))??; // The CBS event loop should not spontaneously stop
+            // TODO: The CBS event loop should not spontaneously stop
+            .map_err(|_| ManagementError::Send(LinkStateError::IllegalSessionState.into()))??;
         Ok(())
     }
 
@@ -234,7 +235,7 @@ impl AmqpConnectionScope {
         _identifier: &str, // TODO: logging using the identifier
     ) -> Result<AmqpManagementLink, OpenMgmtLinkError> {
         if self.is_disposed {
-            return Err(OpenMgmtLinkError::ScopeIsDisposed);
+            return Err(OpenMgmtLinkError::ConnectionScopeDisposed);
         }
 
         // TODO: customize mgmt-link properties?
@@ -287,7 +288,7 @@ impl AmqpConnectionScope {
         OpenSenderError,
     > {
         if self.is_disposed {
-            return Err(OpenSenderError::ScopeIsDisposed);
+            return Err(OpenSenderError::ConnectionScopeDisposed);
         }
 
         let endpoint = format!("{}/{}", service_endpoint, entity_path);
@@ -341,7 +342,7 @@ impl AmqpConnectionScope {
         OpenReceiverError,
     > {
         if self.is_disposed {
-            return Err(OpenReceiverError::ScopeIsDisposed);
+            return Err(OpenReceiverError::ConnectionScopeDisposed);
         }
 
         let endpoint = format!("{}/{}", service_endpoint, entity_path);

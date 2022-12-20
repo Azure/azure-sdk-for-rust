@@ -23,7 +23,7 @@ async fn main() -> Result<(), anyhow::Error> {
     )
     .await?;
 
-    // Create a sender for authentication purpose only
+    // Create a sender for auth purpose only
     let sender = client
         .create_sender(queue_name, ServiceBusSenderOptions::default())
         .await?;

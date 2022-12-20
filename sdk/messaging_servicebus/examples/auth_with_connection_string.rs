@@ -12,7 +12,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut client =
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
-    // Create a sender for authentication purpose only
+    // Create a sender for auth purpose only
     let sender = client
         .create_sender(queue_name, ServiceBusSenderOptions::default())
         .await?;
