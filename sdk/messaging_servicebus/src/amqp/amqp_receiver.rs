@@ -444,7 +444,8 @@ where
                     &mut buffer,
                     max_messages,
                     default_max_wait_time
-                )
+                ),
+                self.recover()
             )?;
 
             if !buffer.is_empty() {
@@ -474,7 +475,8 @@ where
                 &mut buffer,
                 max_messages,
                 max_wait_time
-            )
+            ),
+            self.recover()
         )?;
         Ok(buffer)
     }
@@ -518,7 +520,8 @@ where
                         { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
-                        self.update_disposition(&mut request, &try_timeout)
+                        self.update_disposition(&mut request, &try_timeout),
+                        self.recover()
                     )?;
 
                     self.request_response_locked_messages.remove(&lock_token);
@@ -529,7 +532,8 @@ where
                     { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
-                    self.complete_message(delivery_info)
+                    self.complete_message(delivery_info),
+                    self.recover()
                 )?;
             }
         };
@@ -563,7 +567,8 @@ where
                         { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
-                        self.update_disposition(&mut request, &try_timeout)
+                        self.update_disposition(&mut request, &try_timeout),
+                        self.recover()
                     )?;
 
                     self.request_response_locked_messages.remove(&lock_token);
@@ -574,7 +579,8 @@ where
                     { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
-                    self.defer_message(delivery_info, &properties_to_modify)
+                    self.defer_message(delivery_info, &properties_to_modify),
+                    self.recover()
                 )?;
             }
         };
@@ -598,7 +604,8 @@ where
             { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.peek_message_inner(&mut request, &try_timeout)
+            self.peek_message_inner(&mut request, &try_timeout),
+            self.recover()
         )?;
 
         let peeked_messages = response
@@ -630,7 +637,8 @@ where
             { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.peek_session_message_inner(&mut request, &try_timeout)
+            self.peek_session_message_inner(&mut request, &try_timeout),
+            self.recover()
         )?;
 
         let peeked_messages = response
@@ -669,7 +677,8 @@ where
                         { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
-                        self.update_disposition(&mut request, &try_timeout)
+                        self.update_disposition(&mut request, &try_timeout),
+                        self.recover()
                     )?;
 
                     self.request_response_locked_messages.remove(&lock_token);
@@ -680,7 +689,8 @@ where
                     { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
-                    self.abandon_message(delivery_info, &properties_to_modify)
+                    self.abandon_message(delivery_info, &properties_to_modify),
+                    self.recover()
                 )?;
             }
         };
@@ -714,7 +724,8 @@ where
                         { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
-                        self.update_disposition(&mut request, &try_timeout)
+                        self.update_disposition(&mut request, &try_timeout),
+                        self.recover()
                     )?;
 
                     self.request_response_locked_messages.remove(lock_token);
@@ -730,7 +741,8 @@ where
                         &dead_letter_reason,
                         &dead_letter_error_description,
                         &properties_to_modify
-                    )
+                    ),
+                    self.recover()
                 )?;
             }
         }
@@ -762,7 +774,8 @@ where
             { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.receive_by_sequence_number(&mut request, &try_timeout)
+            self.receive_by_sequence_number(&mut request, &try_timeout),
+            self.recover()
         )?;
 
         let received_messages = response
@@ -793,7 +806,8 @@ where
             { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.renew_lock(&mut request, &try_timeout)
+            self.renew_lock(&mut request, &try_timeout),
+            self.recover()
         )?;
         Ok(response.expirations.into_inner())
     }

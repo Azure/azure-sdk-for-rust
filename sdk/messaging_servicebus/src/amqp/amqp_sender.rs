@@ -230,7 +230,8 @@ where
             {&self.retry_policy},
             AmqpSendError,
             try_timeout,
-            self.send_batch_envelope(&batch)
+            self.send_batch_envelope(&batch),
+            self.recover()
         };
         result
     }
@@ -246,7 +247,8 @@ where
             {&self.retry_policy},
             AmqpSendError,
             try_timeout,
-            self.send_batch_envelope(&batch)
+            self.send_batch_envelope(&batch),
+            self.recover()
         };
         // TODO: Somehow directly returning the result will lead to an error in the macro
         result
@@ -279,7 +281,8 @@ where
                     {&self.retry_policy},
                     AmqpRequestResponseError,
                     try_timeout,
-                    self.schedule_message_inner(&mut request, try_timeout)
+                    self.schedule_message_inner(&mut request, try_timeout),
+                    self.recover()
                 };
                 result
             }
@@ -306,7 +309,8 @@ where
             { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.cancel_scheduled_messages_inner(&mut request, &try_timeout)
+            self.cancel_scheduled_messages_inner(&mut request, &try_timeout),
+            self.recover()
         )
     }
 

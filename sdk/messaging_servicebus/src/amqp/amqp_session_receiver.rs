@@ -8,7 +8,7 @@ use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 
 use crate::{
-    core::{TransportReceiver, TransportSessionReceiver},
+    core::{TransportReceiver, TransportSessionReceiver, RecoverableTransport},
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
@@ -28,7 +28,7 @@ use super::{
         get_session_state::GetSessionStateResponse, renew_session_lock::RenewSessionLockResponse,
         set_session_state::SetSessionStateResponse,
     },
-    error::AmqpRequestResponseError,
+    error::{AmqpRequestResponseError, RecoverReceiverError},
 };
 
 pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<OffsetDateTime> {
@@ -50,6 +50,18 @@ pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<Of
 #[derive(Debug)]
 pub struct AmqpSessionReceiver<RP> {
     pub(crate) inner: AmqpReceiver<RP>,
+}
+
+#[async_trait]
+impl<RP> RecoverableTransport for AmqpSessionReceiver<RP>
+where
+    RP: Send,
+{
+    type RecoverError = RecoverReceiverError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        self.inner.recover().await
+    }
 }
 
 impl<RP> AmqpSessionReceiver<RP> {
@@ -288,7 +300,8 @@ where
             { &self.inner.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.renew_session_lock_inner(&mut request, &try_timeout)
+            self.renew_session_lock_inner(&mut request, &try_timeout),
+            self.recover()
         )?;
 
         Ok(OffsetDateTime::from(response.expiration))
@@ -306,7 +319,8 @@ where
             { &self.inner.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.get_session_state_inner(&mut request, &try_timeout)
+            self.get_session_state_inner(&mut request, &try_timeout),
+            self.recover()
         )?;
 
         Ok(response.session_state.into_vec())
@@ -328,7 +342,8 @@ where
             { &self.inner.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
-            self.set_session_state_inner(&mut request, &try_timeout)
+            self.set_session_state_inner(&mut request, &try_timeout),
+            self.recover()
         )?;
         Ok(())
     }

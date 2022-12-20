@@ -235,6 +235,17 @@ pub enum RecoverSenderError {
     CbsAuth(#[from] CbsAuthError),
 }
 
+impl ServiceBusRetryPolicyError for RecoverSenderError {
+    fn should_try_recover(&self) -> bool {
+        // This error is only returned if the recover operation fails.
+        false
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, RecoverSenderError::ScopeIsDisposed)
+    }
+}
+
 impl From<DetachThenResumeSenderError> for RecoverSenderError {
     fn from(value: DetachThenResumeSenderError) -> Self {
         match value {
@@ -297,6 +308,17 @@ pub enum RecoverReceiverError {
     CbsAuth(#[from] CbsAuthError),
 }
 
+impl ServiceBusRetryPolicyError for RecoverReceiverError {
+    fn should_try_recover(&self) -> bool {
+        // This error is only returned if the recover operation fails.
+        false
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, RecoverReceiverError::ScopeIsDisposed)
+    }
+}
+
 impl From<DetachThenResumeReceiverError> for RecoverReceiverError {
     fn from(value: DetachThenResumeReceiverError) -> Self {
         match value {
@@ -326,6 +348,16 @@ pub enum OpenRuleManagerError {
 
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
+}
+
+impl ServiceBusRetryPolicyError for OpenRuleManagerError {
+    fn should_try_recover(&self) -> bool {
+        false
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, OpenRuleManagerError::ScopeIsDisposed)
+    }
 }
 
 impl From<OpenMgmtLinkError> for OpenRuleManagerError {

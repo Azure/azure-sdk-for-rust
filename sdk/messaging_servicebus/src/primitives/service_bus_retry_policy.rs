@@ -170,6 +170,12 @@ pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
 
 impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + Sync {}
 
+/// Runs the operation with the retry policy.
+///
+/// This is a rather temporary solution as there would be weird lifetime issue if the
+/// same thing is implemented as method to the trait. The lifetime issue is likely caused
+/// by #[async_trait] macro and could be potentially fixed once async fn in trait feature
+/// becomes stable.
 macro_rules! run_operation {
     ($policy:tt, $err_ty:ty, $try_timeout:ident, $op:expr) => {{
         let mut failed_attempt_count = 0;
@@ -201,6 +207,55 @@ macro_rules! run_operation {
             match outcome {
                 Ok(outcome) => break outcome,
                 Err(error) => {
+                    failed_attempt_count += 1;
+                    let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
+                    // TODO: check if the error is recoverable
+
+                    match (
+                        retry_delay,
+                        crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error)
+                    ) {
+                        (Some(retry_delay), false) => {
+                            log::error!("{}", &error);
+                            tokio::time::sleep(retry_delay).await;
+                            $try_timeout = $policy.calculate_try_timeout(failed_attempt_count);
+                        }
+                        _ => return Err(crate::primitives::error::RetryError::Operation(error)),
+                    }
+                }
+            }
+        };
+
+        Result::<_, crate::primitives::error::RetryError<$err_ty>>::Ok(outcome)
+    }};
+
+    ($policy:tt, $err_ty:ty, $try_timeout:ident, $op:expr, $recover_op:expr) => {{
+        let mut failed_attempt_count = 0;
+        if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
+            && $try_timeout
+                < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
+        {
+            // We are in a server busy state before we start processing. Since
+            // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
+            // entire Sleep time.
+            tokio::time::sleep($try_timeout).await;
+        }
+
+        let outcome = loop {
+            if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state()) {
+                tokio::time::sleep(
+                    crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
+                )
+                .await;
+            }
+
+            let outcome = match tokio::time::timeout($try_timeout, $op).await {
+                Ok(result) => result.map_err(<$err_ty>::from),
+                Err(err) => Err(<$err_ty>::from(err)),
+            };
+            match outcome {
+                Ok(outcome) => break outcome,
+                Err(error) => {
                     // TODO: error handling strategy
                     // 1. check if the transport object should try to recover
                     //    An error is recoverable if it indicates the session/connection event loop
@@ -214,12 +269,24 @@ macro_rules! run_operation {
 
                     failed_attempt_count += 1;
                     let retry_delay = $policy.calculate_retry_delay(&error, failed_attempt_count);
+                    let mut is_scope_disposed = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error);
                     // TODO: check if the error is recoverable
+                    if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::should_try_recover(&error) {
+                        match tokio::time::timeout($try_timeout, $recover_op).await {
+                            Ok(result) => {
+                                if let Err(recover_error) = result {
+                                    log::error!("Failed to recover {}", &recover_error);
+                                    is_scope_disposed = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&recover_error);
+                                }
+                            }
+                            Err(elapsed) => {
+                                let err = <$err_ty>::from(elapsed);
+                                is_scope_disposed = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&err);
+                            }
+                        }
+                    }
 
-                    match (
-                        retry_delay,
-                        crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error)
-                    ) {
+                    match (retry_delay, is_scope_disposed) {
                         (Some(retry_delay), false) => {
                             log::error!("{}", &error);
                             tokio::time::sleep(retry_delay).await;
