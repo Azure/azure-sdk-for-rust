@@ -1,4 +1,7 @@
-use std::{sync::{atomic::Ordering, Arc}, time::Duration as StdDuration};
+use std::{
+    sync::{atomic::Ordering, Arc},
+    time::Duration as StdDuration,
+};
 
 use async_trait::async_trait;
 use azure_core::Url;
@@ -142,8 +145,10 @@ impl AmqpConnectionScope {
         .await??;
 
         let cbs_client = attach_cbs_client(&mut session.handle).await?;
-        let cbs_token_provider =
-            CbsTokenProvider::new(credential.clone(), Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
+        let cbs_token_provider = CbsTokenProvider::new(
+            credential.clone(),
+            Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+        );
         let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
 
         Ok(Self {
@@ -539,8 +544,10 @@ impl RecoverableTransport for AmqpConnectionScope {
             let _ = self.cbs_link.stop();
             let _cbs_close_result = self.cbs_link.join_handle_mut().await;
             let cbs_client = attach_cbs_client(&mut self.session.handle).await?;
-            let cbs_token_provider =
-                CbsTokenProvider::new(self.credential.clone(), Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER);
+            let cbs_token_provider = CbsTokenProvider::new(
+                self.credential.clone(),
+                Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+            );
             let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
             self.cbs_link = cbs_link;
         }

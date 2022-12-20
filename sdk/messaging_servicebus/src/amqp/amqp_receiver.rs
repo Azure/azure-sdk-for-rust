@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use fe2o3_amqp::{
-    link::{delivery::DeliveryInfo, DetachError, RecvError, ReceiverAttachExchange},
+    link::{delivery::DeliveryInfo, DetachError, ReceiverAttachExchange, RecvError},
     Delivery, Receiver,
 };
 use fe2o3_amqp_types::{
@@ -169,7 +169,9 @@ where
             .await?;
 
         // Resume the receiver on the new session
-        let mut exchange = self.receiver.detach_then_resume_on_session(&mut connection_scope.session.handle)
+        let mut exchange = self
+            .receiver
+            .detach_then_resume_on_session(&mut connection_scope.session.handle)
             .await?;
 
         // `ReceiverAttachExchange::Complete` => Resume is complete
@@ -189,13 +191,17 @@ where
                     };
                     if let Err(err) = self.receiver.modify(delivery, modified).await {
                         log::error!("Failed to abandon message: {}", err);
-                        exchange = self.receiver.detach_then_resume_on_session(&mut connection_scope.session.handle)
+                        exchange = self
+                            .receiver
+                            .detach_then_resume_on_session(&mut connection_scope.session.handle)
                             .await?;
                     }
-                },
+                }
                 Err(err) => {
                     log::error!("Failed to receive message while trying to settle (abandon) the unsettled: {}", err);
-                    exchange = self.receiver.detach_then_resume_on_session(&mut connection_scope.session.handle)
+                    exchange = self
+                        .receiver
+                        .detach_then_resume_on_session(&mut connection_scope.session.handle)
                         .await?;
                 }
             }

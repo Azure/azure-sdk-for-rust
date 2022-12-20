@@ -43,7 +43,8 @@ impl<'a> fe2o3_amqp_management::request::Request for CancelScheduledMessageReque
     type Body = CancelScheduledMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -61,7 +62,8 @@ impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a mut CancelScheduled
     // TODO: override the blanket impl of `into_message()` to avoid repeated allocation of
     // `ApplicationProperties`
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -77,7 +79,8 @@ impl<'a, 'b> fe2o3_amqp_management::request::Request for &'a CancelScheduledMess
     type Body = &'a CancelScheduledMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

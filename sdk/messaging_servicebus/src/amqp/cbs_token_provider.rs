@@ -2,7 +2,7 @@ use azure_core::auth::TokenResponse;
 use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
 use futures_util::{pin_mut, ready};
-use std::{future::Future, task::Poll, sync::Arc};
+use std::{future::Future, sync::Arc, task::Poll};
 use time::{Duration as TimeSpan, OffsetDateTime};
 use tokio::sync::Semaphore;
 
@@ -22,7 +22,10 @@ pub(crate) struct CbsTokenProvider {
 
 impl CbsTokenProvider {
     /// Initializes a new instance of the [`CbsTokenProvider`] class.
-    pub fn new(credential: Arc<ServiceBusTokenCredential>, token_expiration_buffer: TimeSpan) -> Self {
+    pub fn new(
+        credential: Arc<ServiceBusTokenCredential>,
+        token_expiration_buffer: TimeSpan,
+    ) -> Self {
         let token_type = if credential.is_shared_access_credential() {
             TokenType::SharedAccessToken { credential }
         } else {
@@ -128,8 +131,8 @@ impl AsyncCbsTokenProvider for CbsTokenProvider {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
     use fe2o3_amqp_cbs::AsyncCbsTokenProvider;
+    use std::sync::Arc;
     use time::Duration as TimeSpan;
 
     use azure_core::auth::{AccessToken, TokenResponse};

@@ -40,7 +40,8 @@ impl<'a> Request for RenewSessionLockRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -58,7 +59,8 @@ impl<'a, 'b> Request for &'a mut RenewSessionLockRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -76,7 +78,8 @@ impl<'a, 'b> Request for &'a RenewSessionLockRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

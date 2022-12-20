@@ -326,9 +326,7 @@ where
             .create_transport_sender(entity_path, identifier, retry_options)
             .await?;
 
-        Ok(ServiceBusSender {
-            inner,
-        })
+        Ok(ServiceBusSender { inner })
     }
 }
 
@@ -397,9 +395,7 @@ where
                 false,
             )
             .await?;
-        Ok(ServiceBusReceiver {
-            inner,
-        })
+        Ok(ServiceBusReceiver { inner })
     }
 
     /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving
@@ -466,10 +462,7 @@ where
             )
             .await?;
 
-        Ok(ServiceBusSessionReceiver {
-            inner,
-            session_id,
-        })
+        Ok(ServiceBusSessionReceiver { inner, session_id })
     }
 }
 
@@ -530,10 +523,7 @@ where
             .ok_or(AcceptNextSessionError::SessionIdNotSet)?
             .to_string();
 
-        Ok(ServiceBusSessionReceiver {
-            inner,
-            session_id,
-        })
+        Ok(ServiceBusSessionReceiver { inner, session_id })
     }
 }
 
@@ -562,8 +552,6 @@ where
             .create_transport_rule_manager(subscription_path, identifier, retry_options)
             .await?;
 
-        Ok(ServiceBusRuleManager {
-            inner,
-        })
+        Ok(ServiceBusRuleManager { inner })
     }
 }

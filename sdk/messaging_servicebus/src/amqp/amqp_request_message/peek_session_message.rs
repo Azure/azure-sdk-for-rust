@@ -48,7 +48,8 @@ impl<'a> Request for PeekSessionMessageRequest {
     type Body = PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -64,7 +65,8 @@ impl<'a, 'b> Request for &'a mut PeekSessionMessageRequest {
     type Body = &'a PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -80,7 +82,8 @@ impl<'a, 'b> Request for &'a PeekSessionMessageRequest {
     type Body = &'a PeekSessionMessageRequestBody;
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

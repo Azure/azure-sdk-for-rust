@@ -31,7 +31,6 @@ use super::{
     error::AmqpRequestResponseError,
 };
 
-
 pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<OffsetDateTime> {
     // SessionLockedUntil = link.Settings.Properties.TryGetValue<long>(
     //     AmqpClientConstants.LockedUntilUtc, out var lockedUntilUtcTicks)
@@ -62,7 +61,12 @@ impl<RP> AmqpSessionReceiver<RP> {
         let server_timeout = try_timeout.as_millis() as u32;
         request.set_server_timeout(Some(server_timeout));
 
-        let response = self.inner.management_link.client_mut().call(request).await?;
+        let response = self
+            .inner
+            .management_link
+            .client_mut()
+            .call(request)
+            .await?;
         Ok(response)
     }
 
@@ -74,7 +78,12 @@ impl<RP> AmqpSessionReceiver<RP> {
         let server_timeout = try_timeout.as_millis() as u32;
         request.set_server_timeout(Some(server_timeout));
 
-        let response = self.inner.management_link.client_mut().call(request).await?;
+        let response = self
+            .inner
+            .management_link
+            .client_mut()
+            .call(request)
+            .await?;
         Ok(response)
     }
 
@@ -86,7 +95,12 @@ impl<RP> AmqpSessionReceiver<RP> {
         let server_timeout = try_timeout.as_millis() as u32;
         request.set_server_timeout(Some(server_timeout));
 
-        let response = self.inner.management_link.client_mut().call(request).await?;
+        let response = self
+            .inner
+            .management_link
+            .client_mut()
+            .call(request)
+            .await?;
         Ok(response)
     }
 }
@@ -271,7 +285,7 @@ where
         let mut try_timeout = self.inner.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.inner.retry_policy},
+            { &self.inner.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.renew_session_lock_inner(&mut request, &try_timeout)
@@ -284,11 +298,12 @@ where
         &mut self,
         session_id: &str,
     ) -> Result<Vec<u8>, Self::RequestResponseError> {
-        let mut request = GetSessionStateRequest::new(session_id, Some(self.inner.receiver.name().to_string()));
+        let mut request =
+            GetSessionStateRequest::new(session_id, Some(self.inner.receiver.name().to_string()));
         let mut try_timeout = self.inner.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.inner.retry_policy},
+            { &self.inner.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.get_session_state_inner(&mut request, &try_timeout)
@@ -310,7 +325,7 @@ where
         let mut try_timeout = self.inner.retry_policy.calculate_try_timeout(0);
 
         let _response = run_operation!(
-            {&self.inner.retry_policy},
+            { &self.inner.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.set_session_state_inner(&mut request, &try_timeout)

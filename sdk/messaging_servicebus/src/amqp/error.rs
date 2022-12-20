@@ -1,8 +1,9 @@
 use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{
-        IllegalLinkStateError, LinkStateError, ReceiverAttachError, RecvError, SenderAttachError, SenderResumeErrorKind, DetachError,
-        DetachThenResumeSenderError, ReceiverResumeErrorKind, DetachThenResumeReceiverError,
+        DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError,
+        IllegalLinkStateError, LinkStateError, ReceiverAttachError, ReceiverResumeErrorKind,
+        RecvError, SenderAttachError, SenderResumeErrorKind,
     },
     session::{self, BeginError},
 };
@@ -10,7 +11,12 @@ use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use tokio::time::error::Elapsed;
 
-use crate::{primitives::service_bus_retry_policy::{ServiceBusRetryPolicyError, should_try_recover_from_management_error}, ServiceBusMessage};
+use crate::{
+    primitives::service_bus_retry_policy::{
+        should_try_recover_from_management_error, ServiceBusRetryPolicyError,
+    },
+    ServiceBusMessage,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum AmqpConnectionScopeError {

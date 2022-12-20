@@ -45,7 +45,8 @@ impl<'a> Request for EnumerateRulesRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -63,7 +64,8 @@ impl<'a, 'b> Request for &'a EnumerateRulesRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {
@@ -81,7 +83,8 @@ impl<'a, 'b> Request for &'a mut EnumerateRulesRequest {
     fn encode_application_properties(
         &mut self,
     ) -> Option<fe2o3_amqp_types::messaging::ApplicationProperties> {
-        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone()) // TODO: reduce clones?
+        super::encode_application_properties(self.server_timeout, self.associated_link_name.clone())
+        // TODO: reduce clones?
     }
 
     fn encode_body(self) -> Self::Body {

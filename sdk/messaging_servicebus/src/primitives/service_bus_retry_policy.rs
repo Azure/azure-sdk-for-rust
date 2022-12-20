@@ -20,7 +20,9 @@ pub trait ServiceBusRetryPolicyError: std::error::Error + Send + Sync + 'static 
     fn is_scope_disposed(&self) -> bool;
 }
 
-pub(crate) fn should_try_recover_from_management_error(error: &fe2o3_amqp_management::error::Error) -> bool {
+pub(crate) fn should_try_recover_from_management_error(
+    error: &fe2o3_amqp_management::error::Error,
+) -> bool {
     use fe2o3_amqp::link::{LinkStateError, RecvError};
     match error {
         ManagementError::Send(error) => match error {

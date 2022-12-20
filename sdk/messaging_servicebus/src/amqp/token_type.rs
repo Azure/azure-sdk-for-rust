@@ -1,6 +1,6 @@
 use azure_core::auth::TokenResponse;
-use tokio::sync::Semaphore;
 use std::sync::Arc;
+use tokio::sync::Semaphore;
 
 use crate::{
     authorization::service_bus_token_credential::ServiceBusTokenCredential,
