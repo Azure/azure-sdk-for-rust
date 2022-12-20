@@ -9,7 +9,8 @@ use crate::{
         service_bus_retry_options::ServiceBusRetryOptions,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    receiver::service_bus_receive_mode::ServiceBusReceiveMode, sealed::Sealed,
+    receiver::service_bus_receive_mode::ServiceBusReceiveMode,
+    sealed::Sealed,
 };
 
 use super::{
@@ -85,7 +86,6 @@ pub trait TransportClient: Sized + Sealed {
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
-        is_processor: bool,
     ) -> Result<Self::Receiver, Self::CreateReceiverError>;
 
     /// Creates a session receiver
@@ -97,7 +97,6 @@ pub trait TransportClient: Sized + Sealed {
         receive_mode: ServiceBusReceiveMode,
         session_id: Option<String>,
         prefetch_count: u32,
-        is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError>;
 
     /// TODO: Creates a rule manager strongly aligned with the active protocol and transport, responsible

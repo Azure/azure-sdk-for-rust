@@ -1,4 +1,4 @@
-use crate::{ServiceBusMessage, sealed::Sealed};
+use crate::{sealed::Sealed, ServiceBusMessage};
 
 /// Trait for a message batch.
 pub trait TransportMessageBatch: Sealed {
@@ -18,6 +18,9 @@ pub trait TransportMessageBatch: Sealed {
 
     /// Number of messages in the batch.
     fn len(&self) -> usize;
+
+    /// Returns true if the batch is empty.
+    fn is_empty(&self) -> bool;
 
     /// Attempts to add a [`ServiceBusMessage`] to the batch.
     fn try_add_message(&mut self, message: ServiceBusMessage) -> Result<(), Self::TryAddError>;

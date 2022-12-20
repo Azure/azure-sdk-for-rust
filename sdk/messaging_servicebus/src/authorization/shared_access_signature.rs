@@ -345,7 +345,7 @@ impl SharedAccessSignature {
 
         let encoded_signature = urlencoding::encode(&signature);
         let encoded_expiration = urlencoding::encode(expiry);
-        let encoded_shared_access_key_name = urlencoding::encode(&shared_access_key_name);
+        let encoded_shared_access_key_name = urlencoding::encode(shared_access_key_name);
 
         let s = format!(
             "{} {}={}&{}={}&{}={}&{}={}",

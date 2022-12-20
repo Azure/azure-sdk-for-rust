@@ -48,6 +48,10 @@ impl TransportMessageBatch for AmqpMessageBatch {
         self.messages.len()
     }
 
+    fn is_empty(&self) -> bool {
+        self.messages.is_empty()
+    }
+
     fn try_add_message(
         &mut self,
         message: crate::ServiceBusMessage,

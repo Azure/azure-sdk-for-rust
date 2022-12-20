@@ -312,7 +312,7 @@ impl ServiceBusReceivedMessage {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
             })
-            .unwrap_or(Default::default())
+            .unwrap_or_default()
     }
 
     /// Gets the name of the queue or subscription that this message was enqueued on, before it was
@@ -346,7 +346,7 @@ impl ServiceBusReceivedMessage {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
             })
-            .unwrap_or(Default::default())
+            .unwrap_or_default()
     }
 
     // pub(crate) fn set_enqueued_sequence_number(&mut self, value: i64) {

@@ -13,7 +13,8 @@ use crate::{
         service_bus_retry_policy::ServiceBusRetryPolicy,
         service_bus_transport_type::ServiceBusTransportType,
     },
-    receiver::service_bus_receive_mode::ServiceBusReceiveMode, sealed::Sealed,
+    receiver::service_bus_receive_mode::ServiceBusReceiveMode,
+    sealed::Sealed,
 };
 
 use super::{
@@ -184,7 +185,6 @@ where
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
-        is_processor: bool,
     ) -> Result<Self::Receiver, Self::CreateReceiverError> {
         let mut connection_scope = self.connection_scope.lock().await;
 
@@ -210,7 +210,7 @@ where
             retry_policy,
             receiver,
             receive_mode,
-            _is_processor: is_processor,
+            _is_processor: false,
             prefetch_count,
             management_link,
             request_response_locked_messages: Default::default(),
@@ -228,7 +228,6 @@ where
         receive_mode: ServiceBusReceiveMode,
         session_id: Option<String>,
         prefetch_count: u32,
-        is_processor: bool,
     ) -> Result<Self::SessionReceiver, Self::CreateReceiverError> {
         let mut connection_scope = self.connection_scope.lock().await;
         let (link_identifier, receiver, cbs_command_sender) = connection_scope
@@ -253,7 +252,7 @@ where
             retry_policy,
             receiver,
             receive_mode,
-            _is_processor: is_processor,
+            _is_processor: false,
             prefetch_count,
             management_link,
             request_response_locked_messages: Default::default(),

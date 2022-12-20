@@ -24,17 +24,14 @@ pub(crate) fn should_try_recover_from_management_error(
     error: &fe2o3_amqp_management::error::Error,
 ) -> bool {
     use fe2o3_amqp::link::{LinkStateError, RecvError};
-    match error {
-        ManagementError::Send(error) => match error {
-            SendError::LinkStateError(LinkStateError::IllegalSessionState) => true,
-            _ => false,
-        },
-        ManagementError::Recv(error) => match error {
-            RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
-            _ => false,
-        },
-        _ => false,
-    }
+    matches!(
+        error,
+        ManagementError::Send(SendError::LinkStateError(
+            LinkStateError::IllegalSessionState
+        )) | ManagementError::Recv(RecvError::LinkStateError(
+            LinkStateError::IllegalSessionState
+        ))
+    )
 }
 
 // TODO: use azure_core::retry_policy::RetryPolicy?

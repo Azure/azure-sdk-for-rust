@@ -27,7 +27,8 @@ use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::{RecoverableTransport, TransportConnectionScope},
     primitives::service_bus_transport_type::ServiceBusTransportType,
-    ServiceBusReceiveMode, sealed::Sealed,
+    sealed::Sealed,
+    ServiceBusReceiveMode,
 };
 
 use super::{
@@ -550,14 +551,12 @@ impl RecoverableTransport for AmqpConnectionScope {
 async fn attach_cbs_client(
     session: &mut SessionHandle<()>,
 ) -> Result<CbsClient, AmqpConnectionScopeError> {
-    CbsClient::attach(session).await.map_err(|err| {
-        match err {
-            fe2o3_amqp_management::error::AttachError::Sender(err) => {
-                AmqpConnectionScopeError::SenderAttach(err)
-            }
-            fe2o3_amqp_management::error::AttachError::Receiver(err) => {
-                AmqpConnectionScopeError::ReceiverAttach(err)
-            }
+    CbsClient::attach(session).await.map_err(|err| match err {
+        fe2o3_amqp_management::error::AttachError::Sender(err) => {
+            AmqpConnectionScopeError::SenderAttach(err)
+        }
+        fe2o3_amqp_management::error::AttachError::Receiver(err) => {
+            AmqpConnectionScopeError::ReceiverAttach(err)
         }
     })
 }

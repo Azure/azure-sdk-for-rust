@@ -86,7 +86,7 @@ where
             )
             .await?;
         self.sender
-            .detach_then_resume_on_session(&mut connection_scope.session.handle)
+            .detach_then_resume_on_session(&connection_scope.session.handle)
             .await?;
         self.management_link = connection_scope
             .open_management_link(
@@ -237,6 +237,8 @@ where
             self.send_batch_envelope(&batch),
             self.recover()
         };
+        // TODO: Somehow directly returning the result will lead to an error in the macro
+        #[allow(clippy::let_and_return)]
         result
     }
 
@@ -255,6 +257,7 @@ where
             self.recover()
         };
         // TODO: Somehow directly returning the result will lead to an error in the macro
+        #[allow(clippy::let_and_return)]
         result
     }
 
@@ -288,6 +291,7 @@ where
                     self.schedule_message_inner(&mut request, try_timeout),
                     self.recover()
                 };
+                #[allow(clippy::let_and_return)]
                 result
             }
             None => Ok(vec![]),

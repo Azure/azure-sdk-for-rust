@@ -125,16 +125,12 @@ impl<B> AmqpMessageExt for Message<B> {
 
     #[inline]
     fn session_id(&self) -> Option<&str> {
-        self.properties
-            .as_ref()?
-            .group_id.as_deref()
+        self.properties.as_ref()?.group_id.as_deref()
     }
 
     #[inline]
     fn reply_to_session_id(&self) -> Option<&str> {
-        self.properties
-            .as_ref()?
-            .reply_to_group_id.as_deref()
+        self.properties.as_ref()?.reply_to_group_id.as_deref()
     }
 
     #[inline]
@@ -160,9 +156,7 @@ impl<B> AmqpMessageExt for Message<B> {
 
     #[inline]
     fn subject(&self) -> Option<&str> {
-        self.properties
-            .as_ref()?
-            .subject.as_deref()
+        self.properties.as_ref()?.subject.as_deref()
     }
 
     #[inline]
@@ -181,9 +175,7 @@ impl<B> AmqpMessageExt for Message<B> {
 
     #[inline]
     fn reply_to(&self) -> Option<&str> {
-        self.properties
-            .as_ref()?
-            .reply_to.as_deref()
+        self.properties.as_ref()?.reply_to.as_deref()
     }
 
     /// The default `DateTimeOffset` value from dotnet is taken as the default value

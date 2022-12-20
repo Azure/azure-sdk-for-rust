@@ -104,7 +104,7 @@ impl SharedAccessCredential {
 
             return Ok(TokenResponse {
                 token: AccessToken::new(signature.value().to_string()),
-                expires_on: signature.signature_expiration().clone(),
+                expires_on: *signature.signature_expiration(),
             });
         }
 
@@ -129,7 +129,7 @@ impl SharedAccessCredential {
 
         Ok(TokenResponse {
             token: AccessToken::new(signature.value().to_string()),
-            expires_on: signature.signature_expiration().clone(),
+            expires_on: *signature.signature_expiration(),
         })
     }
 }

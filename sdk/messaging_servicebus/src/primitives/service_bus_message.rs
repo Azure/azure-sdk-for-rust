@@ -91,15 +91,15 @@ impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
             let map = map
                 .into_iter()
                 .filter(|(k, _)| match k {
-                    OwnedKey::Symbol(kstr) => match kstr.as_str() {
+                    OwnedKey::Symbol(ksymbol) => !matches!(
+                        ksymbol.as_str(),
                         LOCKED_UNTIL_NAME
-                        | SEQUENCE_NUMBER_NAME
-                        | DEAD_LETTER_SOURCE_NAME
-                        | ENQUEUE_SEQUENCE_NUMBER_NAME
-                        | ENQUEUED_TIME_UTC_NAME
-                        | MESSAGE_STATE_NAME => false,
-                        _ => true,
-                    },
+                            | SEQUENCE_NUMBER_NAME
+                            | DEAD_LETTER_SOURCE_NAME
+                            | ENQUEUE_SEQUENCE_NUMBER_NAME
+                            | ENQUEUED_TIME_UTC_NAME
+                            | MESSAGE_STATE_NAME
+                    ),
                     OwnedKey::ULong(_) => true,
                 })
                 .collect();
@@ -113,14 +113,15 @@ impl TryFrom<ServiceBusReceivedMessage> for ServiceBusMessage {
         let application_properties =
             src.application_properties
                 .map(|ApplicationProperties(map)| {
-                    let map =
-                        map.into_iter()
-                            .filter(|(k, _)| match k.as_str() {
-                                DEAD_LETTER_REASON_HEADER
-                                | DEAD_LETTER_ERROR_DESCRIPTION_HEADER => false,
-                                _ => true,
-                            })
-                            .collect();
+                    let map = map
+                        .into_iter()
+                        .filter(|(k, _)| {
+                            !matches!(
+                                k.as_str(),
+                                DEAD_LETTER_REASON_HEADER | DEAD_LETTER_ERROR_DESCRIPTION_HEADER
+                            )
+                        })
+                        .collect();
                     ApplicationProperties(map)
                 });
 
@@ -387,7 +388,7 @@ impl ServiceBusMessage {
         let message_annotations = self
             .amqp_message
             .message_annotations
-            .get_or_insert_with(|| MessageAnnotations::default());
+            .get_or_insert_with(MessageAnnotations::default);
         let timestamp = fe2o3_amqp::types::primitives::Timestamp::from(enqueue_time);
         message_annotations.insert(
             amqp_message_constants::SCHEDULED_ENQUEUE_TIME_UTC_NAME.into(),

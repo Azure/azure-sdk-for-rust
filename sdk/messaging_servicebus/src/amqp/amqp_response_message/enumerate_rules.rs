@@ -21,7 +21,7 @@ impl EnumerateRulesResponse {
         let rules = self
             .body
             .remove(management_constants::properties::RULES)
-            .unwrap_or(Vec::with_capacity(0));
+            .unwrap_or_else(|| Vec::with_capacity(0));
 
         rules
             .into_iter()

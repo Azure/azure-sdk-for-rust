@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::{CreateMessageBatchOptions, ServiceBusMessage, sealed::Sealed};
+use crate::{sealed::Sealed, CreateMessageBatchOptions, ServiceBusMessage};
 
 use super::TransportMessageBatch;
 

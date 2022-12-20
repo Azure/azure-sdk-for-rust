@@ -23,7 +23,8 @@ use crate::{
         service_bus_received_message::{ReceivedMessageLockToken, ServiceBusReceivedMessage},
         service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
     },
-    ServiceBusReceiveMode, sealed::Sealed,
+    sealed::Sealed,
+    ServiceBusReceiveMode,
 };
 
 use super::{
@@ -172,7 +173,7 @@ where
         // Resume the receiver on the new session
         let mut exchange = self
             .receiver
-            .detach_then_resume_on_session(&mut connection_scope.session.handle)
+            .detach_then_resume_on_session(&connection_scope.session.handle)
             .await?;
 
         // `ReceiverAttachExchange::Complete` => Resume is complete
@@ -194,7 +195,7 @@ where
                         log::error!("Failed to abandon message: {}", err);
                         exchange = self
                             .receiver
-                            .detach_then_resume_on_session(&mut connection_scope.session.handle)
+                            .detach_then_resume_on_session(&connection_scope.session.handle)
                             .await?;
                     }
                 }
@@ -202,7 +203,7 @@ where
                     log::error!("Failed to receive message while trying to settle (abandon) the unsettled: {}", err);
                     exchange = self
                         .receiver
-                        .detach_then_resume_on_session(&mut connection_scope.session.handle)
+                        .detach_then_resume_on_session(&connection_scope.session.handle)
                         .await?;
                 }
             }
@@ -509,7 +510,7 @@ where
 
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(&lock_token) {
+                if self.request_response_locked_messages.contains(lock_token) {
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Completed,
                         Array(vec![lock_token.clone()]), // TODO: reduce clone
@@ -527,7 +528,7 @@ where
                         self.recover()
                     )?;
 
-                    self.request_response_locked_messages.remove(&lock_token);
+                    self.request_response_locked_messages.remove(lock_token);
                 }
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
@@ -556,7 +557,7 @@ where
 
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(&lock_token) {
+                if self.request_response_locked_messages.contains(lock_token) {
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Defered,
                         Array(vec![lock_token.clone()]), // TODO: reduce clone
@@ -574,7 +575,7 @@ where
                         self.recover()
                     )?;
 
-                    self.request_response_locked_messages.remove(&lock_token);
+                    self.request_response_locked_messages.remove(lock_token);
                 }
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
@@ -666,7 +667,7 @@ where
 
         match &message.lock_token {
             ReceivedMessageLockToken::LockToken(lock_token) => {
-                if self.request_response_locked_messages.contains(&lock_token) {
+                if self.request_response_locked_messages.contains(lock_token) {
                     let mut request = UpdateDispositionRequest::new(
                         DispositionStatus::Abandoned,
                         Array(vec![lock_token.clone()]), // TODO: reduce clone
@@ -684,7 +685,7 @@ where
                         self.recover()
                     )?;
 
-                    self.request_response_locked_messages.remove(&lock_token);
+                    self.request_response_locked_messages.remove(lock_token);
                 }
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {

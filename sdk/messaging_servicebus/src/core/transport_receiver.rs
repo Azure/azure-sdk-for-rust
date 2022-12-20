@@ -9,7 +9,8 @@ use crate::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
     },
-    ServiceBusReceiveMode, sealed::Sealed,
+    sealed::Sealed,
+    ServiceBusReceiveMode,
 };
 
 /// Trait for session receiver

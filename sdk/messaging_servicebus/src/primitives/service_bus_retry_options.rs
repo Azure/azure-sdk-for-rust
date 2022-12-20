@@ -8,7 +8,7 @@ const RETRIES_MAX: u32 = 100;
 const DELAY_MIN: Duration = Duration::from_millis(1);
 const DELAY_MAX: Duration = Duration::from_secs(5 * 60);
 const TRY_TIMEOUT_MIN: Duration = Duration::ZERO;
-const TRY_TIMEOUT_MAX: Duration = Duration::from_secs(1 * 60 * 60); // 1 Hour
+const TRY_TIMEOUT_MAX: Duration = Duration::from_secs(60 * 60); // 1 Hour
 
 /// The error type returned when a retry option value is out of range.
 #[derive(Debug, thiserror::Error)]
@@ -75,10 +75,10 @@ impl ServiceBusRetryOptions {
     pub const DEFAULT_DELAY: Duration = Duration::from_millis(800);
 
     /// Default value for [`ServiceBusRetryOptions::max_delay`].
-    pub const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(1 * 60);
+    pub const DEFAULT_MAX_DELAY: Duration = Duration::from_secs(60);
 
     /// Default value for [`ServiceBusRetryOptions::try_timeout`].
-    pub const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(1 * 60);
+    pub const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(60);
 
     /// The approach to use for calculating retry delays.
     pub fn mode(&self) -> &ServiceBusRetryMode {

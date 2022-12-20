@@ -76,7 +76,7 @@ where
 {
     /// Creates a new instance of the [`ServiceBusClient`] class using the specified
     /// connection string and [`ServiceBusClientOptions`].
-    pub async fn new<'a>(
+    pub async fn create_client<'a>(
         self,
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
@@ -84,9 +84,9 @@ where
         let connection_string = connection_string.into();
         let identifier = options.identifier.clone();
         let connection = ServiceBusConnection::new(connection_string, options).await?;
-        let identifier = identifier.unwrap_or(diagnostics::utilities::generate_identifier(
-            connection.fully_qualified_namespace(),
-        ));
+        let identifier = identifier.unwrap_or_else(|| {
+            diagnostics::utilities::generate_identifier(connection.fully_qualified_namespace())
+        });
         Ok(ServiceBusClient {
             identifier,
             connection,
@@ -94,20 +94,16 @@ where
     }
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
-    pub async fn new_with_named_key_credential(
+    pub async fn create_client_with_named_key_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         credential: AzureNamedKeyCredential,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
-        let identifier =
-            options
-                .identifier
-                .clone()
-                .unwrap_or(diagnostics::utilities::generate_identifier(
-                    &fully_qualified_namespace,
-                ));
+        let identifier = options.identifier.clone().unwrap_or_else(|| {
+            diagnostics::utilities::generate_identifier(&fully_qualified_namespace)
+        });
         let signuture_resource = build_connection_resource(
             &options.transport_type,
             Some(&fully_qualified_namespace),
@@ -129,20 +125,16 @@ where
     }
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
-    pub async fn new_with_sas_credential(
+    pub async fn create_client_with_sas_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         credential: AzureSasCredential,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
-        let identifier =
-            options
-                .identifier
-                .clone()
-                .unwrap_or(diagnostics::utilities::generate_identifier(
-                    &fully_qualified_namespace,
-                ));
+        let identifier = options.identifier.clone().unwrap_or_else(|| {
+            diagnostics::utilities::generate_identifier(&fully_qualified_namespace)
+        });
         let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
         let credential = ServiceBusTokenCredential::new(shared_access_credential);
         let connection = ServiceBusConnection::new_with_credential(
@@ -158,20 +150,16 @@ where
     }
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
-    pub async fn new_with_token_credential(
+    pub async fn create_client_with_token_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         credential: impl TokenCredential + 'static,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<AmqpClient<RP>>, Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
-        let identifier =
-            options
-                .identifier
-                .clone()
-                .unwrap_or(diagnostics::utilities::generate_identifier(
-                    &fully_qualified_namespace,
-                ));
+        let identifier = options.identifier.clone().unwrap_or_else(|| {
+            diagnostics::utilities::generate_identifier(&fully_qualified_namespace)
+        });
         let credential = ServiceBusTokenCredential::new(credential);
         let connection = ServiceBusConnection::new_with_credential(
             fully_qualified_namespace,
@@ -242,7 +230,7 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         Self::with_custom_retry_policy()
-            .new(connection_string, options)
+            .create_client(connection_string, options)
             .await
     }
 
@@ -253,7 +241,7 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         Self::with_custom_retry_policy()
-            .new_with_named_key_credential(fully_qualified_namespace, credential, options)
+            .create_client_with_named_key_credential(fully_qualified_namespace, credential, options)
             .await
     }
 
@@ -264,7 +252,7 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         Self::with_custom_retry_policy()
-            .new_with_sas_credential(fully_qualified_namespace, credential, options)
+            .create_client_with_sas_credential(fully_qualified_namespace, credential, options)
             .await
     }
 
@@ -275,7 +263,7 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         Self::with_custom_retry_policy()
-            .new_with_token_credential(fully_qualified_namespace, credential, options)
+            .create_client_with_token_credential(fully_qualified_namespace, credential, options)
             .await
     }
 }
@@ -336,7 +324,7 @@ where
         let identifier = options
             .identifier
             .filter(|id| !id.is_empty())
-            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+            .unwrap_or_else(|| diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let inner = self
             .connection
@@ -395,7 +383,7 @@ where
         let identifier = options
             .identifier
             .filter(|id| !id.is_empty())
-            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+            .unwrap_or_else(|| diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let receive_mode = options.receive_mode;
         let prefetch_count = options.prefetch_count;
@@ -409,7 +397,6 @@ where
                 retry_options,
                 receive_mode,
                 prefetch_count,
-                false,
             )
             .await?;
         Ok(ServiceBusReceiver { inner })
@@ -461,7 +448,7 @@ where
     ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, C::CreateReceiverError> {
         let identifier = options
             .identifier
-            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+            .unwrap_or_else(|| diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let receive_mode = options.receive_mode;
         let prefetch_count = options.prefetch_count;
@@ -475,7 +462,6 @@ where
                 receive_mode,
                 prefetch_count,
                 Some(session_id.clone()),
-                false,
             )
             .await?;
 
@@ -523,7 +509,7 @@ where
     ) -> Result<ServiceBusSessionReceiver<C::SessionReceiver>, AcceptNextSessionError> {
         let identifier = options
             .identifier
-            .unwrap_or(diagnostics::utilities::generate_identifier(&entity_path));
+            .unwrap_or_else(|| diagnostics::utilities::generate_identifier(&entity_path));
         let retry_options = self.connection.retry_options().clone();
         let receive_mode = options.receive_mode;
         let prefetch_count = options.prefetch_count;
@@ -537,7 +523,6 @@ where
                 receive_mode,
                 prefetch_count,
                 None,
-                false,
             )
             .await?;
 

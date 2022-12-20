@@ -44,7 +44,7 @@ pub(crate) fn build_connection_resource(
     match fully_qualified_namespace {
         Some(fqn) => {
             let mut builder = Url::parse(&format!("{}://{}", transport_type.url_scheme(), fqn))?;
-            builder.set_path(&entity_name.unwrap_or_default());
+            builder.set_path(entity_name.unwrap_or_default());
             builder
                 .set_port(None)
                 .map_err(|_| Error::ArgumentError("Unable to set port to None".to_string()))?;
@@ -131,7 +131,6 @@ where
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
-        is_processor: bool,
     ) -> Result<C::Receiver, C::CreateReceiverError> {
         let receiver = self
             .inner_client
@@ -141,7 +140,6 @@ where
                 retry_options,
                 receive_mode,
                 prefetch_count,
-                is_processor,
             )
             .await?;
 
@@ -156,7 +154,6 @@ where
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
         session_id: Option<String>,
-        is_processor: bool,
     ) -> Result<C::SessionReceiver, C::CreateReceiverError> {
         let receiver = self
             .inner_client
@@ -167,7 +164,6 @@ where
                 receive_mode,
                 session_id,
                 prefetch_count,
-                is_processor,
             )
             .await?;
 
@@ -194,8 +190,8 @@ where
     C: TransportClient,
     Error: From<C::CreateClientError>,
 {
-    pub(crate) async fn new<'a>(
-        connection_string: Cow<'a, str>,
+    pub(crate) async fn new(
+        connection_string: Cow<'_, str>,
         options: ServiceBusClientOptions,
     ) -> Result<Self, Error> {
         let connection_string_properties =

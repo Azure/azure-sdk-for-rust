@@ -494,14 +494,12 @@ pub enum AmqpRecvError {
 
 impl ServiceBusRetryPolicyError for AmqpRecvError {
     fn should_try_recover(&self) -> bool {
-        match self {
-            Self::Recv(err) => match err {
-                RecvError::LinkStateError(LinkStateError::IllegalSessionState) => true,
-                _ => false,
-            },
-            Self::LinkState(IllegalLinkStateError::IllegalSessionState) => true,
-            _ => false,
-        }
+        matches!(
+            self,
+            Self::Recv(RecvError::LinkStateError(
+                LinkStateError::IllegalSessionState
+            )) | Self::LinkState(IllegalLinkStateError::IllegalSessionState)
+        )
     }
 
     fn is_scope_disposed(&self) -> bool {

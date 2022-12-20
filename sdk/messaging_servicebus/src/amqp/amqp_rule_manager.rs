@@ -9,7 +9,8 @@ use crate::{
     amqp::amqp_request_message::add_rule::CreateRuleFilter,
     core::{RecoverableTransport, TransportRuleManager},
     primitives::{error::RetryError, service_bus_retry_policy::run_operation},
-    ServiceBusRetryPolicy, sealed::Sealed,
+    sealed::Sealed,
+    ServiceBusRetryPolicy,
 };
 
 use super::{

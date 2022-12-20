@@ -60,7 +60,7 @@ impl<'a> Future for CbsTokenFut<'a> {
         mut self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> Poll<Self::Output> {
-        let expiration_buffer = self.provider.token_expiration_buffer.clone();
+        let expiration_buffer = self.provider.token_expiration_buffer;
         let entity_type = self.provider.token_type.entity_type().to_owned(); // TODO: fix lifetime
         let result = match &mut self.provider.token_type {
             TokenType::SharedAccessToken { credential } => {

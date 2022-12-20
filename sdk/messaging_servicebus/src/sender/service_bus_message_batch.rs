@@ -49,6 +49,11 @@ impl<T: TransportMessageBatch> ServiceBusMessageBatch<T> {
         self.inner.len()
     }
 
+    /// Returns `true` if the batch contains no messages.
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
     /// Attempts to add a [`ServiceBusMessage`] to the [`ServiceBusMessageBatch`].
     ///
     /// Returns an error if the message is too large to fit in the batch or

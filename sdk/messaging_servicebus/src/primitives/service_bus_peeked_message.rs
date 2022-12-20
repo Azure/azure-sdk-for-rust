@@ -210,7 +210,7 @@ impl ServiceBusPeekedMessage {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
             })
-            .unwrap_or(Default::default())
+            .unwrap_or_default()
     }
 
     /// Gets the name of the queue or subscription that this message was enqueued on, before it was
@@ -244,7 +244,7 @@ impl ServiceBusPeekedMessage {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
             })
-            .unwrap_or(Default::default())
+            .unwrap_or_default()
     }
 
     /// Gets the date and time of the sent time in UTC.

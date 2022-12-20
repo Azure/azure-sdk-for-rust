@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
 use crate::{
-    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter, sealed::Sealed,
+    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter,
+    sealed::Sealed,
 };
 
 /// Trait for rule manager implementations.
