@@ -156,7 +156,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let _response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             CreateRuleError,
             try_timeout,
             self.create_rule(&mut request, &try_timeout),
@@ -171,7 +171,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let _response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.delete_rule(&mut request, &try_timeout),
@@ -201,7 +201,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.get_rules(&mut request, &try_timeout),
@@ -215,4 +215,3 @@ where
         self.management_link.close().await
     }
 }
-

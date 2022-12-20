@@ -8,7 +8,7 @@ use std::time::Duration as StdDuration;
 use time::OffsetDateTime;
 
 use crate::{
-    core::{TransportReceiver, TransportSessionReceiver, RecoverableTransport},
+    core::{RecoverableTransport, TransportReceiver, TransportSessionReceiver},
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
