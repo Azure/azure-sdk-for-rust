@@ -78,8 +78,8 @@ pub trait TransportClient: Sized {
     /// Creates a receiver
     async fn create_receiver(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
@@ -89,8 +89,8 @@ pub trait TransportClient: Sized {
     /// Creates a session receiver
     async fn create_session_receiver(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         session_id: Option<String>,

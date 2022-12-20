@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use fe2o3_amqp::{
-    link::{delivery::DeliveryInfo, DetachError, RecvError},
+    link::{delivery::DeliveryInfo, DetachError, RecvError, ReceiverAttachExchange},
     Delivery, Receiver,
 };
 use fe2o3_amqp_types::{
@@ -9,11 +9,13 @@ use fe2o3_amqp_types::{
     primitives::{Array, OrderedMap, Symbol, Timestamp, Uuid},
 };
 use serde_amqp::Value;
-use std::{collections::HashSet, time::Duration as StdDuration, sync::Arc};
+use std::{collections::HashSet, sync::Arc, time::Duration as StdDuration};
 use tokio::sync::{mpsc, Mutex};
+use url::Url;
 
 use crate::{
-    core::TransportReceiver,
+    authorization::service_bus_claim,
+    core::{RecoverableTransport, TransportReceiver},
     primitives::{
         disposition_status::DispositionStatus,
         error::RetryError,
@@ -27,6 +29,7 @@ use crate::{
 use super::{
     amqp_cbs_link,
     amqp_client_constants::DEAD_LETTER_NAME,
+    amqp_connection_scope::AmqpConnectionScope,
     amqp_management_link::AmqpManagementLink,
     amqp_message_constants::{DEAD_LETTER_ERROR_DESCRIPTION_HEADER, DEAD_LETTER_REASON_HEADER},
     amqp_message_converter::LOCK_TOKEN_DELIVERY_ANNOTATION,
@@ -39,9 +42,8 @@ use super::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
-    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_connection_scope::AmqpConnectionScope,
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError, RecoverReceiverError},
 };
-
 
 async fn receive_messages(
     receiver: &mut Receiver,
@@ -112,7 +114,10 @@ fn map_properties_to_modify_into_fields(
 
 #[derive(Debug)]
 pub struct AmqpReceiver<RP> {
-    pub(crate) identifier: u32, // TODO: should this info be preserved?
+    pub(crate) id: u32, // TODO: should this info be preserved?
+    pub(crate) service_endpoint: Arc<Url>,
+    pub(crate) entity_path: String,
+    pub(crate) identifier_str: String,
 
     pub(crate) prefetch_count: u32,
     pub(crate) retry_policy: RP,
@@ -127,7 +132,84 @@ pub struct AmqpReceiver<RP> {
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
 
     /// This is ONLY used for recovery
-    pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>
+    pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
+}
+
+#[async_trait]
+impl<RP> RecoverableTransport for AmqpReceiver<RP>
+where
+    RP: Send,
+{
+    type RecoverError = RecoverReceiverError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        let mut connection_scope = self.connection_scope.lock().await;
+        connection_scope
+            .recover()
+            .await
+            .map_err(|connection_scope_error| {
+                log::error!(
+                    "Failed to recover connection scope: {}",
+                    connection_scope_error
+                );
+                Self::RecoverError::ScopeIsDisposed
+            })?;
+
+        // Auth with CBS
+        let endpoint = format!("{}/{}", self.service_endpoint, self.entity_path);
+        let resource = endpoint.clone();
+        let required_claims = vec![service_bus_claim::SEND.to_string()];
+        connection_scope
+            .request_refreshable_authorization_using_cbs(
+                self.id,
+                endpoint,
+                resource,
+                required_claims,
+            )
+            .await?;
+
+        // Resume the receiver on the new session
+        let mut exchange = self.receiver.detach_then_resume_on_session(&mut connection_scope.session.handle)
+            .await?;
+
+        // `ReceiverAttachExchange::Complete` => Resume is complete
+        //
+        // `ReceiverAttachExchange::IncompleteUnsettled` => There are unsettled messages, multiple
+        // detach and re-attach may happen in order to reduce the number of unsettled messages.
+        //
+        // `ReceiverAttachExchange::Resume` => There is one message that is partially transferred,
+        // so it would be OK to let the user use the receiver to receive the message
+        while let ReceiverAttachExchange::IncompleteUnsettled = exchange {
+            match self.receiver.recv::<Body<Value>>().await {
+                Ok(delivery) => {
+                    let modified = Modified {
+                        delivery_failed: None,
+                        undeliverable_here: None,
+                        message_annotations: None,
+                    };
+                    if let Err(err) = self.receiver.modify(delivery, modified).await {
+                        log::error!("Failed to abandon message: {}", err);
+                        exchange = self.receiver.detach_then_resume_on_session(&mut connection_scope.session.handle)
+                            .await?;
+                    }
+                },
+                Err(err) => {
+                    log::error!("Failed to receive message while trying to settle (abandon) the unsettled: {}", err);
+                    exchange = self.receiver.detach_then_resume_on_session(&mut connection_scope.session.handle)
+                        .await?;
+                }
+            }
+        }
+        self.management_link = connection_scope
+            .open_management_link(
+                &self.service_endpoint,
+                &self.entity_path,
+                &self.identifier_str,
+            )
+            .await?;
+        self.cbs_command_sender = connection_scope.cbs_link.command_sender().clone();
+        Ok(())
+    }
 }
 
 impl<RP> AmqpReceiver<RP> {
@@ -225,7 +307,9 @@ impl<RP> AmqpReceiver<RP> {
                 .map(map_properties_to_modify_into_fields),
         };
 
-        self.receiver.modify(delivery_info.clone(), modified).await?;
+        self.receiver
+            .modify(delivery_info.clone(), modified)
+            .await?;
         Ok(())
     }
 
@@ -242,7 +326,9 @@ impl<RP> AmqpReceiver<RP> {
                 .map(map_properties_to_modify_into_fields),
         };
 
-        self.receiver.modify(delivery_info.clone(), modified).await?;
+        self.receiver
+            .modify(delivery_info.clone(), modified)
+            .await?;
         Ok(())
     }
 
@@ -304,7 +390,6 @@ impl<RP> AmqpReceiver<RP> {
         let response = self.management_link.client_mut().call(request).await?;
         Ok(response)
     }
-
 }
 
 #[async_trait]
@@ -316,6 +401,14 @@ where
     type ReceiveError = RetryError<AmqpRecvError>;
     type DispositionError = RetryError<AmqpDispositionError>;
     type CloseError = DetachError;
+
+    fn entity_path(&self) -> &str {
+        &self.entity_path
+    }
+
+    fn identifier(&self) -> &str {
+        &self.identifier_str
+    }
 
     fn prefetch_count(&self) -> u32 {
         self.prefetch_count
@@ -337,7 +430,7 @@ where
         let mut buffer = Vec::with_capacity(max_messages as usize);
         loop {
             run_operation!(
-                {&self.retry_policy},
+                { &self.retry_policy },
                 AmqpRecvError,
                 try_timeout,
                 self.receive_messages_with_timeout(
@@ -367,7 +460,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         let mut buffer = Vec::with_capacity(max_messages as usize);
         run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRecvError,
             try_timeout,
             self.receive_messages_with_timeout(
@@ -385,7 +478,7 @@ where
         let _ = self
             .cbs_command_sender
             .send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(
-                self.identifier,
+                self.id,
             ))
             .await;
         self.receiver.drain().await?; // This is only mentioned in an issue but not implemented in the dotnet sdk yet
@@ -416,7 +509,7 @@ where
                         Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
-                        {&self.retry_policy},
+                        { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
                         self.update_disposition(&mut request, &try_timeout)
@@ -427,7 +520,7 @@ where
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
-                    {&self.retry_policy},
+                    { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
                     self.complete_message(delivery_info)
@@ -461,7 +554,7 @@ where
                         Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
-                        {&self.retry_policy},
+                        { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
                         self.update_disposition(&mut request, &try_timeout)
@@ -472,7 +565,7 @@ where
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
-                    {&self.retry_policy},
+                    { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
                     self.defer_message(delivery_info, &properties_to_modify)
@@ -496,7 +589,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.peek_message_inner(&mut request, &try_timeout)
@@ -528,7 +621,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.peek_session_message_inner(&mut request, &try_timeout)
@@ -567,7 +660,7 @@ where
                         Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
-                        {&self.retry_policy},
+                        { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
                         self.update_disposition(&mut request, &try_timeout)
@@ -578,7 +671,7 @@ where
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
-                    {&self.retry_policy},
+                    { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
                     self.abandon_message(delivery_info, &properties_to_modify)
@@ -612,7 +705,7 @@ where
                         Some(self.receiver.name().to_string()),
                     );
                     run_operation!(
-                        {&self.retry_policy},
+                        { &self.retry_policy },
                         AmqpDispositionError,
                         try_timeout,
                         self.update_disposition(&mut request, &try_timeout)
@@ -623,7 +716,7 @@ where
             }
             ReceivedMessageLockToken::Delivery { delivery_info, .. } => {
                 run_operation!(
-                    {&self.retry_policy},
+                    { &self.retry_policy },
                     AmqpDispositionError,
                     try_timeout,
                     self.dead_letter_message(
@@ -660,7 +753,7 @@ where
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.receive_by_sequence_number(&mut request, &try_timeout)
@@ -686,11 +779,12 @@ where
         &mut self,
         lock_tokens: Vec<Uuid>,
     ) -> Result<Vec<Timestamp>, Self::RequestResponseError> {
-        let mut request = RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name().to_string()));
+        let mut request =
+            RenewLockRequest::new(Array(lock_tokens), Some(self.receiver.name().to_string()));
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.renew_lock(&mut request, &try_timeout)

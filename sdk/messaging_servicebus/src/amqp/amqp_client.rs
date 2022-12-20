@@ -177,8 +177,8 @@ where
 
     async fn create_receiver(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
@@ -189,8 +189,8 @@ where
         let (link_identifier, receiver, cbs_command_sender) = connection_scope
             .open_receiver_link(
                 &self.service_endpoint,
-                entity_path,
-                identifier,
+                &entity_path,
+                &identifier,
                 &receive_mode,
                 ReceiverType::NonSession,
                 prefetch_count,
@@ -201,7 +201,10 @@ where
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpReceiver {
-            identifier: link_identifier,
+            id: link_identifier,
+            service_endpoint: self.service_endpoint.clone(),
+            entity_path,
+            identifier_str: identifier,
             retry_policy,
             receiver,
             receive_mode,
@@ -217,8 +220,8 @@ where
 
     async fn create_session_receiver(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         session_id: Option<String>,
@@ -229,8 +232,8 @@ where
         let (link_identifier, receiver, cbs_command_sender) = connection_scope
             .open_receiver_link(
                 &self.service_endpoint,
-                entity_path,
-                identifier,
+                &entity_path,
+                &identifier,
                 &receive_mode,
                 ReceiverType::Session { session_id },
                 prefetch_count,
@@ -241,7 +244,10 @@ where
             .await?;
         let retry_policy = RP::new(retry_options);
         let inner = AmqpReceiver {
-            identifier: link_identifier,
+            id: link_identifier,
+            service_endpoint: self.service_endpoint.clone(),
+            entity_path,
+            identifier_str: identifier,
             retry_policy,
             receiver,
             receive_mode,

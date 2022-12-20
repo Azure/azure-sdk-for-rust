@@ -389,8 +389,8 @@ where
         let inner = self
             .connection
             .create_transport_receiver(
-                &entity_path,
-                &identifier,
+                entity_path,
+                identifier,
                 retry_options,
                 receive_mode,
                 prefetch_count,
@@ -399,8 +399,6 @@ where
             .await?;
         Ok(ServiceBusReceiver {
             inner,
-            entity_path,
-            identifier,
         })
     }
 
@@ -458,8 +456,8 @@ where
         let inner = self
             .connection
             .create_transport_session_receiver(
-                &entity_path,
-                &identifier,
+                entity_path,
+                identifier,
                 retry_options,
                 receive_mode,
                 prefetch_count,
@@ -470,8 +468,6 @@ where
 
         Ok(ServiceBusSessionReceiver {
             inner,
-            entity_path,
-            identifier,
             session_id,
         })
     }
@@ -519,8 +515,8 @@ where
         let inner = self
             .connection
             .create_transport_session_receiver(
-                &entity_path,
-                &identifier,
+                entity_path,
+                identifier,
                 retry_options,
                 receive_mode,
                 prefetch_count,
@@ -536,8 +532,6 @@ where
 
         Ok(ServiceBusSessionReceiver {
             inner,
-            entity_path,
-            identifier,
             session_id,
         })
     }

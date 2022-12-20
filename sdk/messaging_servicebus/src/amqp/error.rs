@@ -2,7 +2,7 @@ use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{
         IllegalLinkStateError, LinkStateError, ReceiverAttachError, RecvError, SenderAttachError, SenderResumeErrorKind, DetachError,
-        DetachThenResumeSenderError,
+        DetachThenResumeSenderError, ReceiverResumeErrorKind, DetachThenResumeReceiverError,
     },
     session::{self, BeginError},
 };
@@ -269,6 +269,43 @@ impl From<OpenMgmtLinkError> for OpenReceiverError {
             OpenMgmtLinkError::ScopeIsDisposed => OpenReceiverError::ScopeIsDisposed,
             OpenMgmtLinkError::Attach(err) => OpenReceiverError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenReceiverError::CbsAuth(err),
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoverReceiverError {
+    #[error("The connection scope is disposed")]
+    ScopeIsDisposed,
+
+    #[error(transparent)]
+    ManagementLinkAttach(#[from] AttachError),
+
+    #[error(transparent)]
+    ReceiverDetach(#[from] DetachError),
+
+    #[error(transparent)]
+    ReceiverResume(#[from] ReceiverResumeErrorKind),
+
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+}
+
+impl From<DetachThenResumeReceiverError> for RecoverReceiverError {
+    fn from(value: DetachThenResumeReceiverError) -> Self {
+        match value {
+            DetachThenResumeReceiverError::Detach(err) => RecoverReceiverError::ReceiverDetach(err),
+            DetachThenResumeReceiverError::Resume(err) => RecoverReceiverError::ReceiverResume(err),
+        }
+    }
+}
+
+impl From<OpenMgmtLinkError> for RecoverReceiverError {
+    fn from(err: OpenMgmtLinkError) -> Self {
+        match err {
+            OpenMgmtLinkError::ScopeIsDisposed => RecoverReceiverError::ScopeIsDisposed,
+            OpenMgmtLinkError::Attach(err) => RecoverReceiverError::ManagementLinkAttach(err),
+            OpenMgmtLinkError::CbsAuth(err) => RecoverReceiverError::CbsAuth(err),
         }
     }
 }

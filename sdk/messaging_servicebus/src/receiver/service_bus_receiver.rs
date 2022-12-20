@@ -39,8 +39,6 @@ pub struct ServiceBusReceiverOptions {
 #[derive(Debug)]
 pub struct ServiceBusReceiver<R> {
     pub(crate) inner: R,
-    pub(crate) entity_path: String,
-    pub(crate) identifier: String,
 }
 
 impl<R> ServiceBusReceiver<R>
@@ -50,12 +48,12 @@ where
     /// The entity path that the receiver is connected to, specific to the Service Bus
     /// namespace that contains it.
     pub fn entity_path(&self) -> &str {
-        &self.entity_path
+        self.inner.entity_path()
     }
 
     /// The identifier of the receiver.
     pub fn identifier(&self) -> &str {
-        &self.identifier
+        self.inner.identifier()
     }
 
     /// The number of messages that will be eagerly requested from Queues or Subscriptions and queued locally without regard to

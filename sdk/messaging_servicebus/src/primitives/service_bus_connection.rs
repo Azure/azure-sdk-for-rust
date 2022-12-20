@@ -126,8 +126,8 @@ where
 
     pub(crate) async fn create_transport_receiver(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,
@@ -150,8 +150,8 @@ where
 
     pub(crate) async fn create_transport_session_receiver(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
         receive_mode: ServiceBusReceiveMode,
         prefetch_count: u32,

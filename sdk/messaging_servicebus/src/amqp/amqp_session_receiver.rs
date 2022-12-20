@@ -101,6 +101,14 @@ where
     type DispositionError = <AmqpReceiver<RP> as TransportReceiver>::DispositionError;
     type CloseError = <AmqpReceiver<RP> as TransportReceiver>::CloseError;
 
+    fn entity_path(&self) -> &str {
+        self.inner.entity_path()
+    }
+
+    fn identifier(&self) -> &str {
+        self.inner.identifier()
+    }
+
     fn prefetch_count(&self) -> u32 {
         self.inner.prefetch_count()
     }
