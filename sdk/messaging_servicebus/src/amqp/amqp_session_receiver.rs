@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::Fields,
     primitives::{Binary, OrderedMap, Timestamp},
@@ -32,9 +31,64 @@ use super::{
     error::AmqpRequestResponseError,
 };
 
+
+pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<OffsetDateTime> {
+    // SessionLockedUntil = link.Settings.Properties.TryGetValue<long>(
+    //     AmqpClientConstants.LockedUntilUtc, out var lockedUntilUtcTicks)
+    //     ? new DateTime(lockedUntilUtcTicks, DateTimeKind.Utc)
+    //     : DateTime.MinValue;
+    properties
+        .as_ref()
+        .and_then(|map| map.get(LOCKED_UNTIL_UTC))
+        .and_then(|value| match value {
+            Value::Timestamp(timestamp) => Some(timestamp.clone()),
+            _ => None, // TODO: what if it's not a timestamp?
+        })
+        .map(OffsetDateTime::from)
+    // .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
+}
+
 #[derive(Debug)]
 pub struct AmqpSessionReceiver<RP> {
     pub(crate) inner: AmqpReceiver<RP>,
+}
+
+impl<RP> AmqpSessionReceiver<RP> {
+    async fn renew_session_lock<'a>(
+        &mut self,
+        request: &mut RenewSessionLockRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<RenewSessionLockResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.inner.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
+
+    async fn set_session_state<'a>(
+        &mut self,
+        request: &mut SetSessionStateRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<SetSessionStateResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.inner.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
+
+    async fn get_session_state<'a>(
+        &mut self,
+        request: &mut GetSessionStateRequest,
+        try_timeout: &StdDuration,
+    ) -> Result<GetSessionStateResponse, AmqpRequestResponseError> {
+        let server_timeout = try_timeout.as_millis() as u32;
+        request.set_server_timeout(Some(server_timeout));
+
+        let response = self.inner.management_link.client_mut().call(request).await?;
+        Ok(response)
+    }
 }
 
 #[async_trait]
@@ -206,15 +260,13 @@ where
     ) -> Result<OffsetDateTime, Self::RequestResponseError> {
         let mut request =
             RenewSessionLockRequest::new(session_id, Some(self.inner.receiver.name().to_string()));
-        let mgmt_client = self.inner.management_link.client_mut();
-        let policy = &self.inner.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
+        let mut try_timeout = self.inner.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            policy,
+            {&self.inner.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            renew_session_lock(mgmt_client, &mut request, &try_timeout)
+            self.renew_session_lock(&mut request, &try_timeout)
         )?;
 
         Ok(OffsetDateTime::from(response.expiration))
@@ -225,15 +277,13 @@ where
         session_id: &str,
     ) -> Result<Vec<u8>, Self::RequestResponseError> {
         let mut request = GetSessionStateRequest::new(session_id, Some(self.inner.receiver.name().to_string()));
-        let mgmt_client = self.inner.management_link.client_mut();
-        let policy = &self.inner.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
+        let mut try_timeout = self.inner.retry_policy.calculate_try_timeout(0);
 
         let response = run_operation!(
-            policy,
+            {&self.inner.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            get_session_state(mgmt_client, &mut request, &try_timeout)
+            self.get_session_state(&mut request, &try_timeout)
         )?;
 
         Ok(response.session_state.into_vec())
@@ -249,68 +299,14 @@ where
             Binary::from(session_state),
             Some(self.inner.receiver.name().to_string()),
         );
-        let mgmt_client = self.inner.management_link.client_mut();
-        let policy = &self.inner.retry_policy;
-        let mut try_timeout = policy.calculate_try_timeout(0);
+        let mut try_timeout = self.inner.retry_policy.calculate_try_timeout(0);
 
         let _response = run_operation!(
-            policy,
+            {&self.inner.retry_policy},
             AmqpRequestResponseError,
             try_timeout,
-            set_session_state(mgmt_client, &mut request, &try_timeout)
+            self.set_session_state(&mut request, &try_timeout)
         )?;
         Ok(())
     }
-}
-
-pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<OffsetDateTime> {
-    // SessionLockedUntil = link.Settings.Properties.TryGetValue<long>(
-    //     AmqpClientConstants.LockedUntilUtc, out var lockedUntilUtcTicks)
-    //     ? new DateTime(lockedUntilUtcTicks, DateTimeKind.Utc)
-    //     : DateTime.MinValue;
-    properties
-        .as_ref()
-        .and_then(|map| map.get(LOCKED_UNTIL_UTC))
-        .and_then(|value| match value {
-            Value::Timestamp(timestamp) => Some(timestamp.clone()),
-            _ => None, // TODO: what if it's not a timestamp?
-        })
-        .map(OffsetDateTime::from)
-    // .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
-}
-
-async fn renew_session_lock<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut RenewSessionLockRequest,
-    try_timeout: &StdDuration,
-) -> Result<RenewSessionLockResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
-}
-
-async fn set_session_state<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut SetSessionStateRequest,
-    try_timeout: &StdDuration,
-) -> Result<SetSessionStateResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
-}
-
-async fn get_session_state<'a>(
-    mgmt_client: &mut MgmtClient,
-    request: &mut GetSessionStateRequest,
-    try_timeout: &StdDuration,
-) -> Result<GetSessionStateResponse, AmqpRequestResponseError> {
-    let server_timeout = try_timeout.as_millis() as u32;
-    request.set_server_timeout(Some(server_timeout));
-
-    let response = mgmt_client.call(request).await?;
-    Ok(response)
 }
