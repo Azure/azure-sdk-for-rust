@@ -1,6 +1,6 @@
 use fe2o3_amqp_management::request::Request;
 use fe2o3_amqp_types::primitives::OrderedMap;
-use serde_amqp::{Value};
+use serde_amqp::Value;
 
 use crate::{
     administration::{FalseRuleFilter, SqlRuleAction, TrueRuleFilter},

@@ -101,9 +101,7 @@ pub(crate) struct RuleDescription {
 pub struct EmptyRuleAction {}
 
 /// SQL rule action
-#[derive(
-    Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
-)]
+#[derive(Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[amqp_contract(
     name = "com.microsoft:sql-rule-action:list",
     code = "0x0000_0137_0000_0006",

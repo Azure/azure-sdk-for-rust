@@ -19,9 +19,7 @@ use crate::amqp::{
 /// implements testing for existence of properties (EXISTS), testing for null-values (IS NULL),
 /// logical NOT/AND/OR, relational operators, numeric arithmetic, and simple text pattern matching
 /// with LIKE.
-#[derive(
-    Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
-)]
+#[derive(Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[amqp_contract(
     name = "com.microsoft:sql-filter:list",
     code = "0x0000_0013_7000_0006",
