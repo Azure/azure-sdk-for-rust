@@ -494,13 +494,3 @@ mod filter_impl {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_true_filter() {
-        let filter = super::TrueRuleFilter {};
-        let value = serde_amqp::to_value(&filter).unwrap();
-        println!("value: {:?}", value);
-    }
-}
