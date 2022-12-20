@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_management::client::MgmtClient;
-use std::time::Duration as StdDuration;
+use tokio::sync::Mutex;
+use std::{time::Duration as StdDuration, sync::Arc};
 
 use crate::{
     administration::RuleProperties,
@@ -21,13 +22,16 @@ use super::{
         add_rule::AddRuleResponse, enumerate_rules::EnumerateRulesResponse,
         remove_rule::RemoveRuleResponse,
     },
-    error::{AmqpRequestResponseError, CreateRuleError},
+    error::{AmqpRequestResponseError, CreateRuleError}, amqp_connection_scope::AmqpConnectionScope,
 };
 
 #[derive(Debug)]
 pub struct AmqpRuleManager<RP> {
     pub(crate) management_link: AmqpManagementLink,
     pub(crate) retry_policy: RP,
+
+    /// This is ONLY used for recovery
+    pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
 }
 
 #[async_trait]

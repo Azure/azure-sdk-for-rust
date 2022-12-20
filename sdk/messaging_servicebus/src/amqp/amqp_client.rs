@@ -168,6 +168,7 @@ where
             sender,
             management_link,
             cbs_command_sender,
+            connection_scope: self.connection_scope.clone(),
         })
     }
 
@@ -207,6 +208,7 @@ where
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
             cbs_command_sender,
+            connection_scope: self.connection_scope.clone(),
         })
     }
 
@@ -246,6 +248,7 @@ where
             request_response_locked_messages: Default::default(),
             last_peeked_sequence_number: DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER,
             cbs_command_sender,
+            connection_scope: self.connection_scope.clone(),
         };
         Ok(AmqpSessionReceiver { inner })
     }
@@ -264,6 +267,7 @@ where
         Ok(AmqpRuleManager {
             retry_policy,
             management_link,
+            connection_scope: self.connection_scope.clone(),
         })
     }
 

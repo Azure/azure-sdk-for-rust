@@ -9,8 +9,8 @@ use fe2o3_amqp_types::{
     primitives::{Array, OrderedMap, Symbol, Timestamp, Uuid},
 };
 use serde_amqp::Value;
-use std::{collections::HashSet, time::Duration as StdDuration};
-use tokio::sync::mpsc;
+use std::{collections::HashSet, time::Duration as StdDuration, sync::Arc};
+use tokio::sync::{mpsc, Mutex};
 
 use crate::{
     core::TransportReceiver,
@@ -39,7 +39,7 @@ use super::{
         peek_message::PeekMessageResponse, peek_session_message::PeekSessionMessageResponse,
         receive_by_sequence_number::ReceiveBySequenceNumberResponse, renew_lock::RenewLockResponse,
     },
-    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError},
+    error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError}, amqp_connection_scope::AmqpConnectionScope,
 };
 
 
@@ -125,6 +125,9 @@ pub struct AmqpReceiver<RP> {
     pub(crate) last_peeked_sequence_number: i64,
 
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
+
+    /// This is ONLY used for recovery
+    pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>
 }
 
 impl<RP> AmqpReceiver<RP> {

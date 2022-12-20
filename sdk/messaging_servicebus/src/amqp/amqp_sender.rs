@@ -3,8 +3,9 @@ use fe2o3_amqp::link::DetachError;
 use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::Outcome;
 use fe2o3_amqp_types::primitives::Array;
+use std::sync::Arc;
 use std::time::Duration as StdDuration;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Mutex};
 
 use crate::primitives::error::RetryError;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
@@ -17,6 +18,7 @@ use crate::{
 };
 
 use super::amqp_cbs_link;
+use super::amqp_connection_scope::AmqpConnectionScope;
 use super::amqp_management_link::AmqpManagementLink;
 use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
@@ -37,6 +39,9 @@ pub struct AmqpSender<RP> {
     pub(crate) sender: fe2o3_amqp::Sender,
     pub(crate) management_link: AmqpManagementLink,
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
+
+    // This is ONLY used for recovery
+    pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
 }
 
 impl<RP> AmqpSender<RP> {
