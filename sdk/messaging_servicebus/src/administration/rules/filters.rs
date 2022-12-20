@@ -34,6 +34,7 @@ pub struct SqlRuleFilter {
 }
 
 impl SqlRuleFilter {
+    /// Creates a new SQL rule filter.
     pub fn new(expression: impl Into<String>) -> Self {
         Self {
             expression: expression.into(),

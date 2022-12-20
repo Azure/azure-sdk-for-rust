@@ -100,6 +100,7 @@ pub struct SqlRuleAction {
 }
 
 impl SqlRuleAction {
+    /// Creates a new SQL rule action.
     pub fn new(expression: impl Into<String>) -> Self {
         Self {
             expression: expression.into(),

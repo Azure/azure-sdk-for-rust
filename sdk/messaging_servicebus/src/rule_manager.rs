@@ -71,6 +71,7 @@ where
             .await
     }
 
+    /// Remove a rule from the current subscription.
     pub async fn delete_rule(
         &mut self,
         rule_name: impl Into<String>,
@@ -78,6 +79,7 @@ where
         self.inner.delete_rule(rule_name.into()).await
     }
 
+    /// Get the rules associated with the current subscription.
     pub async fn get_rules(&mut self) -> Result<Vec<RuleProperties>, T::GetRulesError> {
         let mut skip = 0;
         let mut buffer = Vec::new();
