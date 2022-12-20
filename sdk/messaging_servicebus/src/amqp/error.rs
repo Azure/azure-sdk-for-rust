@@ -1,3 +1,5 @@
+//! Error types for AMQP operations
+
 use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{

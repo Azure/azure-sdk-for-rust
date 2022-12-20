@@ -18,7 +18,6 @@ use fe2o3_amqp_management::client::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::{ReceiverSettleMode, SenderSettleMode},
     messaging::{FilterSet, Source},
-    primitives::Symbol,
 };
 use fe2o3_amqp_ws::WebSocketStream;
 use time::Duration as TimeSpan;
@@ -341,8 +340,6 @@ impl AmqpConnectionScope {
         ),
         OpenReceiverError,
     > {
-        use serde_amqp::Value;
-
         if self.is_disposed {
             return Err(OpenReceiverError::ScopeIsDisposed);
         }
@@ -351,26 +348,22 @@ impl AmqpConnectionScope {
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
-        let filter_set = match receiver_type {
-            ReceiverType::NonSession => FilterSet::with_capacity(0),
+        let mut source_builder = Source::builder().address(endpoint.clone());
+
+        source_builder = match receiver_type {
+            ReceiverType::NonSession => source_builder.filter(FilterSet::with_capacity(0)),
             ReceiverType::Session { session_id } => {
-                let mut filter_set = FilterSet::with_capacity(1);
-                let value = session_id
-                    .map(SessionFilter)
-                    .map(|filter| Value::Described(Box::new(filter.into())))
-                    .unwrap_or(Value::Null);
-                filter_set.insert(
-                    Symbol::from(amqp_client_constants::SESSION_FILTER_NAME),
-                    value,
-                );
-                filter_set
+                source_builder.add_to_filter(
+                    amqp_client_constants::SESSION_FILTER_NAME,
+                    session_id.map(SessionFilter).map(|filter| filter.into()),
+                )
             }
         };
 
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         self.request_refreshable_authorization_using_cbs(
             link_identifier,
-            endpoint.clone(),
+            endpoint,
             resource,
             required_claims,
         )
@@ -378,10 +371,7 @@ impl AmqpConnectionScope {
 
         // linkSettings.LinkName = $"{connection.Settings.ContainerId};{connection.Identifier}:{session.Identifier}:{link.Identifier}:{linkSettings.Source.ToString()}";
         // connection container id is the scope identifier
-        let source = Source::builder()
-            .address(endpoint)
-            .filter(filter_set) // TODO: regular receiver link has an empty filter
-            .build();
+        let source = source_builder.build();
         let (snd_settle_mode, rcv_settle_mode) = service_bus_receive_mode_to_amqp(receive_mode);
         let link_name = format!(
             "{};{}:{}:{}:{:?}",

@@ -19,11 +19,11 @@ pub(crate) mod scheduled_message;
 pub(crate) mod session_filter;
 pub(crate) mod token_type;
 
-pub mod amqp_client;
-pub mod amqp_receiver;
-pub mod amqp_rule_manager;
-pub mod amqp_sender;
-pub mod amqp_session_receiver;
+pub(crate) mod amqp_client;
+pub(crate) mod amqp_receiver;
+pub(crate) mod amqp_rule_manager;
+pub(crate) mod amqp_sender;
+pub(crate) mod amqp_session_receiver;
 pub mod error;
 
 use std::sync::atomic::AtomicU32;

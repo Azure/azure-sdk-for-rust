@@ -98,7 +98,7 @@ async fn main() -> anyhow::Result<()> {
 */
 #![recursion_limit = "128"]
 #![deny(
-    missing_docs,
+    // missing_docs,
     missing_debug_implementations
 )]
 
@@ -123,9 +123,6 @@ pub mod sender;
 // TODO: reserved for future use
 // pub mod processor;
 
-// =============================================================================
-// Re-exports,
-// =============================================================================
 pub mod prelude {
     //! Re-exports
 
