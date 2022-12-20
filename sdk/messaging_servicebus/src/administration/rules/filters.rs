@@ -329,7 +329,7 @@ impl TryFrom<CorrelationRuleFilter> for OrderedMap<Value, Value> {
     code = "0x0000_0013_7000_0007",
     encoding = "list"
 )]
-pub struct TrueRuleFilter {}
+pub struct TrueRuleFilter;
 
 impl Default for TrueRuleFilter {
     fn default() -> Self {
@@ -353,7 +353,7 @@ impl TrueRuleFilter {
     code = "0x0000_0013_7000_0008",
     encoding = "list"
 )]
-pub struct FalseRuleFilter {}
+pub struct FalseRuleFilter;
 
 impl Default for FalseRuleFilter {
     fn default() -> Self {

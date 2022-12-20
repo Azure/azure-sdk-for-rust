@@ -59,7 +59,7 @@ where
     /// rule_manager.create_rule("sql_rule_with_action", (filter, action)).await.unwrap();
     ///
     /// // Create a True rule filter
-    /// rule_manager.create_rule("true_rule", TrueRuleFilter::new()).await.unwrap();
+    /// rule_manager.create_rule("true_rule", TrueRuleFilter).await.unwrap();
     /// ```
     pub async fn create_rule(
         &mut self,

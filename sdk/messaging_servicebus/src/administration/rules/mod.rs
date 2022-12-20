@@ -1,5 +1,7 @@
 //! This module contains the types for working with Service Bus rules.
 
+use std::marker::PhantomData;
+
 use fe2o3_amqp_types::primitives::Timestamp;
 use serde_amqp::{
     described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite,
@@ -28,7 +30,7 @@ pub struct RuleProperties {
 
     // Prevents construction outside of this crate
     // TODO: is this necessary?
-    _sealed: (),
+    _sealed: PhantomData<()>,
 }
 
 impl RuleProperties {
@@ -44,7 +46,7 @@ impl From<RuleDescription> for RuleProperties {
             name: desc.name,
             created_at: desc.created_at.map(|t| t.into()),
 
-            _sealed: (),
+            _sealed: PhantomData,
         }
     }
 }
