@@ -90,12 +90,6 @@ pub trait ServiceBusRetryPolicyState {
 
 #[async_trait]
 pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
-    // async fn run_operation<F, Args, Fut, E>(
-    //     &mut self,
-    //     mut operation: F,
-    //     args: Args,
-    // ) -> Result<(),
-
     // async fn run_operation<F, MutArg, Args, Fut>(
     //     &mut self,
     //     mut operation: F,
@@ -200,7 +194,7 @@ macro_rules! run_operation {
 
             let outcome = match tokio::time::timeout($try_timeout, $op).await {
                 Ok(result) => result.map_err(<$err_ty>::from),
-                Err(err) => Err(<$err_ty>::from(err)),
+                Err(elapsed) => Err(<$err_ty>::from(elapsed)),
             };
             match outcome {
                 Ok(outcome) => break outcome,
@@ -267,7 +261,7 @@ macro_rules! run_operation {
 
             let outcome = match tokio::time::timeout($try_timeout, $op).await {
                 Ok(result) => result.map_err(<$err_ty>::from),
-                Err(err) => Err(<$err_ty>::from(err)),
+                Err(elapsed) => Err(<$err_ty>::from(elapsed)),
             };
             match outcome {
                 Ok(outcome) => break outcome,
