@@ -64,6 +64,7 @@ pub struct ServiceBusClientOptions {
     pub enable_cross_entity_transactions: bool,
 }
 
+/// Type state for [`ServiceBusClient`] indicating that the client is using a custom retry policy.
 #[derive(Debug)]
 pub struct WithCustomRetryPolicy<RP> {
     retry_policy: PhantomData<RP>,
@@ -199,6 +200,22 @@ pub struct ServiceBusClient<C> {
 }
 
 impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
+    /// Use a custom retry policy for the client.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use azure_messaging_servicebus::{
+    ///     ServiceBusClient, ServiceBusClientOptions,
+    /// };
+    ///
+    /// struct MyRetryPolicy;
+    ///
+    /// let mut client = ServiceBusClient::with_custom_retry_policy::<MyRetryPolicy>()
+    ///     .new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///     .await
+    ///     .unwrap();
+    /// ```
     pub fn with_custom_retry_policy<RP>() -> WithCustomRetryPolicy<RP> {
         WithCustomRetryPolicy {
             retry_policy: PhantomData,
@@ -471,6 +488,9 @@ where
     C: TransportClient + Send + Sync + 'static,
     AcceptNextSessionError: From<C::CreateReceiverError>,
 {
+    /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving and settling
+    /// messages from a session-enabled queue by accepting the next unlocked session that contains
+    /// Active messages.
     pub async fn accept_next_session_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -480,6 +500,9 @@ where
         self.accept_next_session(entity_path, options).await
     }
 
+    /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving and settling
+    /// messages from a session-enabled subscription by accepting the next unlocked session that
+    /// contains Active messages.
     pub async fn accept_next_session_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
@@ -535,6 +558,8 @@ impl<C> ServiceBusClient<C>
 where
     C: TransportClient + Send + Sync + 'static,
 {
+    /// Creates a [`ServiceBusRuleManager`] instance that can be used for managing rules on a
+    /// subscription.
     pub async fn create_rule_manager(
         &mut self,
         topic_name: impl AsRef<str>,

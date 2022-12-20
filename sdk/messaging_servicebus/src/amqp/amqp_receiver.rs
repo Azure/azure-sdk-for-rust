@@ -112,6 +112,7 @@ fn map_properties_to_modify_into_fields(
         .collect()
 }
 
+/// An AMQP receiver implementation for Service Bus
 #[derive(Debug)]
 pub struct AmqpReceiver<RP> {
     pub(crate) id: u32, // TODO: should this info be preserved?

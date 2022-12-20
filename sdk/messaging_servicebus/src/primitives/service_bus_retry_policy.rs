@@ -37,6 +37,8 @@ pub(crate) fn should_try_recover_from_management_error(
     }
 }
 
+// TODO: use azure_core::retry_policy::RetryPolicy?
+
 /// An abstract representation of a policy to govern retrying of messaging operations.
 ///
 /// It is recommended that developers without advanced needs not implement custom retry

@@ -26,6 +26,7 @@ use super::{
     error::{AmqpRequestResponseError, CreateRuleError, OpenRuleManagerError},
 };
 
+/// An AMQP implementation for Service Bus rule management.
 #[derive(Debug)]
 pub struct AmqpRuleManager<RP> {
     pub(crate) identifier_str: String,
@@ -116,7 +117,8 @@ where
     RP: ServiceBusRetryPolicy + Send,
 {
     type CreateRuleError = RetryError<CreateRuleError>;
-    type RequestResponseError = RetryError<AmqpRequestResponseError>;
+    type DeleteRuleError = RetryError<AmqpRequestResponseError>;
+    type GetRulesError = RetryError<AmqpRequestResponseError>;
     type CloseError = DetachError;
 
     fn identifier(&self) -> &str {
@@ -166,7 +168,7 @@ where
     }
 
     /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
-    async fn delete_rule(&mut self, rule_name: String) -> Result<(), Self::RequestResponseError> {
+    async fn delete_rule(&mut self, rule_name: String) -> Result<(), Self::DeleteRuleError> {
         let mut request = RemoveRuleRequest::new(rule_name, None);
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
@@ -196,7 +198,7 @@ where
         &mut self,
         skip: i32,
         top: i32,
-    ) -> Result<Vec<RuleProperties>, Self::RequestResponseError> {
+    ) -> Result<Vec<RuleProperties>, Self::GetRulesError> {
         let mut request = EnumerateRulesRequest::new(skip, top, None);
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 

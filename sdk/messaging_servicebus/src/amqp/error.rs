@@ -42,6 +42,7 @@ pub(crate) enum AmqpConnectionScopeError {
     ScopeDisposed,
 }
 
+/// Error with AMQP client
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpClientError {
     #[error(transparent)]
@@ -198,7 +199,7 @@ pub enum OpenSenderError {
     ScopeIsDisposed,
 
     #[error(transparent)]
-    ManagemetnLinkAttach(#[from] AttachError),
+    ManagementLinkAttach(#[from] AttachError),
 
     #[error(transparent)]
     SenderAttach(#[from] SenderAttachError),
@@ -211,7 +212,7 @@ impl From<OpenMgmtLinkError> for OpenSenderError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
             OpenMgmtLinkError::ScopeIsDisposed => OpenSenderError::ScopeIsDisposed,
-            OpenMgmtLinkError::Attach(err) => OpenSenderError::ManagemetnLinkAttach(err),
+            OpenMgmtLinkError::Attach(err) => OpenSenderError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => OpenSenderError::CbsAuth(err),
         }
     }
@@ -223,7 +224,7 @@ pub enum RecoverSenderError {
     ScopeIsDisposed,
 
     #[error(transparent)]
-    ManagemetnLinkAttach(#[from] AttachError),
+    ManagementLinkAttach(#[from] AttachError),
 
     #[error(transparent)]
     SenderDetach(#[from] DetachError),
@@ -259,7 +260,7 @@ impl From<OpenMgmtLinkError> for RecoverSenderError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
             OpenMgmtLinkError::ScopeIsDisposed => RecoverSenderError::ScopeIsDisposed,
-            OpenMgmtLinkError::Attach(err) => RecoverSenderError::ManagemetnLinkAttach(err),
+            OpenMgmtLinkError::Attach(err) => RecoverSenderError::ManagementLinkAttach(err),
             OpenMgmtLinkError::CbsAuth(err) => RecoverSenderError::CbsAuth(err),
         }
     }

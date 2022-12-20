@@ -47,6 +47,7 @@ pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<Of
     // .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
 }
 
+/// An AMQP receiver for session enabled entities.
 #[derive(Debug)]
 pub struct AmqpSessionReceiver<RP> {
     pub(crate) inner: AmqpReceiver<RP>,

@@ -37,6 +37,7 @@ use super::{
     error::NotAcceptedError,
 };
 
+/// An AMQP implementation for Service Bus message sender.
 #[derive(Debug)]
 pub struct AmqpSender<RP> {
     pub(crate) id: u32,

@@ -65,8 +65,10 @@ pub trait TransportReceiver {
     /// Error with closing the receiver
     type CloseError;
 
+    /// Get the entity path
     fn entity_path(&self) -> &str;
 
+    /// Get the identifier
     fn identifier(&self) -> &str;
 
     /// Get the prefetch count

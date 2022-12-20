@@ -30,6 +30,9 @@ pub trait TransportClient: Sized {
     /// Error with creating a receiver
     type CreateReceiverError: Send;
 
+    /// Error with creating a rule manager
+    type CreateRuleManagerError: Send;
+
     /// Error with closing a client
     type DisposeError: Send;
 
@@ -42,8 +45,7 @@ pub trait TransportClient: Sized {
     /// Session receiver type
     type SessionReceiver: TransportSessionReceiver;
 
-    // TODO: impl rule manager
-    type CreateRuleManagerError: Send;
+    /// Rule manager type
     type RuleManager: TransportRuleManager;
 
     /// Creates a new instance of Self.

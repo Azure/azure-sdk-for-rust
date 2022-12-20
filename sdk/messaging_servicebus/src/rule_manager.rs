@@ -1,3 +1,5 @@
+//! Implemments `ServiceBusRuleManager`
+
 use crate::{
     administration::RuleProperties, amqp::amqp_request_message::add_rule::SupportedRuleFilter,
     core::TransportRuleManager,
@@ -40,11 +42,11 @@ where
     pub async fn delete_rule(
         &mut self,
         rule_name: impl Into<String>,
-    ) -> Result<(), T::RequestResponseError> {
+    ) -> Result<(), T::DeleteRuleError> {
         self.inner.delete_rule(rule_name.into()).await
     }
 
-    pub async fn get_rules(&mut self) -> Result<Vec<RuleProperties>, T::RequestResponseError> {
+    pub async fn get_rules(&mut self) -> Result<Vec<RuleProperties>, T::GetRulesError> {
         let mut skip = 0;
         let mut buffer = Vec::new();
         loop {
