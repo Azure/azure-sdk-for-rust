@@ -25,6 +25,10 @@ pub trait TransportSender {
     /// The message batch type
     type MessageBatch: TransportMessageBatch + Send;
 
+    fn entity_path(&self) -> &str;
+
+    fn identifier(&self) -> &str;
+
     /// Creates a size-constraint batch to which [`ServiceBusMessage`] may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
     /// batch will not allow adding the message and signal that scenario using its return value.

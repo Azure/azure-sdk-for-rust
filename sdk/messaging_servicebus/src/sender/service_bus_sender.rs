@@ -20,8 +20,6 @@ pub struct ServiceBusSenderOptions {
 #[derive(Debug)]
 pub struct ServiceBusSender<S> {
     pub(crate) inner: S,
-    pub(crate) entity_path: String,
-    pub(crate) identifier: String,
 }
 
 impl<S> ServiceBusSender<S>
@@ -31,12 +29,12 @@ where
     /// The path of the entity that the sender is connected to, specific to the
     /// Service Bus namespace that contains it.
     pub fn entity_path(&self) -> &str {
-        &self.entity_path
+        self.inner.entity_path()
     }
 
     /// Gets the ID to identify this sender. This can be used to correlate logs and exceptions.
     pub fn identifier(&self) -> &str {
-        &self.identifier
+        self.inner.identifier()
     }
 
     /// Creates a size-constraint batch to which [`ServiceBusMessage`] may be added using

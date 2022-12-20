@@ -149,21 +149,24 @@ where
 
     async fn create_sender(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
         let mut connection_scope = self.connection_scope.lock().await;
 
         let (link_identifier, sender, cbs_command_sender) = connection_scope
-            .open_sender_link(&self.service_endpoint, entity_path, identifier)
+            .open_sender_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
         let management_link = connection_scope
-            .open_management_link(&self.service_endpoint, entity_path, identifier)
+            .open_management_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
         let retry_policy = RP::new(retry_options);
         Ok(AmqpSender {
-            identifier: link_identifier,
+            id: link_identifier,
+            service_endpoint: self.service_endpoint.clone(),
+            entity_path,
+            identifier_str: identifier,
             retry_policy,
             sender,
             management_link,

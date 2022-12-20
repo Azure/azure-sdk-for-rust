@@ -323,13 +323,11 @@ where
         let retry_options = self.connection.retry_options().clone();
         let inner = self
             .connection
-            .create_transport_sender(&entity_path, &identifier, retry_options)
+            .create_transport_sender(entity_path, identifier, retry_options)
             .await?;
 
         Ok(ServiceBusSender {
             inner,
-            entity_path,
-            identifier,
         })
     }
 }

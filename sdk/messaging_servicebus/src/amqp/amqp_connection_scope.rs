@@ -68,10 +68,10 @@ pub(crate) struct AmqpConnectionScope {
     connection: AmqpConnection,
 
     /// A handle to the AMQP session that is active for the current connection
-    session: AmqpSession,
+    pub(crate) session: AmqpSession,
 
     /// CBS client
-    cbs_link: AmqpCbsLinkHandle,
+    pub(crate) cbs_link: AmqpCbsLinkHandle,
 
     recover_operation_timeout: StdDuration,
 
@@ -206,7 +206,7 @@ impl AmqpConnectionScope {
             .map_err(Into::into)
     }
 
-    async fn request_refreshable_authorization_using_cbs(
+    pub(crate) async fn request_refreshable_authorization_using_cbs(
         &mut self,
         link_identifier: u32,
         endpoint: String,

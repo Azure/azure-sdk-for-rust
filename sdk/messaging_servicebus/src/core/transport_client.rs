@@ -70,8 +70,8 @@ pub trait TransportClient: Sized {
     /// responsible for sending [`ServiceBusMessage`] to the entity.
     async fn create_sender(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_policy: ServiceBusRetryOptions,
     ) -> Result<Self::Sender, Self::CreateSenderError>;
 

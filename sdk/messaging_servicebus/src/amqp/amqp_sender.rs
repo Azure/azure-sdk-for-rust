@@ -6,7 +6,10 @@ use fe2o3_amqp_types::primitives::Array;
 use std::sync::Arc;
 use std::time::Duration as StdDuration;
 use tokio::sync::{mpsc, Mutex};
+use url::Url;
 
+use crate::authorization::service_bus_claim;
+use crate::core::RecoverableTransport;
 use crate::primitives::error::RetryError;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
@@ -24,7 +27,9 @@ use super::amqp_message_batch::AmqpMessageBatch;
 use super::amqp_message_converter::build_amqp_batch_from_messages;
 use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequest;
 use super::amqp_request_message::schedule_message::ScheduleMessageRequest;
-use super::error::{AmqpRequestResponseError, AmqpSendError, RequestedSizeOutOfRange};
+use super::error::{
+    AmqpRequestResponseError, AmqpSendError, RecoverSenderError, RequestedSizeOutOfRange,
+};
 use super::{
     amqp_message_converter::{
         batch_service_bus_messages_as_amqp_message, BatchEnvelope, SendableEnvelope,
@@ -34,7 +39,10 @@ use super::{
 
 #[derive(Debug)]
 pub struct AmqpSender<RP> {
-    pub(crate) identifier: u32,
+    pub(crate) id: u32,
+    pub(crate) service_endpoint: Arc<Url>,
+    pub(crate) entity_path: String,
+    pub(crate) identifier_str: String,
     pub(crate) retry_policy: RP,
     pub(crate) sender: fe2o3_amqp::Sender,
     pub(crate) management_link: AmqpManagementLink,
@@ -42,6 +50,52 @@ pub struct AmqpSender<RP> {
 
     // This is ONLY used for recovery
     pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
+}
+
+#[async_trait]
+impl<RP> RecoverableTransport for AmqpSender<RP>
+where
+    RP: Send,
+{
+    type RecoverError = RecoverSenderError;
+
+    // TODO: add a local state to track if a recovery is needed?
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        let mut connection_scope = self.connection_scope.lock().await;
+        connection_scope
+            .recover()
+            .await
+            .map_err(|connection_scope_error| {
+                log::error!(
+                    "Failed to recover connection scope: {:?}",
+                    connection_scope_error
+                );
+                Self::RecoverError::ScopeIsDisposed
+            })?;
+
+        let endpoint = format!("{}/{}", self.service_endpoint, self.entity_path);
+        let resource = endpoint.clone();
+        connection_scope
+            .request_refreshable_authorization_using_cbs(
+                self.id,
+                endpoint,
+                resource,
+                vec![service_bus_claim::SEND.to_string()],
+            )
+            .await?;
+        self.sender
+            .detach_then_resume_on_session(&mut connection_scope.session.handle)
+            .await?;
+        self.management_link = connection_scope
+            .open_management_link(
+                &self.service_endpoint,
+                &self.entity_path,
+                &self.identifier_str,
+            )
+            .await?;
+        self.cbs_command_sender = connection_scope.cbs_link.command_sender().clone();
+        Ok(())
+    }
 }
 
 impl<RP> AmqpSender<RP> {
@@ -111,7 +165,6 @@ impl<RP> AmqpSender<RP> {
         let _response = self.management_link.client_mut().call(request).await?;
         Ok(())
     }
-
 }
 
 #[async_trait]
@@ -125,6 +178,14 @@ where
     type CloseError = DetachError;
     type MessageBatch = AmqpMessageBatch;
     type CreateMessageBatchError = RequestedSizeOutOfRange;
+
+    fn entity_path(&self) -> &str {
+        &self.entity_path
+    }
+
+    fn identifier(&self) -> &str {
+        &self.identifier_str
+    }
 
     /// Creates a size-constraint batch to which [`ServiceBusMessage`] may be added using
     /// a try-based pattern.  If a message would exceed the maximum allowable size of the batch, the
@@ -235,12 +296,14 @@ where
         }
 
         // TODO: solve lifetime issue if link name is borrowed
-        let mut request =
-            CancelScheduledMessageRequest::new(Array(sequence_numbers), Some(self.sender.name().to_string()));
+        let mut request = CancelScheduledMessageRequest::new(
+            Array(sequence_numbers),
+            Some(self.sender.name().to_string()),
+        );
 
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         run_operation!(
-            {&self.retry_policy},
+            { &self.retry_policy },
             AmqpRequestResponseError,
             try_timeout,
             self.cancel_scheduled_messages_inner(&mut request, &try_timeout)
@@ -253,7 +316,7 @@ where
         let _ = self
             .cbs_command_sender
             .send(amqp_cbs_link::Command::RemoveAuthorizationRefresher(
-                self.identifier,
+                self.id,
             ))
             .await;
         self.sender.close().await?;

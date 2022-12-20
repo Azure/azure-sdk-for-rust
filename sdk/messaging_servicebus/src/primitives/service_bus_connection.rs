@@ -112,8 +112,8 @@ where
 
     pub(crate) async fn create_transport_sender<'a>(
         &mut self,
-        entity_path: &str,
-        identifier: &str,
+        entity_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<C::Sender, C::CreateSenderError> {
         let sender = self
