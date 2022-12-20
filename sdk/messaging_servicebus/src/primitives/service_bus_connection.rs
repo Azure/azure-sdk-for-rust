@@ -176,8 +176,8 @@ where
 
     pub(crate) async fn create_transport_rule_manager(
         &mut self,
-        susbcription_path: &str,
-        identifier: &str,
+        susbcription_path: String,
+        identifier: String,
         retry_options: ServiceBusRetryOptions,
     ) -> Result<C::RuleManager, C::CreateRuleManagerError> {
         let rule_manager = self

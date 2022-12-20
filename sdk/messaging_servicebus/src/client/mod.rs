@@ -567,12 +567,10 @@ where
 
         let inner = self
             .connection
-            .create_transport_rule_manager(&subscription_path, &identifier, retry_options)
+            .create_transport_rule_manager(subscription_path, identifier, retry_options)
             .await?;
 
         Ok(ServiceBusRuleManager {
-            identifier,
-            subscription_path,
             inner,
         })
     }
