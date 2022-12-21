@@ -4,7 +4,7 @@ This crate is part of a collection of crates: for more information please refer 
 
 # Examples
 
-## Send messages to the queue
+## Send messages to queue
 
 ```no_run,rust
 use azure_messaging_servicebus::prelude::*;
@@ -16,14 +16,14 @@ async fn main() -> anyhow::Result<()> {
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
     let mut client = ServiceBusClient::new(
         "<NAMESPACE-CONNECTION-STRING>",
-        Default::default()
+        ServiceBusClientOptions::default()
     )
     .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
     let mut sender = client.create_sender(
         "<QUEUE-NAME>",
-        Default::default()
+        ServiceBusSenderOptions::default()
     )
     .await?;
 
@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-## Receive messages from the queue
+## Receive messages from queue
 
 ```no_run,rust
 use azure_messaging_servicebus::prelude::*;
@@ -66,14 +66,14 @@ async fn main() -> anyhow::Result<()> {
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
     let mut client = ServiceBusClient::new(
         "<NAMESPACE-CONNECTION-STRING>",
-        Default::default()
+        ServiceBusClientOptions::default()
     )
     .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
     let mut receiver = client.create_receiver_for_queue(
         "<QUEUE-NAME>",
-        Default::default()
+        ServiceBusReceiverOptions::default()
     )
     .await?;
 
