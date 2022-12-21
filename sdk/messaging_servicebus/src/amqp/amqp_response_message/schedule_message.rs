@@ -4,6 +4,9 @@ use fe2o3_amqp_types::primitives::{Array, OrderedMap};
 
 use crate::amqp::management_constants::properties::SEQUENCE_NUMBERS;
 
+type SequenceNumbers = Array<i64>;
+type ScheduleMessageResponseBody = OrderedMap<String, SequenceNumbers>;
+
 pub(crate) struct ScheduleMessageResponse {
     pub sequence_numbers: Vec<i64>,
 }
@@ -17,7 +20,7 @@ impl ScheduleMessageResponse {
 impl Response for ScheduleMessageResponse {
     const STATUS_CODE: u16 = 200;
 
-    type Body = Option<OrderedMap<String, Array<i64>>>;
+    type Body = Option<ScheduleMessageResponseBody>;
 
     type Error = ManagementError;
 
