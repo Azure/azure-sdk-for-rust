@@ -4,38 +4,45 @@ use serial_test::serial;
 mod common;
 use common::setup_dotenv;
 
-#[tokio::test]
-#[serial]
-async fn drain_subscription() {
-    use azure_messaging_servicebus::prelude::*;
+// #[tokio::test]
+// #[serial]
+// async fn drain_subscription() {
+//     use azure_messaging_servicebus::prelude::*;
 
-    setup_dotenv();
+//     setup_dotenv();
 
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION").unwrap();
-    let max_messages = 4;
+//     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+//     let topic_name = std::env::var("SERVICE_BUS_SESSION_TOPIC").unwrap();
+//     let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION").unwrap();
+//     let max_messages = 4;
 
-    let mut client = ServiceBusClient::new(connection_string, Default::default())
-        .await
-        .unwrap();
-    let options = ServiceBusReceiverOptions {
-        sub_queue: SubQueue::DeadLetter,
-        ..Default::default()
-    };
-    let mut receiver = client
-        .create_receiver_for_subscription(topic_name, subscription_name, options)
-        .await
-        .unwrap();
-    let received = receiver.receive_messages(max_messages).await.unwrap();
-    for message in &received {
-        println!("Received message: {}", message);
-        receiver.complete_message(message).await.unwrap();
-    }
+//     let client_options = ServiceBusClientOptions {
+//         retry_options: common::zero_retry_options(),
+//         ..Default::default()
+//     };
+//     let mut client = ServiceBusClient::new(connection_string, client_options)
+//         .await
+//         .unwrap();
+//     let options = ServiceBusReceiverOptions {
+//         sub_queue: SubQueue::DeadLetter,
+//         ..Default::default()
+//     };
+//     let mut receiver = client
+//         .create_receiver_for_subscription(topic_name, subscription_name, options)
+//         .await
+//         .unwrap();
+//     let received = receiver
+//         .receive_messages_with_max_wait_time(max_messages, std::time::Duration::from_secs(10))
+//         .await
+//         .unwrap();
+//     for message in &received {
+//         println!("Received message: {}", message);
+//         receiver.complete_message(message).await.unwrap();
+//     }
 
-    receiver.dispose().await.unwrap();
-    client.dispose().await.unwrap();
-}
+//     receiver.dispose().await.unwrap();
+//     client.dispose().await.unwrap();
+// }
 
 #[tokio::test]
 #[serial]
@@ -281,8 +288,8 @@ async fn create_rule_manager() {
 
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION").unwrap();
+    let topic_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_TOPIC").unwrap();
+    let subscription_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION").unwrap();
 
     let mut client = ServiceBusClient::new(connection_string, Default::default())
         .await

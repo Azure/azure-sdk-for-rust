@@ -24,33 +24,33 @@ pub fn setup_dotenv() {
     dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
 }
 
-#[allow(dead_code)]
-pub async fn drain_queue(
-    connection_string: &str,
-    client_options: ServiceBusClientOptions,
-    queue_name: &str,
-    receiver_options: ServiceBusReceiverOptions,
-    max_messages: u32,
-) {
-    let mut client = ServiceBusClient::new(connection_string, client_options)
-        .await
-        .unwrap();
-    let mut receiver = client
-        .create_receiver_for_queue(queue_name, receiver_options)
-        .await
-        .unwrap();
-    let messages = receiver
-        .receive_messages_with_max_wait_time(max_messages, None)
-        .await
-        .unwrap();
+// #[allow(dead_code)]
+// pub async fn drain_queue(
+//     connection_string: &str,
+//     client_options: ServiceBusClientOptions,
+//     queue_name: &str,
+//     receiver_options: ServiceBusReceiverOptions,
+//     max_messages: u32,
+// ) {
+//     let mut client = ServiceBusClient::new(connection_string, client_options)
+//         .await
+//         .unwrap();
+//     let mut receiver = client
+//         .create_receiver_for_queue(queue_name, receiver_options)
+//         .await
+//         .unwrap();
+//     let messages = receiver
+//         .receive_messages_with_max_wait_time(max_messages, std::time::Duration::from_secs(10))
+//         .await
+//         .unwrap();
 
-    for message in messages {
-        receiver.complete_message(&message).await.unwrap();
-    }
+//     for message in messages {
+//         receiver.complete_message(&message).await.unwrap();
+//     }
 
-    receiver.dispose().await.unwrap();
-    client.dispose().await.unwrap();
-}
+//     receiver.dispose().await.unwrap();
+//     client.dispose().await.unwrap();
+// }
 
 #[allow(dead_code)]
 pub async fn create_client_and_send_messages_separately_to_queue_or_topic(

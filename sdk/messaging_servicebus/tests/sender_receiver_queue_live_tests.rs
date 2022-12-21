@@ -16,25 +16,37 @@ use time::OffsetDateTime;
 mod common;
 use common::setup_dotenv;
 
-#[tokio::test]
-#[serial]
-async fn drain_queue() {
-    setup_dotenv();
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
-    let max_messages = 100;
+// #[tokio::test]
+// #[serial]
+// async fn drain_queue() {
+//     setup_dotenv();
+//     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
+//     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
+//     let max_messages = 100;
 
-    let mut client_options = ServiceBusClientOptions::default();
-    client_options.retry_options = common::zero_retry_options();
-    common::drain_queue(
-        &connection_string,
-        client_options,
-        &queue_name,
-        Default::default(),
-        max_messages,
-    )
-    .await;
-}
+//     let mut client_options = ServiceBusClientOptions::default();
+//     client_options.retry_options = common::zero_retry_options();
+
+//     let mut client = ServiceBusClient::new(connection_string, client_options)
+//         .await
+//         .unwrap();
+//     let mut receiver = client
+//         .create_receiver_for_queue(queue_name, Default::default())
+//         .await
+//         .unwrap();
+
+//     let drained = receiver
+//         .receive_messages_with_max_wait_time(max_messages, std::time::Duration::from_secs(10))
+//         .await
+//         .unwrap();
+//     for message in drained {
+//         println!("draining message: {:?}", message);
+//         receiver.complete_message(message).await.unwrap();
+//     }
+
+//     receiver.dispose().await.unwrap();
+//     client.dispose().await.unwrap();
+// }
 
 #[tokio::test]
 #[serial]
@@ -669,17 +681,15 @@ async fn send_and_peek_messages() {
         assert_eq!(peeked_message_body, expected[i].as_bytes());
     }
 
-    // drain the queue
-    let mut client_options = ServiceBusClientOptions::default();
-    client_options.retry_options = common::zero_retry_options();
-    common::drain_queue(
+    // Removed the peeked messages from the queue
+    let _received = common::create_client_and_receive_messages_from_queue(
         &connection_string,
-        client_options,
+        Default::default(),
         &queue_name,
         Default::default(),
         expected.len() as u32,
-    )
-    .await;
+        None,
+    ).await.unwrap();
 }
 
 #[tokio::test]
