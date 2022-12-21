@@ -192,17 +192,24 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use azure_messaging_servicebus::{
-    ///     ServiceBusClient, ServiceBusClientOptions,
+    ///     ServiceBusClient, ServiceBusClientOptions, ServiceBusRetryPolicy,
     /// };
     ///
     /// struct MyRetryPolicy;
     ///
-    /// let mut client = ServiceBusClient::with_custom_retry_policy::<MyRetryPolicy>()
-    ///     .new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
-    ///     .await
-    ///     .unwrap();
+    /// impl ServiceBusRetryPolicy for MyRetryPolicy {
+    ///     // ...
+    /// }
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut client = ServiceBusClient::with_custom_retry_policy::<MyRetryPolicy>()
+    ///         .create_client("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///         .await
+    ///         .unwrap();
+    /// }
     /// ```
     pub fn with_custom_retry_policy<RP>() -> WithCustomRetryPolicy<RP> {
         WithCustomRetryPolicy {
@@ -220,10 +227,13 @@ impl ServiceBusClient<AmqpClient<BasicRetryPolicy>> {
     ///     ServiceBusClient, ServiceBusClientOptions,
     /// };
     ///
-    /// let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
-    ///     .await
-    ///     .unwrap();
-    /// client.dispose().await.unwrap();
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///         .await
+    ///         .unwrap();
+    ///     client.dispose().await.unwrap();
+    /// }
     /// ```
     pub async fn new<'a>(
         connection_string: impl Into<Cow<'a, str>>,

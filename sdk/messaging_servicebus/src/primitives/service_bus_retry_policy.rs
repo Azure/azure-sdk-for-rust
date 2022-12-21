@@ -1,6 +1,5 @@
 //! Defines the retry policy trait for Service Bus operations.
 
-use std::hash::Hash;
 use std::time::Duration as StdDuration;
 
 use async_trait::async_trait;
@@ -41,7 +40,7 @@ pub(crate) fn should_try_recover_from_management_error(
 /// It is recommended that developers without advanced needs not implement custom retry
 /// policies but instead configure the default policy by specifying the desired set of
 /// retry options when creating one of the Service Bus clients.
-pub trait ServiceBusRetryPolicy: Eq + Hash + ToString {
+pub trait ServiceBusRetryPolicy {
     /// The type of state maintained by the retry policy.
     type State: ServiceBusRetryPolicyState;
 

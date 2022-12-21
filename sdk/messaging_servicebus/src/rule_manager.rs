@@ -38,7 +38,7 @@ where
     ///
     /// # Example
     ///
-    /// ```rust,no_run
+    /// ```rust,ignore
     /// use azure_messaging_servicebus::administration::{
     ///     SqlRuleFilter, SqlRuleAction, CorrelationRuleFilter, TrueRuleFilter,
     /// };

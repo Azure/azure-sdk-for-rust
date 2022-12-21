@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
     .await?;
 
     // Create a batch
-    let mut message_batch = sender.create_message_batch(Default::default()).await?;
+    let mut message_batch = sender.create_message_batch(Default::default())?;
 
     for i in 0..3 {
         // Create a message
@@ -71,7 +71,7 @@ async fn main() -> anyhow::Result<()> {
     .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
-    let mut receiver = client.create_receiver(
+    let mut receiver = client.create_receiver_for_queue(
         "<QUEUE-NAME>",
         Default::default()
     )

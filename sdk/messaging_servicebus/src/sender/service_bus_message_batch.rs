@@ -19,7 +19,9 @@ pub struct CreateMessageBatchOptions {
 ///
 /// # Examples
 ///
-/// ```rust
+/// ```rust,ignore
+/// use azure_messaging_servicebus::CreateMessageBatchOptions;
+///
 /// let options = CreateMessageBatchOptions::default();
 /// let mut message_batch = sender.create_message_batch(options).unwrap();
 /// message_batch.try_add_message("Message 1").unwrap();

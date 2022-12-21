@@ -74,6 +74,7 @@ where
     }
 
     /// Receive a single message from the entity using the receiver's receive mode.
+    ///
     /// This method will wait indefinitely until at least one message is received.
     pub async fn receive_message(&mut self) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
         self.receive_messages(1).await.map(|mut v| {
@@ -84,6 +85,7 @@ where
     }
 
     /// Receive messages from the entity using the receiver's receive mode.
+    ///
     /// This method will wait indefinitely until at least one message is received.
     pub async fn receive_messages(
         &mut self,
