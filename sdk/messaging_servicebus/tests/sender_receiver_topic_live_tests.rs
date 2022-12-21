@@ -310,6 +310,10 @@ async fn get_delete_then_create_rules() -> Result<(), anyhow::Error> {
 
     let rules = rule_manager.get_rules().await?;
 
+    // try remove a non-existent rule
+    let result = rule_manager.delete_rule("non-existent").await;
+    assert!(result.is_err());
+
     // Remove all existing rules
     for rule in rules {
         let name = rule.name;
