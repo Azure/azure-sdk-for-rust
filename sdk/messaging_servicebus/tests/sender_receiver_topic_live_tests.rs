@@ -4,35 +4,43 @@ mod common;
 use common::setup_dotenv;
 
 #[tokio::test]
-async fn run_session_subscription_tests_sequentially() {
-    let result = send_and_receive_session_messages().await;
-    assert!(result.is_ok(), "send_and_receive_session_messages");
-}
+async fn run_topic_subscription_tests_sequentially() {
+    let mut all_result: Result<(), anyhow::Error> = Ok(());
 
-#[tokio::test]
-async fn run_non_session_subscription_tests_sequentially() {
+    print!("test send_and_receive_one_message");
     let result = send_and_receive_one_message().await;
-    assert!(result.is_ok(), "send_and_receive_one_message");
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_receive_multiple_messages_separately");
     let result = send_and_receive_multiple_messages_separately().await;
-    assert!(
-        result.is_ok(),
-        "send_and_receive_multiple_messages_separately"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_receive_multiple_messages_separately_with_prefetch");
     let result = send_and_receive_multiple_messages_separately_with_prefetch().await;
-    assert!(
-        result.is_ok(),
-        "send_and_receive_multiple_messages_separately_with_prefetch"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
+
+    print!("test send_and_receive_session_messages");
+    let result = send_and_receive_session_messages().await;
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
+
+    print!("test get_delete_then_create_rules");
+    let result = get_delete_then_create_rules().await;
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
+
+    assert!(all_result.is_ok());
 }
 
 async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
     setup_dotenv();
 
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION").unwrap();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
+    let topic_name = std::env::var("SERVICE_BUS_TOPIC")?;
+    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION")?;
 
     let message_body = b"test message";
     let message = ServiceBusMessage::new(&message_body[..]);
@@ -47,7 +55,7 @@ async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
         messages,
     )
     .await
-    .unwrap();
+    ?;
 
     let received = common::create_client_and_receive_messages_from_subscription(
         &connection_string,
@@ -59,10 +67,10 @@ async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
         None,
     )
     .await
-    .unwrap();
+    ?;
 
     assert_eq!(received.len(), max_messages as usize);
-    let received_message_body = received[0].body().unwrap();
+    let received_message_body = received[0].body()?;
     assert_eq!(received_message_body, message_body);
 
     Ok(())
@@ -70,9 +78,9 @@ async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
 
 async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::Error> {
     setup_dotenv();
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION").unwrap();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
+    let topic_name = std::env::var("SERVICE_BUS_TOPIC")?;
+    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION")?;
 
     let expected = ["test message 1", "test message 2", "test message 3"];
     let messages = vec![
@@ -90,7 +98,7 @@ async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::E
         messages.into_iter(),
     )
     .await
-    .unwrap();
+    ?;
 
     let received = common::create_client_and_receive_messages_from_subscription(
         &connection_string,
@@ -102,11 +110,11 @@ async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::E
         None,
     )
     .await
-    .unwrap();
+    ?;
 
     assert_eq!(received.len(), total);
     for (i, message) in received.iter().enumerate() {
-        let received_message_body = message.body().unwrap();
+        let received_message_body = message.body()?;
         assert_eq!(received_message_body, expected[i].as_bytes());
     }
 
@@ -116,9 +124,9 @@ async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::E
 async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result<(), anyhow::Error>
 {
     setup_dotenv();
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION").unwrap();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
+    let topic_name = std::env::var("SERVICE_BUS_TOPIC")?;
+    let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION")?;
 
     let expected = ["test message 1", "test message 2", "test message 3"];
     let messages = vec![
@@ -136,7 +144,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result
         messages.into_iter(),
     )
     .await
-    .unwrap();
+    ?;
 
     let receiver_option = ServiceBusReceiverOptions {
         prefetch_count: total as u32,
@@ -152,11 +160,11 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result
         None,
     )
     .await
-    .unwrap();
+    ?;
 
     assert_eq!(received.len(), total);
     for (i, message) in received.iter().enumerate() {
-        let received_message_body = message.body().unwrap();
+        let received_message_body = message.body()?;
         assert_eq!(received_message_body, expected[i].as_bytes());
     }
     Ok(())
@@ -164,9 +172,9 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result
 
 async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
     setup_dotenv();
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_SESSION_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION").unwrap();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
+    let topic_name = std::env::var("SERVICE_BUS_SESSION_TOPIC")?;
+    let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION")?;
 
     let expected_for_session_id_1 = ["test message 1", "test message 2", "test message 3"];
     let expected_for_session_id_2 = ["test message 4", "test message 5", "test message 6"];
@@ -221,7 +229,7 @@ async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
         messages,
     )
     .await
-    .unwrap();
+    ?;
 
     // Send 1st session messages next
     let messages = expected_for_session_id_1.iter().map(|m| {
@@ -237,14 +245,14 @@ async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
         messages,
     )
     .await
-    .unwrap();
+    ?;
 
-    let received_1 = handle_1.await.unwrap().unwrap();
-    let received_2 = handle_2.await.unwrap().unwrap();
+    let received_1 = handle_1.await.unwrap()?;
+    let received_2 = handle_2.await.unwrap()?;
 
     assert_eq!(received_1.len(), expected_for_session_id_1.len());
     for (i, message) in received_1.iter().enumerate() {
-        let received_message_body = message.body().unwrap();
+        let received_message_body = message.body()?;
         assert_eq!(
             received_message_body,
             expected_for_session_id_1[i].as_bytes()
@@ -253,7 +261,7 @@ async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
 
     assert_eq!(received_2.len(), expected_for_session_id_2.len());
     for (i, message) in received_2.iter().enumerate() {
-        let received_message_body = message.body().unwrap();
+        let received_message_body = message.body()?;
         assert_eq!(
             received_message_body,
             expected_for_session_id_2[i].as_bytes()
@@ -263,30 +271,29 @@ async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-#[tokio::test]
-async fn get_delete_then_create_rules() {
+async fn get_delete_then_create_rules() -> Result<(), anyhow::Error> {
     use azure_messaging_servicebus::administration::*;
     use azure_messaging_servicebus::prelude::*;
 
     setup_dotenv();
-    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-    let topic_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_TOPIC").unwrap();
-    let subscription_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION").unwrap();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
+    let topic_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_TOPIC")?;
+    let subscription_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION")?;
 
     let mut client = ServiceBusClient::new(connection_string, Default::default())
         .await
-        .unwrap();
+        ?;
     let mut rule_manager = client
         .create_rule_manager(topic_name, subscription_name)
         .await
-        .unwrap();
+        ?;
 
-    let rules = rule_manager.get_rules().await.unwrap();
+    let rules = rule_manager.get_rules().await?;
 
     // Remove all existing rules
     for rule in rules {
         let name = rule.name;
-        rule_manager.delete_rule(name).await.unwrap();
+        rule_manager.delete_rule(name).await?;
     }
 
     // Add a correlation rule filter
@@ -294,7 +301,7 @@ async fn get_delete_then_create_rules() {
     rule_manager
         .create_rule("brand-filter", correlation_filter)
         .await
-        .unwrap();
+        ?;
 
     // Add a SQL rule filter
     let filter = SqlRuleFilter::new("user.color='red'");
@@ -302,22 +309,22 @@ async fn get_delete_then_create_rules() {
     rule_manager
         .create_rule("color-filter", (filter, action))
         .await
-        .unwrap();
+        ?;
 
     // Add a true filter
     rule_manager
         .create_rule("true-filter", TrueRuleFilter::new())
         .await
-        .unwrap();
+        ?;
 
     // Add a false filter
     rule_manager
         .create_rule("false-filter", FalseRuleFilter::new())
         .await
-        .unwrap();
+        ?;
 
     // Get the newly added rules
-    let rules = rule_manager.get_rules().await.unwrap();
+    let rules = rule_manager.get_rules().await?;
     assert_eq!(rules.len(), 4);
     let rule_names = rules.iter().map(|r| r.name.as_str()).collect::<Vec<_>>();
     assert!(rule_names.contains(&"brand-filter"));
@@ -325,6 +332,8 @@ async fn get_delete_then_create_rules() {
     assert!(rule_names.contains(&"true-filter"));
     assert!(rule_names.contains(&"false-filter"));
 
-    rule_manager.dispose().await.unwrap();
-    client.dispose().await.unwrap();
+    rule_manager.dispose().await?;
+    client.dispose().await?;
+
+    Ok(())
 }

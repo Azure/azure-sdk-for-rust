@@ -17,76 +17,85 @@ use common::setup_dotenv;
 
 /// These tests use the same queue, so they must be run sequentially.
 #[tokio::test]
-async fn run_non_session_queue_tests_sequentially() {
+async fn run_queue_tests_sequentially() {
+    let mut all_result: Result<(), anyhow::Error> = Ok(());
+
+    print!("test send_and_receive_one_message");
     let result = send_and_receive_one_message().await;
-    assert!(result.is_ok(), "send_and_receive_one_message");
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_one_message_and_try_receive_more_than_one");
     let result = send_one_message_and_try_receive_more_than_one().await;
-    assert!(
-        result.is_ok(),
-        "send_one_message_and_try_receive_more_than_one"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_receive_multiple_messages_separately");
     let result = send_and_receive_multiple_messages_separately().await;
-    assert!(
-        result.is_ok(),
-        "send_and_receive_multiple_messages_separately"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_receive_multiple_messages_separately_with_prefetch");
     let result = send_and_receive_multiple_messages_separately_with_prefetch().await;
-    assert!(
-        result.is_ok(),
-        "send_and_receive_multiple_messages_separately_with_prefetch"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_receive_multiple_messages_with_message_batch");
     let result = send_and_receive_multiple_messages_with_message_batch().await;
-    assert!(
-        result.is_ok(),
-        "send_and_receive_multiple_messages_with_message_batch"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_message_batch_and_try_receive_more_than_sent");
     let result = send_message_batch_and_try_receive_more_than_sent().await;
-    assert!(
-        result.is_ok(),
-        "send_message_batch_and_try_receive_more_than_sent"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_abandon_messages_then_receive_messages");
     let result = send_and_abandon_messages_then_receive_messages().await;
-    assert!(
-        result.is_ok(),
-        "send_and_abandon_messages_then_receive_messages"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_deadletter_then_receive_from_deadletter_queue");
     let result = send_and_deadletter_then_receive_from_deadletter_queue().await;
-    assert!(
-        result.is_ok(),
-        "send_and_deadletter_then_receive_from_deadletter_queue"
-    );
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test schedule_and_receive_messages");
     let result = schedule_and_receive_messages().await;
-    assert!(result.is_ok(), "schedule_and_receive_messages");
+    println!("{:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test schedule_and_cancel_scheduled_messages");
     let result = schedule_and_cancel_scheduled_messages().await;
-    assert!(result.is_ok(), "schedule_and_cancel_scheduled_messages");
+    println!("{:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_peek_messages");
     let result = send_and_peek_messages().await;
-    assert!(result.is_ok(), "send_and_peek_messages");
+    println!("{:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test defer_and_receive_deferred_messages");
     let result = defer_and_receive_deferred_messages().await;
-    assert!(result.is_ok(), "defer_and_receive_deferred_messages");
+    println!("{:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test receive_and_renew_lock");
     let result = receive_and_renew_lock().await;
-    assert!(result.is_ok(), "receive_and_renew_lock");
-}
+    println!("{:?}", result);
+    all_result = all_result.and(result);
 
-/// These tests use the same session queue, so they must be run sequentially.
-#[tokio::test]
-async fn run_session_queue_tests_sequentially() {
+    print!("test send_and_receive_on_next_session");
     let result = send_and_receive_on_next_session().await;
-    assert!(result.is_ok(), "send_and_receive_on_next_session");
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
 
+    print!("test send_and_receive_sessionful_messages");
     let result = send_and_receive_sessionful_messages().await;
-    assert!(result.is_ok(), "send_and_receive_sessionful_messages");
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
+
+    assert!(all_result.is_ok())
 }
 
 async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
