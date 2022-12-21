@@ -20,6 +20,7 @@ async fn client_can_connect_using_connection_string_over_amqp_tcp() {
         .unwrap();
 
     // Create a sender for authentication purpose only.
+    // Do not create a receiver as it may accidentally receive messages from other tests.
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
     let sender = client
         .create_sender(queue_name, Default::default())
@@ -43,6 +44,7 @@ async fn client_can_connect_using_connection_string_over_amqp_websocket() {
         .unwrap();
 
     // Create a sender for authentication purpose only.
+    // Do not create a receiver as it may accidentally receive messages from other tests.
     let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
     let sender = client
         .create_sender(queue_name, Default::default())
@@ -69,6 +71,7 @@ async fn client_can_connect_using_named_key_credential() {
             .unwrap();
 
     // Creating sender will perform CBS authentication.
+    // Do not create a receiver as it may accidentally receive messages from other tests.
     let sender = client
         .create_sender(queue_name.clone(), Default::default())
         .await

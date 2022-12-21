@@ -1,52 +1,33 @@
 use azure_messaging_servicebus::{ServiceBusMessage, ServiceBusReceiverOptions};
-use serial_test::serial;
 
 mod common;
 use common::setup_dotenv;
 
-// #[tokio::test]
-// #[serial]
-// async fn drain_subscription() {
-//     use azure_messaging_servicebus::prelude::*;
-
-//     setup_dotenv();
-
-//     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
-//     let topic_name = std::env::var("SERVICE_BUS_SESSION_TOPIC").unwrap();
-//     let subscription_name = std::env::var("SERVICE_BUS_SESSION_SUBSCRIPTION").unwrap();
-//     let max_messages = 4;
-
-//     let client_options = ServiceBusClientOptions {
-//         retry_options: common::zero_retry_options(),
-//         ..Default::default()
-//     };
-//     let mut client = ServiceBusClient::new(connection_string, client_options)
-//         .await
-//         .unwrap();
-//     let options = ServiceBusReceiverOptions {
-//         sub_queue: SubQueue::DeadLetter,
-//         ..Default::default()
-//     };
-//     let mut receiver = client
-//         .create_receiver_for_subscription(topic_name, subscription_name, options)
-//         .await
-//         .unwrap();
-//     let received = receiver
-//         .receive_messages_with_max_wait_time(max_messages, std::time::Duration::from_secs(10))
-//         .await
-//         .unwrap();
-//     for message in &received {
-//         println!("Received message: {}", message);
-//         receiver.complete_message(message).await.unwrap();
-//     }
-
-//     receiver.dispose().await.unwrap();
-//     client.dispose().await.unwrap();
-// }
+#[tokio::test]
+async fn run_session_subscription_tests_sequentially() {
+    let result = send_and_receive_session_messages().await;
+    assert!(result.is_ok(), "send_and_receive_session_messages");
+}
 
 #[tokio::test]
-#[serial]
-async fn send_and_receive_one_message() {
+async fn run_non_session_subscription_tests_sequentially() {
+    let result = send_and_receive_one_message().await;
+    assert!(result.is_ok(), "send_and_receive_one_message");
+
+    let result = send_and_receive_multiple_messages_separately().await;
+    assert!(
+        result.is_ok(),
+        "send_and_receive_multiple_messages_separately"
+    );
+
+    let result = send_and_receive_multiple_messages_separately_with_prefetch().await;
+    assert!(
+        result.is_ok(),
+        "send_and_receive_multiple_messages_separately_with_prefetch"
+    );
+}
+
+async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
     setup_dotenv();
 
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
@@ -83,11 +64,11 @@ async fn send_and_receive_one_message() {
     assert_eq!(received.len(), max_messages as usize);
     let received_message_body = received[0].body().unwrap();
     assert_eq!(received_message_body, message_body);
+
+    Ok(())
 }
 
-#[tokio::test]
-#[serial]
-async fn send_and_receive_multiple_messages_separately() {
+async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::Error> {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
@@ -128,11 +109,12 @@ async fn send_and_receive_multiple_messages_separately() {
         let received_message_body = message.body().unwrap();
         assert_eq!(received_message_body, expected[i].as_bytes());
     }
+
+    Ok(())
 }
 
-#[tokio::test]
-#[serial]
-async fn send_and_receive_multiple_messages_separately_with_prefetch() {
+async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result<(), anyhow::Error>
+{
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let topic_name = std::env::var("SERVICE_BUS_TOPIC").unwrap();
@@ -177,11 +159,10 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() {
         let received_message_body = message.body().unwrap();
         assert_eq!(received_message_body, expected[i].as_bytes());
     }
+    Ok(())
 }
 
-#[tokio::test]
-#[serial]
-async fn send_and_receive_session_messages() {
+async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
     let topic_name = std::env::var("SERVICE_BUS_SESSION_TOPIC").unwrap();
@@ -278,11 +259,12 @@ async fn send_and_receive_session_messages() {
             expected_for_session_id_2[i].as_bytes()
         );
     }
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
-async fn create_rule_manager() {
+async fn get_delete_then_create_rules() {
     use azure_messaging_servicebus::administration::*;
     use azure_messaging_servicebus::prelude::*;
 

@@ -1,12 +1,9 @@
 //! This mod contains long running tests that are not run by default.
 
-use serial_test::serial;
-
 mod common;
 
 #[tokio::test]
 #[ignore]
-#[serial]
 async fn send_to_queue_every_minute_for_two_hour() {
     // Run this test with:
     //
