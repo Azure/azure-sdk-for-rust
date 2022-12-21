@@ -2,6 +2,8 @@ use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions};
 
 /// Creates a separate client and receiver and then abandons a message.
 async fn create_a_client_and_abandon_a_message() -> Result<(), anyhow::Error> {
+    // The connection string should look like:
+    // "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=<your-policy>;SharedAccessKey=<your-key>"
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 
@@ -24,6 +26,8 @@ async fn create_a_client_and_abandon_a_message() -> Result<(), anyhow::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    // The connection string should look like:
+    // "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=<your-policy>;SharedAccessKey=<your-key>"
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 

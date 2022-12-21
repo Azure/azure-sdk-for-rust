@@ -3,6 +3,8 @@ use time::OffsetDateTime;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    // The connection string should look like:
+    // "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=<your-policy>;SharedAccessKey=<your-key>"
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 

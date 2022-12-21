@@ -2,6 +2,8 @@ use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions, Serv
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    // The connection string should look like:
+    // "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=<your-policy>;SharedAccessKey=<your-key>"
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     // The queue must have sessions enabled
     let queue_name = std::env::var("SERVICE_BUS_SESSION_QUEUE")?;

@@ -27,6 +27,10 @@
 - [Send and receive session messages](./send_and_receive_session_messages.rs)
 - [Receive from next available session](./receive_from_next_available_session.rs)
 
+## Managing rules
+
+- [Managing rules](./manage_rules.rs)
+
 ## Configuring the transport
 
 - [AMQP over WebSocket](./amqp_over_websocket.rs)

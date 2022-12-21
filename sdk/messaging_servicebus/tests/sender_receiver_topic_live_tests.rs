@@ -54,8 +54,7 @@ async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
         Default::default(),
         messages,
     )
-    .await
-    ?;
+    .await?;
 
     let received = common::create_client_and_receive_messages_from_subscription(
         &connection_string,
@@ -66,8 +65,7 @@ async fn send_and_receive_one_message() -> Result<(), anyhow::Error> {
         max_messages,
         None,
     )
-    .await
-    ?;
+    .await?;
 
     assert_eq!(received.len(), max_messages as usize);
     let received_message_body = received[0].body()?;
@@ -97,8 +95,7 @@ async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::E
         Default::default(),
         messages.into_iter(),
     )
-    .await
-    ?;
+    .await?;
 
     let received = common::create_client_and_receive_messages_from_subscription(
         &connection_string,
@@ -109,8 +106,7 @@ async fn send_and_receive_multiple_messages_separately() -> Result<(), anyhow::E
         total as u32,
         None,
     )
-    .await
-    ?;
+    .await?;
 
     assert_eq!(received.len(), total);
     for (i, message) in received.iter().enumerate() {
@@ -143,8 +139,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result
         Default::default(),
         messages.into_iter(),
     )
-    .await
-    ?;
+    .await?;
 
     let receiver_option = ServiceBusReceiverOptions {
         prefetch_count: total as u32,
@@ -159,8 +154,7 @@ async fn send_and_receive_multiple_messages_separately_with_prefetch() -> Result
         total as u32,
         None,
     )
-    .await
-    ?;
+    .await?;
 
     assert_eq!(received.len(), total);
     for (i, message) in received.iter().enumerate() {
@@ -228,8 +222,7 @@ async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
         Default::default(),
         messages,
     )
-    .await
-    ?;
+    .await?;
 
     // Send 1st session messages next
     let messages = expected_for_session_id_1.iter().map(|m| {
@@ -244,8 +237,7 @@ async fn send_and_receive_session_messages() -> Result<(), anyhow::Error> {
         Default::default(),
         messages,
     )
-    .await
-    ?;
+    .await?;
 
     let received_1 = handle_1.await.unwrap()?;
     let received_2 = handle_2.await.unwrap()?;
@@ -280,13 +272,10 @@ async fn get_delete_then_create_rules() -> Result<(), anyhow::Error> {
     let topic_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_TOPIC")?;
     let subscription_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION")?;
 
-    let mut client = ServiceBusClient::new(connection_string, Default::default())
-        .await
-        ?;
+    let mut client = ServiceBusClient::new(connection_string, Default::default()).await?;
     let mut rule_manager = client
         .create_rule_manager(topic_name, subscription_name)
-        .await
-        ?;
+        .await?;
 
     let rules = rule_manager.get_rules().await?;
 
@@ -300,28 +289,24 @@ async fn get_delete_then_create_rules() -> Result<(), anyhow::Error> {
     let correlation_filter = CorrelationRuleFilter::builder().subject("subject").build();
     rule_manager
         .create_rule("brand-filter", correlation_filter)
-        .await
-        ?;
+        .await?;
 
     // Add a SQL rule filter
     let filter = SqlRuleFilter::new("user.color='red'");
     let action = SqlRuleAction::new("SET quantity = quantity / 2;");
     rule_manager
         .create_rule("color-filter", (filter, action))
-        .await
-        ?;
+        .await?;
 
     // Add a true filter
     rule_manager
         .create_rule("true-filter", TrueRuleFilter::new())
-        .await
-        ?;
+        .await?;
 
     // Add a false filter
     rule_manager
         .create_rule("false-filter", FalseRuleFilter::new())
-        .await
-        ?;
+        .await?;
 
     // Get the newly added rules
     let rules = rule_manager.get_rules().await?;
