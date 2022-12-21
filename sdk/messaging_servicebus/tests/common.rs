@@ -21,7 +21,7 @@ pub fn zero_retry_options() -> ServiceBusRetryOptions {
 
 #[allow(dead_code)]
 pub fn setup_dotenv() {
-    dotenv::from_filename("./sdk/messaging_servicebus/tests/.env").ok();
+    let _ = dotenv::from_filename("./sdk/messaging_servicebus/.env");
 }
 
 // #[allow(dead_code)]
