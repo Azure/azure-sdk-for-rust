@@ -83,39 +83,40 @@ where
         custom_endpoint: Option<Url>,
         retry_timeout: Duration,
     ) -> Result<Self, Self::CreateClientError> {
-        let service_endpoint = match transport_type {
-            ServiceBusTransportType::AmqpTcp => {
-                let addr = format!("{}://{}", transport_type.url_scheme(), host);
-                Url::parse(&addr)?
-            }
-            ServiceBusTransportType::AmqpWebSocket => {
-                let addr = format!(
-                    "{}://{}{}",
-                    transport_type.url_scheme(),
-                    host,
-                    AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
-                );
-                Url::parse(&addr)?
-            }
+        // Scheme of service endpoint must always be either "amqp" or "amqps"
+        let service_endpoint = {
+            let addr = format!("{}://{}", ServiceBusTransportType::AMQP_SCHEME, host);
+            Url::parse(&addr)?
         };
 
         let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str()) {
             Some(custom_host) => match transport_type {
                 ServiceBusTransportType::AmqpTcp => {
-                    let addr = format!("{}://{}", service_endpoint.scheme(), custom_host);
+                    let addr = format!("{}://{}", transport_type.url_scheme(), custom_host);
                     Url::parse(&addr)?
                 }
                 ServiceBusTransportType::AmqpWebSocket => {
                     let addr = format!(
                         "{}://{}{}",
-                        service_endpoint.scheme(),
+                        transport_type.url_scheme(),
                         custom_host,
                         AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
                     );
                     Url::parse(&addr)?
                 }
             },
-            None => service_endpoint.clone(),
+            None => match transport_type {
+                ServiceBusTransportType::AmqpTcp => service_endpoint.clone(),
+                ServiceBusTransportType::AmqpWebSocket => {
+                    let addr = format!(
+                        "{}://{}{}",
+                        transport_type.url_scheme(),
+                        host,
+                        AmqpConnectionScope::WEB_SOCKETS_PATH_SUFFIX
+                    );
+                    Url::parse(&addr)?
+                }
+            },
         };
 
         // Create AmqpConnectionScope

@@ -68,17 +68,12 @@ async fn client_can_connect_using_named_key_credential() {
             .await
             .unwrap();
 
-    // Creating sender and receiver will perform CBS authentication first.
+    // Creating sender will perform CBS authentication.
     let sender = client
         .create_sender(queue_name.clone(), Default::default())
         .await
         .unwrap();
-    let receiver = client
-        .create_receiver_for_queue(queue_name, Default::default())
-        .await
-        .unwrap();
 
-    receiver.dispose().await.unwrap();
     sender.dispose().await.unwrap();
     client.dispose().await.unwrap();
 }

@@ -18,13 +18,13 @@ impl Default for ServiceBusTransportType {
 }
 
 impl ServiceBusTransportType {
-    const AMQP_URI_SCHEME: &'static str = "amqps";
-    const WEBSOCKET_SCHEME: &'static str = "wss";
+    pub(crate) const AMQP_SCHEME: &'static str = "amqps";
+    pub(crate) const WEBSOCKET_SCHEME: &'static str = "wss";
 
     /// Returns the URI scheme for the transport type.
     pub fn url_scheme(&self) -> &str {
         match self {
-            ServiceBusTransportType::AmqpTcp => Self::AMQP_URI_SCHEME,
+            ServiceBusTransportType::AmqpTcp => Self::AMQP_SCHEME,
             ServiceBusTransportType::AmqpWebSocket => Self::WEBSOCKET_SCHEME,
         }
     }

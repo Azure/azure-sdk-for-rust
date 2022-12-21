@@ -37,3 +37,23 @@ fn format_transfer_dead_letter_path(entity_path: String) -> String {
         entity_path, PATH_DELIMITER, TRANSFER_DEAD_LETTER_QUEUE_NAME
     )
 }
+
+/// Formats the endpoint for the given service endpoint and entity path.
+///
+/// The `url::Url::join` is not used because it returns a Result that is likely infallible.
+pub(crate) fn format_endpoint(
+    service_endpoint: impl AsRef<str>,
+    entity_path: impl AsRef<str>,
+) -> String {
+    let service_endpoint = service_endpoint.as_ref();
+    let entity_path = entity_path.as_ref();
+    match (
+        service_endpoint.ends_with('/'),
+        entity_path.starts_with('/'),
+    ) {
+        (true, true) => format!("{}{}", service_endpoint, &entity_path[1..]),
+        (true, false) => format!("{}{}", service_endpoint, entity_path),
+        (false, true) => format!("{}{}", service_endpoint, entity_path),
+        (false, false) => format!("{}/{}", service_endpoint, entity_path),
+    }
+}

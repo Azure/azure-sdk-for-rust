@@ -26,6 +26,7 @@ use tokio::{sync::mpsc, time::timeout};
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
     core::{RecoverableTransport, TransportConnectionScope},
+    entity_name_formatter,
     primitives::service_bus_transport_type::ServiceBusTransportType,
     sealed::Sealed,
     ServiceBusReceiveMode,
@@ -247,7 +248,7 @@ impl AmqpConnectionScope {
             service_bus_claim::LISTEN.to_string(),
             service_bus_claim::SEND.to_string(),
         ];
-        let endpoint = format!("{}/{}", service_endpoint, entity_path);
+        let endpoint = entity_name_formatter::format_endpoint(service_endpoint, &entity_path);
         let resource = endpoint.clone();
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         self.request_refreshable_authorization_using_cbs(
@@ -292,7 +293,7 @@ impl AmqpConnectionScope {
             return Err(OpenSenderError::ConnectionScopeDisposed);
         }
 
-        let endpoint = format!("{}/{}", service_endpoint, entity_path);
+        let endpoint = entity_name_formatter::format_endpoint(service_endpoint, entity_path);
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
@@ -346,7 +347,7 @@ impl AmqpConnectionScope {
             return Err(OpenReceiverError::ConnectionScopeDisposed);
         }
 
-        let endpoint = format!("{}/{}", service_endpoint, entity_path);
+        let endpoint = entity_name_formatter::format_endpoint(service_endpoint, entity_path);
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
