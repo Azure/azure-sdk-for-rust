@@ -3,30 +3,95 @@
 Azure Service Bus crate for the unofficial Microsoft Azure SDK for Rust.
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
-## Example
+## Examples
+
+### Send messages to queue
+
 ```no_run,rust
 use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
-async fn main() -> azure_core::Result<()> {
-    let service_bus_namespace = std::env::var("AZURE_SERVICE_BUS_NAMESPACE").expect("missing AZURE_SERVICE_BUS_NAMESPACE");
-    let queue_name = std::env::var("AZURE_QUEUE_NAME").expect("missing AZURE_QUEUE_NAME");
-    let policy_name = std::env::var("AZURE_POLICY_NAME").expect("missing AZURE_POLICY_NAME");
-    let policy_key = std::env::var("AZURE_POLICY_KEY").expect("missing AZURE_POLICY_KEY");
+async fn main() -> anyhow::Result<()> {
+    // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
+    // which can be found in the Azure portal and should look like
+    // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
+    let mut client = ServiceBusClient::new(
+        "<NAMESPACE-CONNECTION-STRING>",
+        ServiceBusClientOptions::default()
+    )
+    .await?;
 
-    let http_client = azure_core::new_http_client();
-    let mut client = QueueClient::new(
-        http_client,
-        service_bus_namespace,
-        queue_name,
-        policy_name,
-        policy_key,
-    )?;
+    // Replace "<QUEUE-NAME>" with the name of your queue
+    let mut sender = client.create_sender(
+        "<QUEUE-NAME>",
+        ServiceBusSenderOptions::default()
+    )
+    .await?;
 
-    client.send_message("hello world").await?;
+    // Create a batch
+    let mut message_batch = sender.create_message_batch(Default::default())?;
 
-    let received_message = client.receive_and_delete_message().await?;
-    println!("Received Message: {}", received_message);
+    for i in 0..3 {
+        // Create a message
+        let message = ServiceBusMessage::new(format!("Message {}", i));
+        // Try to add the message to the batch
+        if let Err(e) = message_batch.try_add_message(message) {
+            // If the batch is full, an error will be returned
+            println!("Failed to add message {} to batch: {:?}", i, e);
+            break;
+        }
+    }
+
+    // Send the batch of messages to the queue
+    match sender.send_message_batch(message_batch).await {
+        Ok(()) => println!("Batch sent successfully"),
+        Err(e) => println!("Failed to send batch: {:?}", e),
+    }
+
+    sender.dispose().await?;
+    client.dispose().await?;
+
+    Ok(())
+}
+```
+
+### Receive messages from queue
+
+```no_run,rust
+use azure_messaging_servicebus::prelude::*;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
+    // which can be found in the Azure portal and should look like
+    // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
+    let mut client = ServiceBusClient::new(
+        "<NAMESPACE-CONNECTION-STRING>",
+        ServiceBusClientOptions::default()
+    )
+    .await?;
+
+    // Replace "<QUEUE-NAME>" with the name of your queue
+    let mut receiver = client.create_receiver_for_queue(
+        "<QUEUE-NAME>",
+        ServiceBusReceiverOptions::default()
+    )
+    .await?;
+
+    // Receive messages from the queue
+    // This will wait indefinitely until at least one message is received
+    let messages = receiver.receive_messages(3).await?;
+
+    for message in &messages {
+        let body = message.body()?;
+        println!("Received message: {:?}", std::str::from_utf8(body)?);
+
+        // Complete the message so that it is removed from the queue
+        receiver.complete_message(message).await?;
+    }
+
+    receiver.dispose().await?;
+    client.dispose().await?;
 
     Ok(())
 }
