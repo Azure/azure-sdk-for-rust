@@ -14,6 +14,15 @@ keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 
 edition = "2021"
 
+# docs.rs configurations
+# To test the docs locally, run
+# cargo +nightly doc --no-deps --open -Z unstable-options --config "build.rustdocflags=[\"--cfg\", \"docsrs\"]"
+# The nightly toolchain is only used to build the docs, the crate itself is still built with stable.
+# TODO: enable all features when building docs
+[package.metadata.docs.rs]
+# all-features = true
+rustdoc-args = ["--cfg", "docsrs"] # for conditional intra-doc links
+
 [dependencies]
 async-trait = "0.1"
 azure_core = { path = "../core", version = "0.7" }
