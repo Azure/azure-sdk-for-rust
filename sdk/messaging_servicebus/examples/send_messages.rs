@@ -3,7 +3,7 @@
 use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
     // which can be found in the Azure portal and should look like
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"

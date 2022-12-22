@@ -4,13 +4,16 @@ This crate is part of a collection of crates: for more information please refer 
 
 # Examples
 
+Below are two examples of sending and receiving messages from a queue. More examples can be found
+in the [examples](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/messaging_servicebus/examples)
+
 ## Send messages to queue
 
 ```no_run,rust
 use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
     // which can be found in the Azure portal and should look like
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
@@ -60,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
 use azure_messaging_servicebus::prelude::*;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
     // which can be found in the Azure portal and should look like
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
@@ -96,6 +99,7 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 */
+
 #![recursion_limit = "128"]
 #![deny(missing_docs, missing_debug_implementations)]
 
