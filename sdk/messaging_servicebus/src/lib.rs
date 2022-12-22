@@ -2,6 +2,32 @@
 Azure Service Bus crate for the unofficial Microsoft Azure SDK for Rust.
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
+# Supported Service Bus Features
+
+Below shows supported Service Bus features
+
+| Feature | Supported |
+| ------- | --------- |
+| Send messages to queue/topic | Yes |
+| Receive messages from queue/subscription | Yes |
+| Session receivers for queue/subscription | Yes |
+| Prefetch | Yes |
+| Schedule messages | Yes |
+| Cancel scheduled messages | Yes |
+| Peek messages | Yes |
+| Complete messages | Yes |
+| Abandon messages | Yes |
+| Defer messages | Yes |
+| Receive deferred messages | Yes |
+| Dead-letter messages | Yes |
+| Receive dead-lettered messages | Yes |
+| Batching | Yes |
+| Manage rule filters for subscriptions | Yes |
+| Lock renewal | Yes |
+| Transaction | No |
+| Processor | No |
+| Session processor | No |
+
 # Examples
 
 Below are two examples of sending and receiving messages from a queue. More examples can be found
