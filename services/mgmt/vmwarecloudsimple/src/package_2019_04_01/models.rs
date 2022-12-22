@@ -963,7 +963,7 @@ pub struct PrivateCloudProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_networks: Vec<VirtualNetwork>,
-    #[doc = "Is Vrops enabled/disabled"]
+    #[doc = "Is vRealize Operations Manager enabled/disabled"]
     #[serde(rename = "vrOpsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub vr_ops_enabled: Option<bool>,
 }

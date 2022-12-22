@@ -11,6 +11,9 @@ pub struct AccessConnector {
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityData>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessConnectorProperties>,
 }
@@ -19,6 +22,7 @@ impl AccessConnector {
         Self {
             tracked_resource,
             identity: None,
+            system_data: None,
             properties: None,
         }
     }
@@ -655,7 +659,7 @@ pub mod operation {
     #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
-        #[doc = "Service provider: Microsoft.ResourceProvider"]
+        #[doc = "Service provider: ex Microsoft.Databricks"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
         #[doc = "Resource on which the operation is performed."]
@@ -664,6 +668,9 @@ pub mod operation {
         #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description for the resource operation."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
     }
     impl Display {
         pub fn new() -> Self {
@@ -800,6 +807,14 @@ pub struct PrivateEndpointConnectionProperties {
     #[doc = "The private endpoint property of a private endpoint connection"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "GroupIds from the private link service resource."]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub group_ids: Vec<String>,
     #[doc = "The current state of a private endpoint connection"]
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
@@ -811,6 +826,7 @@ impl PrivateEndpointConnectionProperties {
     pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
         Self {
             private_endpoint: None,
+            group_ids: Vec::new(),
             private_link_service_connection_state,
             provisioning_state: None,
         }
@@ -918,15 +934,15 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Actions required for a private endpoint connection"]
-    #[serde(rename = "actionRequired", default, skip_serializing_if = "Option::is_none")]
-    pub action_required: Option<String>,
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
 }
 impl PrivateLinkServiceConnectionState {
     pub fn new(status: private_link_service_connection_state::Status) -> Self {
         Self {
             status,
             description: None,
-            action_required: None,
+            actions_required: None,
         }
     }
 }

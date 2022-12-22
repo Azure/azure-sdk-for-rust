@@ -1,6 +1,6 @@
 [package]
 name = "azure_messaging_servicebus"
-version = "0.7.0"
+version = "0.8.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -25,7 +25,7 @@ rustdoc-args = ["--cfg", "docsrs"] # for conditional intra-doc links
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.7" }
+azure_core = { path = "../core", version = "0.8" }
 base64 = "0.20.0"
 bytes = "1.0"
 const_format = "0.2"

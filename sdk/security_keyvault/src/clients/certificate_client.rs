@@ -79,6 +79,76 @@ impl CertificateClient {
         GetCertificateVersionsBuilder::new(self.clone(), name.into())
     }
 
+    /// Creates a new certificate.
+    /// If this is the first version, the certificate resource is created.
+    /// This operation requires the certificates/create permission.
+    //
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     let certificate = client.create("NAME", "SUBJECT", "ISSUER").await.unwrap();
+    ///     dbg!(&certificate);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn create<N, S, I>(&self, name: N, subject: S, issuer_name: I) -> CreateCertificateBuilder
+    where
+        N: Into<String>,
+        S: Into<String>,
+        I: Into<String>,
+    {
+        CreateCertificateBuilder::new(
+            self.clone(),
+            name.into(),
+            subject.into(),
+            issuer_name.into(),
+        )
+    }
+
+    /// Merges a certificate or a certificate chain with a key pair existing on the server.
+    /// The MergeCertificate operation performs the merging of a certificate or certificate chain with a key
+    /// pair currently available in the service. This operation requires the certificates/create permission.
+    //
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     let certificate = client.merge("NAME", vec![String::from("X5C")]).await.unwrap();
+    ///     dbg!(&certificate);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn merge<N, V>(&self, name: N, x5c: V) -> MergeCertificateBuilder
+    where
+        N: Into<String>,
+        V: Into<Vec<String>>,
+    {
+        MergeCertificateBuilder::new(self.clone(), name.into(), x5c.into())
+    }
+
     /// Imports a certificate into a specified key vault.
     /// This operation requires the certificates/import permission. The certificate to be imported can be in either PFX
     /// or PEM format. If the certificate is in PEM format the PEM file must contain the key as well as x509 certificates.
@@ -173,20 +243,11 @@ impl CertificateClient {
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn delete<N>(&self, name: N) -> azure_core::Result<()>
+    pub fn delete<N>(&self, name: N) -> DeleteCertificateBuilder
     where
         N: Into<String>,
     {
-        // let mut uri = self.vault_url.clone();
-        // uri.set_path(&format!("certificates/{}", certificate_name));
-
-        // self.delete_authed(uri.to_string()).await?;
-
-        // Ok(())
-
-        let _name = name.into();
-
-        todo!("See issue #174 at: https://github.com/Azure/azure-sdk-for-rust/issues/174.")
+        DeleteCertificateBuilder::new(self.clone(), name.into())
     }
 
     /// Lists all the certificates in the Key Vault.

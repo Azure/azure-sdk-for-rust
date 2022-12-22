@@ -1674,7 +1674,7 @@ pub mod get_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2020,7 +2020,7 @@ pub mod get_certificate_issuers {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -2494,7 +2494,7 @@ pub mod get_certificate_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3246,7 +3246,7 @@ pub mod get_deleted_certificates {
         pub(crate) include_pending: Option<bool>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3889,7 +3889,7 @@ pub mod get_key_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -3986,7 +3986,7 @@ pub mod get_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -4681,7 +4681,7 @@ pub mod get_deleted_keys {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -5371,7 +5371,7 @@ pub mod get_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -5469,7 +5469,7 @@ pub mod get_secret_versions {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified, the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -5566,7 +5566,7 @@ pub mod get_deleted_secrets {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -5939,7 +5939,7 @@ pub mod get_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -6036,7 +6036,7 @@ pub mod get_deleted_storage_accounts {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -6724,7 +6724,7 @@ pub mod get_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self
@@ -6823,7 +6823,7 @@ pub mod get_deleted_sas_definitions {
         pub(crate) maxresults: Option<i32>,
     }
     impl RequestBuilder {
-        #[doc = "Maximum number of results to return in a page. If not specified the service will return up to 25 results."]
+        #[doc = "Specifies the maximum number of results to return in a page. Setting maxresults to a value less than 1 or greater than 25 results in error response code 400 (Bad Request). If there are additional results to return, then the service returns a nextLink containing a skip token for pagination. In certain cases, the service might return fewer results than specified by maxresults (even 0 results) and also return a nextLink. Clients should not make any assumptions on the minimum number of results per page, and should enumerate all pages until the nextLink becomes null."]
         pub fn maxresults(mut self, maxresults: i32) -> Self {
             self.maxresults = Some(maxresults);
             self

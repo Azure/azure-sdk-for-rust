@@ -1,4 +1,7 @@
-# UNRELEASED (2022-11)
+# 0.9 (2022-12)
+- generated from azure-rest-api-specs [commit from 2022-12-16](https://github.com/Azure/azure-rest-api-specs/fd296f4cbe90e46098824e020e4a02517d56fc35)
+
+# 0.8 (2022-11)
 
 - generated from azure-rest-api-specs [commit from 2022-11-29](https://github.com/Azure/azure-rest-api-specs/d85953a9cb1b464824fae7c1fd300a99d086c8e4)
 

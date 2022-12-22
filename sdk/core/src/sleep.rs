@@ -21,7 +21,13 @@ impl Future for Sleep {
     type Output = ();
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        if self.thread.is_none() {
+        if let Some(thread) = &self.thread {
+            if thread.is_finished() {
+                Poll::Ready(())
+            } else {
+                Poll::Pending
+            }
+        } else {
             let waker = cx.waker().clone();
             let duration = self.duration;
             self.get_mut().thread = Some(thread::spawn(move || {
@@ -29,8 +35,6 @@ impl Future for Sleep {
                 waker.wake();
             }));
             Poll::Pending
-        } else {
-            Poll::Ready(())
         }
     }
 }
