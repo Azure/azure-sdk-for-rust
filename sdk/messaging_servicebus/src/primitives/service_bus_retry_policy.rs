@@ -244,12 +244,12 @@ macro_rules! run_operation {
                     Ok(result) => {
                         if let Err(recover_error) = result {
                             log::error!("Failed to recover {}", &recover_error);
-                            _is_scope_disposed = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&recover_error);
+                            _is_scope_disposed |= crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&recover_error);
                         }
                     }
                     Err(elapsed) => {
                         let err = <$err_ty>::from(elapsed);
-                        _is_scope_disposed = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&err);
+                        _is_scope_disposed |= crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&err);
                     }
                 }
             }
