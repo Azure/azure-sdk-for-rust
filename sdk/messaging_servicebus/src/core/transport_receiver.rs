@@ -13,6 +13,10 @@ use crate::{
     ServiceBusReceiveMode,
 };
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::{ServiceBusReceiver};
+
 /// Trait for session receiver
 #[async_trait]
 pub trait TransportSessionReceiver: TransportReceiver {
@@ -31,7 +35,8 @@ pub trait TransportSessionReceiver: TransportReceiver {
     /// Set locked until time for the session
     fn set_session_locked_until(&mut self, session_locked_until: OffsetDateTime);
 
-    /// Renews the lock on the session specified by the `session_id`. The lock will be renewed based on the setting specified on the entity.
+    /// Renews the lock on the session specified by the `session_id`. The lock will be renewed based
+    /// on the setting specified on the entity.
     async fn renew_session_lock(
         &mut self,
         session_id: &str,
@@ -43,7 +48,8 @@ pub trait TransportSessionReceiver: TransportReceiver {
         session_id: &str,
     ) -> Result<Vec<u8>, Self::RequestResponseError>;
 
-    /// Set a custom state on the session which can be later retrieved using [`TransportSessionReceiver::session_state()`]
+    /// Set a custom state on the session which can be later retrieved using
+    /// [`TransportSessionReceiver::session_state`]
     async fn set_session_state(
         &mut self,
         session_id: &str,
@@ -78,7 +84,8 @@ pub trait TransportReceiver: Sealed {
     /// Get the receive mode
     fn receive_mode(&self) -> ServiceBusReceiveMode;
 
-    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
+    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using
+    /// [`ServiceBusReceiveMode`] mode.
     ///
     /// This method should poll indefinitely until at least one message is received.
     async fn receive_messages(
@@ -86,10 +93,12 @@ pub trait TransportReceiver: Sealed {
         max_messages: u32,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::ReceiveError>;
 
-    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using [`ServiceBusReceiveMode`] mode.
+    /// Receives a set of [`ServiceBusReceivedMessage`] from the entity using
+    /// [`ServiceBusReceiveMode`] mode.
     ///
-    /// The `max_wait_time` parameter specifies the maximum amount of time the receiver will wait to receive the specified number of messages.
-    /// If the `max_wait_time` is not specified, a default value that is provided by the `ServiceBusReceiverOptions` will be used.
+    /// The `max_wait_time` parameter specifies the maximum amount of time the receiver will wait to
+    /// receive the specified number of messages. If the `max_wait_time` is not specified, a default
+    /// value that is provided by the `ServiceBusReceiverOptions` will be used.
     async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
@@ -111,10 +120,11 @@ pub trait TransportReceiver: Sealed {
 
     /// Indicates that the receiver wants to defer the processing for the message.
     ///
-    /// In order to receive this message again in the future, you will need to save the [`ServiceBusReceivedMessage::sequence_number()`]
-    /// and receive it using `receive_deferred_message()`.
-    /// Deferring messages does not impact message's expiration, meaning that deferred messages can still expire.
-    /// This operation can only be performed on messages that were received by this receiver.
+    /// In order to receive this message again in the future, you will need to save the
+    /// [`ServiceBusReceivedMessage::sequence_number`] and receive it using
+    /// `receive_deferred_message()`. Deferring messages does not impact message's expiration,
+    /// meaning that deferred messages can still expire. This operation can only be performed on
+    /// messages that were received by this receiver.
     async fn defer(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -122,29 +132,34 @@ pub trait TransportReceiver: Sealed {
         session_id: Option<&str>,
     ) -> Result<(), Self::DispositionError>;
 
-    /// Fetches the next batch of active messages without changing the state of the receiver or the message source.
+    /// Fetches the next batch of active messages without changing the state of the receiver or the
+    /// message source.
     ///
-    /// Unlike a received message, peeked message will not have lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.
-    /// Also, unlike [`receive_message()`], this method will fetch even Deferred messages (but not Deadlettered messages).
-    async fn peek_message(
+    /// Unlike a received message, peeked message will not have lock token associated with it, and
+    /// hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed. Also, unlike
+    /// [`TransportReceiver::receive_messages`], this method will fetch even Deferred messages (but
+    /// not Deadlettered messages).
+    async fn peek_messages(
         &mut self,
         sequence_number: Option<i64>,
         message_count: i32,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError>;
 
-    /// Fetches the next batch of active messages for a session without changing the state of the receiver or the message source.
-    async fn peek_session_message(
+    /// Fetches the next batch of active messages for a session without changing the state of the
+    /// receiver or the message source.
+    async fn peek_session_messages(
         &mut self,
         sequence_number: Option<i64>,
         message_count: i32,
         session_id: &str,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError>;
 
-    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for processing.
+    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for
+    /// processing.
     ///
-    /// Abandoning a message will increase the delivery count on the message.
-    /// This operation can only be performed on messages that were received by this receiver
-    /// when [`ServiceBusReceiveMode`] is set to [`ServiceBusReceiveMode.PeekLock`].
+    /// Abandoning a message will increase the delivery count on the message. This operation can
+    /// only be performed on messages that were received by this receiver when
+    /// [`ServiceBusReceiveMode`] is set to [`ServiceBusReceiveMode.PeekLock`].
     async fn abandon(
         &mut self,
         message: &ServiceBusReceivedMessage,
@@ -174,7 +189,8 @@ pub trait TransportReceiver: Sealed {
         session_id: Option<&str>,
     ) -> Result<Vec<ServiceBusReceivedMessage>, Self::RequestResponseError>;
 
-    /// Renews the lock on the message. The lock will be renewed based on the setting specified on the queue.
+    /// Renews the lock on the message. The lock will be renewed based on the setting specified on
+    /// the queue.
     async fn renew_message_lock(
         &mut self,
         lock_tokens: Vec<fe2o3_amqp::types::primitives::Uuid>,

@@ -35,33 +35,13 @@ pub trait TransportRuleManager: Sealed {
 
     /// Adds a rule to the current subscription to filter the messages reaching from topic to the
     /// subscription.
-    ///
-    /// # Parameters
-    ///
-    /// * `properties` - The rule properties for the rule to add.
-    /// * `cancellation_token` - An optional [CancellationToken] instance to signal the
-    ///   request to cancel the operation.
-    ///
-    /// # Returns
-    ///
-    /// A future that represents the asynchronous add rule operation.
     async fn create_rule(
         &mut self,
         rule_name: String,
         filter: CreateRuleFilter,
     ) -> Result<(), Self::CreateRuleError>;
 
-    /// Removes the rule on the subscription identified by <paramref name="ruleName" />.
-    ///
-    /// # Parameters
-    ///
-    /// * `rule_name` - Name of the rule
-    /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
-    ///   request to cancel the operation.
-    ///
-    /// # Returns
-    ///
-    /// A future that represents the asynchronous remove rule operation.
+    /// Removes the rule on the subscription identified by `rule_name`.
     async fn delete_rule(&mut self, rule_name: String) -> Result<(), Self::DeleteRuleError>;
 
     /// Get all rules associated with the subscription.
@@ -70,12 +50,6 @@ pub trait TransportRuleManager: Sealed {
     ///
     /// * `skip` - The number of rules to skip when retrieving the next set of rules.
     /// * `top` - The number of rules to retrieve per service request.
-    /// * `cancellation_token` - An optional <see cref="CancellationToken"/> instance to signal the
-    ///   request to cancel the operation.
-    ///
-    /// # Returns
-    ///
-    /// Returns a list of rules description
     async fn get_rules(
         &mut self,
         skip: i32,

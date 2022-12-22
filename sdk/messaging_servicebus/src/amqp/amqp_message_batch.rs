@@ -8,7 +8,7 @@ use super::error::TryAddMessageError;
 /// A set of [`ServiceBusMessage`] with size constraints known up-front, intended to be
 /// sent to the Queue/Topic as a single batch. A [`ServiceBusMessageBatch`] can be
 /// created using `ServiceBusSender::create_message_batch()`.
-/// Messages can be added to the batch using the [`try_add_message()`] method on the batch.
+/// Messages can be added to the batch using the [`try_add_message`] method on the batch.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AmqpMessageBatch {
     /// The maximum size of the batch, in bytes.

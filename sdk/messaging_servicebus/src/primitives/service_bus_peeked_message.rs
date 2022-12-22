@@ -25,6 +25,10 @@ use crate::{
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::ServiceBusReceivedMessage;
+
 /// A peeked message from a Service Bus queue or topic.
 #[derive(Debug)]
 pub struct ServiceBusPeekedMessage {
@@ -69,7 +73,7 @@ impl ServiceBusPeekedMessage {
     /// setting this value enables assigning related messages to the same internal partition, so
     /// that submission sequence order is correctly recorded. The partition is chosen by a hash
     /// function over this value and cannot be chosen directly. For session-aware entities, the
-    /// [`session_id()`](#method.session_id) property overrides this value.
+    /// [`session_id`](#method.session_id) property overrides this value.
     pub fn partition_key(&self) -> Option<&str> {
         self.raw_amqp_message.partition_key()
     }
@@ -77,7 +81,7 @@ impl ServiceBusPeekedMessage {
     /// Gets a partition key for sending a message into an entity via a partitioned transfer queue.
     ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
-    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
+    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key`]
     /// and ensures that messages are kept together and in order as they are transferred. See
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-viaå).
@@ -96,7 +100,7 @@ impl ServiceBusPeekedMessage {
         self.raw_amqp_message.session_id()
     }
 
-    /// Gets a session identifier augmenting the [`Self::reply_to()`] address.
+    /// Gets a session identifier augmenting the [`Self::reply_to`] address.
     ///
     /// This value augments the ReplyTo information and specifies which SessionId should be set for
     /// the reply when sent to the reply entity. See [Message Routing and

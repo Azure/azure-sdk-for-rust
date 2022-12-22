@@ -187,24 +187,24 @@ where
             .await
     }
 
-    async fn peek_message(
+    async fn peek_messages(
         &mut self,
         sequence_number: Option<i64>,
         message_count: i32,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
         self.inner
-            .peek_message(sequence_number, message_count)
+            .peek_messages(sequence_number, message_count)
             .await
     }
 
-    async fn peek_session_message(
+    async fn peek_session_messages(
         &mut self,
         sequence_number: Option<i64>,
         message_count: i32,
         session_id: &str,
     ) -> Result<Vec<ServiceBusPeekedMessage>, Self::RequestResponseError> {
         self.inner
-            .peek_session_message(sequence_number, message_count, session_id)
+            .peek_session_messages(sequence_number, message_count, session_id)
             .await
     }
 

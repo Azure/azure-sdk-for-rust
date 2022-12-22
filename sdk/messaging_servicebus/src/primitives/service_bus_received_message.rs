@@ -29,6 +29,9 @@ use crate::{
 
 use super::service_bus_message_state::ServiceBusMessageState;
 
+#[cfg(docsrs)]
+use crate::{ServiceBusMessage, ServiceBusReceiveMode};
+
 /// The lock token for a received message
 #[derive(Debug, Clone)]
 pub(crate) enum ReceivedMessageLockToken {
@@ -122,7 +125,7 @@ impl ServiceBusReceivedMessage {
     /// setting this value enables assigning related messages to the same internal partition, so
     /// that submission sequence order is correctly recorded. The partition is chosen by a hash
     /// function over this value and cannot be chosen directly. For session-aware entities, the
-    /// [`session_id()`](#method.session_id) property overrides this value.
+    /// [`session_id`](#method.session_id) property overrides this value.
     pub fn partition_key(&self) -> Option<&str> {
         self.raw_amqp_message.partition_key()
     }
@@ -130,7 +133,7 @@ impl ServiceBusReceivedMessage {
     /// Gets a partition key for sending a message into an entity via a partitioned transfer queue.
     ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
-    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
+    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key`]
     /// and ensures that messages are kept together and in order as they are transferred. See
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-viaå).
@@ -149,7 +152,7 @@ impl ServiceBusReceivedMessage {
         self.raw_amqp_message.session_id()
     }
 
-    /// Gets a session identifier augmenting the [`reply_to()`](#method.reply_to) address.
+    /// Gets a session identifier augmenting the [`reply_to`](#method.reply_to) address.
     ///
     /// This value augments the ReplyTo information and specifies which SessionId should be set for
     /// the reply when sent to the reply entity. See [Message Routing and
@@ -161,7 +164,7 @@ impl ServiceBusReceivedMessage {
     /// Gets the message’s "time to live" value.
     ///
     /// This value is the relative duration after which the message expires, starting from the
-    /// instant the message has been accepted and stored by the broker, as captured in [`ServiceBusReceivedMessage::enqueued_time()`].
+    /// instant the message has been accepted and stored by the broker, as captured in [`ServiceBusReceivedMessage::enqueued_time`].
     /// When not set explicitly, the assumed value is the DefaultTimeToLive
     /// for the respective queue or topic. A message-level time to live value cannot be
     /// longer than the entity's DefaultTimeToLive setting and it is silently adjusted if it does.
@@ -239,8 +242,8 @@ impl ServiceBusReceivedMessage {
     /// Gets the lock token for the current message.
     ///
     /// The lock token is a reference to the lock that is being held by the broker in
-    /// [`ServiceBusReceiveMode::PeekLock`] mode. Locks are used to explicitly settle messages as explained in the
-    /// documentation in more
+    /// [`ServiceBusReceiveMode::PeekLock`] mode. Locks are used to explicitly settle messages as
+    /// explained in the documentation in [more
     /// detail](https://docs.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement).
     /// The token can also be used to pin the lock permanently through the [Deferral
     /// API](https://docs.microsoft.com/azure/service-bus-messaging/message-deferral) and, with

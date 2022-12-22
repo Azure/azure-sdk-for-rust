@@ -1,5 +1,9 @@
 //! Defines the [`ServiceBusMessageState`] enum.
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::ServiceBusReceivedMessage;
+
 /// Represents the message state of the [`ServiceBusReceivedMessage`]
 #[derive(Debug)]
 pub enum ServiceBusMessageState {

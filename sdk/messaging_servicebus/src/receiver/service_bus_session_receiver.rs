@@ -14,19 +14,24 @@ use crate::{
 
 use super::DeadLetterOptions;
 
+#[cfg(docsrs)]
+use crate::{ServiceBusClient, ServiceBusRetryOptions};
+
 /// Options for configuring a `ServiceBusSessionReceiver`.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ServiceBusSessionReceiverOptions {
-    /// The number of messages that will be eagerly requested from Queues or Subscriptions and queued locally without regard to
-    /// whether the receiver is actively receiving, intended to help maximize throughput by allowing the receiver to receive
-    /// from a local cache rather than waiting on a service request.
+    /// The number of messages that will be eagerly requested from Queues or Subscriptions and
+    /// queued locally without regard to whether the receiver is actively receiving, intended to
+    /// help maximize throughput by allowing the receiver to receive from a local cache rather than
+    /// waiting on a service request.
     pub prefetch_count: u32,
 
     /// Specifies how messages are received. Defaults to PeekLock mode.
     pub receive_mode: ServiceBusReceiveMode,
 
-    /// A property used to set the [`ServiceBusReceiver`] ID to identify the client. This can be used to correlate logs
-    /// and exceptions. If `None` or empty, a random unique value will be used.
+    /// A property used to set the [`ServiceBusSessionReceiver`] ID to identify the client. This can
+    /// be used to correlate logs and exceptions. If `None` or empty, a random unique value will be
+    /// used.
     pub identifier: Option<String>,
 }
 
@@ -41,9 +46,10 @@ impl From<ServiceBusSessionReceiverOptions> for ServiceBusReceiverOptions {
     }
 }
 
-/// The [`ServiceBusSessionReceiver`] is responsible for receiving [`ServiceBusReceivedMessage`]
-/// and settling messages from session-enabled Queues and Subscriptions. It is constructed by calling
-/// [`ServiceBusClient::accept_next_session_for_queue()`] or [`ServiceBusClient::accept_next_session_for_subscription()`].
+/// The [`ServiceBusSessionReceiver`] is responsible for receiving [`ServiceBusReceivedMessage`] and
+/// settling messages from session-enabled Queues and Subscriptions. It is constructed by calling
+/// [`ServiceBusClient::accept_next_session_for_queue`] or
+/// [`ServiceBusClient::accept_next_session_for_subscription`].
 #[derive(Debug)]
 pub struct ServiceBusSessionReceiver<R> {
     pub(crate) inner: R,
@@ -65,9 +71,10 @@ where
         self.inner.identifier()
     }
 
-    /// The number of messages that will be eagerly requested from Queues or Subscriptions and queued locally without regard to
-    /// whether the receiver is actively receiving, intended to help maximize throughput by allowing the receiver to receive
-    /// from a local cache rather than waiting on a service request.
+    /// The number of messages that will be eagerly requested from Queues or Subscriptions and
+    /// queued locally without regard to whether the receiver is actively receiving, intended to
+    /// help maximize throughput by allowing the receiver to receive from a local cache rather than
+    /// waiting on a service request.
     pub fn prefetch_count(&self) -> u32 {
         self.inner.prefetch_count()
     }
@@ -108,9 +115,11 @@ where
         self.inner.receive_messages(max_messages).await
     }
 
-    /// Receive a single message from the entity using the receiver's receive mode with a maximum wait time.
+    /// Receive a single message from the entity using the receiver's receive mode with a maximum
+    /// wait time.
     ///
-    /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
+    /// If `max_wait_time` is `None`, a default max wait time value that is equal to
+    /// [`ServiceBusRetryOptions::try_timeout`] will be used.
     pub async fn receive_message_with_max_wait_time(
         &mut self,
         max_wait_time: impl Into<Option<std::time::Duration>>,
@@ -122,8 +131,10 @@ where
 
     /// Receive messages from the entity using the receiver's receive mode with a maximum wait time.
     ///
-    /// If `max_wait_time` is `None`, a default max wait time value that is equal to [`ServiceBusRetryOptions::try_timeout`] will be used.
-    /// Please use [`ServiceBusReceiver::receive_messages()`] if the user wants to wait indefinitely for at least one message.
+    /// If `max_wait_time` is `None`, a default max wait time value that is equal to
+    /// [`ServiceBusRetryOptions::try_timeout`] will be used. Please use
+    /// [`Self::receive_messages`] if the user wants to wait indefinitely for at least one
+    /// message.
     pub async fn receive_messages_with_max_wait_time(
         &mut self,
         max_messages: u32,
@@ -144,7 +155,8 @@ where
             .await
     }
 
-    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for immediate processing as the lock on the message held by the receiver will be released.
+    /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for
+    /// immediate processing as the lock on the message held by the receiver will be released.
     pub async fn abandon_message(
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
@@ -162,10 +174,10 @@ where
     /// Indicates that the receiver wants to defer the processing for the message.
     ///
     /// In order to receive this message again in the future, you will need to save the
-    /// [`ServiceBusReceivedMessage::sequence_number()`]
-    /// and receive it using [`receive_deferred_message(seq_num)`].
-    /// Deferring messages does not impact message's expiration, meaning that deferred messages can still expire.
-    /// This operation can only be performed on messages that were received by this receiver.
+    /// [`ServiceBusReceivedMessage::sequence_number`] and receive it using
+    /// [`receive_deferred_message(seq_num)`]. Deferring messages does not impact message's
+    /// expiration, meaning that deferred messages can still expire. This operation can only be
+    /// performed on messages that were received by this receiver.
     pub async fn defer_message(
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
@@ -197,11 +209,15 @@ where
             .await
     }
 
-    /// Fetches the next active [`ServiceBusPeekedMessage`] without changing the state of the receiver or the message source.
+    /// Fetches the next active [`ServiceBusPeekedMessage`] without changing the state of the
+    /// receiver or the message source.
     ///
-    /// The first call to [`peek_message()`] fetches the first active message for this receiver. Each subsequent call fetches the subsequent message in the entity.
-    /// Unlike a received message, a peeked message will not have a lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.
-    /// Also, unlike [`receive_message()`], this method will fetch even Deferred messages (but not Deadlettered message).
+    /// The first call to [`Self::peek_message`] fetches the first active message for this
+    /// receiver. Each subsequent call fetches the subsequent message in the entity. Unlike a
+    /// received message, a peeked message will not have a lock token associated with it, and hence
+    /// it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed. Also, unlike
+    /// [`Self::receive_message`], this method will fetch even Deferred messages (but not
+    /// Deadlettered message).
     pub async fn peek_message(
         &mut self,
         from_sequence_number: Option<i64>,
@@ -211,21 +227,25 @@ where
             .map(|mut v| v.drain(..).next())
     }
 
-    /// Fetches a list of active messages without changing the state of the receiver or the message source.
+    /// Fetches a list of active messages without changing the state of the receiver or the message
+    /// source.
     ///
-    /// Unlike a received message, a peeked message will not have a lock token associated with it, and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed.
-    /// Also, unlike [`receive_message()`], this method will fetch even Deferred messages (but not Deadlettered message).
+    /// Unlike a received message, a peeked message will not have a lock token associated with it,
+    /// and hence it cannot be Completed/Abandoned/Deferred/Deadlettered/Renewed. Also, unlike
+    /// [`Self::receive_message`], this method will fetch even Deferred messages (but not
+    /// Deadlettered message).
     pub async fn peek_messages(
         &mut self,
         max_messages: u32, // FIXME: stop user from putting a negative number here?
         from_sequence_number: Option<i64>,
     ) -> Result<Vec<ServiceBusPeekedMessage>, R::RequestResponseError> {
         self.inner
-            .peek_session_message(from_sequence_number, max_messages as i32, &self.session_id)
+            .peek_session_messages(from_sequence_number, max_messages as i32, &self.session_id)
             .await
     }
 
-    /// Receives a deferred message identified by `sequence_number`. An error is returned if the message is not deferred.
+    /// Receives a deferred message identified by `sequence_number`. An error is returned if the
+    /// message is not deferred.
     pub async fn receive_deferred_message(
         &mut self,
         sequence_number: i64,
@@ -235,7 +255,8 @@ where
             .map(|mut v| v.drain(..).next())
     }
 
-    /// Receives a list of deferred messages identified by `sequence_numbers`. An error is returned if any of the messages are not deferred.
+    /// Receives a list of deferred messages identified by `sequence_numbers`. An error is returned
+    /// if any of the messages are not deferred.
     pub async fn receive_deferred_messages(
         &mut self,
         sequence_numbers: impl Iterator<Item = i64> + Send,
@@ -245,7 +266,8 @@ where
             .await
     }
 
-    /// Renews the lock on the specified message. The lock will be renewed based on the setting specified on the entity.
+    /// Renews the lock on the specified message. The lock will be renewed based on the setting
+    /// specified on the entity.
     pub async fn renew_message_lock(
         &mut self,
         message: &mut ServiceBusReceivedMessage,
@@ -264,7 +286,8 @@ where
         self.inner.session_state(&self.session_id).await
     }
 
-    /// Set a custom state on the session which can be later retrieved using [`session_state()`]
+    /// Set a custom state on the session which can be later retrieved using
+    /// [`Self::session_state`]
     pub async fn set_session_state(
         &mut self,
         session_state: Vec<u8>,
@@ -274,7 +297,8 @@ where
             .await
     }
 
-    /// Renews the lock on the session specified by the [`session_id()`]. The lock will be renewed based on the setting specified on the entity.
+    /// Renews the lock on the session specified by the [`Self::session_id`]. The lock will be
+    /// renewed based on the setting specified on the entity.
     pub async fn renew_session_lock(&mut self) -> Result<(), R::RequestResponseError> {
         let locked_until = self.inner.renew_session_lock(&self.session_id).await?;
         self.inner.set_session_locked_until(locked_until);

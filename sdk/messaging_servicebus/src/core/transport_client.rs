@@ -18,6 +18,10 @@ use super::{
     TransportSessionReceiver,
 };
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::{ServiceBusMessage};
+
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
 /// instance may provide operations for a specific transport.
 #[async_trait]

@@ -12,9 +12,13 @@ use crate::amqp::{
     },
 };
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::{ServiceBusMessage};
+
 /// A [`SqlRuleFilter`] holds a SQL-like condition expression that is evaluated in the broker
 /// against the arriving messages' user-defined properties and system properties. All system
-/// properties (which are all properties explicitly listed on the [`erviceBusMessage`]
+/// properties (which are all properties explicitly listed on the [`ServiceBusMessage`]
 /// class) must be prefixed with `sys.` in the condition expression. The SQL subset
 /// implements testing for existence of properties (EXISTS), testing for null-values (IS NULL),
 /// logical NOT/AND/OR, relational operators, numeric arithmetic, and simple text pattern matching
@@ -60,10 +64,10 @@ impl SqlRuleFilter {
 ///
 /// A CorrelationRuleFilter holds a set of conditions that are matched against one of more of an
 /// arriving message's user and system properties. A common use is a match against the
-/// [`ServiceBusMessage::correlation_id()`] property, but the application can also choose to match
-/// against [`ServiceBusMessage::content_type()`], [`ServiceBusMessage::subject()`],
-/// [`ServiceBusMessage::message_id()`], [`ServiceBusMessage::reply_to`],
-/// [`ServiceBusMessage::reply_to_session_id()`], [`ServiceBusMessage.session_id()`],
+/// [`ServiceBusMessage::correlation_id`] property, but the application can also choose to match
+/// against [`ServiceBusMessage::content_type`], [`ServiceBusMessage::subject`],
+/// [`ServiceBusMessage::message_id`], [`ServiceBusMessage::reply_to`],
+/// [`ServiceBusMessage::reply_to_session_id`], [`ServiceBusMessage.session_id`],
 /// [`ServiceBusMessage.to()`, and any user-defined properties. A match exists when an arriving
 /// message's value for a property is equal to the value specified in the correlation filter. For
 /// string expressions, the comparison is case-sensitive. When specifying multiple match properties,
@@ -78,7 +82,7 @@ impl SqlRuleFilter {
 /// O(1).
 ///
 /// The user needs to make sure that at least one of the properties is set. Because of this, it is
-/// recommended to use the [`CorrelationRuleFilter::builder()`] to construct the filter.
+/// recommended to use the [`CorrelationRuleFilter::builder`] to construct the filter.
 #[derive(
     Debug, Clone, SerializeComposite, DeserializeComposite, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]

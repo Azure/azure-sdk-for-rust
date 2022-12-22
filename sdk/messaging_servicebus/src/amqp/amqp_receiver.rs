@@ -592,7 +592,7 @@ where
     }
 
     /// Fetches the next batch of active messages without changing the state of the receiver or the message source.
-    async fn peek_message(
+    async fn peek_messages(
         &mut self,
         sequence_number: Option<i64>,
         message_count: i32,
@@ -623,7 +623,7 @@ where
         Ok(peeked_messages)
     }
 
-    async fn peek_session_message(
+    async fn peek_session_messages(
         &mut self,
         sequence_number: Option<i64>,
         message_count: i32,

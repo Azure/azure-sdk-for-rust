@@ -221,7 +221,7 @@ where
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
     /// the size of the messages exceed the maximum size of a single batch, an error will be
     /// returned and the send will fail. In order to ensure that the messages being sent will fit
-    /// in a batch, use [`send_batch()`] instead.
+    /// in a batch, use [`send_batch`] instead.
     async fn send(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,

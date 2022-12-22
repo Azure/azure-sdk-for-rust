@@ -414,7 +414,7 @@ where
 
     /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving
     /// and settling messages from a session-enabled queue by accepting the next unlocked session that contains Active messages. If there
-    /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout()`] value and returns
+    /// are no unlocked sessions with Active messages, then the call will timeout after the configured [`ServiceBusRetryOptions::try_timeout`] value and returns
     /// an error.
     ///
     /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.

@@ -122,7 +122,7 @@ async fn run_queue_tests_sequentially() {
     all_result = all_result.and(result);
 
     print!("test renew_session_lock");
-    let result = renew_session_lock().await;
+    let result = renew_session_lock_and_set_get_session_state().await;
     println!(" ... {:?}", result);
     all_result = all_result.and(result);
 
@@ -503,7 +503,7 @@ async fn send_and_receive_sessionful_messages() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-async fn renew_session_lock() -> Result<(), anyhow::Error> {
+async fn renew_session_lock_and_set_get_session_state() -> Result<(), anyhow::Error> {
     setup_dotenv();
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     let queue_name = std::env::var("SERVICE_BUS_SESSION_QUEUE")?;
@@ -519,6 +519,9 @@ async fn renew_session_lock() -> Result<(), anyhow::Error> {
     let received = session_receiver.receive_message().await?;
     session_receiver.complete_message(&received).await?;
     session_receiver.renew_session_lock().await?;
+    session_receiver.set_session_state(vec![1, 2, 3]).await?;
+    let state = session_receiver.session_state().await?;
+    assert_eq!(state, vec![1, 2, 3]);
 
     sender.dispose().await?;
     session_receiver.dispose().await?;

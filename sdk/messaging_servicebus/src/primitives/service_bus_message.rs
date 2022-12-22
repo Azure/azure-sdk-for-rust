@@ -26,7 +26,8 @@ use crate::amqp::{
 
 use super::service_bus_received_message::ServiceBusReceivedMessage;
 
-/// The [ServiceBusMessage] is used to send data to Service Bus Queues and Topics. When receiving messages, the [`ServiceBusReceivedMessage`] is used.
+/// The [ServiceBusMessage] is used to send data to Service Bus Queues and Topics. When receiving
+/// messages, the [`ServiceBusReceivedMessage`] is used.
 ///
 /// The message structure is discussed in detail in the [product
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
@@ -183,11 +184,12 @@ impl ServiceBusMessage {
 
     /// Gets the MessageId to identify the message.
     ///
-    /// The message identifier is an application-defined value that uniquely identifies the message and its payload. The
-    /// identifier is a free-form string and can reflect a GUID or an identifier derived from the application context.
-    /// If enabled, the [duplicate
-    /// detection](https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection) feature identifies and
-    /// removes second and further submissions of messages with the same MessageId.
+    /// The message identifier is an application-defined value that uniquely identifies the message
+    /// and its payload. The identifier is a free-form string and can reflect a GUID or an
+    /// identifier derived from the application context. If enabled, the [duplicate
+    /// detection](https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection)
+    /// feature identifies and removes second and further submissions of messages with the same
+    /// MessageId.
     pub fn message_id(&self) -> Option<Cow<'_, str>> {
         self.amqp_message.message_id()
     }
@@ -209,12 +211,13 @@ impl ServiceBusMessage {
     /// setting this value enables assigning related messages to the same internal partition, so
     /// that submission sequence order is correctly recorded. The partition is chosen by a hash
     /// function over this value and cannot be chosen directly. For session-aware entities, the
-    /// [`set_session_id()`] method overrides this value.
+    /// [`ServiceBusMessage::set_session_id`] method overrides this value.
     pub fn partition_key(&self) -> Option<&str> {
         self.amqp_message.partition_key()
     }
 
-    /// Sets a partition key for sending a message to a partitioned entity. Maximum length is 128 characters.
+    /// Sets a partition key for sending a message to a partitioned entity. Maximum length is 128
+    /// characters.
     pub fn set_partition_key(
         &mut self,
         key: impl Into<Option<String>>,
@@ -222,11 +225,10 @@ impl ServiceBusMessage {
         self.amqp_message.set_partition_key(key)
     }
 
-    /// Gets a partition key for sending a message into an entity via a partitioned transfer
-    /// queue.
+    /// Gets a partition key for sending a message into an entity via a partitioned transfer queue.
     ///
     /// If a message is sent via a transfer queue in the scope of a transaction, this value selects
-    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key()`]
+    /// the transfer queue partition: This is functionally equivalent to [`Self::partition_key`]
     /// and ensures that messages are kept together and in order as they are transferred. See
     /// [Transfers and Send
     /// Via](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-transactions#transfers-and-send-via).
@@ -264,7 +266,7 @@ impl ServiceBusMessage {
         self.amqp_message.set_session_id(session_id)
     }
 
-    /// Gets session identifier augmenting the [`reply_to()`] address.
+    /// Gets session identifier augmenting the [`ServiceBusMessage::reply_to`] address.
     ///
     /// This value augments the ReplyTo information and specifies which SessionId should be set for
     /// the reply when sent to the reply entity. See [Message Routing and
@@ -273,7 +275,8 @@ impl ServiceBusMessage {
         self.amqp_message.reply_to_session_id()
     }
 
-    /// Sets a session identifier augmenting the [`reply_to()`] address. Maximum length is 128 characters.
+    /// Sets a session identifier augmenting the [`ServiceBusMessage::set_reply_to`] address.
+    /// Maximum length is 128 characters.
     pub fn set_reply_to_session_id(
         &mut self,
         session_id: impl Into<Option<String>>,

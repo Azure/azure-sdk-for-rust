@@ -6,17 +6,22 @@ use crate::{
     core::TransportSender, CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::ServiceBusClient;
+
 /// The set of options that can be specified when creating a [`ServiceBusSender`]
 /// to configure its behavior.
 #[derive(Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ServiceBusSenderOptions {
-    /// A property used to set the [`ServiceBusSender`] ID to identify the client. This can be used to correlate logs
-    /// and exceptions. If `None` or empty, a random unique value will be used.
+    /// A property used to set the [`ServiceBusSender`] ID to identify the client. This can be used
+    /// to correlate logs and exceptions. If `None` or empty, a random unique value will be used.
     pub identifier: Option<String>,
 }
 
-/// A client responsible for sending [`ServiceBusMessage`] to a specific Service Bus entity
-/// (Queue or Topic). It can be used for both session and non-session entities. It is constructed by calling [`ServiceBusClient::create_sender()`].
+/// A client responsible for sending [`ServiceBusMessage`] to a specific Service Bus entity (Queue
+/// or Topic). It can be used for both session and non-session entities. It is constructed by
+/// calling [`ServiceBusClient::create_sender`].
 #[derive(Debug)]
 pub struct ServiceBusSender<S> {
     pub(crate) inner: S,
@@ -38,7 +43,7 @@ where
     }
 
     /// Creates a size-constraint batch to which [`ServiceBusMessage`] may be added using
-    /// a [`ServiceBusMessageBatch::try_add_message()`]. If a message would exceed the maximum
+    /// a [`ServiceBusMessageBatch::try_add_message`]. If a message would exceed the maximum
     /// allowable size of the batch, the batch will not allow adding the message and signal that
     /// scenario by returning an error.
     ///

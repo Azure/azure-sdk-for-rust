@@ -4,10 +4,14 @@ use crate::{sealed::Sealed, CreateMessageBatchOptions, ServiceBusMessage};
 
 use super::TransportMessageBatch;
 
-/// Provides an abstraction for generalizing an Service Bus entity Producer so that a dedicated instance may provide operations
-/// for a specific transport, such as AMQP or JMS.  It is intended that the public [`ServiceBusSender`] employ
-/// a transport producer via containment and delegate operations to it rather than understanding protocol-specific details
-/// for different transports.
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::{ServiceBusSender};
+
+/// Provides an abstraction for generalizing an Service Bus entity Producer so that a dedicated
+/// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended
+/// that the public [`ServiceBusSender`] employ a transport producer via containment and delegate
+/// operations to it rather than understanding protocol-specific details for different transports.
 #[async_trait]
 pub trait TransportSender: Sealed {
     /// Error with sending a message
@@ -45,13 +49,13 @@ pub trait TransportSender: Sealed {
     /// Sends a list of messages to the associated Service Bus entity using a batched approach. If
     /// the size of the messages exceed the maximum size of a single batch, an exception will be
     /// triggered and the send will fail. In order to ensure that the messages being sent will fit
-    /// in a batch, use [`TransportSender::send_batch()`] instead.
+    /// in a batch, use [`TransportSender::send_batch`] instead.
     async fn send(
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
     ) -> Result<(), Self::SendError>;
 
-    /// Sends a [`ServiceBusMessageBatch`] to the associated Queue/Topic.
+    /// Sends a [`Self::MessageBatch`] to the associated Queue/Topic.
     async fn send_batch(
         &mut self,
         message_batch: Self::MessageBatch,

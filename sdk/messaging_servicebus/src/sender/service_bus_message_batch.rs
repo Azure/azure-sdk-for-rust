@@ -2,6 +2,10 @@
 
 use crate::{core::TransportMessageBatch, ServiceBusMessage};
 
+// Conditional import for docs.rs
+#[cfg(docsrs)]
+use crate::ServiceBusSender;
+
 /// The set of options that can be specified to influence the way in which an service bus message
 /// batch behaves and is sent to the Queue/Topic.
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -10,12 +14,11 @@ pub struct CreateMessageBatchOptions {
     pub max_size_in_bytes: Option<u64>,
 }
 
-/// A set of [`ServiceBusMessage`] with size constraints known up-front,
-/// intended to be sent to the Queue/Topic as a single batch.
+/// A set of [`ServiceBusMessage`] with size constraints known up-front, intended to be sent to the
+/// Queue/Topic as a single batch.
 ///
-/// A [`ServiceBusMessageBatch`] can be created using
-/// [`ServiceBusSender::create_message_batch()`].
-/// Messages can be added to the batch using the [`try_add_message`] method on the batch.
+/// A [`ServiceBusMessageBatch`] can be created using [`ServiceBusSender::create_message_batch`].
+/// Messages can be added to the batch using the [`Self::try_add_message`] method on the batch.
 ///
 /// # Examples
 ///
