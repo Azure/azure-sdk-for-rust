@@ -149,10 +149,6 @@ pub mod receiver;
 pub mod rule_manager;
 pub mod sender;
 
-// pub mod prelude;
-// pub mod service_bus;
-// pub mod utils;
-
 // TODO: reserved for future use
 // pub mod processor;
 
