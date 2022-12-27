@@ -7,7 +7,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 
-
     let mut client =
         ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
 
