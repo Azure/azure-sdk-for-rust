@@ -3,7 +3,10 @@ use serde_amqp::serialized_size;
 
 use crate::{core::TransportMessageBatch, sealed::Sealed};
 
-use super::error::TryAddMessageError;
+use super::{
+    amqp_message_converter::{build_amqp_batch_from_messages, SendableEnvelope},
+    error::TryAddMessageError,
+};
 
 /// A set of [`ServiceBusMessage`] with size constraints known up-front, intended to be
 /// sent to the Queue/Topic as a single batch. A [`ServiceBusMessageBatch`] can be
@@ -58,23 +61,59 @@ impl TransportMessageBatch for AmqpMessageBatch {
         message: crate::ServiceBusMessage,
     ) -> Result<(), Self::TryAddError> {
         let serializable_message = Serializable(&message.amqp_message);
-        let ssize = match serialized_size(&serializable_message) {
-            Ok(size) => size,
-            Err(err) => {
-                return Err(Self::TryAddError::Codec {
-                    source: err,
-                    message,
-                })
+
+        // Initialize the size by reserving space for the batch envelope taking into account the
+        // properties from the first message which will be used to populate properties on the batch
+        // envelope.
+        let new_size = if self.messages.is_empty() {
+            // TODO: avoid clone
+            let reservce_overhead_message = std::iter::once(message.clone().amqp_message);
+            // Force batching to get the overhead size
+            let reserve_overhead_envelope =
+                match build_amqp_batch_from_messages(reservce_overhead_message, true) {
+                    Some(envelope) => envelope,
+                    None => unreachable!(), // force batching a single message should never fail
+                };
+            let result = match reserve_overhead_envelope.sendable {
+                SendableEnvelope::Single(sendable) => {
+                    let serializable = Serializable(sendable.message);
+                    serialized_size(&serializable)
+                }
+                SendableEnvelope::Batch(sendable) => {
+                    let serializable = Serializable(sendable.message);
+                    serialized_size(&serializable)
+                }
+            };
+            match result {
+                Ok(size) => size as u64,
+                Err(err) => {
+                    return Err(Self::TryAddError::Codec {
+                        source: err,
+                        message,
+                    })
+                }
             }
+        } else {
+            let ssize = match serialized_size(&serializable_message) {
+                Ok(size) => size,
+                Err(err) => {
+                    return Err(Self::TryAddError::Codec {
+                        source: err,
+                        message,
+                    })
+                }
+            };
+
+            self.size_in_bytes + ssize as u64
         };
 
-        let new_size = self.size_in_bytes + ssize as u64;
         if new_size > self.max_size_in_bytes {
             return Err(TryAddMessageError::BatchFull(message));
         }
 
         self.size_in_bytes = new_size;
         self.messages.push(message.amqp_message);
+
         Ok(())
     }
 
@@ -94,6 +133,15 @@ mod tests {
 
     use super::*;
 
+    /// The amount of bytes to reserve as overhead for a small message.
+    const OVERHEAD_BYTES_SMALL_MESSAGE: usize = 5;
+
+    /// The amount of bytes to reserve as overhead for a large message.
+    const OVERHEAD_BYTES_LARGE_MESSAGE: usize = 8;
+
+    /// The maximum number of bytes that a message may be to be considered small.
+    const MAXIMUM_BYTES_SMALL_MESSAGE: usize = 255;
+
     #[test]
     fn new_sets_max_size_in_bytes() {
         let batch = AmqpMessageBatch::new(1024);
@@ -102,6 +150,7 @@ mod tests {
 
     #[test]
     fn try_add_sets_batch_size_in_bytes() {
+        let overhead = OVERHEAD_BYTES_SMALL_MESSAGE; // The messages added are small
         let mut batch = AmqpMessageBatch::new(1024);
         let message = ServiceBusMessage::new("hello world");
 
@@ -111,10 +160,10 @@ mod tests {
         assert!(size * 2 < 1024);
 
         assert!(batch.try_add_message(message.clone()).is_ok());
-        assert_eq!(batch.size_in_bytes, size as u64);
+        assert_eq!(batch.size_in_bytes, (size + overhead) as u64);
 
         assert!(batch.try_add_message(message).is_ok());
-        assert_eq!(batch.size_in_bytes, size as u64 * 2);
+        assert_eq!(batch.size_in_bytes, (size * 2 + overhead) as u64);
     }
 
     #[test]
@@ -146,6 +195,10 @@ mod tests {
     #[test]
     fn try_add_accepts_message_until_batch_is_full() {
         let max_size_in_bytes = 1024;
+        let overhead = match max_size_in_bytes > MAXIMUM_BYTES_SMALL_MESSAGE as u64 {
+            true => OVERHEAD_BYTES_LARGE_MESSAGE,
+            false => OVERHEAD_BYTES_SMALL_MESSAGE,
+        };
         let mut batch = AmqpMessageBatch::new(max_size_in_bytes);
 
         let message = ServiceBusMessage::new("hello world");
@@ -155,7 +208,7 @@ mod tests {
             let serializable = Serializable(message.amqp_message.clone());
             let message_size = serialized_size(&serializable).unwrap();
             cumulated_size_in_bytes += message_size;
-            if cumulated_size_in_bytes as u64 > max_size_in_bytes {
+            if (cumulated_size_in_bytes + overhead) as u64 > max_size_in_bytes {
                 break;
             }
 
