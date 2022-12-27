@@ -59,6 +59,9 @@ pub(crate) fn build_amqp_batch_from_messages(
 
             // Take selected fields from the first message properties and message annotations and
             // use it as the basis for the evelope
+            //
+            // TODO: should AmqpMessageBatch also follow the same pattern? (where first message's
+            // metadata is used as the basis for the batch)
             let properties = first_message.properties.clone();
             let message_annotations = first_message.message_annotations.clone();
 
