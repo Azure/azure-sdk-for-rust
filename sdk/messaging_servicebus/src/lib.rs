@@ -124,6 +124,10 @@ Below shows supported Service Bus features
 | Transaction | Not yet |
 | Processor | Not yet |
 | Session processor | Not yet |
+
+# MSRV (Minimum Supported Rust Version)
+
+1.65.0 is the MSRV for this crate because it uses generic associated types.
 */
 
 #![recursion_limit = "128"]
