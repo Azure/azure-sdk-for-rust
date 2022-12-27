@@ -76,12 +76,10 @@ impl TransportMessageBatch for AmqpMessageBatch {
                 };
             let result = match reserve_overhead_envelope.sendable {
                 SendableEnvelope::Single(sendable) => {
-                    let serializable = Serializable(sendable.message);
-                    serialized_size(&serializable)
+                    serialized_size(&Serializable(sendable.message))
                 }
                 SendableEnvelope::Batch(sendable) => {
-                    let serializable = Serializable(sendable.message);
-                    serialized_size(&serializable)
+                    serialized_size(&Serializable(sendable.message))
                 }
             };
             match result {
