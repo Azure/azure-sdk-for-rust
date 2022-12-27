@@ -69,12 +69,11 @@ where
     type CreateSenderError = OpenSenderError;
     type CreateReceiverError = OpenReceiverError;
     type DisposeError = AmqpClientError;
+    type CreateRuleManagerError = OpenRuleManagerError;
 
     type Sender = AmqpSender;
     type Receiver = AmqpReceiver;
     type SessionReceiver = AmqpSessionReceiver;
-
-    type CreateRuleManagerError = OpenRuleManagerError;
     type RuleManager = AmqpRuleManager;
 
     async fn create_transport_client(

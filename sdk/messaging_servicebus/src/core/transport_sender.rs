@@ -13,7 +13,7 @@ use crate::ServiceBusSender;
 /// that the public [`ServiceBusSender`] employ a transport producer via containment and delegate
 /// operations to it rather than understanding protocol-specific details for different transports.
 #[async_trait]
-pub trait TransportSender: Sealed {
+pub(crate) trait TransportSender: Sealed {
     /// Error with sending a message
     type SendError: std::error::Error + Send;
 

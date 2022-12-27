@@ -25,7 +25,7 @@ use crate::ServiceBusMessage;
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
 /// instance may provide operations for a specific transport.
 #[async_trait]
-pub trait TransportClient: Sized + Sealed {
+pub(crate) trait TransportClient: Sized + Sealed {
     /// Error with creating a client
     type CreateClientError: std::error::Error + Send;
 

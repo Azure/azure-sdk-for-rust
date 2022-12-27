@@ -1,7 +1,11 @@
 //! Implements `ServiceBusMessageBatch`.
 
+use fe2o3_amqp_types::messaging::{Data, Message};
+
 use crate::{
-    amqp::amqp_message_batch::AmqpMessageBatch, core::TransportMessageBatch, ServiceBusMessage,
+    amqp::{amqp_message_batch::AmqpMessageBatch, error::TryAddMessageError},
+    core::TransportMessageBatch,
+    ServiceBusMessage,
 };
 
 // Conditional import for docs.rs
@@ -15,8 +19,6 @@ pub struct CreateMessageBatchOptions {
     /// The maximum size of the batch, in bytes.
     pub max_size_in_bytes: Option<u64>,
 }
-
-type TransportMessageBatchImpl = AmqpMessageBatch;
 
 /// A set of [`ServiceBusMessage`] with size constraints known up-front, intended to be sent to the
 /// Queue/Topic as a single batch.
@@ -71,12 +73,12 @@ impl ServiceBusMessageBatch {
     pub fn try_add_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
-    ) -> Result<(), <TransportMessageBatchImpl as TransportMessageBatch>::TryAddError> {
+    ) -> Result<(), TryAddMessageError> {
         self.inner.try_add_message(message.into())
     }
 
     /// Iterate over the messages in the batch.
-    pub fn iter(&self) -> <TransportMessageBatchImpl as TransportMessageBatch>::Iter<'_> {
+    pub fn iter(&self) -> std::slice::Iter<'_, Message<Data>> {
         self.inner.iter()
     }
 

@@ -1,17 +1,22 @@
 //! Implemments `ServiceBusRuleManager`
 
+use fe2o3_amqp::link::DetachError;
+
 use crate::{
     administration::RuleProperties,
-    amqp::{amqp_request_message::add_rule::CreateRuleFilter, amqp_rule_manager::AmqpRuleManager},
+    amqp::{
+        amqp_request_message::add_rule::CreateRuleFilter,
+        amqp_rule_manager::AmqpRuleManager,
+        error::{AmqpRequestResponseError, CreateRuleError},
+    },
     core::TransportRuleManager,
+    primitives::error::RetryError,
 };
-
-type TransportRuleManagerImpl = AmqpRuleManager;
 
 /// A `ServiceBusRuleManager` is used to manage rules for a subscription.
 #[derive(Debug)]
 pub struct ServiceBusRuleManager {
-    pub(crate) inner: TransportRuleManagerImpl,
+    pub(crate) inner: AmqpRuleManager,
 }
 
 impl ServiceBusRuleManager {
@@ -29,9 +34,7 @@ impl ServiceBusRuleManager {
     }
 
     /// Closes the rule manager and perform any cleanup required.
-    pub async fn dispose(
-        self,
-    ) -> Result<(), <TransportRuleManagerImpl as TransportRuleManager>::CloseError> {
+    pub async fn dispose(self) -> Result<(), DetachError> {
         self.inner.close().await
     }
 
@@ -67,7 +70,7 @@ impl ServiceBusRuleManager {
         &mut self,
         name: impl Into<String>,
         filter: impl Into<CreateRuleFilter>,
-    ) -> Result<(), <TransportRuleManagerImpl as TransportRuleManager>::CreateRuleError> {
+    ) -> Result<(), RetryError<CreateRuleError>> {
         self.inner.create_rule(name.into(), filter.into()).await
     }
 
@@ -75,17 +78,14 @@ impl ServiceBusRuleManager {
     pub async fn delete_rule(
         &mut self,
         rule_name: impl Into<String>,
-    ) -> Result<(), <TransportRuleManagerImpl as TransportRuleManager>::DeleteRuleError> {
+    ) -> Result<(), RetryError<AmqpRequestResponseError>> {
         self.inner.delete_rule(rule_name.into()).await
     }
 
     /// Get the rules associated with the current subscription.
     pub async fn get_rules(
         &mut self,
-    ) -> Result<
-        Vec<RuleProperties>,
-        <TransportRuleManagerImpl as TransportRuleManager>::GetRulesError,
-    > {
+    ) -> Result<Vec<RuleProperties>, RetryError<AmqpRequestResponseError>> {
         let mut skip = 0;
         let mut buffer = Vec::new();
         loop {

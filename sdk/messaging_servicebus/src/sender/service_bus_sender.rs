@@ -1,17 +1,21 @@
 //! Implements `ServiceBusSender` and `ServiceBusSenderOptions`
 
+use fe2o3_amqp::link::DetachError;
 use time::OffsetDateTime;
 
 use crate::{
-    amqp::amqp_sender::AmqpSender, core::TransportSender, CreateMessageBatchOptions,
-    ServiceBusMessage, ServiceBusMessageBatch,
+    amqp::{
+        amqp_sender::AmqpSender,
+        error::{AmqpRequestResponseError, AmqpSendError, RequestedSizeOutOfRange},
+    },
+    core::TransportSender,
+    primitives::error::RetryError,
+    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
 };
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
 use crate::ServiceBusClient;
-
-type TransportSenderImpl = AmqpSender;
 
 /// The set of options that can be specified when creating a [`ServiceBusSender`]
 /// to configure its behavior.
@@ -52,10 +56,7 @@ impl ServiceBusSender {
     pub fn create_message_batch(
         &self,
         options: CreateMessageBatchOptions,
-    ) -> Result<
-        ServiceBusMessageBatch,
-        <TransportSenderImpl as TransportSender>::CreateMessageBatchError,
-    > {
+    ) -> Result<ServiceBusMessageBatch, RequestedSizeOutOfRange> {
         let inner = self.inner.create_message_batch(options)?;
         Ok(ServiceBusMessageBatch { inner })
     }
@@ -64,7 +65,7 @@ impl ServiceBusSender {
     pub async fn send_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
-    ) -> Result<(), <AmqpSender as TransportSender>::SendError> {
+    ) -> Result<(), RetryError<AmqpSendError>> {
         let iter = std::iter::once(message.into());
         self.send_messages(iter).await
     }
@@ -73,7 +74,7 @@ impl ServiceBusSender {
     pub async fn send_messages<M, I>(
         &mut self,
         messages: M,
-    ) -> Result<(), <TransportSenderImpl as TransportSender>::SendError>
+    ) -> Result<(), RetryError<AmqpSendError>>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -87,7 +88,7 @@ impl ServiceBusSender {
     pub async fn send_message_batch(
         &mut self,
         batch: ServiceBusMessageBatch,
-    ) -> Result<(), <TransportSenderImpl as TransportSender>::SendError> {
+    ) -> Result<(), RetryError<AmqpSendError>> {
         self.inner.send_batch(batch.inner).await
     }
 
@@ -96,7 +97,7 @@ impl ServiceBusSender {
         &mut self,
         message: impl Into<ServiceBusMessage>,
         enqueue_time: OffsetDateTime,
-    ) -> Result<i64, <TransportSenderImpl as TransportSender>::ScheduleError> {
+    ) -> Result<i64, RetryError<AmqpRequestResponseError>> {
         let messages = std::iter::once(message.into());
         let seq_nums = self.schedule_messages(messages, enqueue_time).await?;
         // PANIC: there should be exactly one sequence number returned
@@ -109,7 +110,7 @@ impl ServiceBusSender {
         &mut self,
         messages: M,
         enqueue_time: OffsetDateTime,
-    ) -> Result<Vec<i64>, <TransportSenderImpl as TransportSender>::ScheduleError>
+    ) -> Result<Vec<i64>, RetryError<AmqpRequestResponseError>>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -131,7 +132,7 @@ impl ServiceBusSender {
     pub async fn cancel_scheduled_message(
         &mut self,
         sequence_number: i64,
-    ) -> Result<(), <TransportSenderImpl as TransportSender>::ScheduleError> {
+    ) -> Result<(), RetryError<AmqpRequestResponseError>> {
         // The request will always encode the sequence numbers as a Vec, so it doesn't hurt to
         // allocate a Vec here.
         self.cancel_scheduled_messages(std::iter::once(sequence_number))
@@ -142,7 +143,7 @@ impl ServiceBusSender {
     pub async fn cancel_scheduled_messages<I>(
         &mut self,
         sequence_numbers: I,
-    ) -> Result<(), <TransportSenderImpl as TransportSender>::ScheduleError>
+    ) -> Result<(), RetryError<AmqpRequestResponseError>>
     where
         I: IntoIterator<Item = i64>,
         I::IntoIter: ExactSizeIterator + Send,
@@ -156,7 +157,7 @@ impl ServiceBusSender {
     }
 
     /// Closes the sender and performs any cleanup required.
-    pub async fn dispose(self) -> Result<(), <TransportSenderImpl as TransportSender>::CloseError> {
+    pub async fn dispose(self) -> Result<(), DetachError> {
         self.inner.close().await
     }
 }

@@ -5,13 +5,16 @@ use std::{borrow::Cow, marker::PhantomData};
 use azure_core::{auth::TokenCredential, Url};
 
 use crate::{
-    amqp::amqp_client::AmqpClient,
+    amqp::{
+        amqp_client::AmqpClient,
+        error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError},
+    },
     authorization::{
         service_bus_token_credential::ServiceBusTokenCredential,
         shared_access_credential::SharedAccessCredential, AzureNamedKeyCredential,
         AzureSasCredential,
     },
-    core::{BasicRetryPolicy, TransportClient, TransportSessionReceiver},
+    core::{BasicRetryPolicy, TransportSessionReceiver},
     diagnostics,
     entity_name_formatter::{self, format_entity_path},
     primitives::{
@@ -175,8 +178,6 @@ where
     }
 }
 
-type TransportClientImpl<RP> = AmqpClient<RP>;
-
 /// The [`ServiceBusClient`] is the top-level client through which all Service Bus entities can be
 /// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
 /// [`ServiceBusReceiver`] will share the same AMQP connection. Disposing the [`ServiceBusClient`]
@@ -187,7 +188,7 @@ pub struct ServiceBusClient<RP> {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<TransportClientImpl<RP>>, // TODO: use trait objects?
+    connection: ServiceBusConnection<AmqpClient<RP>>, // TODO: use trait objects?
 }
 
 impl ServiceBusClient<BasicRetryPolicy> {
@@ -312,9 +313,7 @@ where
 {
     /// Performs the task needed to clean up resources used by the [`ServiceBusClient`],
     /// including ensuring that the client itself has been closed.
-    pub async fn dispose(
-        self,
-    ) -> Result<(), <TransportClientImpl<RP> as TransportClient>::DisposeError> {
+    pub async fn dispose(self) -> Result<(), AmqpClientError> {
         self.connection.dispose().await?;
         Ok(())
     }
@@ -334,8 +333,7 @@ where
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,
-    ) -> Result<ServiceBusSender, <TransportClientImpl<RP> as TransportClient>::CreateSenderError>
-    {
+    ) -> Result<ServiceBusSender, OpenSenderError> {
         let entity_path = queue_or_topic_name.into();
         let identifier = options
             .identifier
@@ -370,8 +368,7 @@ where
         &mut self,
         queue_name: impl Into<String>,
         options: ServiceBusReceiverOptions,
-    ) -> Result<ServiceBusReceiver, <TransportClientImpl<RP> as TransportClient>::CreateReceiverError>
-    {
+    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
         let entity_path = queue_name.into();
         self.create_receiver(entity_path, options).await
     }
@@ -383,8 +380,7 @@ where
         topic_name: impl AsRef<str>,
         subscription_name: impl AsRef<str>,
         options: ServiceBusReceiverOptions,
-    ) -> Result<ServiceBusReceiver, <TransportClientImpl<RP> as TransportClient>::CreateReceiverError>
-    {
+    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
         let entity_path = entity_name_formatter::format_subscription_path(
             topic_name.as_ref(),
             subscription_name.as_ref(),
@@ -397,8 +393,7 @@ where
         &mut self,
         entity_path: String,
         options: ServiceBusReceiverOptions,
-    ) -> Result<ServiceBusReceiver, <TransportClientImpl<RP> as TransportClient>::CreateReceiverError>
-    {
+    ) -> Result<ServiceBusReceiver, OpenReceiverError> {
         let identifier = options
             .identifier
             .filter(|id| !id.is_empty())
@@ -432,10 +427,7 @@ where
         queue_name: impl Into<String>,
         session_id: impl Into<String>,
         options: ServiceBusSessionReceiverOptions,
-    ) -> Result<
-        ServiceBusSessionReceiver,
-        <TransportClientImpl<RP> as TransportClient>::CreateReceiverError,
-    > {
+    ) -> Result<ServiceBusSessionReceiver, OpenReceiverError> {
         let entity_path = queue_name.into();
         let session_id = session_id.into();
         self.accept_session(entity_path, session_id, options).await
@@ -453,10 +445,7 @@ where
         subscription_name: impl AsRef<str>,
         session_id: impl Into<String>,
         options: ServiceBusSessionReceiverOptions,
-    ) -> Result<
-        ServiceBusSessionReceiver,
-        <TransportClientImpl<RP> as TransportClient>::CreateReceiverError,
-    > {
+    ) -> Result<ServiceBusSessionReceiver, OpenReceiverError> {
         let entity_path = entity_name_formatter::format_subscription_path(
             topic_name.as_ref(),
             subscription_name.as_ref(),
@@ -470,10 +459,7 @@ where
         entity_path: String,
         session_id: String,
         options: ServiceBusSessionReceiverOptions,
-    ) -> Result<
-        ServiceBusSessionReceiver,
-        <TransportClientImpl<RP> as TransportClient>::CreateReceiverError,
-    > {
+    ) -> Result<ServiceBusSessionReceiver, OpenReceiverError> {
         let identifier = options
             .identifier
             .unwrap_or_else(|| diagnostics::utilities::generate_identifier(&entity_path));
@@ -576,10 +562,7 @@ where
         &mut self,
         topic_name: impl AsRef<str>,
         subscription_name: impl AsRef<str>,
-    ) -> Result<
-        ServiceBusRuleManager,
-        <TransportClientImpl<RP> as TransportClient>::CreateRuleManagerError,
-    > {
+    ) -> Result<ServiceBusRuleManager, OpenRuleManagerError> {
         let subscription_path = entity_name_formatter::format_subscription_path(
             topic_name.as_ref(),
             subscription_name.as_ref(),

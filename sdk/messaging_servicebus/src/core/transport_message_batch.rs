@@ -1,7 +1,7 @@
 use crate::{sealed::Sealed, ServiceBusMessage};
 
 /// Trait for a message batch.
-pub trait TransportMessageBatch: Sealed {
+pub(crate) trait TransportMessageBatch: Sealed {
     /// Error with adding a message to the batch.
     type TryAddError: std::error::Error + Send;
 

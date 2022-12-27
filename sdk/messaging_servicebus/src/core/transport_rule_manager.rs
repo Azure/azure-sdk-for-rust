@@ -7,7 +7,7 @@ use crate::{
 
 /// Trait for rule manager implementations.
 #[async_trait]
-pub trait TransportRuleManager: Sealed {
+pub(crate) trait TransportRuleManager: Sealed {
     /// Error with creating a rule
     type CreateRuleError: std::error::Error + Send;
 

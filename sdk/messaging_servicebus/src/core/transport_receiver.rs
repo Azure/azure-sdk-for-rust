@@ -19,7 +19,7 @@ use crate::ServiceBusReceiver;
 
 /// Trait for session receiver
 #[async_trait]
-pub trait TransportSessionReceiver: TransportReceiver {
+pub(crate) trait TransportSessionReceiver: TransportReceiver {
     // /// TODO: dispose/close will consume the ownership, is this still necessary?
     // /// Indicates whether the session link has been closed. This is useful for session receiver scenarios because once the link is closed for a
     // /// session receiver it will not be reopened.
@@ -59,7 +59,7 @@ pub trait TransportSessionReceiver: TransportReceiver {
 
 /// Trait for a receiver.
 #[async_trait]
-pub trait TransportReceiver: Sealed {
+pub(crate) trait TransportReceiver: Sealed {
     /// Error with request-response operations
     type RequestResponseError: std::error::Error + Send;
 
