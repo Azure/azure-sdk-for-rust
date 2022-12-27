@@ -14,7 +14,7 @@ use crate::amqp::{
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
-use crate::{ServiceBusMessage};
+use crate::ServiceBusMessage;
 
 /// A [`SqlRuleFilter`] holds a SQL-like condition expression that is evaluated in the broker
 /// against the arriving messages' user-defined properties and system properties. All system

@@ -15,7 +15,7 @@ use crate::{
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
-use crate::{ServiceBusReceiver};
+use crate::ServiceBusReceiver;
 
 /// Trait for session receiver
 #[async_trait]

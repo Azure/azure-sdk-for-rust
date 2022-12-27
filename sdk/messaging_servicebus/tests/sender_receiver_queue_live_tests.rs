@@ -509,13 +509,17 @@ async fn renew_session_lock_and_set_get_session_state() -> Result<(), anyhow::Er
     let queue_name = std::env::var("SERVICE_BUS_SESSION_QUEUE")?;
 
     let mut client = ServiceBusClient::new(connection_string, Default::default()).await?;
-    let mut sender = client.create_sender(&queue_name, Default::default()).await?;
+    let mut sender = client
+        .create_sender(&queue_name, Default::default())
+        .await?;
 
     let mut session_message = ServiceBusMessage::new("test message");
     session_message.set_session_id(String::from("test_session_1"))?;
     sender.send_message(session_message).await?;
 
-    let mut session_receiver = client.accept_next_session_for_queue(queue_name, Default::default()).await?;
+    let mut session_receiver = client
+        .accept_next_session_for_queue(queue_name, Default::default())
+        .await?;
     let received = session_receiver.receive_message().await?;
     session_receiver.complete_message(&received).await?;
     session_receiver.renew_session_lock().await?;

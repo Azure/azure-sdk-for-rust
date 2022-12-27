@@ -9,16 +9,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
     let mut client = ServiceBusClient::new(
         "<NAMESPACE-CONNECTION-STRING>",
-        ServiceBusClientOptions::default()
+        ServiceBusClientOptions::default(),
     )
     .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
-    let mut sender = client.create_sender(
-        "<QUEUE-NAME>",
-        ServiceBusSenderOptions::default()
-    )
-    .await?;
+    let mut sender = client
+        .create_sender("<QUEUE-NAME>", ServiceBusSenderOptions::default())
+        .await?;
 
     // Create a batch
     let mut message_batch = sender.create_message_batch(Default::default())?;
