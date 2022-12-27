@@ -22,9 +22,7 @@ use crate::{
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
-use crate::{
-    ServiceBusReceivedMessage, ServiceBusPeekedMessage,
-};
+use crate::{ServiceBusPeekedMessage, ServiceBusReceivedMessage};
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum AmqpConnectionScopeError {

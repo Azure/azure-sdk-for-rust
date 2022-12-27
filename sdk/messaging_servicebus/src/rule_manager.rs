@@ -1,20 +1,20 @@
 //! Implemments `ServiceBusRuleManager`
 
 use crate::{
-    administration::RuleProperties, amqp::amqp_request_message::add_rule::CreateRuleFilter,
+    administration::RuleProperties,
+    amqp::{amqp_request_message::add_rule::CreateRuleFilter, amqp_rule_manager::AmqpRuleManager},
     core::TransportRuleManager,
 };
 
+type TransportRuleManagerImpl = AmqpRuleManager;
+
 /// A `ServiceBusRuleManager` is used to manage rules for a subscription.
 #[derive(Debug)]
-pub struct ServiceBusRuleManager<T> {
-    pub(crate) inner: T,
+pub struct ServiceBusRuleManager {
+    pub(crate) inner: TransportRuleManagerImpl,
 }
 
-impl<T> ServiceBusRuleManager<T>
-where
-    T: TransportRuleManager,
-{
+impl ServiceBusRuleManager {
     const MAX_RULES_PER_REQUEST: i32 = 100;
 
     /// Get the ID to identify this client.
@@ -29,7 +29,9 @@ where
     }
 
     /// Closes the rule manager and perform any cleanup required.
-    pub async fn dispose(self) -> Result<(), T::CloseError> {
+    pub async fn dispose(
+        self,
+    ) -> Result<(), <TransportRuleManagerImpl as TransportRuleManager>::CloseError> {
         self.inner.close().await
     }
 
@@ -65,7 +67,7 @@ where
         &mut self,
         name: impl Into<String>,
         filter: impl Into<CreateRuleFilter>,
-    ) -> Result<(), T::CreateRuleError> {
+    ) -> Result<(), <TransportRuleManagerImpl as TransportRuleManager>::CreateRuleError> {
         self.inner.create_rule(name.into(), filter.into()).await
     }
 
@@ -73,12 +75,17 @@ where
     pub async fn delete_rule(
         &mut self,
         rule_name: impl Into<String>,
-    ) -> Result<(), T::DeleteRuleError> {
+    ) -> Result<(), <TransportRuleManagerImpl as TransportRuleManager>::DeleteRuleError> {
         self.inner.delete_rule(rule_name.into()).await
     }
 
     /// Get the rules associated with the current subscription.
-    pub async fn get_rules(&mut self) -> Result<Vec<RuleProperties>, T::GetRulesError> {
+    pub async fn get_rules(
+        &mut self,
+    ) -> Result<
+        Vec<RuleProperties>,
+        <TransportRuleManagerImpl as TransportRuleManager>::GetRulesError,
+    > {
         let mut skip = 0;
         let mut buffer = Vec::new();
         loop {

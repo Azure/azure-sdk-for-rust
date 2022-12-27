@@ -3,12 +3,15 @@
 use time::OffsetDateTime;
 
 use crate::{
-    core::TransportSender, CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
+    amqp::amqp_sender::AmqpSender, core::TransportSender, CreateMessageBatchOptions,
+    ServiceBusMessage, ServiceBusMessageBatch,
 };
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
 use crate::ServiceBusClient;
+
+type TransportSenderImpl = AmqpSender;
 
 /// The set of options that can be specified when creating a [`ServiceBusSender`]
 /// to configure its behavior.
@@ -23,14 +26,11 @@ pub struct ServiceBusSenderOptions {
 /// or Topic). It can be used for both session and non-session entities. It is constructed by
 /// calling [`ServiceBusClient::create_sender`].
 #[derive(Debug)]
-pub struct ServiceBusSender<S> {
-    pub(crate) inner: S,
+pub struct ServiceBusSender {
+    pub(crate) inner: AmqpSender,
 }
 
-impl<S> ServiceBusSender<S>
-where
-    S: TransportSender,
-{
+impl ServiceBusSender {
     /// The path of the entity that the sender is connected to, specific to the
     /// Service Bus namespace that contains it.
     pub fn entity_path(&self) -> &str {
@@ -52,7 +52,10 @@ where
     pub fn create_message_batch(
         &self,
         options: CreateMessageBatchOptions,
-    ) -> Result<ServiceBusMessageBatch<S::MessageBatch>, S::CreateMessageBatchError> {
+    ) -> Result<
+        ServiceBusMessageBatch,
+        <TransportSenderImpl as TransportSender>::CreateMessageBatchError,
+    > {
         let inner = self.inner.create_message_batch(options)?;
         Ok(ServiceBusMessageBatch { inner })
     }
@@ -61,13 +64,16 @@ where
     pub async fn send_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
-    ) -> Result<(), S::SendError> {
+    ) -> Result<(), <AmqpSender as TransportSender>::SendError> {
         let iter = std::iter::once(message.into());
         self.send_messages(iter).await
     }
 
     /// Sends a set of [`ServiceBusMessage`] to the Queue/Topic.
-    pub async fn send_messages<M, I>(&mut self, messages: M) -> Result<(), S::SendError>
+    pub async fn send_messages<M, I>(
+        &mut self,
+        messages: M,
+    ) -> Result<(), <TransportSenderImpl as TransportSender>::SendError>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -80,8 +86,8 @@ where
     /// Sends a [`ServiceBusMessageBatch`] to the Queue/Topic.
     pub async fn send_message_batch(
         &mut self,
-        batch: ServiceBusMessageBatch<S::MessageBatch>,
-    ) -> Result<(), S::SendError> {
+        batch: ServiceBusMessageBatch,
+    ) -> Result<(), <TransportSenderImpl as TransportSender>::SendError> {
         self.inner.send_batch(batch.inner).await
     }
 
@@ -90,7 +96,7 @@ where
         &mut self,
         message: impl Into<ServiceBusMessage>,
         enqueue_time: OffsetDateTime,
-    ) -> Result<i64, S::ScheduleError> {
+    ) -> Result<i64, <TransportSenderImpl as TransportSender>::ScheduleError> {
         let messages = std::iter::once(message.into());
         let seq_nums = self.schedule_messages(messages, enqueue_time).await?;
         // PANIC: there should be exactly one sequence number returned
@@ -103,7 +109,7 @@ where
         &mut self,
         messages: M,
         enqueue_time: OffsetDateTime,
-    ) -> Result<Vec<i64>, S::ScheduleError>
+    ) -> Result<Vec<i64>, <TransportSenderImpl as TransportSender>::ScheduleError>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -125,7 +131,7 @@ where
     pub async fn cancel_scheduled_message(
         &mut self,
         sequence_number: i64,
-    ) -> Result<(), S::ScheduleError> {
+    ) -> Result<(), <TransportSenderImpl as TransportSender>::ScheduleError> {
         // The request will always encode the sequence numbers as a Vec, so it doesn't hurt to
         // allocate a Vec here.
         self.cancel_scheduled_messages(std::iter::once(sequence_number))
@@ -136,7 +142,7 @@ where
     pub async fn cancel_scheduled_messages<I>(
         &mut self,
         sequence_numbers: I,
-    ) -> Result<(), S::ScheduleError>
+    ) -> Result<(), <TransportSenderImpl as TransportSender>::ScheduleError>
     where
         I: IntoIterator<Item = i64>,
         I::IntoIter: ExactSizeIterator + Send,
@@ -150,7 +156,7 @@ where
     }
 
     /// Closes the sender and performs any cleanup required.
-    pub async fn dispose(self) -> Result<(), S::CloseError> {
+    pub async fn dispose(self) -> Result<(), <TransportSenderImpl as TransportSender>::CloseError> {
         self.inner.close().await
     }
 }

@@ -20,26 +20,26 @@ use super::{
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
-use crate::{ServiceBusMessage};
+use crate::ServiceBusMessage;
 
 /// Provides an abstraction for generalizing an Service Bus entity client so that a dedicated
 /// instance may provide operations for a specific transport.
 #[async_trait]
 pub trait TransportClient: Sized + Sealed {
     /// Error with creating a client
-    type CreateClientError: Send;
+    type CreateClientError: std::error::Error + Send;
 
     /// Error with creating a sender
-    type CreateSenderError: Send;
+    type CreateSenderError: std::error::Error + Send;
 
     /// Error with creating a receiver
-    type CreateReceiverError: Send;
+    type CreateReceiverError: std::error::Error + Send;
 
     /// Error with creating a rule manager
-    type CreateRuleManagerError: Send;
+    type CreateRuleManagerError: std::error::Error + Send;
 
     /// Error with closing a client
-    type DisposeError: Send;
+    type DisposeError: std::error::Error + Send;
 
     /// Sender type
     type Sender: TransportSender;

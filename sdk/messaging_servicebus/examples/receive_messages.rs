@@ -9,16 +9,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
     let mut client = ServiceBusClient::new(
         "<NAMESPACE-CONNECTION-STRING>",
-        ServiceBusClientOptions::default()
+        ServiceBusClientOptions::default(),
     )
     .await?;
 
     // Replace "<QUEUE-NAME>" with the name of your queue
-    let mut receiver = client.create_receiver_for_queue(
-        "<QUEUE-NAME>",
-        ServiceBusReceiverOptions::default()
-    )
-    .await?;
+    let mut receiver = client
+        .create_receiver_for_queue("<QUEUE-NAME>", ServiceBusReceiverOptions::default())
+        .await?;
 
     // Receive messages from the queue
     // This will wait indefinitely until at least one message is received

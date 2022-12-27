@@ -12,7 +12,7 @@ use crate::{
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_policy::{run_operation},
+        service_bus_retry_policy::run_operation,
     },
     sealed::Sealed,
     ServiceBusReceiveMode,

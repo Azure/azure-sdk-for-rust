@@ -9,16 +9,16 @@ use crate::{
 #[async_trait]
 pub trait TransportRuleManager: Sealed {
     /// Error with creating a rule
-    type CreateRuleError: Send;
+    type CreateRuleError: std::error::Error + Send;
 
     /// Error with deleting a rule
-    type DeleteRuleError: Send;
+    type DeleteRuleError: std::error::Error + Send;
 
     /// Error with getting rules
-    type GetRulesError: Send;
+    type GetRulesError: std::error::Error + Send;
 
     /// Error with closing a rule manager
-    type CloseError: Send;
+    type CloseError: std::error::Error + Send;
 
     /// Gets the identifier of the rule manager.
     fn identifier(&self) -> &str;

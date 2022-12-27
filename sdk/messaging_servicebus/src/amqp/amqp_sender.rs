@@ -15,9 +15,7 @@ use crate::sealed::Sealed;
 use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
     core::TransportSender,
-    primitives::service_bus_retry_policy::{
-        run_operation, ServiceBusRetryPolicy,
-    },
+    primitives::service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
     CreateMessageBatchOptions, ServiceBusMessage,
 };
 

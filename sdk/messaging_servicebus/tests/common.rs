@@ -1,10 +1,9 @@
 use std::time::Duration as StdDuration;
 
 use azure_messaging_servicebus::{
-    core::TransportSender, ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage,
-    ServiceBusPeekedMessage, ServiceBusReceivedMessage, ServiceBusReceiverOptions,
-    ServiceBusRetryOptions, ServiceBusSender, ServiceBusSenderOptions,
-    ServiceBusSessionReceiverOptions,
+    ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage, ServiceBusPeekedMessage,
+    ServiceBusReceivedMessage, ServiceBusReceiverOptions, ServiceBusRetryOptions, ServiceBusSender,
+    ServiceBusSenderOptions, ServiceBusSessionReceiverOptions,
 };
 use time::OffsetDateTime;
 
@@ -73,13 +72,10 @@ pub async fn create_client_and_send_messages_separately_to_queue_or_topic(
 }
 
 #[allow(dead_code)]
-pub async fn send_messages_separately<S>(
-    sender: &mut ServiceBusSender<S>,
+pub async fn send_messages_separately(
+    sender: &mut ServiceBusSender,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
-) -> Result<(), S::SendError>
-where
-    S: TransportSender,
-{
+) -> Result<(), anyhow::Error> {
     for message in messages {
         sender.send_message(message).await?;
     }

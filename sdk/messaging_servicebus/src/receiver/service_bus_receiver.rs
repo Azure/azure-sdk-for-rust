@@ -3,6 +3,7 @@
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
+use crate::amqp::amqp_receiver::AmqpReceiver;
 use crate::primitives::service_bus_peeked_message::ServiceBusPeekedMessage;
 use crate::{
     core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
@@ -38,19 +39,18 @@ pub struct ServiceBusReceiverOptions {
     pub sub_queue: SubQueue,
 }
 
+type TransportReceiverImpl = AmqpReceiver;
+
 /// The [`ServiceBusReceiver`] is responsible for receiving
 /// [`ServiceBusReceivedMessage`] and settling messages from Queues and Subscriptions.
 /// It is constructed by calling [`ServiceBusClient::create_receiver_for_queue`] or
 /// [`ServiceBusClient::create_receiver_for_subscription`].
 #[derive(Debug)]
-pub struct ServiceBusReceiver<R> {
-    pub(crate) inner: R,
+pub struct ServiceBusReceiver {
+    pub(crate) inner: TransportReceiverImpl,
 }
 
-impl<R> ServiceBusReceiver<R>
-where
-    R: TransportReceiver,
-{
+impl ServiceBusReceiver {
     /// The entity path that the receiver is connected to, specific to the Service Bus
     /// namespace that contains it.
     pub fn entity_path(&self) -> &str {
@@ -76,14 +76,19 @@ where
     }
 
     /// Closes the receiver and performs any cleanup required.
-    pub async fn dispose(self) -> Result<(), R::CloseError> {
+    pub async fn dispose(
+        self,
+    ) -> Result<(), <TransportReceiverImpl as TransportReceiver>::CloseError> {
         self.inner.close().await
     }
 
     /// Receive a single message from the entity using the receiver's receive mode.
     ///
     /// This method will wait indefinitely until at least one message is received.
-    pub async fn receive_message(&mut self) -> Result<ServiceBusReceivedMessage, R::ReceiveError> {
+    pub async fn receive_message(
+        &mut self,
+    ) -> Result<ServiceBusReceivedMessage, <TransportReceiverImpl as TransportReceiver>::ReceiveError>
+    {
         self.receive_messages(1).await.map(|mut v| {
             v.drain(..)
                 .next()
@@ -97,7 +102,10 @@ where
     pub async fn receive_messages(
         &mut self,
         max_messages: u32,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
+    ) -> Result<
+        Vec<ServiceBusReceivedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::ReceiveError,
+    > {
         self.inner.receive_messages(max_messages).await
     }
 
@@ -109,7 +117,10 @@ where
     pub async fn receive_message_with_max_wait_time(
         &mut self,
         max_wait_time: impl Into<Option<std::time::Duration>>,
-    ) -> Result<Option<ServiceBusReceivedMessage>, R::ReceiveError> {
+    ) -> Result<
+        Option<ServiceBusReceivedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::ReceiveError,
+    > {
         self.receive_messages_with_max_wait_time(1, max_wait_time)
             .await
             .map(|mut v| v.drain(..).next())
@@ -125,7 +136,10 @@ where
         &mut self,
         max_messages: u32,
         max_wait_time: impl Into<Option<std::time::Duration>>,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, R::ReceiveError> {
+    ) -> Result<
+        Vec<ServiceBusReceivedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::ReceiveError,
+    > {
         self.inner
             .receive_messages_with_max_wait_time(max_messages, max_wait_time.into())
             .await
@@ -135,7 +149,7 @@ where
     pub async fn complete_message(
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
-    ) -> Result<(), R::DispositionError> {
+    ) -> Result<(), <TransportReceiverImpl as TransportReceiver>::DispositionError> {
         self.inner.complete(message.as_ref(), None).await
     }
 
@@ -145,7 +159,7 @@ where
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-    ) -> Result<(), R::DispositionError> {
+    ) -> Result<(), <TransportReceiverImpl as TransportReceiver>::DispositionError> {
         self.inner
             .abandon(message.as_ref(), properties_to_modify, None)
             .await
@@ -156,7 +170,7 @@ where
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
         options: DeadLetterOptions,
-    ) -> Result<(), R::DispositionError> {
+    ) -> Result<(), <TransportReceiverImpl as TransportReceiver>::DispositionError> {
         self.inner
             .dead_letter(
                 message.as_ref(),
@@ -179,7 +193,7 @@ where
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-    ) -> Result<(), R::DispositionError> {
+    ) -> Result<(), <TransportReceiverImpl as TransportReceiver>::DispositionError> {
         self.inner
             .defer(message.as_ref(), properties_to_modify, None)
             .await
@@ -197,7 +211,10 @@ where
     pub async fn peek_message(
         &mut self,
         from_sequence_number: Option<i64>,
-    ) -> Result<Option<ServiceBusPeekedMessage>, R::RequestResponseError> {
+    ) -> Result<
+        Option<ServiceBusPeekedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::RequestResponseError,
+    > {
         self.peek_messages(1, from_sequence_number)
             .await
             .map(|mut v| v.drain(..).next())
@@ -214,7 +231,10 @@ where
         &mut self,
         max_messages: u32, // FIXME: stop user from putting a negative number here?
         from_sequence_number: Option<i64>,
-    ) -> Result<Vec<ServiceBusPeekedMessage>, R::RequestResponseError> {
+    ) -> Result<
+        Vec<ServiceBusPeekedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::RequestResponseError,
+    > {
         self.inner
             .peek_messages(from_sequence_number, max_messages as i32)
             .await
@@ -225,7 +245,10 @@ where
     pub async fn receive_deferred_message(
         &mut self,
         sequence_number: i64,
-    ) -> Result<Option<ServiceBusReceivedMessage>, R::RequestResponseError> {
+    ) -> Result<
+        Option<ServiceBusReceivedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::RequestResponseError,
+    > {
         self.receive_deferred_messages(std::iter::once(sequence_number))
             .await
             .map(|mut v| v.drain(..).next())
@@ -236,7 +259,10 @@ where
     pub async fn receive_deferred_messages<Seq>(
         &mut self,
         sequence_numbers: Seq,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, R::RequestResponseError>
+    ) -> Result<
+        Vec<ServiceBusReceivedMessage>,
+        <TransportReceiverImpl as TransportReceiver>::RequestResponseError,
+    >
     where
         Seq: IntoIterator<Item = i64> + Send,
         Seq::IntoIter: Send,
@@ -251,7 +277,7 @@ where
     pub async fn renew_message_lock(
         &mut self,
         message: &mut ServiceBusReceivedMessage,
-    ) -> Result<(), R::RequestResponseError> {
+    ) -> Result<(), <TransportReceiverImpl as TransportReceiver>::RequestResponseError> {
         let lock_tokens = vec![message.lock_token().clone()];
         let mut expirations = self.inner.renew_message_lock(lock_tokens).await?;
         if let Some(expiration) = expirations.drain(..).next() {

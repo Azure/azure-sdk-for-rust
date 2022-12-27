@@ -15,7 +15,7 @@ use crate::{
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
-use crate::{ServiceBusReceiver};
+use crate::ServiceBusReceiver;
 
 /// Trait for session receiver
 #[async_trait]
@@ -61,16 +61,16 @@ pub trait TransportSessionReceiver: TransportReceiver {
 #[async_trait]
 pub trait TransportReceiver: Sealed {
     /// Error with request-response operations
-    type RequestResponseError;
+    type RequestResponseError: std::error::Error + Send;
 
     /// Error with receiving messages
-    type ReceiveError;
+    type ReceiveError: std::error::Error + Send;
 
     /// Error with disposing messages
-    type DispositionError;
+    type DispositionError: std::error::Error + Send;
 
     /// Error with closing the receiver
-    type CloseError;
+    type CloseError: std::error::Error + Send;
 
     /// Get the entity path
     fn entity_path(&self) -> &str;

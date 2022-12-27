@@ -6,7 +6,7 @@ use crate::{primitives::service_bus_transport_type::ServiceBusTransportType, sea
 
 #[async_trait]
 pub trait TransportConnectionScope: Sealed {
-    type Error;
+    type Error: std::error::Error + Send;
 
     fn transport_type(&self) -> ServiceBusTransportType;
 

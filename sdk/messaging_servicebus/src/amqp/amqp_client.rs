@@ -10,11 +10,12 @@ use crate::{
     core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_retry_policy::{ServiceBusRetryPolicyExt},
+        service_bus_retry_policy::ServiceBusRetryPolicyExt,
         service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
-    sealed::Sealed, ServiceBusRetryPolicy,
+    sealed::Sealed,
+    ServiceBusRetryPolicy,
 };
 
 use super::{

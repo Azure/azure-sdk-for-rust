@@ -6,7 +6,7 @@ use super::TransportMessageBatch;
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
-use crate::{ServiceBusSender};
+use crate::ServiceBusSender;
 
 /// Provides an abstraction for generalizing an Service Bus entity Producer so that a dedicated
 /// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended

@@ -1,6 +1,8 @@
 //! Implements `ServiceBusMessageBatch`.
 
-use crate::{core::TransportMessageBatch, ServiceBusMessage};
+use crate::{
+    amqp::amqp_message_batch::AmqpMessageBatch, core::TransportMessageBatch, ServiceBusMessage,
+};
 
 // Conditional import for docs.rs
 #[cfg(docsrs)]
@@ -13,6 +15,8 @@ pub struct CreateMessageBatchOptions {
     /// The maximum size of the batch, in bytes.
     pub max_size_in_bytes: Option<u64>,
 }
+
+type TransportMessageBatchImpl = AmqpMessageBatch;
 
 /// A set of [`ServiceBusMessage`] with size constraints known up-front, intended to be sent to the
 /// Queue/Topic as a single batch.
@@ -34,11 +38,11 @@ pub struct CreateMessageBatchOptions {
 /// sender.send_message_batch(message_batch).await.unwrap();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ServiceBusMessageBatch<T: TransportMessageBatch> {
-    pub(crate) inner: T,
+pub struct ServiceBusMessageBatch {
+    pub(crate) inner: AmqpMessageBatch,
 }
 
-impl<T: TransportMessageBatch> ServiceBusMessageBatch<T> {
+impl ServiceBusMessageBatch {
     /// The maximum size of the batch, in bytes.
     pub fn max_size_in_bytes(&self) -> u64 {
         self.inner.max_size_in_bytes()
@@ -67,12 +71,12 @@ impl<T: TransportMessageBatch> ServiceBusMessageBatch<T> {
     pub fn try_add_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
-    ) -> Result<(), T::TryAddError> {
+    ) -> Result<(), <TransportMessageBatchImpl as TransportMessageBatch>::TryAddError> {
         self.inner.try_add_message(message.into())
     }
 
     /// Iterate over the messages in the batch.
-    pub fn iter(&self) -> T::Iter<'_> {
+    pub fn iter(&self) -> <TransportMessageBatchImpl as TransportMessageBatch>::Iter<'_> {
         self.inner.iter()
     }
 
