@@ -126,6 +126,11 @@ async fn run_queue_tests_sequentially() {
     println!(" ... {:?}", result);
     all_result = all_result.and(result);
 
+    print!("test set_time_to_live");
+    let result = set_time_to_live().await;
+    println!(" ... {:?}", result);
+    all_result = all_result.and(result);
+
     assert!(all_result.is_ok())
 }
 
@@ -855,5 +860,40 @@ async fn receive_and_renew_lock() -> Result<(), anyhow::Error> {
         _ => panic!("Expected locked_until to be set"),
     }
 
+    Ok(())
+}
+
+async fn set_time_to_live() -> Result<(), anyhow::Error> {
+    use std::time::Duration;
+
+    setup_dotenv();
+    let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;
+    let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
+
+    let mut client =
+        ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
+
+    // Create a sender and then send a batch of messages
+    let mut sender = client
+        .create_sender(&queue_name, Default::default())
+        .await?;
+
+    let time_to_live = Duration::from_secs(600);
+    let mut message = ServiceBusMessage::new("test message 1");
+    message.set_time_to_live(time_to_live)?;
+    sender.send_message(message).await?;
+
+    // Create a receiver and then receive the messages
+    let mut receiver = client
+        .create_receiver_for_queue(queue_name, Default::default())
+        .await?;
+    // This will wait indefinitely until at least one message is received
+    let received = receiver.receive_message().await?;
+    receiver.complete_message(&received).await?;
+    assert_eq!(received.time_to_live(), Some(time_to_live));
+
+    sender.dispose().await?;
+    receiver.dispose().await?;
+    client.dispose().await?;
     Ok(())
 }

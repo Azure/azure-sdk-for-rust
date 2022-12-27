@@ -459,6 +459,9 @@ pub enum AmqpSendError {
 impl ServiceBusRetryPolicyError for AmqpSendError {
     fn should_try_recover(&self) -> bool {
         use fe2o3_amqp::link::SendError;
+
+        println!("AmqpSendError: {:?}", self);
+
         matches!(
             self,
             Self::Send(SendError::LinkStateError(

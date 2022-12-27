@@ -298,9 +298,9 @@ impl ServiceBusMessage {
     /// Sets the message’s "time to live" value.
     pub fn set_time_to_live(
         &mut self,
-        ttl: Option<StdDuration>,
+        ttl: impl Into<Option<StdDuration>>,
     ) -> Result<(), MaxAllowedTtlExceededError> {
-        self.amqp_message.set_time_to_live(ttl)
+        self.amqp_message.set_time_to_live(ttl.into())
     }
 
     /// Gets the correlation identifier.
