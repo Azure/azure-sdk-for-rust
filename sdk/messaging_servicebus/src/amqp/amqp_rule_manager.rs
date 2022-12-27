@@ -29,23 +29,20 @@ use super::{
 
 /// An AMQP implementation for Service Bus rule management.
 #[derive(Debug)]
-pub struct AmqpRuleManager<RP> {
+pub struct AmqpRuleManager {
     pub(crate) identifier_str: String,
     pub(crate) service_endpoint: Arc<Url>,
     pub(crate) subscription_path: String,
 
     pub(crate) management_link: AmqpManagementLink,
-    pub(crate) retry_policy: RP,
+    pub(crate) retry_policy: Box<dyn ServiceBusRetryPolicy>,
 
     /// This is ONLY used for recovery
     pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
 }
 
 #[async_trait]
-impl<RP> RecoverableTransport for AmqpRuleManager<RP>
-where
-    RP: Send,
-{
+impl RecoverableTransport for AmqpRuleManager {
     type RecoverError = OpenRuleManagerError;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
@@ -71,10 +68,7 @@ where
     }
 }
 
-impl<RP> AmqpRuleManager<RP>
-where
-    RP: Send,
-{
+impl AmqpRuleManager {
     async fn create_rule<'a>(
         &mut self,
         request: &mut AddRuleRequest,
@@ -112,13 +106,10 @@ where
     }
 }
 
-impl<RP> Sealed for AmqpRuleManager<RP> {}
+impl Sealed for AmqpRuleManager {}
 
 #[async_trait]
-impl<RP> TransportRuleManager for AmqpRuleManager<RP>
-where
-    RP: ServiceBusRetryPolicy + Send,
-{
+impl TransportRuleManager for AmqpRuleManager {
     type CreateRuleError = RetryError<CreateRuleError>;
     type DeleteRuleError = RetryError<AmqpRequestResponseError>;
     type GetRulesError = RetryError<AmqpRequestResponseError>;

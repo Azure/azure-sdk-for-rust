@@ -18,12 +18,12 @@ use crate::{
         error::Error,
         service_bus_connection::{build_connection_resource, ServiceBusConnection},
         service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_transport_type::ServiceBusTransportType,
+        service_bus_transport_type::ServiceBusTransportType, service_bus_retry_policy::ServiceBusRetryPolicyExt,
     },
     receiver::service_bus_session_receiver::{
         ServiceBusSessionReceiver, ServiceBusSessionReceiverOptions,
     },
-    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRetryPolicy, ServiceBusRuleManager,
+    ServiceBusReceiver, ServiceBusReceiverOptions, ServiceBusRuleManager,
     ServiceBusSender, ServiceBusSenderOptions,
 };
 
@@ -72,7 +72,7 @@ pub struct WithCustomRetryPolicy<RP> {
 
 impl<RP> WithCustomRetryPolicy<RP>
 where
-    RP: ServiceBusRetryPolicy + Send + Sync,
+    RP: ServiceBusRetryPolicyExt + Send + Sync + 'static,
 {
     /// Creates a new instance of the [`ServiceBusClient`] class using the specified
     /// connection string and [`ServiceBusClientOptions`].

@@ -12,7 +12,7 @@ use crate::{
     primitives::{
         service_bus_peeked_message::ServiceBusPeekedMessage,
         service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_policy::{run_operation, ServiceBusRetryPolicy},
+        service_bus_retry_policy::{run_operation},
     },
     sealed::Sealed,
     ServiceBusReceiveMode,
@@ -50,15 +50,12 @@ pub(super) fn get_session_locked_until(properties: &Option<Fields>) -> Option<Of
 
 /// An AMQP receiver for session enabled entities.
 #[derive(Debug)]
-pub struct AmqpSessionReceiver<RP> {
-    pub(crate) inner: AmqpReceiver<RP>,
+pub struct AmqpSessionReceiver {
+    pub(crate) inner: AmqpReceiver,
 }
 
 #[async_trait]
-impl<RP> RecoverableTransport for AmqpSessionReceiver<RP>
-where
-    RP: Send,
-{
+impl RecoverableTransport for AmqpSessionReceiver {
     type RecoverError = RecoverReceiverError;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
@@ -66,7 +63,7 @@ where
     }
 }
 
-impl<RP> AmqpSessionReceiver<RP> {
+impl AmqpSessionReceiver {
     async fn renew_session_lock_inner(
         &mut self,
         request: &mut RenewSessionLockRequest,
@@ -119,17 +116,14 @@ impl<RP> AmqpSessionReceiver<RP> {
     }
 }
 
-impl<RP> Sealed for AmqpSessionReceiver<RP> {}
+impl Sealed for AmqpSessionReceiver {}
 
 #[async_trait]
-impl<RP> TransportReceiver for AmqpSessionReceiver<RP>
-where
-    RP: ServiceBusRetryPolicy + Send + Sync,
-{
-    type RequestResponseError = <AmqpReceiver<RP> as TransportReceiver>::RequestResponseError;
-    type ReceiveError = <AmqpReceiver<RP> as TransportReceiver>::ReceiveError;
-    type DispositionError = <AmqpReceiver<RP> as TransportReceiver>::DispositionError;
-    type CloseError = <AmqpReceiver<RP> as TransportReceiver>::CloseError;
+impl TransportReceiver for AmqpSessionReceiver {
+    type RequestResponseError = <AmqpReceiver as TransportReceiver>::RequestResponseError;
+    type ReceiveError = <AmqpReceiver as TransportReceiver>::ReceiveError;
+    type DispositionError = <AmqpReceiver as TransportReceiver>::DispositionError;
+    type CloseError = <AmqpReceiver as TransportReceiver>::CloseError;
 
     fn entity_path(&self) -> &str {
         self.inner.entity_path()
@@ -257,10 +251,7 @@ where
 }
 
 #[async_trait]
-impl<RP> TransportSessionReceiver for AmqpSessionReceiver<RP>
-where
-    RP: ServiceBusRetryPolicy + Send + Sync,
-{
+impl TransportSessionReceiver for AmqpSessionReceiver {
     fn session_id(&self) -> Option<&str> {
         self.inner
             .receiver

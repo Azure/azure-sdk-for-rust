@@ -10,11 +10,11 @@ use crate::{
     core::{TransportClient, TransportConnectionScope},
     primitives::{
         service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_retry_policy::ServiceBusRetryPolicy,
+        service_bus_retry_policy::{ServiceBusRetryPolicyExt},
         service_bus_transport_type::ServiceBusTransportType,
     },
     receiver::service_bus_receive_mode::ServiceBusReceiveMode,
-    sealed::Sealed,
+    sealed::Sealed, ServiceBusRetryPolicy,
 };
 
 use super::{
@@ -62,19 +62,19 @@ impl<RP> Sealed for AmqpClient<RP> {}
 #[async_trait]
 impl<RP> TransportClient for AmqpClient<RP>
 where
-    RP: ServiceBusRetryPolicy + Send + Sync,
+    RP: ServiceBusRetryPolicyExt + Send + Sync + 'static,
 {
     type CreateClientError = AmqpClientError;
     type CreateSenderError = OpenSenderError;
     type CreateReceiverError = OpenReceiverError;
     type DisposeError = AmqpClientError;
 
-    type Sender = AmqpSender<RP>;
-    type Receiver = AmqpReceiver<RP>;
-    type SessionReceiver = AmqpSessionReceiver<RP>;
+    type Sender = AmqpSender;
+    type Receiver = AmqpReceiver;
+    type SessionReceiver = AmqpSessionReceiver;
 
     type CreateRuleManagerError = OpenRuleManagerError;
-    type RuleManager = AmqpRuleManager<RP>;
+    type RuleManager = AmqpRuleManager;
 
     async fn create_transport_client(
         host: &str,
@@ -165,13 +165,13 @@ where
         let management_link = connection_scope
             .open_management_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
-        let retry_policy = RP::new(retry_options);
+        let retry_policy = RP::from(retry_options);
         Ok(AmqpSender {
             id: link_identifier,
             service_endpoint: self.service_endpoint.clone(),
             entity_path,
             identifier_str: identifier,
-            retry_policy,
+            retry_policy: Box::new(retry_policy) as Box<dyn ServiceBusRetryPolicy>,
             sender,
             management_link,
             cbs_command_sender,
@@ -202,13 +202,13 @@ where
         let management_link = connection_scope
             .open_management_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
-        let retry_policy = RP::new(retry_options);
+        let retry_policy = RP::from(retry_options);
         Ok(AmqpReceiver {
             id: link_identifier,
             service_endpoint: self.service_endpoint.clone(),
             entity_path,
             identifier_str: identifier,
-            retry_policy,
+            retry_policy: Box::new(retry_policy) as Box<dyn ServiceBusRetryPolicy>,
             receiver,
             receive_mode,
             _is_processor: false,
@@ -244,13 +244,13 @@ where
         let management_link = connection_scope
             .open_management_link(&self.service_endpoint, &entity_path, &identifier)
             .await?;
-        let retry_policy = RP::new(retry_options);
+        let retry_policy = RP::from(retry_options);
         let inner = AmqpReceiver {
             id: link_identifier,
             service_endpoint: self.service_endpoint.clone(),
             entity_path,
             identifier_str: identifier,
-            retry_policy,
+            retry_policy: Box::new(retry_policy) as Box<dyn ServiceBusRetryPolicy>,
             receiver,
             receive_mode,
             _is_processor: false,
@@ -271,7 +271,7 @@ where
         retry_options: ServiceBusRetryOptions,
     ) -> Result<Self::RuleManager, Self::CreateRuleManagerError> {
         let mut connection_scope = self.connection_scope.lock().await;
-        let retry_policy = RP::new(retry_options);
+        let retry_policy = RP::from(retry_options);
         let management_link = connection_scope
             .open_management_link(&self.service_endpoint, &subscription_path, &identifier)
             .await?;
@@ -279,7 +279,7 @@ where
             identifier_str: identifier,
             service_endpoint: self.service_endpoint.clone(),
             subscription_path,
-            retry_policy,
+            retry_policy: Box::new(retry_policy) as Box<dyn ServiceBusRetryPolicy>,
             management_link,
             connection_scope: self.connection_scope.clone(),
         })

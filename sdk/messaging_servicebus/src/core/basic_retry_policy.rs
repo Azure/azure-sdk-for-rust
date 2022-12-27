@@ -67,25 +67,25 @@ impl Display for BasicRetryPolicy {
     }
 }
 
-impl ServiceBusRetryPolicy for BasicRetryPolicy {
-    type State = BasicRetryPolicyState;
-
-    fn new(options: ServiceBusRetryOptions) -> Self {
+impl From<ServiceBusRetryOptions> for BasicRetryPolicy {
+    fn from(options: ServiceBusRetryOptions) -> Self {
         Self {
             options,
             state: BasicRetryPolicyState::default(),
         }
     }
+}
 
+impl ServiceBusRetryPolicy for BasicRetryPolicy {
     fn options(&self) -> &ServiceBusRetryOptions {
         &self.options
     }
 
-    fn state(&self) -> &Self::State {
+    fn state(&self) -> &dyn ServiceBusRetryPolicyState {
         &self.state
     }
 
-    fn state_mut(&mut self) -> &mut Self::State {
+    fn state_mut(&mut self) -> &mut dyn ServiceBusRetryPolicyState {
         &mut self.state
     }
 
@@ -93,9 +93,9 @@ impl ServiceBusRetryPolicy for BasicRetryPolicy {
         self.options.try_timeout
     }
 
-    fn calculate_retry_delay<E: ServiceBusRetryPolicyError>(
+    fn calculate_retry_delay(
         &self,
-        _last_error: &E,
+        _last_error: &dyn ServiceBusRetryPolicyError,
         attempt_count: u32,
     ) -> Option<std::time::Duration> {
         if self.options.max_retries == 0

@@ -115,14 +115,14 @@ fn map_properties_to_modify_into_fields(
 
 /// An AMQP receiver implementation for Service Bus
 #[derive(Debug)]
-pub struct AmqpReceiver<RP> {
+pub struct AmqpReceiver {
     pub(crate) id: u32, // TODO: should this info be preserved?
     pub(crate) service_endpoint: Arc<Url>,
     pub(crate) entity_path: String,
     pub(crate) identifier_str: String,
 
     pub(crate) prefetch_count: u32,
-    pub(crate) retry_policy: RP,
+    pub(crate) retry_policy: Box<dyn ServiceBusRetryPolicy>,
     pub(crate) receiver: fe2o3_amqp::Receiver,
     pub(crate) receive_mode: ServiceBusReceiveMode,
     pub(crate) _is_processor: bool, // TODO: implement processor
@@ -138,10 +138,7 @@ pub struct AmqpReceiver<RP> {
 }
 
 #[async_trait]
-impl<RP> RecoverableTransport for AmqpReceiver<RP>
-where
-    RP: Send,
-{
+impl RecoverableTransport for AmqpReceiver {
     type RecoverError = RecoverReceiverError;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
@@ -220,7 +217,7 @@ where
     }
 }
 
-impl<RP> AmqpReceiver<RP> {
+impl AmqpReceiver {
     async fn receive_messages_with_timeout(
         &mut self,
         prefetch_count: u32,
@@ -400,13 +397,10 @@ impl<RP> AmqpReceiver<RP> {
     }
 }
 
-impl<RP> Sealed for AmqpReceiver<RP> {}
+impl Sealed for AmqpReceiver {}
 
 #[async_trait]
-impl<RP> TransportReceiver for AmqpReceiver<RP>
-where
-    RP: ServiceBusRetryPolicy + Send + Sync,
-{
+impl TransportReceiver for AmqpReceiver {
     type RequestResponseError = RetryError<AmqpRequestResponseError>;
     type ReceiveError = RetryError<AmqpRecvError>;
     type DispositionError = RetryError<AmqpDispositionError>;

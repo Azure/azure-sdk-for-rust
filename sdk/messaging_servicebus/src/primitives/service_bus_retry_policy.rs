@@ -40,21 +40,15 @@ pub(crate) fn should_try_recover_from_management_error(
 /// It is recommended that developers without advanced needs not implement custom retry
 /// policies but instead configure the default policy by specifying the desired set of
 /// retry options when creating one of the Service Bus clients.
-pub trait ServiceBusRetryPolicy {
-    /// The type of state maintained by the retry policy.
-    type State: ServiceBusRetryPolicyState;
-
-    /// Creates a new retry policy instance with the specified options.
-    fn new(options: ServiceBusRetryOptions) -> Self;
-
+pub trait ServiceBusRetryPolicy: std::fmt::Debug + Send {
     /// Gets the retry options for the policy.
     fn options(&self) -> &ServiceBusRetryOptions;
 
     /// Gets the state for the policy.
-    fn state(&self) -> &Self::State;
+    fn state(&self) -> &dyn ServiceBusRetryPolicyState;
 
     /// Gets the state mutably for the policy.
-    fn state_mut(&mut self) -> &mut Self::State;
+    fn state_mut(&mut self) -> &mut dyn ServiceBusRetryPolicyState;
 
     /// Calculates the amount of time to allow the current attempt for an operation to
     /// complete before considering it to be timed out.
@@ -64,9 +58,9 @@ pub trait ServiceBusRetryPolicy {
     /// or not another attempt should be made.
     ///
     /// Returns None if no more attempts should be made.
-    fn calculate_retry_delay<E: ServiceBusRetryPolicyError>(
+    fn calculate_retry_delay(
         &self,
-        last_error: &E,
+        last_error: &dyn ServiceBusRetryPolicyError,
         attempt_count: u32,
     ) -> Option<StdDuration>;
 }
@@ -86,81 +80,14 @@ pub trait ServiceBusRetryPolicyState {
     fn server_busy_error_message(&self) -> Option<&str>;
 }
 
+/// Extension trait for retry policies.
+///
+/// This trait currently is simple a marker trait that acts as the trait bound for the retry policy
+/// generic parameter on the ServiceBusClient.
 #[async_trait]
-pub(crate) trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + Send + Sync {
-    // async fn run_operation<F, MutArg, Args, Fut>(
-    //     &mut self,
-    //     mut operation: F,
-    //     mut_arg: &'static mut MutArg,
-    //     args: Args,
-    //     cancellation_token: CancellationToken,
-    // ) -> Result<(), RetryError<Self::Error>>
-    // where
-    //     F: FnMut(&mut MutArg, &Args, Duration, CancellationToken) -> Fut + Send + Sync,
-    //     MutArg: Send + Sync,
-    //     Args: Send + Sync,
-    //     Fut: Future<Output = Result<(), Self::Error>> + Send,
-    // {
-    //     let mut failed_attempt_count = 0;
-    //     let mut try_timeout = self.calculate_try_timeout(0);
-    //     if self.state().is_server_busy() && try_timeout < SERVER_BUSY_BASE_SLEEP_TIME {
-    //         // We are in a server busy state before we start processing. Since
-    //         // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
-    //         // entire Sleep time.
-    //         timeout(try_timeout, cancellation_token.cancelled())
-    //             .await
-    //             .map_err(|_| RetryError::ServiceBusy)?
-    //     }
+pub trait ServiceBusRetryPolicyExt: ServiceBusRetryPolicy + From<ServiceBusRetryOptions> + Send + Sync {}
 
-    //     let outcome = loop {
-    //         if self.state().is_server_busy() {
-    //             let cancelled_fut = cancellation_token.cancelled();
-    //             let _ = timeout(SERVER_BUSY_BASE_SLEEP_TIME, cancelled_fut).await;
-    //         }
-
-    //         match (operation)(mut_arg, &args, try_timeout, cancellation_token.clone()).await {
-    //             Ok(outcome) => break outcome,
-    //             Err(error) => {
-    //                 failed_attempt_count += 1;
-    //                 let retry_delay = self.calculate_retry_delay(&error, failed_attempt_count);
-
-    //                 match (
-    //                     retry_delay,
-    //                     error.is_scope_disposed(),
-    //                     cancellation_token.is_cancelled(),
-    //                 ) {
-    //                     (Some(retry_delay), false, false) => {
-    //                         log::error!("{}", &error);
-
-    //                         let _ = timeout(retry_delay, cancellation_token.cancelled()).await;
-    //                         try_timeout = self.calculate_try_timeout(failed_attempt_count);
-    //                     }
-    //                     _ => return Err(RetryError::Operation(error)),
-    //                 }
-    //             }
-    //         }
-    //     };
-
-    //     Ok(outcome)
-    // }
-
-    fn set_server_busy(&mut self, error_message: String) {
-        let state = self.state_mut();
-
-        state.set_server_busy(error_message);
-    }
-
-    fn reset_server_busy(&mut self) {
-        self.state_mut().reset_server_busy();
-    }
-
-    async fn schedule_reset_server_busy(&mut self) {
-        tokio::time::sleep(SERVER_BUSY_BASE_SLEEP_TIME).await;
-        self.reset_server_busy()
-    }
-}
-
-impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + Send + Sync {}
+impl<T> ServiceBusRetryPolicyExt for T where T: ServiceBusRetryPolicy + From<ServiceBusRetryOptions>+ Send + Sync {}
 
 /// Runs the operation with the retry policy.
 ///

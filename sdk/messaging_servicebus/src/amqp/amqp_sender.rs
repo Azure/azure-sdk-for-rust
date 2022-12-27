@@ -16,7 +16,7 @@ use crate::sender::MINIMUM_BATCH_SIZE_LIMIT;
 use crate::{
     core::TransportSender,
     primitives::service_bus_retry_policy::{
-        run_operation, ServiceBusRetryPolicy, ServiceBusRetryPolicyState,
+        run_operation, ServiceBusRetryPolicy,
     },
     CreateMessageBatchOptions, ServiceBusMessage,
 };
@@ -40,12 +40,12 @@ use super::{
 
 /// An AMQP implementation for Service Bus message sender.
 #[derive(Debug)]
-pub struct AmqpSender<RP> {
+pub struct AmqpSender {
     pub(crate) id: u32,
     pub(crate) service_endpoint: Arc<Url>,
     pub(crate) entity_path: String,
     pub(crate) identifier_str: String,
-    pub(crate) retry_policy: RP,
+    pub(crate) retry_policy: Box<dyn ServiceBusRetryPolicy>,
     pub(crate) sender: fe2o3_amqp::Sender,
     pub(crate) management_link: AmqpManagementLink,
     pub(crate) cbs_command_sender: mpsc::Sender<amqp_cbs_link::Command>,
@@ -55,10 +55,7 @@ pub struct AmqpSender<RP> {
 }
 
 #[async_trait]
-impl<RP> RecoverableTransport for AmqpSender<RP>
-where
-    RP: Send,
-{
+impl RecoverableTransport for AmqpSender {
     type RecoverError = RecoverSenderError;
 
     // TODO: add a local state to track if a recovery is needed?
@@ -100,7 +97,7 @@ where
     }
 }
 
-impl<RP> AmqpSender<RP> {
+impl AmqpSender {
     async fn send_batch_envelope(
         &mut self,
         batch: &Option<BatchEnvelope>,
@@ -169,14 +166,10 @@ impl<RP> AmqpSender<RP> {
     }
 }
 
-impl<RP> Sealed for AmqpSender<RP> {}
+impl Sealed for AmqpSender {}
 
 #[async_trait]
-impl<RP> TransportSender for AmqpSender<RP>
-where
-    RP: ServiceBusRetryPolicy + Send + Sync,
-    RP::State: ServiceBusRetryPolicyState,
-{
+impl TransportSender for AmqpSender {
     type SendError = RetryError<AmqpSendError>;
     type ScheduleError = RetryError<AmqpRequestResponseError>;
     type CloseError = DetachError;
