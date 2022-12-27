@@ -31,6 +31,7 @@ impl AmqpMessageBatch {
 
 impl Sealed for AmqpMessageBatch {}
 
+// TODO: Should account for metadata/additional bytes added to the batch itself?
 impl TransportMessageBatch for AmqpMessageBatch {
     type TryAddError = TryAddMessageError;
 
