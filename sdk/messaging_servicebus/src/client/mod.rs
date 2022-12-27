@@ -329,7 +329,7 @@ where
 {
     /// Creates a new [`ServiceBusSender`] which can be used to send messages to a specific queue or
     /// topic.
-    pub async fn create_sender<'a>(
+    pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
         options: ServiceBusSenderOptions,

@@ -69,7 +69,7 @@ impl RecoverableTransport for AmqpRuleManager {
 }
 
 impl AmqpRuleManager {
-    async fn create_rule<'a>(
+    async fn create_rule(
         &mut self,
         request: &mut AddRuleRequest,
         try_timeout: &StdDuration,
@@ -81,7 +81,7 @@ impl AmqpRuleManager {
         Ok(response)
     }
 
-    async fn delete_rule<'a>(
+    async fn delete_rule(
         &mut self,
         request: &mut RemoveRuleRequest,
         try_timeout: &StdDuration,
@@ -93,7 +93,7 @@ impl AmqpRuleManager {
         Ok(response)
     }
 
-    async fn get_rules<'a>(
+    async fn get_rules(
         &mut self,
         request: &mut EnumerateRulesRequest,
         try_timeout: &StdDuration,

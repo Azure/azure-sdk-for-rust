@@ -337,7 +337,7 @@ impl AmqpReceiver {
         Ok(())
     }
 
-    async fn receive_by_sequence_number<'a>(
+    async fn receive_by_sequence_number(
         &mut self,
         request: &mut ReceiveBySequenceNumberRequest,
         try_timeout: &StdDuration,
@@ -349,7 +349,7 @@ impl AmqpReceiver {
         Ok(response)
     }
 
-    async fn update_disposition<'a>(
+    async fn update_disposition(
         &mut self,
         request: &mut UpdateDispositionRequest,
         try_timeout: &StdDuration,
@@ -360,7 +360,7 @@ impl AmqpReceiver {
         Ok(())
     }
 
-    async fn peek_message_inner<'a>(
+    async fn peek_message_inner(
         &mut self,
         request: &mut PeekMessageRequest,
         try_timeout: &StdDuration,
@@ -372,7 +372,7 @@ impl AmqpReceiver {
         Ok(response)
     }
 
-    async fn peek_session_message_inner<'a>(
+    async fn peek_session_message_inner(
         &mut self,
         request: &mut PeekSessionMessageRequest,
         try_timeout: &StdDuration,
@@ -384,7 +384,7 @@ impl AmqpReceiver {
         Ok(response)
     }
 
-    async fn renew_lock<'a>(
+    async fn renew_lock(
         &mut self,
         request: &mut RenewLockRequest,
         try_timeout: &StdDuration,

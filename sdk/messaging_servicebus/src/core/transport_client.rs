@@ -54,8 +54,8 @@ pub(crate) trait TransportClient: Sized + Sealed {
     type RuleManager: TransportRuleManager;
 
     /// Creates a new instance of Self.
-    async fn create_transport_client<'a>(
-        host: &'a str,
+    async fn create_transport_client(
+        host: &str,
         credential: ServiceBusTokenCredential,
         transport_type: ServiceBusTransportType,
         custom_endpoint: Option<Url>,

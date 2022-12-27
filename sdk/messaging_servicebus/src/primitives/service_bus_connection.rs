@@ -110,7 +110,7 @@ where
         self.inner_client.transport_type()
     }
 
-    pub(crate) async fn create_transport_sender<'a>(
+    pub(crate) async fn create_transport_sender(
         &mut self,
         entity_path: String,
         identifier: String,
