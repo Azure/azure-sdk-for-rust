@@ -24,9 +24,10 @@ pub(crate) struct BatchEnvelope {
 pub(crate) fn batch_service_bus_messages_as_amqp_message(
     source: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator,
     force_batch: bool,
+    generate_message_id: bool
 ) -> Option<BatchEnvelope> {
     let batch_messages = source.map(|m| m.amqp_message);
-    build_amqp_batch_from_messages(batch_messages, force_batch)
+    build_amqp_batch_from_messages(batch_messages, force_batch, generate_message_id)
 }
 
 /// Builds a batch from a set of messages. Returns the batch containing the source messages.
@@ -35,6 +36,7 @@ pub(crate) fn batch_service_bus_messages_as_amqp_message(
 pub(crate) fn build_amqp_batch_from_messages(
     mut source: impl Iterator<Item = Message<Data>> + ExactSizeIterator,
     force_batch: bool,
+    generate_message_id: bool,
 ) -> Option<BatchEnvelope> {
     let total = source.len();
 
@@ -42,7 +44,9 @@ pub(crate) fn build_amqp_batch_from_messages(
         (0, _) => None,
         (1, false) => {
             let mut message = source.next()?;
-            generate_message_id_if_not_present(&mut message); // TODO: temp workaround for duplicate detection
+            if generate_message_id {
+                generate_message_id_if_not_present(&mut message); // TODO: temp workaround for duplicate detection
+            }
             let sendable = Sendable {
                 message,
                 message_format: Default::default(),
@@ -57,7 +61,9 @@ pub(crate) fn build_amqp_batch_from_messages(
             let mut batch_data: Batch<Data> = Batch::from(Vec::with_capacity(total));
 
             let mut first_message = source.next()?;
-            generate_message_id_if_not_present(&mut first_message); // TODO: temp workaround for duplicate detection
+            if generate_message_id {
+                generate_message_id_if_not_present(&mut first_message); // TODO: temp workaround for duplicate detection
+            }
 
             // Take selected fields from the first message properties and message annotations and
             // use it as the basis for the evelope
@@ -71,7 +77,9 @@ pub(crate) fn build_amqp_batch_from_messages(
             batch_data.push(data);
 
             for mut message in source {
-                generate_message_id_if_not_present(&mut message); // TODO: temp workaround for duplicate detection
+                if generate_message_id {
+                    generate_message_id_if_not_present(&mut message); // TODO: temp workaround for duplicate detection
+                }
                 let data = Data::from(to_vec(&Serializable(message)).ok()?);
                 batch_data.push(data);
             }

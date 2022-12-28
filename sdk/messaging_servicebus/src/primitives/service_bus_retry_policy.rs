@@ -100,8 +100,9 @@ impl<T> ServiceBusRetryPolicyExt for T where
 /// TODO: This is a rather temporary solution as there would be weird lifetime issue if the same
 /// thing is implemented as a method.
 macro_rules! run_operation {
-    ($policy:tt, $err_ty:ty, $try_timeout:ident, $op:expr) => {{
+    ($policy:tt, $try_timeout:ident, $last_err:ident, $op:expr) => {{
         let mut _failed_attempt_count = 0; // avoid accidental shadowing
+        let mut _is_scope_disposed = false; // avoid accidental shadowing
         if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
             && $try_timeout
                 < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
@@ -120,23 +121,24 @@ macro_rules! run_operation {
                 .await;
             }
 
+            // TODO: should we even try to run the operation if recovery failed? The current impl
+            // needs to try to run the operation to get the error to determine if the error is
+            // recoverable.
             let outcome = match tokio::time::timeout($try_timeout, $op).await {
-                Ok(result) => result.map_err(<$err_ty>::from),
-                Err(elapsed) => Err(<$err_ty>::from(elapsed)),
+                Ok(result) => result,
+                Err(elapsed) => Err(elapsed.into()),
             };
             match outcome {
                 Ok(outcome) => break outcome,
                 Err(error) => {
                     _failed_attempt_count += 1;
                     let _retry_delay = $policy.calculate_retry_delay(&error, _failed_attempt_count);
-                    // TODO: check if the error is recoverable
+                    _is_scope_disposed |= crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error);
 
-                    match (
-                        _retry_delay,
-                        crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error)
-                    ) {
+                    match (_retry_delay, _is_scope_disposed) {
                         (Some(retry_delay), false) => {
                             log::error!("{}", &error);
+                            $last_err = Some(error);
                             tokio::time::sleep(retry_delay).await;
                             $try_timeout = $policy.calculate_try_timeout(_failed_attempt_count);
                         }
@@ -146,7 +148,7 @@ macro_rules! run_operation {
             }
         };
 
-        Result::<_, crate::primitives::error::RetryError<$err_ty>>::Ok(outcome)
+        Result::<_, crate::primitives::error::RetryError<_>>::Ok(outcome)
     }};
 
     ($policy:tt, $err_ty:ty, $try_timeout:ident, $op:expr, $recover_op:expr) => {{
@@ -232,6 +234,7 @@ macro_rules! run_operation {
 
         Result::<_, crate::primitives::error::RetryError<$err_ty>>::Ok(outcome)
     }};
+
 }
 
 pub(crate) use run_operation;

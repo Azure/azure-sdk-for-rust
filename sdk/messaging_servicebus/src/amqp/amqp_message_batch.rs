@@ -69,7 +69,7 @@ impl TransportMessageBatch for AmqpMessageBatch {
             let reservce_overhead_message = std::iter::once(message.clone().amqp_message);
             // Force batching to get the overhead size
             let reserve_overhead_envelope =
-                match build_amqp_batch_from_messages(reservce_overhead_message, true) {
+                match build_amqp_batch_from_messages(reservce_overhead_message, true, false) {
                     Some(envelope) => envelope,
                     None => unreachable!(), // force batching a single message should never fail
                 };
