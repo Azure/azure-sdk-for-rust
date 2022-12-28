@@ -44,7 +44,7 @@ urlencoding = "2"
 uuid = { version = "1", features=["v4"] }
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.8.4", features = ["rustls"]} # TODO: let user choose rustls or native-tls?
+fe2o3-amqp = {version = "0.8.5", features = ["rustls"]} # TODO: let user choose rustls or native-tls?
 fe2o3-amqp-cbs = "0.2"
 fe2o3-amqp-management = "0.2.1"
 fe2o3-amqp-types = "0.7"

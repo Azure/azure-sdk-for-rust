@@ -217,8 +217,8 @@ impl TransportSender for AmqpSender {
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
     ) -> Result<(), Self::SendError> {
-        // ServiceBusRetryPolicyExt::run_operation(&mut , operation, t1, cancellation_token)
-        // TODO: retry policy
+        // This internally calls `build_amqp_batch_from_messages` which will generate a message id
+        // if one is not provided.
         let batch = batch_service_bus_messages_as_amqp_message(messages, false);
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         let result = run_operation! {
@@ -238,6 +238,7 @@ impl TransportSender for AmqpSender {
         &mut self,
         message_batch: Self::MessageBatch,
     ) -> Result<(), Self::SendError> {
+        // `build_amqp_batch_from_messages` will generate a message id if one is not provided.
         let batch = build_amqp_batch_from_messages(message_batch.messages.into_iter(), false);
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         let result = run_operation! {
@@ -261,7 +262,10 @@ impl TransportSender for AmqpSender {
 
         let encoded_messages = messages
             .map(|m| m.amqp_message)
-            .map(ScheduledBatchEnvelope::from_amqp_message)
+            // `ScheduledBatchEnvelope::try_from_amqp_message` internally calls
+            // `build_amqp_batch_from_messages` which will generate a message id if one is not
+            // provided.
+            .map(ScheduledBatchEnvelope::try_from_amqp_message)
             .map(|result| result.map(|opt| opt.map(|m| m.into_ordered_map())))
             .collect::<Result<Option<Vec<_>>, _>>()
             .map_err(|_| ManagementError::Send(SendError::MessageEncodeError))

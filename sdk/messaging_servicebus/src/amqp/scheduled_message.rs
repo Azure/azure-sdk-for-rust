@@ -44,7 +44,7 @@ impl ScheduledBatchEnvelope {
         map
     }
 
-    pub(crate) fn from_amqp_message(
+    pub(crate) fn try_from_amqp_message(
         message: Message<Data>,
     ) -> Result<Option<Self>, serde_amqp::Error> {
         let message_id = message.message_id().map(|id| id.to_string());
