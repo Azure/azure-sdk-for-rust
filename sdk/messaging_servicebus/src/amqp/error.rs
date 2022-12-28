@@ -5,7 +5,7 @@ use fe2o3_amqp::{
     link::{
         DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError,
         IllegalLinkStateError, LinkStateError, ReceiverAttachError, ReceiverResumeErrorKind,
-        RecvError, SenderAttachError, SenderResumeErrorKind,
+        RecvError, SendError, SenderAttachError, SenderResumeErrorKind,
     },
     session::{self, BeginError},
 };
@@ -456,26 +456,59 @@ pub enum AmqpSendError {
     ConnectionScopeDisposed,
 }
 
-impl ServiceBusRetryPolicyError for AmqpSendError {
+impl ServiceBusRetryPolicyError for LinkStateError {
     fn should_try_recover(&self) -> bool {
-        use fe2o3_amqp::link::SendError;
-
         matches!(
             self,
-            Self::Send(
-                SendError::LinkStateError(
-                    LinkStateError::IllegalState
-                        | LinkStateError::IllegalSessionState
-                        | LinkStateError::ExpectImmediateDetach
-                        | LinkStateError::RemoteDetached
-                ) | SendError::Detached(
-                    DetachError::IllegalState
-                        | DetachError::IllegalSessionState
-                        | DetachError::RemoteDetachedWithError(_)
-                        | DetachError::DetachedByRemote
-                )
-            ) | Self::Elapsed(_)
+            LinkStateError::IllegalState
+                | LinkStateError::IllegalSessionState
+                | LinkStateError::ExpectImmediateDetach
+                | LinkStateError::RemoteDetached
         )
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        false
+    }
+}
+
+impl ServiceBusRetryPolicyError for DetachError {
+    fn should_try_recover(&self) -> bool {
+        matches!(
+            self,
+            DetachError::IllegalState
+                | DetachError::IllegalSessionState
+                | DetachError::RemoteDetachedWithError(_)
+                | DetachError::DetachedByRemote
+        )
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        false
+    }
+}
+
+impl ServiceBusRetryPolicyError for SendError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            SendError::LinkStateError(err) => err.should_try_recover(),
+            SendError::Detached(err) => err.should_try_recover(),
+            _ => false,
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        false
+    }
+}
+
+impl ServiceBusRetryPolicyError for AmqpSendError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            Self::Send(err) => err.should_try_recover(),
+            Self::Elapsed(_) => true,
+            _ => false,
+        }
     }
 
     fn is_scope_disposed(&self) -> bool {

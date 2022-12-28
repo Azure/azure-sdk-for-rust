@@ -95,6 +95,12 @@ impl ServiceBusReceivedMessage {
         &self.raw_amqp_message
     }
 
+    /// Consumes the [`ServiceBusReceivedMessage`] and returns the raw Amqp message data that was
+    /// transmitted over the wire.
+    pub fn into_raw_amqp_message(self) -> Message<Body<Value>> {
+        self.raw_amqp_message
+    }
+
     /// Gets the body of the message.
     pub fn body(&self) -> Result<&[u8], RawAmqpMessageError> {
         match &self.raw_amqp_message.body {

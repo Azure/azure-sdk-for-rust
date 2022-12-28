@@ -24,7 +24,7 @@ pub(crate) struct BatchEnvelope {
 pub(crate) fn batch_service_bus_messages_as_amqp_message(
     source: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator,
     force_batch: bool,
-    generate_message_id: bool
+    generate_message_id: bool,
 ) -> Option<BatchEnvelope> {
     let batch_messages = source.map(|m| m.amqp_message);
     build_amqp_batch_from_messages(batch_messages, force_batch, generate_message_id)

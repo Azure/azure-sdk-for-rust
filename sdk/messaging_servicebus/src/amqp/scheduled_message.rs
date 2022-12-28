@@ -52,7 +52,11 @@ impl ScheduledBatchEnvelope {
         let session_id = message.session_id().map(|id| id.to_string());
         let partition_key = message.partition_key().map(|key| key.to_string());
         let via_partition_key = message.via_partition_key().map(|key| key.to_string());
-        let batch_envelope = match build_amqp_batch_from_messages(std::iter::once(message), false, generate_message_id) {
+        let batch_envelope = match build_amqp_batch_from_messages(
+            std::iter::once(message),
+            false,
+            generate_message_id,
+        ) {
             Some(envelope) => envelope,
             None => return Ok(None),
         };

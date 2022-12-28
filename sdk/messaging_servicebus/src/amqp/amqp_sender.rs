@@ -99,6 +99,23 @@ impl RecoverableTransport for AmqpSender {
 }
 
 impl AmqpSender {
+    async fn recover_and_resend(
+        &mut self,
+        last_error: AmqpSendError,
+        batch: &Option<BatchEnvelope>,
+    ) -> Result<(), AmqpSendError> {
+        match self.recover().await {
+            Ok(_) => {
+                // Recover will re-send the unsettled messages. So we should not
+                // retry sending the batch envelope because it would become a duplciated
+                // message.
+                self.send_batch_envelope(batch).await
+            }
+            Err(_recover_error) => Err(last_error),
+        }
+    }
+
+    // Unlike
     async fn recover_if_needed_and_send_batch_envelope(
         &mut self,
         last_error: &mut Option<AmqpSendError>,
@@ -107,26 +124,23 @@ impl AmqpSender {
         use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
 
         match last_error.take() {
-            Some(last_err) => match last_err.should_try_recover() {
-                true => {
-                    match self.recover().await {
-                        Ok(_) => {
-                            // Recover will re-send the unsettled messages. So we should not
-                            // retry sending the batch envelope because it would become a duplciated
-                            // message.
-                            log::info!("Sender recovered successfully");
-                            Ok(())
-                        },
-                        Err(_recover_error) => {
-                            log::error!("Failed to recover the sender: {:?}", last_err);
-                            Err(last_err)
-                        }
-                    }
+            Some(last_error) => match &last_error {
+                AmqpSendError::Elapsed(_) => {
+                    // If the error is a timeout, the message have been added to AmqpSender's
+                    // unsettled map, and unsettled messages will be re-sent upon re-attaching. So
+                    // we should not retry sending the batch envelope because it would become a
+                    // duplciated message.
+                    self.recover().await.map_err(|_| last_error)
+                }
+                AmqpSendError::Send(err) => match err.should_try_recover() {
+                    true => self.recover_and_resend(last_error, batch).await,
+                    false => self.send_batch_envelope(batch).await,
                 },
-                false => {
-                    // just retry sending then
+                AmqpSendError::NotAccepted(_) => {
+                    // Delivery was not accepted, there should be no need to recover
                     self.send_batch_envelope(batch).await
                 }
+                AmqpSendError::ConnectionScopeDisposed => Err(last_error),
             },
             None => self.send_batch_envelope(batch).await,
         }
@@ -255,7 +269,8 @@ impl TransportSender for AmqpSender {
     ) -> Result<(), Self::SendError> {
         // This internally calls `build_amqp_batch_from_messages` which will generate a message id
         // if one is not provided.
-        let batch = batch_service_bus_messages_as_amqp_message(messages, false, self.generate_message_id);
+        let batch =
+            batch_service_bus_messages_as_amqp_message(messages, false, self.generate_message_id);
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         let mut last_error = None;
 
@@ -276,7 +291,11 @@ impl TransportSender for AmqpSender {
         message_batch: Self::MessageBatch,
     ) -> Result<(), Self::SendError> {
         // `build_amqp_batch_from_messages` will generate a message id if one is not provided.
-        let batch = build_amqp_batch_from_messages(message_batch.messages.into_iter(), false, self.generate_message_id);
+        let batch = build_amqp_batch_from_messages(
+            message_batch.messages.into_iter(),
+            false,
+            self.generate_message_id,
+        );
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
         let mut last_error = None;
 
