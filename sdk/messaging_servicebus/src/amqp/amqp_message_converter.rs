@@ -67,9 +67,6 @@ pub(crate) fn build_amqp_batch_from_messages(
 
             // Take selected fields from the first message properties and message annotations and
             // use it as the basis for the evelope
-            //
-            // TODO: should AmqpMessageBatch also follow the same pattern? (where first message's
-            // metadata is used as the basis for the batch)
             let properties = first_message.properties.clone();
             let message_annotations = first_message.message_annotations.clone();
 
@@ -106,7 +103,7 @@ pub(crate) fn build_amqp_batch_from_messages(
 /// Generates a message id if one is not present.
 ///
 /// TODO: This is a workaround to allow the service to perform duplicate detection. The current
-/// retry policy would make retrying a message as if it were a new message.
+/// retry policy would sometimes make retrying a message as if it were a new message.
 ///
 /// Upon establishing a sender link, the service will have `rcv_settle_mode` set to `First` which
 /// settles the message without needing a disposition from the sender.

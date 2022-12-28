@@ -36,7 +36,7 @@ pub struct SqlRuleFilter {
 
     // TODO: there is an unknown integer in the response, and the value is always 20 but it's not
     // documented
-    _unknown_int: Option<i32>,
+    _undocumented_int: Option<i32>,
 }
 
 impl std::fmt::Debug for SqlRuleFilter {
@@ -55,7 +55,7 @@ impl SqlRuleFilter {
 
             // Always set it to `None` so that it won't be serialized
             // Setting it to `Some(20)` seems to work too.
-            _unknown_int: None,
+            _undocumented_int: None,
         }
     }
 }

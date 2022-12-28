@@ -330,8 +330,6 @@ impl<B> AmqpMessageMutExt for Message<B> {
     }
 
     /// Returns error if `ttl.whole_milliseconds()` exceeds valid range of u32
-    ///
-    /// TODO: use std::time::StdDuration instead?
     #[inline]
     fn set_time_to_live(
         &mut self,

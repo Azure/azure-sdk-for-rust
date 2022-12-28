@@ -184,5 +184,5 @@ pub mod prelude {
     };
 }
 
-// TODO: Re-export again to allow user to selectively import components
+// Re-export again to allow user to selectively import components
 pub use prelude::*;

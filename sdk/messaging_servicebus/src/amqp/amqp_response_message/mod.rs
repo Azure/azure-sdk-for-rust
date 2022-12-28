@@ -16,8 +16,6 @@ pub(crate) mod renew_session_lock;
 pub(crate) mod schedule_message;
 pub(crate) mod set_session_state;
 pub(crate) mod update_disposition;
-
-// // TODO: unused mods
 pub(crate) mod add_rule;
 pub(crate) mod enumerate_rules;
 pub(crate) mod remove_rule;

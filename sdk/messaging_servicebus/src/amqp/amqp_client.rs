@@ -27,10 +27,6 @@ use super::{
     error::{AmqpClientError, OpenReceiverError, OpenRuleManagerError, OpenSenderError},
 };
 
-// TODO: current implementation doesn't support running callback in the background to refresh the
-// token
-// const DEFAULT_CREDENTIAL_REFRESH_BUFFER: Duration = Duration::from_secs(5 * 60);
-
 /// A transport client abstraction responsible for brokering operations for AMQP-based connections.
 ///
 /// See also [`TransportClient`]
@@ -52,7 +48,7 @@ pub struct AmqpClient<RP> {
 
     /// Keep track of whether the client has been disposed.
     ///
-    /// TODO: this is duplicated as the connection scope also keeps track of that. The reason is that
+    /// this is duplicated as the connection scope also keeps track of that. The reason is that
     /// the connection scope is shared between the client and the receivers/senders. The client
     /// shouldn't have to .await for a lock on the connection scope to check if it's been disposed.
     is_connection_scope_disposed: bool,

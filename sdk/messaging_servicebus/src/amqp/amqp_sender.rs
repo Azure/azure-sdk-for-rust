@@ -59,7 +59,6 @@ pub struct AmqpSender {
 impl RecoverableTransport for AmqpSender {
     type RecoverError = RecoverSenderError;
 
-    // TODO: add a local state to track if a recovery is needed?
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
         let mut connection_scope = self.connection_scope.lock().await;
         connection_scope

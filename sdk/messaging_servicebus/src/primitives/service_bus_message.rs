@@ -33,7 +33,6 @@ use super::service_bus_received_message::ServiceBusReceivedMessage;
 /// documentation](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-messages-payloads)
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq)]
 pub struct ServiceBusMessage {
-    // TODO: change to generics?
     pub(crate) amqp_message: Message<Data>,
 }
 
@@ -195,8 +194,6 @@ impl ServiceBusMessage {
     }
 
     /// Sets the MessageId
-    ///
-    /// TODO: check if message_id is empty?
     pub fn set_message_id(
         &mut self,
         message_id: impl Into<String>,

@@ -26,7 +26,7 @@ pub struct RuleProperties {
     pub name: String,
 
     /// The time the rule was created.
-    pub created_at: Option<OffsetDateTime>, // TODO: This is not indicated in the docs
+    pub created_at: Option<OffsetDateTime>,
 
     // Prevents construction outside of this crate
     // TODO: is this necessary?
@@ -85,7 +85,7 @@ pub(crate) struct RuleDescription {
     pub filters: RuleFilter,
     pub actions: RuleAction,
     pub name: String,
-    pub created_at: Option<Timestamp>, // TODO: This is not indicated in the docs
+    pub created_at: Option<Timestamp>,
 }
 
 /// No rule action present
@@ -113,8 +113,7 @@ pub struct SqlRuleAction {
     pub expression: String,
 
     /// There is an undocumented field here that is present in the responses
-    /// TODO: ask the service about this
-    _unknown_int: Option<i32>,
+    _undocumented_int: Option<i32>,
 }
 
 impl std::fmt::Debug for SqlRuleAction {
@@ -132,7 +131,7 @@ impl SqlRuleAction {
             expression: expression.into(),
 
             // Set it to `None` so that it is not serialized
-            _unknown_int: None,
+            _undocumented_int: None,
         }
     }
 }

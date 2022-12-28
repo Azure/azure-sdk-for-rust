@@ -429,7 +429,6 @@ impl TransportReceiver for AmqpReceiver {
         let prefetch_count = self.prefetch_count;
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
 
-        // TODO: Should this wait indefinitely until all messages are received?
         let default_max_wait_time = self.retry_policy.options().try_timeout;
         let mut buffer = Vec::with_capacity(max_messages as usize);
         loop {

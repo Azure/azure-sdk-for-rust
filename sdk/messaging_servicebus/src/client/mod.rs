@@ -188,7 +188,7 @@ pub struct ServiceBusClient<RP> {
     identifier: String,
 
     /// The connection that is used for the client.
-    connection: ServiceBusConnection<AmqpClient<RP>>, // TODO: use trait objects?
+    connection: ServiceBusConnection<AmqpClient<RP>>,
 }
 
 impl ServiceBusClient<BasicRetryPolicy> {

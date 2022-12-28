@@ -217,7 +217,7 @@ macro_rules! run_operation {
                     _failed_attempt_count += 1;
                     let _retry_delay = $policy.calculate_retry_delay(&error, _failed_attempt_count);
                     _is_scope_disposed |= crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error);
-                    // TODO: check if the error is recoverable
+                    // check if the error is recoverable
                     _should_try_recover = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::should_try_recover(&error);
 
                     match (_retry_delay, _is_scope_disposed) {

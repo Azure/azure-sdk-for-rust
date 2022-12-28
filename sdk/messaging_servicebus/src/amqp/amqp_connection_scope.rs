@@ -225,7 +225,7 @@ impl AmqpConnectionScope {
         self.cbs_link
             .request_refreshable_authorization(link_identifier, endpoint, resource, required_claims)
             .await
-            // TODO: The CBS event loop should not spontaneously stop
+            // TODO: The CBS event loop should never spontaneously stop
             .map_err(|_| ManagementError::Send(LinkStateError::IllegalSessionState.into()))??;
         Ok(())
     }
@@ -297,7 +297,6 @@ impl AmqpConnectionScope {
         let resource = endpoint.clone();
         let required_claims = vec![service_bus_claim::SEND.to_string()];
 
-        // TODO: what to do about auto-renewal?
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         self.request_refreshable_authorization_using_cbs(
             link_identifier,
@@ -449,7 +448,7 @@ impl TransportConnectionScope for AmqpConnectionScope {
             return Ok(());
         }
 
-        // TODO: handle link close?
+        // TODO: close active links? Is this necessary?
         self.is_disposed = true;
 
         let _ = self.cbs_link.stop();
@@ -483,11 +482,7 @@ impl RecoverableTransport for AmqpConnectionScope {
 
         // Recover connection first
         if self.connection.handle.is_closed() {
-            // TODO: Must make sure this is not called after user actively disposes the scope
-            // because calling close on a closed connection will result in a panic
             let result = self.connection.handle.close().await;
-
-            // TODO: log error
             if let Err(err) = result {
                 log::error!("Error closing connection during recovering: {:?}", err);
             }
@@ -501,10 +496,7 @@ impl RecoverableTransport for AmqpConnectionScope {
 
         // Recover session
         if self.session.handle.is_ended() {
-            // TODO: Must make sure this is not called after user actively disposes the scope
-            // because calling end on an ended session will result in a panic
-            let result = self.session.handle.end().await;
-            if let Err(err) = result {
+            if let Err(err) = self.session.handle.end().await {
                 log::error!("Error ending session during recovering: {:?}", err);
             }
 
@@ -533,7 +525,7 @@ impl RecoverableTransport for AmqpConnectionScope {
                 }
             }
 
-            // TODO: recover CBS link only if session was recovered
+            // recover CBS link only if session was recovered
             let _ = self.cbs_link.stop();
             let _cbs_close_result = self.cbs_link.join_handle_mut().await;
             let cbs_client = attach_cbs_client(&mut self.session.handle).await?;

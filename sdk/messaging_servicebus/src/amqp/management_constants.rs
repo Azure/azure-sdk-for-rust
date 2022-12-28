@@ -27,7 +27,6 @@ pub mod operations {
     pub const CANCEL_SCHEDULED_MESSAGE_OPERATION: &str =
         concatcp!(MICROSOFT, ":cancel-scheduled-message");
 
-    // // TODO: unused operations
     pub const ADD_RULE_OPERATION: &str = concatcp!(MICROSOFT, ":add-rule");
     pub const REMOVE_RULE_OPERATION: &str = concatcp!(MICROSOFT, ":remove-rule");
     pub const ENUMERATE_RULES_OPERATION: &str = concatcp!(MICROSOFT, ":enumerate-rules");
@@ -70,7 +69,6 @@ pub mod properties {
     pub const CONTENT_TYPE: &str = "content-type";
     pub const CORRELATION_RULE_FILTER_PROPERTIES: &str = "properties";
 
-    // // TODO: unused properties
     pub const SKIP: &str = "skip";
     pub const TOP: &str = "top";
     pub const RULES: &str = "rules";

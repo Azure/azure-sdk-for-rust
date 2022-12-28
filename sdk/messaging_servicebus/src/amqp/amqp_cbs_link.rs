@@ -23,23 +23,12 @@ const CBS_LINK_COMMAND_QUEUE_SIZE: usize = 128;
 type LinkIdentifier = u32;
 
 pub(crate) enum Command {
-    // TODO: unused variant?
-    // NewAuthorizationOnce {
-    //     auth: AuthorizationOnce,
-    //     result_sender: oneshot::Sender<Result<(), CbsAuthError>>,
-    // },
     NewAuthorizationRefresher {
         auth: AuthorizationRefresher,
         result_sender: oneshot::Sender<Result<(), CbsAuthError>>,
     },
     RemoveAuthorizationRefresher(LinkIdentifier),
 }
-
-// pub(crate) struct AuthorizationOnce {
-//     endpoint: String,
-//     resource: String,
-//     required_claims: Vec<String>,
-// }
 
 pub(crate) enum Refresher {
     /// This is a placeholder that is only used to avoid spinning the runtime when the
@@ -170,20 +159,6 @@ impl AmqpCbsLink {
 
     async fn handle_command(&mut self, command: Command) {
         match command {
-            // Command::NewAuthorizationOnce {
-            //     auth,
-            //     result_sender,
-            // } => {
-            //     let result = self
-            //         .request_authorization_using_cbs(
-            //             &auth.endpoint,
-            //             &auth.resource,
-            //             &auth.required_claims,
-            //         )
-            //         .await;
-
-            //     let _ = result_sender.send(result.map(|_| ()));
-            // }
             Command::NewAuthorizationRefresher {
                 auth,
                 result_sender,

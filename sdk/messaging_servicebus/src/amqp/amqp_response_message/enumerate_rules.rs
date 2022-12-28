@@ -11,8 +11,6 @@ type Rules = Vec<OrderedMap<String, RuleDescription>>;
 type EnumerateRulesResponseBody = OrderedMap<String, Rules>;
 
 pub(crate) struct EnumerateRulesResponse {
-    // TODO: The documentation is confusing. It says "an array of described objects" while
-    // the dotnet sdk only decodes one described object. This needs to be investigated.
     pub body: EnumerateRulesResponseBody,
 }
 
