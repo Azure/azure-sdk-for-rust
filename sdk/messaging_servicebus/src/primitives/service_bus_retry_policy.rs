@@ -174,10 +174,15 @@ macro_rules! run_operation {
             // Recover before trying the operation
             if _should_try_recover {
                 match tokio::time::timeout($try_timeout, $recover_op).await {
-                    Ok(result) => {
-                        if let Err(recover_error) = result {
+                    Ok(result) => match result {
+                        Ok(_) => {
+                            log::info!("Recovery succeeded");
+                            _should_try_recover = false;
+                        }
+                        Err(recover_error) => {
                             log::error!("Failed to recover {}", &recover_error);
                             _is_scope_disposed |= crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&recover_error);
+                            _should_try_recover = crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::should_try_recover(&recover_error);
                         }
                     }
                     Err(elapsed) => {
@@ -187,6 +192,9 @@ macro_rules! run_operation {
                 }
             }
 
+            // TODO: should we even try to run the operation if recovery failed? The current impl
+            // needs to try to run the operation to get the error to determine if the error is
+            // recoverable.
             let outcome = match tokio::time::timeout($try_timeout, $op).await {
                 Ok(result) => result.map_err(<$err_ty>::from),
                 Err(elapsed) => Err(<$err_ty>::from(elapsed)),

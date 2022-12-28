@@ -460,13 +460,21 @@ impl ServiceBusRetryPolicyError for AmqpSendError {
     fn should_try_recover(&self) -> bool {
         use fe2o3_amqp::link::SendError;
 
-        println!("AmqpSendError: {:?}", self);
-
         matches!(
             self,
-            Self::Send(SendError::LinkStateError(
-                LinkStateError::IllegalSessionState
-            ))
+            Self::Send(
+                SendError::LinkStateError(
+                    LinkStateError::IllegalState
+                        | LinkStateError::IllegalSessionState
+                        | LinkStateError::ExpectImmediateDetach
+                        | LinkStateError::RemoteDetached
+                ) | SendError::Detached(
+                    DetachError::IllegalState
+                        | DetachError::IllegalSessionState
+                        | DetachError::RemoteDetachedWithError(_)
+                        | DetachError::DetachedByRemote
+                )
+            ) | Self::Elapsed(_)
         )
     }
 
@@ -504,8 +512,11 @@ impl ServiceBusRetryPolicyError for AmqpRecvError {
         matches!(
             self,
             Self::Recv(RecvError::LinkStateError(
-                LinkStateError::IllegalSessionState
-            )) | Self::LinkState(IllegalLinkStateError::IllegalSessionState)
+                LinkStateError::IllegalState
+                    | LinkStateError::IllegalSessionState
+                    | LinkStateError::ExpectImmediateDetach
+                    | LinkStateError::RemoteDetached
+            )) | Self::LinkState(_)
         )
     }
 

@@ -1,4 +1,6 @@
 //! This mod contains long running tests that are not run by default.
+//!
+//! This test may be used to test sender recovery after a network interruption.
 
 mod common;
 
