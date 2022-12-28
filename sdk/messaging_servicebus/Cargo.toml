@@ -17,7 +17,7 @@ edition = "2021"
 # docs.rs configurations
 # To test the docs locally, run
 # cargo +nightly doc --no-deps --open -Z unstable-options --config "build.rustdocflags=[\"--cfg\", \"docsrs\"]"
-# The nightly toolchain is only used to build the docs, the crate itself is still built with stable.
+# The nightly toolchain is only used to build the docs, the crate itself doesn't neet nightly.
 # TODO: enable all features when building docs
 [package.metadata.docs.rs]
 # all-features = true
