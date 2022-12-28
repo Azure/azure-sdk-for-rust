@@ -116,7 +116,6 @@ fn generate_message_id_if_not_present(message: &mut Message<Data>) {
     if message.message_id().is_none() {
         // UUID length won't exceed MAX_MESSAGE_ID_LENGTH
         let message_id = uuid::Uuid::new_v4().to_string();
-        println!("Generated message id: {}", message_id);
         let _ = message.set_message_id(message_id);
     }
 }
