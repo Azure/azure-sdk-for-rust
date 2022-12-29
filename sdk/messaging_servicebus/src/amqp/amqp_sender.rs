@@ -108,11 +108,11 @@ impl AmqpSender {
                     SendableEnvelope::Single(sendable) => {
                         let fut = self.sender.send_batchable_ref(sendable).await?;
                         batch.state = BatchEnvelopeState::Sent(fut);
-                    },
+                    }
                     SendableEnvelope::Batch(sendable) => {
                         let fut = self.sender.send_batchable_ref(sendable).await?;
                         batch.state = BatchEnvelopeState::Sent(fut);
-                    },
+                    }
                 },
                 BatchEnvelopeState::Sent(fut) => break fut.await?,
                 BatchEnvelopeState::Settled => return Ok(()),
@@ -233,8 +233,8 @@ impl TransportSender for AmqpSender {
                 // TODO: Somehow directly returning the result will lead to an error in the macro
                 #[allow(clippy::let_and_return)]
                 result
-            },
-            None => Ok(())
+            }
+            None => Ok(()),
         }
     }
 
@@ -261,8 +261,8 @@ impl TransportSender for AmqpSender {
                 };
                 #[allow(clippy::let_and_return)]
                 result
-            },
-            None => Ok(())
+            }
+            None => Ok(()),
         }
     }
 

@@ -1,5 +1,10 @@
-use fe2o3_amqp::{Sendable, link::{delivery::DeliveryFut, SendError}};
-use fe2o3_amqp_types::messaging::{message::__private::Serializable, Batch, Data, Message, Outcome};
+use fe2o3_amqp::{
+    link::{delivery::DeliveryFut, SendError},
+    Sendable,
+};
+use fe2o3_amqp_types::messaging::{
+    message::__private::Serializable, Batch, Data, Message, Outcome,
+};
 use serde_amqp::to_vec;
 
 use crate::ServiceBusMessage;

@@ -6,19 +6,19 @@ use fe2o3_amqp_management::{
 };
 use fe2o3_amqp_types::messaging::Message;
 
+pub(crate) mod add_rule;
 pub(crate) mod cancel_scheduled_message;
+pub(crate) mod enumerate_rules;
 pub(crate) mod get_session_state;
 pub(crate) mod peek_message;
 pub(crate) mod peek_session_message;
 pub(crate) mod receive_by_sequence_number;
+pub(crate) mod remove_rule;
 pub(crate) mod renew_lock;
 pub(crate) mod renew_session_lock;
 pub(crate) mod schedule_message;
 pub(crate) mod set_session_state;
 pub(crate) mod update_disposition;
-pub(crate) mod add_rule;
-pub(crate) mod enumerate_rules;
-pub(crate) mod remove_rule;
 
 const HTTP_STATUS_CODE_OK: u16 = 200;
 const HTTP_STATUS_CODE_NO_CONTENT: u16 = 204;
