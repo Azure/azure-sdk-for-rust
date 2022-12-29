@@ -152,7 +152,6 @@ where
         entity_path: String,
         identifier: String,
         retry_options: ServiceBusRetryOptions,
-        generate_message_id: bool,
     ) -> Result<Self::Sender, Self::CreateSenderError> {
         let mut connection_scope = self.connection_scope.lock().await;
 
@@ -173,7 +172,6 @@ where
             management_link,
             cbs_command_sender,
             connection_scope: self.connection_scope.clone(),
-            generate_message_id,
         })
     }
 

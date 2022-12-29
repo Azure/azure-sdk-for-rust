@@ -24,9 +24,6 @@ pub struct ServiceBusSenderOptions {
     /// A property used to set the [`ServiceBusSender`] ID to identify the client. This can be used
     /// to correlate logs and exceptions. If `None` or empty, a random unique value will be used.
     pub identifier: Option<String>,
-
-    /// Whether the client should generate a message ID for each message
-    pub generate_message_id: bool,
 }
 
 /// A client responsible for sending [`ServiceBusMessage`] to a specific Service Bus entity (Queue

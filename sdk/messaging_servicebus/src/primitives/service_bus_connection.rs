@@ -115,11 +115,10 @@ where
         entity_path: String,
         identifier: String,
         retry_options: ServiceBusRetryOptions,
-        generate_message_id: bool,
     ) -> Result<C::Sender, C::CreateSenderError> {
         let sender = self
             .inner_client
-            .create_sender(entity_path, identifier, retry_options, generate_message_id)
+            .create_sender(entity_path, identifier, retry_options)
             .await?;
 
         Ok(sender)

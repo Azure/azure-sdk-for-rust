@@ -80,7 +80,6 @@ pub(crate) trait TransportClient: Sized + Sealed {
         entity_path: String,
         identifier: String,
         retry_policy: ServiceBusRetryOptions,
-        generate_message_id: bool,
     ) -> Result<Self::Sender, Self::CreateSenderError>;
 
     /// Creates a receiver

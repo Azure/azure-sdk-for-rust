@@ -55,10 +55,9 @@ pub(crate) struct BatchEnvelope {
 pub(crate) fn batch_service_bus_messages_as_amqp_message(
     source: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator,
     force_batch: bool,
-    generate_message_id: bool,
 ) -> Option<BatchEnvelope> {
     let batch_messages = source.map(|m| m.amqp_message);
-    build_amqp_batch_from_messages(batch_messages, force_batch, generate_message_id)
+    build_amqp_batch_from_messages(batch_messages, force_batch)
 }
 
 /// Builds a batch from a set of messages. Returns the batch containing the source messages.
@@ -67,17 +66,13 @@ pub(crate) fn batch_service_bus_messages_as_amqp_message(
 pub(crate) fn build_amqp_batch_from_messages(
     mut source: impl Iterator<Item = Message<Data>> + ExactSizeIterator,
     force_batch: bool,
-    generate_message_id: bool,
 ) -> Option<BatchEnvelope> {
     let total = source.len();
 
     match (total, force_batch) {
         (0, _) => None,
         (1, false) => {
-            let mut message = source.next()?;
-            if generate_message_id {
-                generate_message_id_if_not_present(&mut message); // TODO: temp workaround for duplicate detection
-            }
+            let message = source.next()?;
             let sendable = Sendable {
                 message,
                 message_format: Default::default(),
@@ -91,10 +86,7 @@ pub(crate) fn build_amqp_batch_from_messages(
         _ => {
             let mut batch_data: Batch<Data> = Batch::from(Vec::with_capacity(total));
 
-            let mut first_message = source.next()?;
-            if generate_message_id {
-                generate_message_id_if_not_present(&mut first_message); // TODO: temp workaround for duplicate detection
-            }
+            let first_message = source.next()?;
 
             // Take selected fields from the first message properties and message annotations and
             // use it as the basis for the evelope
@@ -104,10 +96,7 @@ pub(crate) fn build_amqp_batch_from_messages(
             let data = Data::from(to_vec(&Serializable(first_message)).ok()?);
             batch_data.push(data);
 
-            for mut message in source {
-                if generate_message_id {
-                    generate_message_id_if_not_present(&mut message); // TODO: temp workaround for duplicate detection
-                }
+            for message in source {
                 let data = Data::from(to_vec(&Serializable(message)).ok()?);
                 batch_data.push(data);
             }
@@ -128,22 +117,5 @@ pub(crate) fn build_amqp_batch_from_messages(
                 sendable: SendableEnvelope::Batch(sendable),
             })
         }
-    }
-}
-
-/// Generates a message id if one is not present.
-///
-/// TODO: This is a workaround to allow the service to perform duplicate detection. The current
-/// retry policy would sometimes make retrying a message as if it were a new message.
-///
-/// Upon establishing a sender link, the service will have `rcv_settle_mode` set to `First` which
-/// settles the message without needing a disposition from the sender.
-fn generate_message_id_if_not_present(message: &mut Message<Data>) {
-    use super::amqp_message_extensions::{AmqpMessageExt, AmqpMessageMutExt};
-
-    if message.message_id().is_none() {
-        // UUID length won't exceed MAX_MESSAGE_ID_LENGTH
-        let message_id = uuid::Uuid::new_v4().to_string();
-        let _ = message.set_message_id(message_id);
     }
 }

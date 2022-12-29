@@ -46,17 +46,12 @@ impl ScheduledBatchEnvelope {
 
     pub(crate) fn try_from_amqp_message(
         message: Message<Data>,
-        generate_message_id: bool,
     ) -> Result<Option<Self>, serde_amqp::Error> {
         let message_id = message.message_id().map(|id| id.to_string());
         let session_id = message.session_id().map(|id| id.to_string());
         let partition_key = message.partition_key().map(|key| key.to_string());
         let via_partition_key = message.via_partition_key().map(|key| key.to_string());
-        let batch_envelope = match build_amqp_batch_from_messages(
-            std::iter::once(message),
-            false,
-            generate_message_id,
-        ) {
+        let batch_envelope = match build_amqp_batch_from_messages(std::iter::once(message), false) {
             Some(envelope) => envelope,
             None => return Ok(None),
         };
