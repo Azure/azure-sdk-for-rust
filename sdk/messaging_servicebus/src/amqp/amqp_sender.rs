@@ -23,7 +23,7 @@ use super::amqp_cbs_link;
 use super::amqp_connection_scope::AmqpConnectionScope;
 use super::amqp_management_link::AmqpManagementLink;
 use super::amqp_message_batch::AmqpMessageBatch;
-use super::amqp_message_converter::build_amqp_batch_from_messages;
+use super::amqp_message_converter::{build_amqp_batch_from_messages, BatchEnvelopeState};
 use super::amqp_request_message::cancel_scheduled_message::CancelScheduledMessageRequest;
 use super::amqp_request_message::schedule_message::ScheduleMessageRequest;
 use super::error::{
@@ -98,94 +98,45 @@ impl RecoverableTransport for AmqpSender {
 }
 
 impl AmqpSender {
-    async fn recover_and_resend(
-        &mut self,
-        last_error: AmqpSendError,
-        batch: &Option<BatchEnvelope>,
-    ) -> Result<(), AmqpSendError> {
-        match self.recover().await {
-            Ok(_) => {
-                // Recover will re-send the unsettled messages. So we should not
-                // retry sending the batch envelope because it would become a duplciated
-                // message.
-                self.send_batch_envelope(batch).await
-            }
-            Err(_recover_error) => Err(last_error),
-        }
-    }
-
-    // Unlike
-    async fn recover_if_needed_and_send_batch_envelope(
-        &mut self,
-        last_error: &mut Option<AmqpSendError>,
-        batch: &Option<BatchEnvelope>,
-    ) -> Result<(), AmqpSendError> {
-        use crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError;
-
-        match last_error.take() {
-            Some(last_error) => match &last_error {
-                AmqpSendError::Elapsed(_) => {
-                    // If the error is a timeout, the message have been added to AmqpSender's
-                    // unsettled map, and unsettled messages will be re-sent upon re-attaching. So
-                    // we should not retry sending the batch envelope because it would become a
-                    // duplciated message.
-                    self.recover().await.map_err(|_| last_error)
-                }
-                AmqpSendError::Send(err) => match err.should_try_recover() {
-                    true => self.recover_and_resend(last_error, batch).await,
-                    false => self.send_batch_envelope(batch).await,
-                },
-                AmqpSendError::NotAccepted(_) => {
-                    // Delivery was not accepted, there should be no need to recover
-                    self.send_batch_envelope(batch).await
-                }
-                AmqpSendError::ConnectionScopeDisposed => Err(last_error),
-            },
-            None => self.send_batch_envelope(batch).await,
-        }
-    }
-
     async fn send_batch_envelope(
         &mut self,
-        batch: &Option<BatchEnvelope>,
+        batch: &mut BatchEnvelope,
     ) -> Result<(), AmqpSendError> {
-        if let Some(batch) = batch {
-            let outcome = match &batch.sendable {
-                SendableEnvelope::Single(sendable) => match batch.batchable {
-                    true => {
+        let outcome = loop {
+            match &mut batch.state {
+                BatchEnvelopeState::NotSent => match &mut batch.sendable {
+                    SendableEnvelope::Single(sendable) => {
                         let fut = self.sender.send_batchable_ref(sendable).await?;
-                        fut.await?
-                    }
-                    false => self.sender.send_ref(sendable).await?,
-                },
-                SendableEnvelope::Batch(sendable) => match batch.batchable {
-                    true => {
+                        batch.state = BatchEnvelopeState::Sent(fut);
+                    },
+                    SendableEnvelope::Batch(sendable) => {
                         let fut = self.sender.send_batchable_ref(sendable).await?;
-                        fut.await?
-                    }
-                    false => self.sender.send_ref(sendable).await?,
+                        batch.state = BatchEnvelopeState::Sent(fut);
+                    },
                 },
-            };
+                BatchEnvelopeState::Sent(fut) => break fut.await?,
+                BatchEnvelopeState::Settled => return Ok(()),
+            }
+        };
 
-            match outcome {
-                Outcome::Accepted(_) => return Ok(()),
-                Outcome::Rejected(rejected) => {
-                    return Err(AmqpSendError::from(NotAcceptedError::Rejected(rejected)))
-                }
-                Outcome::Released(released) => {
-                    return Err(AmqpSendError::from(NotAcceptedError::Released(released)))
-                }
-                Outcome::Modified(modified) => {
-                    return Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
-                }
-                #[cfg(feature = "transaction")]
-                Outcome::Declared(_) => {
-                    unreachable!("Declared is not expected outside txn-control links")
-                }
+        batch.state = BatchEnvelopeState::Settled;
+
+        match outcome {
+            Outcome::Accepted(_) => Ok(()),
+            Outcome::Rejected(rejected) => {
+                Err(AmqpSendError::from(NotAcceptedError::Rejected(rejected)))
+            }
+            Outcome::Released(released) => {
+                Err(AmqpSendError::from(NotAcceptedError::Released(released)))
+            }
+            Outcome::Modified(modified) => {
+                Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
+            }
+            #[cfg(feature = "transaction")]
+            Outcome::Declared(_) => {
+                unreachable!("Declared is not expected outside txn-control links")
             }
         }
-
-        Ok(())
     }
 
     async fn schedule_message_inner(
@@ -266,22 +217,25 @@ impl TransportSender for AmqpSender {
         &mut self,
         messages: impl Iterator<Item = ServiceBusMessage> + ExactSizeIterator + Send,
     ) -> Result<(), Self::SendError> {
-        // This internally calls `build_amqp_batch_from_messages` which will generate a message id
-        // if one is not provided.
         let batch =
             batch_service_bus_messages_as_amqp_message(messages, false, self.generate_message_id);
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
-        let mut last_error = None;
 
-        let result = run_operation! {
-            {&self.retry_policy},
-            try_timeout,
-            last_error,
-            self.recover_if_needed_and_send_batch_envelope(&mut last_error, &batch)
-        };
-        // TODO: Somehow directly returning the result will lead to an error in the macro
-        #[allow(clippy::let_and_return)]
-        result
+        match batch {
+            Some(mut envelope) => {
+                let result = run_operation! {
+                    {&self.retry_policy},
+                    AmqpSendError,
+                    try_timeout,
+                    self.send_batch_envelope(&mut envelope),
+                    self.recover()
+                };
+                // TODO: Somehow directly returning the result will lead to an error in the macro
+                #[allow(clippy::let_and_return)]
+                result
+            },
+            None => Ok(())
+        }
     }
 
     /// Sends [`ServiceBusMessageBatch`] to the associated Queue/Topic.
@@ -289,24 +243,27 @@ impl TransportSender for AmqpSender {
         &mut self,
         message_batch: Self::MessageBatch,
     ) -> Result<(), Self::SendError> {
-        // `build_amqp_batch_from_messages` will generate a message id if one is not provided.
         let batch = build_amqp_batch_from_messages(
             message_batch.messages.into_iter(),
             false,
             self.generate_message_id,
         );
         let mut try_timeout = self.retry_policy.calculate_try_timeout(0);
-        let mut last_error = None;
 
-        let result = run_operation! {
-            {&self.retry_policy},
-            try_timeout,
-            last_error,
-            self.recover_if_needed_and_send_batch_envelope(&mut last_error, &batch)
-        };
-        // TODO: Somehow directly returning the result will lead to an error in the macro
-        #[allow(clippy::let_and_return)]
-        result
+        match batch {
+            Some(mut envelope) => {
+                let result = run_operation! {
+                    {&self.retry_policy},
+                    AmqpSendError,
+                    try_timeout,
+                    self.send_batch_envelope(&mut envelope),
+                    self.recover()
+                };
+                #[allow(clippy::let_and_return)]
+                result
+            },
+            None => Ok(())
+        }
     }
 
     async fn schedule_messages(
@@ -318,9 +275,6 @@ impl TransportSender for AmqpSender {
 
         let encoded_messages = messages
             .map(|m| m.amqp_message)
-            // `ScheduledBatchEnvelope::try_from_amqp_message` internally calls
-            // `build_amqp_batch_from_messages` which will generate a message id if one is not
-            // provided.
             .map(|msg| ScheduledBatchEnvelope::try_from_amqp_message(msg, self.generate_message_id))
             .map(|result| result.map(|opt| opt.map(|m| m.into_ordered_map())))
             .collect::<Result<Option<Vec<_>>, _>>()

@@ -1,5 +1,5 @@
-use fe2o3_amqp::Sendable;
-use fe2o3_amqp_types::messaging::{message::__private::Serializable, Batch, Data, Message};
+use fe2o3_amqp::{Sendable, link::{delivery::DeliveryFut, SendError}};
+use fe2o3_amqp_types::messaging::{message::__private::Serializable, Batch, Data, Message, Outcome};
 use serde_amqp::to_vec;
 
 use crate::ServiceBusMessage;
@@ -8,15 +8,41 @@ use super::amqp_constants;
 
 pub(crate) const LOCK_TOKEN_DELIVERY_ANNOTATION: &str = "x-opt-lock-token";
 
-#[derive(Debug, Clone)]
+/// State of a batch envelope. Delivery is not considered complete until the envelope is settled.
+///
+/// The AMQP sender will keep the message in its internal unsettled map until the delivery is
+/// settled by the receiver. All unsettled messages will be resent upon re-attaching the sender.
+/// This is why a sent but not settled message should not be retried.
+pub(crate) enum BatchEnvelopeState {
+    /// The envelope has not been sent yet.
+    NotSent,
+
+    /// The envelope has been sent but not settled by the receiver.
+    Sent(DeliveryFut<Result<Outcome, SendError>>),
+
+    /// The envelope has been settled by the receiver.
+    Settled,
+}
+
+impl std::fmt::Debug for BatchEnvelopeState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BatchEnvelopeState::NotSent => write!(f, "NotSent"),
+            BatchEnvelopeState::Sent(_) => write!(f, "Sent"),
+            BatchEnvelopeState::Settled => write!(f, "Settled"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub(crate) enum SendableEnvelope {
     Single(Sendable<Data>),
     Batch(Sendable<Batch<Data>>),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub(crate) struct BatchEnvelope {
-    pub batchable: bool,
+    pub state: BatchEnvelopeState,
     pub sendable: SendableEnvelope,
 }
 
@@ -53,7 +79,7 @@ pub(crate) fn build_amqp_batch_from_messages(
                 settled: Default::default(),
             };
             Some(BatchEnvelope {
-                batchable: false,
+                state: BatchEnvelopeState::NotSent,
                 sendable: SendableEnvelope::Single(sendable),
             })
         }
@@ -93,7 +119,7 @@ pub(crate) fn build_amqp_batch_from_messages(
                 .build();
 
             Some(BatchEnvelope {
-                batchable: true,
+                state: BatchEnvelopeState::NotSent,
                 sendable: SendableEnvelope::Batch(sendable),
             })
         }

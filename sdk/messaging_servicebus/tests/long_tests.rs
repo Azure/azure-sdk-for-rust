@@ -12,6 +12,7 @@ async fn send_one_message_per_minute(
 ) -> Result<(), anyhow::Error> {
     for i in 0..total {
         let message = format!("message {}", i);
+        println!("sending message {}", i);
         sender.send_message(message).await?;
         println!("sent message {}", i);
         tokio::time::sleep(std::time::Duration::from_secs(60)).await;
@@ -30,8 +31,8 @@ async fn receive_and_complete_once_per_minute(
     let mut received = Vec::new();
     while total_received < total {
         let message = receiver.receive_message().await?;
-
         receiver.complete_message(&message).await?;
+
         println!(
             "received message {}",
             std::str::from_utf8(message.body().unwrap()).unwrap()

@@ -100,57 +100,6 @@ impl<T> ServiceBusRetryPolicyExt for T where
 /// TODO: This is a rather temporary solution as there would be weird lifetime issue if the same
 /// thing is implemented as a method.
 macro_rules! run_operation {
-    ($policy:tt, $try_timeout:ident, $last_err:ident, $op:expr) => {{
-        let mut _failed_attempt_count = 0; // avoid accidental shadowing
-        let mut _is_scope_disposed = false; // avoid accidental shadowing
-        if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state())
-            && $try_timeout
-                < crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME
-        {
-            // We are in a server busy state before we start processing. Since
-            // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
-            // entire Sleep time.
-            tokio::time::sleep($try_timeout).await;
-        }
-
-        let outcome = loop {
-            if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state()) {
-                tokio::time::sleep(
-                    crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
-                )
-                .await;
-            }
-
-            // TODO: should we even try to run the operation if recovery failed? The current impl
-            // needs to try to run the operation to get the error to determine if the error is
-            // recoverable.
-            let outcome = match tokio::time::timeout($try_timeout, $op).await {
-                Ok(result) => result,
-                Err(elapsed) => Err(elapsed.into()),
-            };
-            match outcome {
-                Ok(outcome) => break outcome,
-                Err(error) => {
-                    _failed_attempt_count += 1;
-                    let _retry_delay = $policy.calculate_retry_delay(&error, _failed_attempt_count);
-                    _is_scope_disposed |= crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyError::is_scope_disposed(&error);
-
-                    match (_retry_delay, _is_scope_disposed) {
-                        (Some(retry_delay), false) => {
-                            log::error!("{}", &error);
-                            $last_err = Some(error);
-                            tokio::time::sleep(retry_delay).await;
-                            $try_timeout = $policy.calculate_try_timeout(_failed_attempt_count);
-                        }
-                        _ => return Err(crate::primitives::error::RetryError::Operation(error)),
-                    }
-                }
-            }
-        };
-
-        Result::<_, crate::primitives::error::RetryError<_>>::Ok(outcome)
-    }};
-
     ($policy:tt, $err_ty:ty, $try_timeout:ident, $op:expr, $recover_op:expr) => {{
         let mut _failed_attempt_count = 0; // avoid accidental shadowing
         let mut _should_try_recover = false; // avoid accidental shadowing
