@@ -25,7 +25,6 @@ rustdoc-args = ["--cfg", "docsrs"] # for conditional intra-doc links
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.8" }
 base64 = "0.20.0"
 const_format = "0.2"
 digest = "0.10"
@@ -37,11 +36,14 @@ serde = "1"
 sha2 = "0.10"
 thiserror = "1.0"
 time = "0.3.10"
-tokio = {version = "1", features = ["time"]}
-tokio-util = {version = "0.7.3", features = ["time"]}
 url = "2.2"
 urlencoding = "2"
 uuid = { version = "1", features=["v4"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+azure_core = { path = "../core", version = "0.8" }
+tokio-util = {version = "0.7.3", features = ["time"]}
+tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
 
 # AMQP dependencies
 fe2o3-amqp = {version = "0.8.6", features = ["rustls"]} # TODO: let user choose rustls or native-tls?
@@ -51,7 +53,12 @@ fe2o3-amqp-types = "0.7"
 fe2o3-amqp-ws = { version = "0.2", features = ["rustls-tls-webpki-roots"] }
 serde_amqp = {version = "0.5.6", features = ["time"]}
 
-[dev-dependencies]
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Add dependency to getrandom to enable WASM support
+getrandom = { version = "0.2", features = ["js"] }
+
+# wasm32 target is not supported yet
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 anyhow = "1.0"
 dotenv = "0.15"
 futures = "0.3"

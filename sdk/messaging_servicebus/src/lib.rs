@@ -133,56 +133,61 @@ Below shows supported Service Bus features
 #![recursion_limit = "128"]
 #![deny(missing_docs, missing_debug_implementations)]
 
-pub(crate) mod constants;
-pub(crate) mod diagnostics;
-pub(crate) mod entity_name_formatter;
+#[macro_use]
+mod macros;
 
-pub(crate) mod sealed {
-    // This is a marker trait to prevent users from implementing certain traits from this crate.
-    // This should be kept within a `pub(crate) mod` and MUST NOT be re-exported or made public.
-    pub trait Sealed {}
+cfg_not_wasm32! {
+    pub(crate) mod constants;
+    pub(crate) mod diagnostics;
+    pub(crate) mod entity_name_formatter;
+
+    pub(crate) mod sealed {
+        // This is a marker trait to prevent users from implementing certain traits from this crate.
+        // This should be kept within a `pub(crate) mod` and MUST NOT be re-exported or made public.
+        pub trait Sealed {}
+    }
+
+    pub mod administration;
+    pub mod amqp;
+    pub mod authorization;
+    pub mod client;
+    pub mod core;
+    pub mod primitives;
+    pub mod receiver;
+    pub mod rule_manager;
+    pub mod sender;
+
+    // TODO: reserved for future use
+    // pub mod processor;
+
+    pub mod prelude {
+        //! Re-exports
+
+        pub use crate::client::{ServiceBusClient, ServiceBusClientOptions};
+        pub use crate::primitives::{
+            service_bus_connection_string_properties::ServiceBusConnectionStringProperties,
+            service_bus_message::ServiceBusMessage, service_bus_message_state::ServiceBusMessageState,
+            service_bus_peeked_message::ServiceBusPeekedMessage,
+            service_bus_received_message::ServiceBusReceivedMessage,
+            service_bus_retry_mode::ServiceBusRetryMode,
+            service_bus_retry_options::ServiceBusRetryOptions,
+            service_bus_retry_policy::ServiceBusRetryPolicy,
+            service_bus_transport_type::ServiceBusTransportType, sub_queue::SubQueue,
+        };
+        pub use crate::receiver::{
+            service_bus_receive_mode::ServiceBusReceiveMode, service_bus_receiver::ServiceBusReceiver,
+            service_bus_receiver::ServiceBusReceiverOptions,
+            service_bus_session_receiver::ServiceBusSessionReceiver,
+            service_bus_session_receiver::ServiceBusSessionReceiverOptions,
+        };
+        pub use crate::rule_manager::ServiceBusRuleManager;
+        pub use crate::sender::{
+            service_bus_message_batch::CreateMessageBatchOptions,
+            service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
+            service_bus_sender::ServiceBusSenderOptions,
+        };
+    }
+
+    // Re-export again to allow user to selectively import components
+    pub use prelude::*;
 }
-
-pub mod administration;
-pub mod amqp;
-pub mod authorization;
-pub mod client;
-pub mod core;
-pub mod primitives;
-pub mod receiver;
-pub mod rule_manager;
-pub mod sender;
-
-// TODO: reserved for future use
-// pub mod processor;
-
-pub mod prelude {
-    //! Re-exports
-
-    pub use crate::client::{ServiceBusClient, ServiceBusClientOptions};
-    pub use crate::primitives::{
-        service_bus_connection_string_properties::ServiceBusConnectionStringProperties,
-        service_bus_message::ServiceBusMessage, service_bus_message_state::ServiceBusMessageState,
-        service_bus_peeked_message::ServiceBusPeekedMessage,
-        service_bus_received_message::ServiceBusReceivedMessage,
-        service_bus_retry_mode::ServiceBusRetryMode,
-        service_bus_retry_options::ServiceBusRetryOptions,
-        service_bus_retry_policy::ServiceBusRetryPolicy,
-        service_bus_transport_type::ServiceBusTransportType, sub_queue::SubQueue,
-    };
-    pub use crate::receiver::{
-        service_bus_receive_mode::ServiceBusReceiveMode, service_bus_receiver::ServiceBusReceiver,
-        service_bus_receiver::ServiceBusReceiverOptions,
-        service_bus_session_receiver::ServiceBusSessionReceiver,
-        service_bus_session_receiver::ServiceBusSessionReceiverOptions,
-    };
-    pub use crate::rule_manager::ServiceBusRuleManager;
-    pub use crate::sender::{
-        service_bus_message_batch::CreateMessageBatchOptions,
-        service_bus_message_batch::ServiceBusMessageBatch, service_bus_sender::ServiceBusSender,
-        service_bus_sender::ServiceBusSenderOptions,
-    };
-}
-
-// Re-export again to allow user to selectively import components
-pub use prelude::*;
