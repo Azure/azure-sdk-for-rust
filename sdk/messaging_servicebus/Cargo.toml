@@ -46,11 +46,11 @@ tokio-util = {version = "0.7.3", features = ["time"]}
 tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.8.6", features = ["rustls"]} # TODO: let user choose rustls or native-tls?
+fe2o3-amqp = {version = "0.8.6"} # TODO: let user choose rustls or native-tls?
 fe2o3-amqp-cbs = "0.2"
 fe2o3-amqp-management = "0.2.1"
 fe2o3-amqp-types = "0.7"
-fe2o3-amqp-ws = { version = "0.2", features = ["rustls-tls-webpki-roots"] }
+fe2o3-amqp-ws = { version = "0.2" }
 serde_amqp = {version = "0.5.6", features = ["time"]}
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -67,9 +67,12 @@ mockall = "0.11"
 env_logger = "0.10"
 
 [features]
-default = []
+default = ["rustls"]
 test_e2e = []
 
 # TODO: transaction is not implemented yet.
 # Transaction requires standard tier or above
 transaction = ["fe2o3-amqp/transaction"]
+
+rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
+native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]

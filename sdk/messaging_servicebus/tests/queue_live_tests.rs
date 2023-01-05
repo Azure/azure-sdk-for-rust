@@ -34,8 +34,8 @@ mod macros;
 
 cfg_not_wasm32! {
     use azure_messaging_servicebus::{
-        client::{ServiceBusClient, ServiceBusClientOptions},
-        primitives::sub_queue::SubQueue,
+        ServiceBusClient, ServiceBusClientOptions,
+        SubQueue,
         ServiceBusMessage, ServiceBusReceiverOptions,
     };
     use std::time::Duration as StdDuration;

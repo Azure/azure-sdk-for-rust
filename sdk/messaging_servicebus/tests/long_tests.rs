@@ -61,12 +61,14 @@ cfg_not_wasm32! {
         // cargo test --test long_tests -- --ignored send_to_queue_every_minute_for_two_hour --exact --nocapture
         // ```
 
+        use azure_messaging_servicebus::{ServiceBusClient};
+
         common::setup_dotenv();
 
         let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
         let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
 
-        let mut client = azure_messaging_servicebus::client::ServiceBusClient::new(
+        let mut client = ServiceBusClient::new(
             &connection_string,
             Default::default(),
         )

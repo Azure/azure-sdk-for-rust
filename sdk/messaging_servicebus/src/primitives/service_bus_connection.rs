@@ -8,7 +8,7 @@ use crate::{
         shared_access_credential::SharedAccessCredential,
         shared_access_signature::SharedAccessSignature,
     },
-    client::ServiceBusClientOptions,
+    client::service_bus_client::ServiceBusClientOptions,
     core::TransportClient,
     ServiceBusReceiveMode,
 };

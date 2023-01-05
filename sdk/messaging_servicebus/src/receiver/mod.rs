@@ -1,9 +1,12 @@
-//! Implements the Service Bus Receiver.
+//! Receiver for Service Bus queues and subscriptions.
 use serde_amqp::{primitives::OrderedMap, Value};
 
+cfg_either_rustls_or_native_tls! {
+    pub mod service_bus_receiver;
+    pub mod service_bus_session_receiver;
+}
+
 pub mod service_bus_receive_mode;
-pub mod service_bus_receiver;
-pub mod service_bus_session_receiver;
 
 /// The dead letter options.
 ///

@@ -1,4 +1,4 @@
-//! Implemments `ServiceBusRuleManager`
+//! Rule manager for Service Bus subscriptions.
 
 use fe2o3_amqp::link::DetachError;
 

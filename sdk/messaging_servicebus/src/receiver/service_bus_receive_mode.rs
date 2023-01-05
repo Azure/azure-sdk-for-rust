@@ -1,4 +1,4 @@
-//! Defines `ServiceBusReceiveMode`
+//! Receive mode for Service Bus receiver.
 
 /// The mode in which to receive messages.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

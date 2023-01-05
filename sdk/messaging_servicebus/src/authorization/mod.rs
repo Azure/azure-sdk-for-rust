@@ -1,4 +1,4 @@
-//! Authorization types for Service Bus.
+//! Authorization primitives.
 
 mod azure_named_key_credential;
 mod azure_sas_credential;

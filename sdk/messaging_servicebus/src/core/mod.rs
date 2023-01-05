@@ -1,4 +1,4 @@
-//! Defines core traits for the AMQP client.
+//! Core trait abstractions and a basic retry policy implementation.
 
 mod basic_retry_policy;
 mod recoverable_transport;
