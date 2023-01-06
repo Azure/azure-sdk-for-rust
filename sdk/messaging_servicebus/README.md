@@ -10,7 +10,6 @@ This crate is part of a collection of crates: for more information please refer 
 - [TLS Support](#tls-support)
 - [Feature flags](#feature-flags)
 
-
 ## Examples
 
 Below are two examples of sending and receiving messages from a queue. More examples can be found in the [examples](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/messaging_servicebus/examples)
@@ -140,8 +139,8 @@ The TLS implementation is exposed to the user through the corresponding feature 
 either the `rustls` or `native-tls` feature is enabled, and at least one TLS implementation is enabled. Enabling both features
 is **not** supported and will result in a compile-time error.
 
-The `rustls` feature is enabled by default, and it will use the `rustls` crate and `webpki-roots` crate to provide TLS support.
-The `native-tls` feature will use the `native-tls` crate to provide TLS support.
+The `native-tls` feature is enabled by default, and it will use the `native-tls` crate to provide TLS support.
+The `rustls` feature will use the `rustls` crate and `webpki-roots` crate to provide TLS support.
 
 ## Feature flags
 
@@ -149,7 +148,7 @@ This crate supports the following feature flags:
 
 | Feature | Description |
 | ------- | ----------- |
-| `default` | Enables "rustls" feature |
+| `default` | Enables "native-tls" feature |
 | `rustls` | Enables the use of the `rustls` crate for TLS support |
 | `native-tls` | Enables the use of the `native-tls` crate for TLS support |
 | `transaction` | This is reserved for future support of transaction and is not implemented yet |
