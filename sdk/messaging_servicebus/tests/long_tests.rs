@@ -60,7 +60,7 @@ cfg_not_wasm32! {
         // Run this test with:
         //
         // ```sh
-        // cargo test --test long_tests -- --ignored send_to_queue_every_minute_for_two_hour --exact --nocapture
+        // cargo test --test long_tests --features test_e2e -- --ignored send_to_queue_every_minute_for_two_hour --exact --nocapture
         // ```
 
         use azure_messaging_servicebus::{ServiceBusClient};
