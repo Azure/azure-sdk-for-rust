@@ -1,3 +1,5 @@
+#![cfg(all(test, feature = "test_e2e"))]
+
 use std::time::Duration as StdDuration;
 
 use azure_messaging_servicebus::{

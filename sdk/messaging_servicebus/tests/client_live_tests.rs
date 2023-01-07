@@ -29,6 +29,8 @@
 //!   that is only used for testing rule filters. This is to avoid interfering with other tests.
 //!
 
+#![cfg(all(test, feature = "test_e2e"))]
+
 #[macro_use]
 mod macros;
 

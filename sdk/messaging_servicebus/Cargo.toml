@@ -68,7 +68,10 @@ env_logger = "0.10"
 
 [features]
 default = ["native-tls"]
-test_e2e = []
+
+# CI tests related features
+test_e2e = [] # This enables tests under the `sdk/messaging_servicebus/tests` directory
+test_integration = [] # TODO: this feature is not used for now
 
 # TODO: transaction is not implemented yet.
 # Transaction requires standard tier or above

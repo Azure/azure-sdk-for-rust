@@ -2,6 +2,8 @@
 //!
 //! This test may be used to test sender recovery after a network interruption.
 
+#![cfg(all(test, feature = "test_e2e"))]
+
 #[macro_use]
 mod macros;
 
