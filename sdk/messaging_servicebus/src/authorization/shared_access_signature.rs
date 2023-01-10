@@ -336,12 +336,14 @@ impl SharedAccessSignature {
         shared_access_key: &str,
         expiry: &str,
     ) -> Result<String, InvalidLength> {
+        use base64::Engine;
+
         let encoded_audience: String =
             url::form_urlencoded::byte_serialize(audience.as_bytes()).collect();
         // let expiration = convert_to_unix_time(expiration_time).to_string();
         let message = format!("{encoded_audience}\n{expiry}");
         let mac = mac::<Hmac<Sha256>>(shared_access_key.as_bytes(), message.as_bytes())?;
-        let signature = base64::encode(mac.as_ref());
+        let signature = base64::engine::general_purpose::STANDARD.encode(mac.as_ref());
 
         let encoded_signature = urlencoding::encode(&signature);
         let encoded_expiration = urlencoding::encode(expiry);
