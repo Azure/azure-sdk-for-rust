@@ -2,9 +2,9 @@
 
 An unofficial and experimental AMQP 1.0 client for Azure Service Bus.
 
-This crate follows a similar structure to the
-[azure-sdk-for-net/Azure.Messaging.ServiceBus](https://github.com/Azure/azure-sdk-for-net/tree/main/sdk/servicebus/Azure.Messaging.ServiceBus)
-and provides more features than [azservicebus](https://crates.io/crates/azservicebus). The list
+This crate follows a similar structure to the dotnet sdk (
+[Azure.Messaging.ServiceBus](https://github.com/Azure/azure-sdk-for-net/tree/main/sdk/servicebus/Azure.Messaging.ServiceBus))
+and provides more features than [azure_messaging_servicebus](https://crates.io/crates/azure_messaging_servicebus). The list
 of supported Service Bus features can be found below ([Supported Service Bus
 Features](#supported-service-bus-features)). A complete comparison of supported features in REST
 client and AMQP 1.0 client can be found
