@@ -1,6 +1,4 @@
-use azservicebus::{
-    ServiceBusClient, ServiceBusClientOptions, ServiceBusSenderOptions,
-};
+use azservicebus::{ServiceBusClient, ServiceBusClientOptions, ServiceBusSenderOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
