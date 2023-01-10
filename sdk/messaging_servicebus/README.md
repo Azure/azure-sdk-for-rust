@@ -18,12 +18,14 @@ issue/feature request.
 
 ## Content
 
+- [Homepage](https://github.com/minghuaw/azure-sdk-for-rust/blob/separate_servicebus_crate/sdk/messaging_servicebus)
 - [Examples](#examples)
   - [Send messages to queue](#send-messages-to-queue)
   - [Receive messages from queue](#receive-messages-from-queue)
 - [Supported Service Bus Features](#supported-service-bus-features)
 - [TLS Support](#tls-support)
 - [Feature flags](#feature-flags)
+- [Change log](https://github.com/minghuaw/azure-sdk-for-rust/blob/separate_servicebus_crate/sdk/messaging_servicebus/CHANGELOG.md)
 
 ## Examples
 
