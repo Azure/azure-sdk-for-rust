@@ -10,7 +10,7 @@ homepage = "https://github.com/minghuaw/azure-sdk-for-rust/tree/separate_service
 documentation = "https://docs.rs/azservicebus"
 
 categories = ["api-bindings"]
-keywords = ["sdk", "azure", "amqp", "servicebus", "cloud"]
+keywords = ["sdk", "azure", "servicebus", "amqp", "cloud"]
 
 edition = "2021"
 
