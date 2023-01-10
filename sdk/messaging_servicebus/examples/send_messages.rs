@@ -1,6 +1,6 @@
 //! This is the same example shown in the crate-level documentation
 
-use azure_messaging_servicebus::prelude::*;
+use azservicebus::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

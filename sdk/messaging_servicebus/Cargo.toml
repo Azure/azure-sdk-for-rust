@@ -1,16 +1,16 @@
 [package]
-name = "azure_messaging_servicebus"
-version = "0.8.0"
-description = "Azure Service Bus client library for rust"
+name = "azservicebus"
+version = "0.1.0"
+description = "Unofficial and experimental AMQP 1.0 rust client for Azure Service Bus"
 readme = "README.md"
-authors = ["Microsoft Corp."]
+authors = ["Minghua Wu"]
 license = "MIT"
-repository = "https://github.com/azure/azure-sdk-for-rust"
-homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_messaging_servicebus"
+repository = "https://github.com/minghuaw/azure-sdk-for-rust/tree/separate_servicebus_crate"
+homepage = "https://github.com/minghuaw/azure-sdk-for-rust/tree/separate_servicebus_crate"
+documentation = "https://docs.rs/azservicebus"
 
 categories = ["api-bindings"]
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "azure", "amqp", "servicebus", "cloud"]
 
 edition = "2021"
 

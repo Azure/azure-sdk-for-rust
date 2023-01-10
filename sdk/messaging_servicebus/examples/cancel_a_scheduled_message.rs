@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions};
+use azservicebus::{ServiceBusClient, ServiceBusClientOptions};
 use time::OffsetDateTime;
 
 #[tokio::main]

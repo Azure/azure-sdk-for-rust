@@ -44,7 +44,7 @@ impl ServiceBusRuleManager {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use azure_messaging_servicebus::administration::{
+    /// use azservicebus::administration::{
     ///     SqlRuleFilter, SqlRuleAction, CorrelationRuleFilter, TrueRuleFilter,
     /// };
     ///

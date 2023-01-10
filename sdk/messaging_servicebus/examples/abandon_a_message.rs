@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions};
+use azservicebus::{ServiceBusClient, ServiceBusClientOptions};
 
 /// Creates a separate client and receiver and then abandons a message.
 async fn create_a_client_and_abandon_a_message() -> Result<(), anyhow::Error> {

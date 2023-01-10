@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{
+use azservicebus::{
     authorization::AzureNamedKeyCredential, ServiceBusClient, ServiceBusClientOptions,
     ServiceBusSenderOptions,
 };
