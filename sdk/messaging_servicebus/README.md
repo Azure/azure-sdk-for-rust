@@ -154,7 +154,7 @@ Below shows supported Service Bus features
 Communication between a client application and an Azure Service Bus namespace is encrypted using
 Transport Layer Security (TLS). The TLS implementation is exposed to the user through the
 corresponding feature flags (please see the feature flag section below). The user should ensure
-either the `rustls` or `native-tls` feature is enabled, and at least one TLS implementation is
+either the `rustls` or `native-tls` feature is enabled, and one and only one TLS implementation is
 enabled. Enabling both features is **not** supported and will result in a compile-time error.
 
 The `native-tls` feature is enabled by default, and it will use the `native-tls` crate to
