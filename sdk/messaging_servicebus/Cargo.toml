@@ -25,7 +25,7 @@ rustdoc-args = ["--cfg", "docsrs"] # for conditional intra-doc links
 
 [dependencies]
 async-trait = "0.1"
-base64 = "0.20.0"
+base64 = "0.21.0"
 const_format = "0.2"
 digest = "0.10"
 futures-util = "0.3"
@@ -46,7 +46,7 @@ tokio-util = {version = "0.7.3", features = ["time"]}
 tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.8.6"} # TODO: let user choose rustls or native-tls?
+fe2o3-amqp = {version = "0.8.9"} # TODO: let user choose rustls or native-tls?
 fe2o3-amqp-cbs = "0.2"
 fe2o3-amqp-management = "0.2.1"
 fe2o3-amqp-types = "0.7"
