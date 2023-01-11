@@ -269,7 +269,8 @@ struct OperationModuleCode {
     response_code: ResponseCode,
     request_builder_struct_code: RequestBuilderStructCode,
     request_builder_setters_code: RequestBuilderSettersCode,
-    request_builder_future_code: RequestBuilderIntoFutureCode,
+    request_builder_send_code: RequestBuilderSendCode,
+    request_builder_intofuture_code: RequestBuilderIntoFutureCode,
 }
 
 struct OperationCode {
@@ -565,15 +566,17 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let request_builder_setters_code = RequestBuilderSettersCode::new(parameters);
     let response_code = ResponseCode::new(operation, produces)?;
     let long_running_operation = operation.0.long_running_operation;
-    let request_builder_future_code =
-        RequestBuilderIntoFutureCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
+    let request_builder_send_code =
+        RequestBuilderSendCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
+    let request_builder_intofuture_code = RequestBuilderIntoFutureCode::new(response_code.clone())?;
 
     let module_code = OperationModuleCode {
         module_name: operation.function_name()?,
         response_code,
         request_builder_struct_code,
         request_builder_setters_code,
-        request_builder_future_code,
+        request_builder_send_code,
+        request_builder_intofuture_code,
     };
 
     Ok(OperationCode {
@@ -890,7 +893,7 @@ impl ToTokens for ResponseCode {
 }
 
 /// The `send` function of the request builder.
-struct RequestBuilderIntoFutureCode {
+struct RequestBuilderSendCode {
     new_request_code: NewRequestCode,
     request_builder: SetRequestCode,
     response_code: ResponseCode,
@@ -898,7 +901,11 @@ struct RequestBuilderIntoFutureCode {
     long_running_operation: bool,
 }
 
-impl RequestBuilderIntoFutureCode {
+struct RequestBuilderIntoFutureCode {
+    response_code: ResponseCode,
+}
+
+impl RequestBuilderSendCode {
     fn new(
         new_request_code: NewRequestCode,
         request_builder: SetRequestCode,
@@ -918,7 +925,7 @@ impl RequestBuilderIntoFutureCode {
     }
 }
 
-impl ToTokens for RequestBuilderIntoFutureCode {
+impl ToTokens for RequestBuilderSendCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let new_request_code = &self.new_request_code;
         let request_builder = &self.request_builder;
@@ -943,23 +950,11 @@ impl ToTokens for RequestBuilderIntoFutureCode {
             }
         });
 
-        let into_future = if let Some(response_type) = self.response_code.response_type() {
-            quote! {
-                #[doc = "Send the request and return the response body."]
-                pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<#response_type>> {
-                    Box::pin(
-                        async move {
-                            self.send().await?.into_body().await
-                        }
-                    )
-                }
-            }
-        } else {
-            quote! {}
-        };
-
         let send_future = quote! {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -972,7 +967,6 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                     }
                 })
             }
-            #into_future
         };
 
         let fut = if let Some(pageable) = &self.response_code.pageable {
@@ -1064,6 +1058,47 @@ impl ToTokens for RequestBuilderIntoFutureCode {
     }
 }
 
+impl RequestBuilderIntoFutureCode {
+    fn new(response_code: ResponseCode) -> Result<Self> {
+        Ok(Self { response_code })
+    }
+}
+
+impl ToTokens for RequestBuilderIntoFutureCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        // Skip generating IntoFuture if response is pageable
+        if self.response_code.pageable.is_some() {
+            return;
+        }
+
+        let into_future = if let Some(response_type) = self.response_code.response_type() {
+            quote! {
+                impl std::future::IntoFuture for RequestBuilder {
+                    type Output = azure_core::Result<#response_type>;
+                    type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<#response_type>>;
+
+                    #[doc = "Returns a future that sends the request and returns the parsed response body."]
+                    #[doc = ""]
+                    #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+                    #[doc = ""]
+                    #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+                    fn into_future(self) -> Self::IntoFuture {
+                        Box::pin(
+                            async move {
+                                self.send().await?.into_body().await
+                            }
+                        )
+                    }
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        tokens.extend(into_future);
+    }
+}
+
 impl ToTokens for OperationModuleCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let Self {
@@ -1071,7 +1106,8 @@ impl ToTokens for OperationModuleCode {
             response_code,
             request_builder_struct_code,
             request_builder_setters_code,
-            request_builder_future_code,
+            request_builder_send_code,
+            request_builder_intofuture_code,
         } = &self;
         tokens.extend(quote! {
             pub mod #module_name {
@@ -1083,9 +1119,10 @@ impl ToTokens for OperationModuleCode {
 
                 impl RequestBuilder {
                     #request_builder_setters_code
-                    #request_builder_future_code
+                    #request_builder_send_code
                 }
 
+                #request_builder_intofuture_code
             }
         })
     }
@@ -1386,6 +1423,20 @@ impl ToTokens for RequestBuilderStructCode {
         }
         tokens.extend(quote! {
             #[derive(Clone)]
+            /// `RequestBuilder` provides a mechanism for setting optional parameters on a request.
+            ///
+            /// Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple
+            /// parameters can be chained.
+            ///
+            /// The building of a request is typically finalized by invoking `.await` on
+            /// `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)
+            /// method, which converts `RequestBuilder` into a future that executes the request
+            /// operation and returns a `Result` with the parsed response.
+            ///
+            /// If you need lower-level access to the raw response details (e.g. to inspect
+            /// response headers or raw body data) then you can finalize the request using the
+            /// [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level
+            /// [`Response`] value.
             pub struct RequestBuilder {
                 #(#params),*
             }
