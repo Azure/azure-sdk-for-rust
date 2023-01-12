@@ -1,4 +1,5 @@
 use azure_core::{Body, Method, Request};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};
@@ -96,7 +97,9 @@ impl<'de> Visitor<'de> for RequestVisitor {
             )));
         }
 
-        let body = base64::decode(&body.1).map_err(serde::de::Error::custom)?;
+        let body = BASE64_STANDARD
+            .decode(&body.1)
+            .map_err(serde::de::Error::custom)?;
 
         // `url` cannot be relative
         let url = Url::parse("http://example.com").unwrap();
@@ -135,7 +138,7 @@ impl<'a> Serialize for RequestSerializer<'a> {
         state.serialize_field(
             FIELDS[3],
             &match &self.0.body() {
-                Body::Bytes(bytes) => base64::encode(bytes as &[u8]),
+                Body::Bytes(bytes) => BASE64_STANDARD.encode(bytes as &[u8]),
                 Body::SeekableStream(_) => unimplemented!(),
             },
         )?;

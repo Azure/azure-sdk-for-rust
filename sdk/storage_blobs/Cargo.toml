@@ -16,7 +16,7 @@ rust-version = "1.64.0"
 [dependencies]
 azure_core = { path = "../core", version = "0.8", features = ["xml"] }
 azure_storage = { path = "../storage", version = "0.9", default-features = false }
-base64 = "0.13"
+base64 = "0.21"
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"

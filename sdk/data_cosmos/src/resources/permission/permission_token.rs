@@ -1,4 +1,5 @@
 use super::AuthorizationToken;
+use base64::{prelude::BASE64_STANDARD, Engine};
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -28,7 +29,7 @@ impl std::fmt::Display for PermissionToken {
         use std::borrow::Cow;
         let (permission_type, signature) = match &self.token {
             AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
-            AuthorizationToken::Primary(s) => ("master", Cow::Owned(base64::encode(s))),
+            AuthorizationToken::Primary(s) => ("master", Cow::Owned(BASE64_STANDARD.encode(s))),
         };
         write!(
             f,
@@ -70,7 +71,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let permission_type = try_get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
         let signature = try_get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
-            "master" => AuthorizationToken::Primary(base64::decode(signature)?),
+            "master" => AuthorizationToken::Primary(BASE64_STANDARD.decode(signature)?),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
                 return Err(PermissionTokenParseError::UnrecognizedPermissionType {

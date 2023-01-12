@@ -1,4 +1,5 @@
 use crate::blob::{BlobBlockType, BlockWithSizeList};
+use base64::{prelude::BASE64_STANDARD, Engine};
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct BlockList {
@@ -24,15 +25,18 @@ impl BlockList {
                 BlobBlockType::Committed(content) => {
                     format!(
                         "\t<Committed>{}</Committed>\n",
-                        base64::encode(content.as_ref())
+                        BASE64_STANDARD.encode(content.as_ref())
                     )
                 }
                 BlobBlockType::Uncommitted(content) => format!(
                     "\t<Uncommitted>{}</Uncommitted>\n",
-                    base64::encode(content.as_ref())
+                    BASE64_STANDARD.encode(content.as_ref())
                 ),
                 BlobBlockType::Latest(content) => {
-                    format!("\t<Latest>{}</Latest>\n", base64::encode(content.as_ref()))
+                    format!(
+                        "\t<Latest>{}</Latest>\n",
+                        BASE64_STANDARD.encode(content.as_ref())
+                    )
                 }
             };
 

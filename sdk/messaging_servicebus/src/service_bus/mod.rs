@@ -1,5 +1,6 @@
 use azure_core::{error::Error, headers, CollectedResponse, HttpClient, Request, Url};
 use azure_core::{Method, StatusCode};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use ring::hmac;
 use std::time::Duration;
 use std::{ops::Add, sync::Arc};
@@ -66,7 +67,7 @@ fn generate_signature(
 
     // shadow sig
     let sig = {
-        let sig = ::base64::encode(sig.as_ref());
+        let sig = BASE64_STANDARD.encode(sig.as_ref());
         let mut ser = Serializer::new(String::new());
         ser.append_pair("sig", &sig);
         ser.finish()

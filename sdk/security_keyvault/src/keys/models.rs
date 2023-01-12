@@ -1,5 +1,5 @@
 use azure_core::error::{Error, ErrorKind};
-use base64::{CharacterSet, Config};
+use base64::{prelude::BASE64_URL_SAFE_NO_PAD, Engine};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 use std::fmt::{Debug, Display};
@@ -155,13 +155,11 @@ pub struct JsonWebKey {
     pub y: Option<Vec<u8>>,
 }
 
-pub(crate) const BASE64_URL_SAFE: Config = Config::new(CharacterSet::UrlSafe, false);
-
 fn ser_base64<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let base_64 = base64::encode_config(bytes, BASE64_URL_SAFE);
+    let base_64 = BASE64_URL_SAFE_NO_PAD.encode(bytes);
     serializer.serialize_str(&base_64)
 }
 
@@ -170,7 +168,7 @@ where
     S: Serializer,
 {
     if let Some(bytes) = bytes {
-        let base_64 = base64::encode_config(bytes, BASE64_URL_SAFE);
+        let base_64 = BASE64_URL_SAFE_NO_PAD.encode(bytes);
         serializer.serialize_str(&base_64)
     } else {
         serializer.serialize_none()
@@ -182,7 +180,9 @@ where
     D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer)?;
-    let res = base64::decode_config(s, BASE64_URL_SAFE).map_err(serde::de::Error::custom)?;
+    let res = BASE64_URL_SAFE_NO_PAD
+        .decode(s)
+        .map_err(serde::de::Error::custom)?;
     Ok(res)
 }
 
@@ -192,9 +192,11 @@ where
 {
     let s: Option<&str> = Option::deserialize(deserializer)?;
     let res = match s {
-        Some(s) => {
-            Some(base64::decode_config(s, BASE64_URL_SAFE).map_err(serde::de::Error::custom)?)
-        }
+        Some(s) => Some(
+            BASE64_URL_SAFE_NO_PAD
+                .decode(s)
+                .map_err(serde::de::Error::custom)?,
+        ),
         None => None,
     };
     Ok(res)

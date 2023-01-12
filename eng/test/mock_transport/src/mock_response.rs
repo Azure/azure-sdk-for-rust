@@ -3,6 +3,7 @@ use azure_core::{
     headers::{HeaderName, HeaderValue, Headers},
     BytesStream, Response, StatusCode,
 };
+use base64::{prelude::BASE64_STANDARD, Engine};
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -67,7 +68,7 @@ impl<'de> Deserialize<'de> for MockResponse {
             let value = HeaderValue::from(v.to_owned());
             headers.insert(name, value);
         }
-        let body = Bytes::from(base64::decode(r.body).map_err(Error::custom)?);
+        let body = Bytes::from(BASE64_STANDARD.decode(r.body).map_err(Error::custom)?);
         let status = StatusCode::try_from(r.status)
             .map_err(|_| Error::custom(format!("invalid status code {}", r.status)))?;
 
@@ -85,7 +86,7 @@ impl Serialize for MockResponse {
             headers.insert(h.as_str().into(), v.as_str().into());
         }
         let status = self.status as u16;
-        let body = base64::encode(&self.body as &[u8]);
+        let body = BASE64_STANDARD.encode(&self.body as &[u8]);
         let s = SerializedMockResponse {
             status,
             headers,

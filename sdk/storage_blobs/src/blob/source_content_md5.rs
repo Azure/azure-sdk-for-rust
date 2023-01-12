@@ -1,4 +1,5 @@
 use azure_core::headers::{self, Header};
+use base64::{prelude::BASE64_STANDARD, Engine};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct SourceContentMD5([u8; 16]);
@@ -15,6 +16,6 @@ impl Header for SourceContentMD5 {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        base64::encode(self.0).into()
+        BASE64_STANDARD.encode(self.0).into()
     }
 }

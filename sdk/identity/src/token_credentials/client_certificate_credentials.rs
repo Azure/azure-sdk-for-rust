@@ -5,6 +5,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers, new_http_client, HttpClient, Method, Request,
 };
+use base64::{prelude::BASE64_STANDARD, Engine};
 use base64::{CharacterSet, Config};
 use openssl::{
     error::ErrorStack,
@@ -140,7 +141,7 @@ struct AadTokenResponse {
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
         "\"{}\"",
-        base64::encode(cert.to_pem().map_err(openssl_error)?)
+        BASE64_STANDARD.encode(cert.to_pem().map_err(openssl_error)?)
     ))
 }
 
@@ -159,7 +160,8 @@ impl TokenCredential for ClientCertificateCredential {
             self.tenant_id
         );
 
-        let certificate = base64::decode(&self.client_certificate)
+        let certificate = BASE64_STANDARD
+            .decode(&self.client_certificate)
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
         let certificate = Pkcs12::from_der(&certificate)
             .map_err(openssl_error)?
@@ -172,7 +174,7 @@ impl TokenCredential for ClientCertificateCredential {
         let uuid = uuid::Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
-        let x5t = base64::encode(&thumbprint);
+        let x5t = BASE64_STANDARD.encode(&thumbprint);
 
         let header = match options.send_certificate_chain {
             true => {

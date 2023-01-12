@@ -1,4 +1,5 @@
 use super::PermissionToken;
+use base64::{prelude::BASE64_STANDARD, Engine};
 use std::fmt;
 
 /// Authorization tokens for accessing Cosmos.
@@ -17,7 +18,7 @@ impl AuthorizationToken {
     ///
     /// The token is *not* verified to be valid.
     pub fn primary_from_base64(base64_encoded: &str) -> azure_core::Result<AuthorizationToken> {
-        let key = base64::decode(base64_encoded).map_err(|e| {
+        let key = BASE64_STANDARD.decode(base64_encoded).map_err(|e| {
             azure_core::error::Error::full(azure_core::error::ErrorKind::Credential, e,
             "failed to base64 decode the primary credential - ensure that the credential is properly base64 encoded")
         })?;

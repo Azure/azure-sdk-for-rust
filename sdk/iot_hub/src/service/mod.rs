@@ -5,7 +5,7 @@ use azure_core::{
     auth::TokenCredential, prelude::Timeout, ClientOptions, CollectedResponse, Context, Method,
     Pipeline, Request, Response, TimeoutPolicy, Url,
 };
-use base64::{decode, encode};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::sync::Arc;
@@ -120,9 +120,11 @@ impl ServiceClient {
             iot_hub_name, &expiry_date_seconds
         );
 
-        let key = decode(private_key).with_context(ErrorKind::Other, || {
-            format!("failed to decode the given private key: {private_key}")
-        })?;
+        let key = BASE64_STANDARD
+            .decode(private_key)
+            .with_context(ErrorKind::Other, || {
+                format!("failed to base64 decode the given private key: {private_key}")
+            })?;
 
         let mut hmac = HmacSHA256::new_from_slice(key.as_ref())
             .with_context(ErrorKind::Other, || {
@@ -131,7 +133,7 @@ impl ServiceClient {
 
         hmac.update(data.as_bytes());
         let result = hmac.finalize();
-        let sas_token: &str = &encode(result.into_bytes());
+        let sas_token: &str = &BASE64_STANDARD.encode(result.into_bytes());
 
         let encoded: String = url::form_urlencoded::Serializer::new(String::new())
             .append_pair("sr", &format!("{}.azure-devices.net", iot_hub_name))
