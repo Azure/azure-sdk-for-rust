@@ -286,6 +286,20 @@ pub mod container_apps_auth_configs {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -383,6 +397,20 @@ pub mod container_apps_auth_configs {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -391,7 +419,10 @@ pub mod container_apps_auth_configs {
             pub(crate) auth_config_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -420,8 +451,16 @@ pub mod container_apps_auth_configs {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AuthConfig>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::AuthConfig>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AuthConfig>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -453,6 +492,20 @@ pub mod container_apps_auth_configs {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -462,7 +515,10 @@ pub mod container_apps_auth_configs {
             pub(crate) auth_config_envelope: models::AuthConfig,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -492,8 +548,16 @@ pub mod container_apps_auth_configs {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::AuthConfig>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::AuthConfig>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AuthConfig>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -502,6 +566,20 @@ pub mod container_apps_auth_configs {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -510,7 +588,10 @@ pub mod container_apps_auth_configs {
             pub(crate) auth_config_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -587,6 +668,20 @@ pub mod available_workload_profiles {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -701,13 +796,30 @@ pub mod billing_meters {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -734,8 +846,16 @@ pub mod billing_meters {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::BillingMeterCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::BillingMeterCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::BillingMeterCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -904,6 +1024,20 @@ pub mod connected_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -997,6 +1131,20 @@ pub mod connected_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1092,6 +1240,20 @@ pub mod connected_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1099,7 +1261,10 @@ pub mod connected_environments {
             pub(crate) connected_environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1127,8 +1292,16 @@ pub mod connected_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ConnectedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1160,6 +1333,20 @@ pub mod connected_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1169,7 +1356,10 @@ pub mod connected_environments {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1198,8 +1388,16 @@ pub mod connected_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ConnectedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1231,6 +1429,20 @@ pub mod connected_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1238,7 +1450,10 @@ pub mod connected_environments {
             pub(crate) connected_environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1266,8 +1481,16 @@ pub mod connected_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ConnectedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1276,6 +1499,20 @@ pub mod connected_environments {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1284,7 +1521,10 @@ pub mod connected_environments {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1341,6 +1581,20 @@ pub mod connected_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1349,7 +1603,10 @@ pub mod connected_environments {
             pub(crate) check_name_availability_request: models::CheckNameAvailabilityRequest,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1378,8 +1635,16 @@ pub mod connected_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResponse>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::CheckNameAvailabilityResponse>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResponse>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1529,6 +1794,20 @@ pub mod connected_environments_certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1626,6 +1905,20 @@ pub mod connected_environments_certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1634,7 +1927,10 @@ pub mod connected_environments_certificates {
             pub(crate) certificate_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1663,8 +1959,16 @@ pub mod connected_environments_certificates {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Certificate>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1696,6 +2000,20 @@ pub mod connected_environments_certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1710,7 +2028,10 @@ pub mod connected_environments_certificates {
                 self.certificate_envelope = Some(certificate_envelope.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1744,8 +2065,16 @@ pub mod connected_environments_certificates {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Certificate>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1777,6 +2106,20 @@ pub mod connected_environments_certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1786,7 +2129,10 @@ pub mod connected_environments_certificates {
             pub(crate) certificate_envelope: models::CertificatePatch,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -1816,8 +2162,16 @@ pub mod connected_environments_certificates {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Certificate>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -1826,6 +2180,20 @@ pub mod connected_environments_certificates {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1834,7 +2202,10 @@ pub mod connected_environments_certificates {
             pub(crate) certificate_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2010,6 +2381,20 @@ pub mod connected_environments_dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2107,6 +2492,20 @@ pub mod connected_environments_dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2115,7 +2514,10 @@ pub mod connected_environments_dapr_components {
             pub(crate) component_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2144,8 +2546,16 @@ pub mod connected_environments_dapr_components {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DaprComponent>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2177,6 +2587,20 @@ pub mod connected_environments_dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2186,7 +2610,10 @@ pub mod connected_environments_dapr_components {
             pub(crate) dapr_component_envelope: models::DaprComponent,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2216,8 +2643,16 @@ pub mod connected_environments_dapr_components {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DaprComponent>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2226,6 +2661,20 @@ pub mod connected_environments_dapr_components {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2234,7 +2683,10 @@ pub mod connected_environments_dapr_components {
             pub(crate) component_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2292,6 +2744,20 @@ pub mod connected_environments_dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2300,7 +2766,10 @@ pub mod connected_environments_dapr_components {
             pub(crate) component_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2323,8 +2792,16 @@ pub mod connected_environments_dapr_components {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DaprSecretsCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DaprSecretsCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DaprSecretsCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2454,6 +2931,20 @@ pub mod connected_environments_storages {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2461,7 +2952,10 @@ pub mod connected_environments_storages {
             pub(crate) connected_environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2489,10 +2983,16 @@ pub mod connected_environments_storages {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironmentStoragesCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ConnectedEnvironmentStoragesCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironmentStoragesCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2524,6 +3024,20 @@ pub mod connected_environments_storages {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2532,7 +3046,10 @@ pub mod connected_environments_storages {
             pub(crate) storage_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2561,8 +3078,16 @@ pub mod connected_environments_storages {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironmentStorage>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ConnectedEnvironmentStorage>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironmentStorage>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2594,6 +3119,20 @@ pub mod connected_environments_storages {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2603,7 +3142,10 @@ pub mod connected_environments_storages {
             pub(crate) storage_envelope: models::ConnectedEnvironmentStorage,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2633,8 +3175,16 @@ pub mod connected_environments_storages {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironmentStorage>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ConnectedEnvironmentStorage>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ConnectedEnvironmentStorage>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -2643,6 +3193,20 @@ pub mod connected_environments_storages {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2651,7 +3215,10 @@ pub mod connected_environments_storages {
             pub(crate) storage_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -2884,6 +3451,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2977,6 +3558,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3072,6 +3667,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3079,7 +3688,10 @@ pub mod container_apps {
             pub(crate) container_app_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3107,8 +3719,16 @@ pub mod container_apps {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ContainerApp>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3140,6 +3760,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3149,7 +3783,10 @@ pub mod container_apps {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3178,8 +3815,16 @@ pub mod container_apps {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ContainerApp>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3211,6 +3856,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3220,7 +3879,10 @@ pub mod container_apps {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3249,8 +3911,16 @@ pub mod container_apps {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ContainerApp>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3259,6 +3929,20 @@ pub mod container_apps {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3267,7 +3951,10 @@ pub mod container_apps {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3324,6 +4011,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3337,7 +4038,10 @@ pub mod container_apps {
                 self.custom_hostname = Some(custom_hostname.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3369,8 +4073,16 @@ pub mod container_apps {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CustomHostnameAnalysisResult>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::CustomHostnameAnalysisResult>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::CustomHostnameAnalysisResult>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3402,6 +4114,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3409,7 +4135,10 @@ pub mod container_apps {
             pub(crate) container_app_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3438,8 +4167,16 @@ pub mod container_apps {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SecretsCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::SecretsCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SecretsCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3471,6 +4208,20 @@ pub mod container_apps {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3478,7 +4229,10 @@ pub mod container_apps {
             pub(crate) container_app_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3507,8 +4261,16 @@ pub mod container_apps {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerAppAuthToken>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ContainerAppAuthToken>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ContainerAppAuthToken>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3654,6 +4416,20 @@ pub mod container_apps_revisions {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3760,6 +4536,20 @@ pub mod container_apps_revisions {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3768,7 +4558,10 @@ pub mod container_apps_revisions {
             pub(crate) revision_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3797,8 +4590,16 @@ pub mod container_apps_revisions {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Revision>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Revision>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Revision>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -3807,6 +4608,20 @@ pub mod container_apps_revisions {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3815,7 +4630,10 @@ pub mod container_apps_revisions {
             pub(crate) revision_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3851,6 +4669,20 @@ pub mod container_apps_revisions {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3859,7 +4691,10 @@ pub mod container_apps_revisions {
             pub(crate) revision_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -3895,6 +4730,20 @@ pub mod container_apps_revisions {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3903,7 +4752,10 @@ pub mod container_apps_revisions {
             pub(crate) revision_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4015,6 +4867,20 @@ pub mod container_apps_revision_replicas {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4024,7 +4890,10 @@ pub mod container_apps_revision_replicas {
             pub(crate) replica_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4054,8 +4923,16 @@ pub mod container_apps_revision_replicas {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Replica>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Replica>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Replica>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4087,6 +4964,20 @@ pub mod container_apps_revision_replicas {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4095,7 +4986,10 @@ pub mod container_apps_revision_replicas {
             pub(crate) revision_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4124,8 +5018,16 @@ pub mod container_apps_revision_replicas {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ReplicaCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ReplicaCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4265,6 +5167,20 @@ pub mod container_apps_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4362,6 +5278,20 @@ pub mod container_apps_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4370,7 +5300,10 @@ pub mod container_apps_diagnostics {
             pub(crate) detector_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4399,8 +5332,16 @@ pub mod container_apps_diagnostics {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Diagnostics>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Diagnostics>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Diagnostics>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4432,6 +5373,20 @@ pub mod container_apps_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4532,6 +5487,20 @@ pub mod container_apps_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4540,7 +5509,10 @@ pub mod container_apps_diagnostics {
             pub(crate) revision_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4562,8 +5534,16 @@ pub mod container_apps_diagnostics {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Revision>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Revision>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Revision>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4595,6 +5575,20 @@ pub mod container_apps_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4602,7 +5596,10 @@ pub mod container_apps_diagnostics {
             pub(crate) container_app_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4630,8 +5627,16 @@ pub mod container_apps_diagnostics {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ContainerApp>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ContainerApp>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4712,6 +5717,20 @@ pub mod managed_environment_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4719,7 +5738,10 @@ pub mod managed_environment_diagnostics {
             pub(crate) environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4747,8 +5769,16 @@ pub mod managed_environment_diagnostics {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticsCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DiagnosticsCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DiagnosticsCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4780,6 +5810,20 @@ pub mod managed_environment_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4788,7 +5832,10 @@ pub mod managed_environment_diagnostics {
             pub(crate) detector_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4817,8 +5864,16 @@ pub mod managed_environment_diagnostics {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Diagnostics>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Diagnostics>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Diagnostics>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -4876,6 +5931,20 @@ pub mod managed_environments_diagnostics {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -4883,7 +5952,10 @@ pub mod managed_environments_diagnostics {
             pub(crate) environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -4905,8 +5977,16 @@ pub mod managed_environments_diagnostics {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -5098,6 +6178,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5191,6 +6285,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5286,6 +6394,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5293,7 +6415,10 @@ pub mod managed_environments {
             pub(crate) environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5321,8 +6446,16 @@ pub mod managed_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -5354,6 +6487,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5363,7 +6510,10 @@ pub mod managed_environments {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5392,8 +6542,16 @@ pub mod managed_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -5425,6 +6583,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5434,7 +6606,10 @@ pub mod managed_environments {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5463,8 +6638,16 @@ pub mod managed_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironment>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironment>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -5473,6 +6656,20 @@ pub mod managed_environments {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5481,7 +6678,10 @@ pub mod managed_environments {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5538,6 +6738,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5545,7 +6759,10 @@ pub mod managed_environments {
             pub(crate) environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5574,8 +6791,16 @@ pub mod managed_environments {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::EnvironmentAuthToken>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::EnvironmentAuthToken>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::EnvironmentAuthToken>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -5607,6 +6832,20 @@ pub mod managed_environments {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5822,6 +7061,20 @@ pub mod certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5919,6 +7172,20 @@ pub mod certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -5927,7 +7194,10 @@ pub mod certificates {
             pub(crate) certificate_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -5956,8 +7226,16 @@ pub mod certificates {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Certificate>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -5989,6 +7267,20 @@ pub mod certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6003,7 +7295,10 @@ pub mod certificates {
                 self.certificate_envelope = Some(certificate_envelope.into());
                 self
             }
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6037,8 +7332,16 @@ pub mod certificates {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Certificate>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -6070,6 +7373,20 @@ pub mod certificates {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6079,7 +7396,10 @@ pub mod certificates {
             pub(crate) certificate_envelope: models::CertificatePatch,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6109,8 +7429,16 @@ pub mod certificates {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Certificate>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::Certificate>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -6119,6 +7447,20 @@ pub mod certificates {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6127,7 +7469,10 @@ pub mod certificates {
             pub(crate) certificate_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6214,6 +7559,20 @@ pub mod namespaces {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6222,7 +7581,10 @@ pub mod namespaces {
             pub(crate) check_name_availability_request: models::CheckNameAvailabilityRequest,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6251,8 +7613,16 @@ pub mod namespaces {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResponse>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::CheckNameAvailabilityResponse>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::CheckNameAvailabilityResponse>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -6294,6 +7664,20 @@ pub mod operations {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
@@ -6500,6 +7884,20 @@ pub mod dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6597,6 +7995,20 @@ pub mod dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6605,7 +8017,10 @@ pub mod dapr_components {
             pub(crate) component_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6634,8 +8049,16 @@ pub mod dapr_components {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DaprComponent>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -6667,6 +8090,20 @@ pub mod dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6676,7 +8113,10 @@ pub mod dapr_components {
             pub(crate) dapr_component_envelope: models::DaprComponent,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6706,8 +8146,16 @@ pub mod dapr_components {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DaprComponent>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DaprComponent>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -6716,6 +8164,20 @@ pub mod dapr_components {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6724,7 +8186,10 @@ pub mod dapr_components {
             pub(crate) component_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6782,6 +8247,20 @@ pub mod dapr_components {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6790,7 +8269,10 @@ pub mod dapr_components {
             pub(crate) component_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6813,8 +8295,16 @@ pub mod dapr_components {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::DaprSecretsCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DaprSecretsCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DaprSecretsCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -6944,6 +8434,20 @@ pub mod managed_environments_storages {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -6951,7 +8455,10 @@ pub mod managed_environments_storages {
             pub(crate) environment_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -6979,10 +8486,16 @@ pub mod managed_environments_storages {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironmentStoragesCollection>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironmentStoragesCollection>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironmentStoragesCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -7014,6 +8527,20 @@ pub mod managed_environments_storages {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7022,7 +8549,10 @@ pub mod managed_environments_storages {
             pub(crate) storage_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7051,8 +8581,16 @@ pub mod managed_environments_storages {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironmentStorage>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironmentStorage>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironmentStorage>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -7084,6 +8622,20 @@ pub mod managed_environments_storages {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7093,7 +8645,10 @@ pub mod managed_environments_storages {
             pub(crate) storage_envelope: models::ManagedEnvironmentStorage,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7123,8 +8678,16 @@ pub mod managed_environments_storages {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironmentStorage>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::ManagedEnvironmentStorage>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ManagedEnvironmentStorage>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -7133,6 +8696,20 @@ pub mod managed_environments_storages {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7141,7 +8718,10 @@ pub mod managed_environments_storages {
             pub(crate) storage_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7295,6 +8875,20 @@ pub mod container_apps_source_controls {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7392,6 +8986,20 @@ pub mod container_apps_source_controls {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7400,7 +9008,10 @@ pub mod container_apps_source_controls {
             pub(crate) source_control_name: String,
         }
         impl RequestBuilder {
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7429,8 +9040,16 @@ pub mod container_apps_source_controls {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SourceControl>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::SourceControl>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SourceControl>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -7462,6 +9081,20 @@ pub mod container_apps_source_controls {
             }
         }
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7472,7 +9105,10 @@ pub mod container_apps_source_controls {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
@@ -7502,8 +9138,16 @@ pub mod container_apps_source_controls {
                     }
                 })
             }
-            #[doc = "Send the request and return the response body."]
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, azure_core::Result<models::SourceControl>> {
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::SourceControl>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SourceControl>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
             }
         }
@@ -7512,6 +9156,20 @@ pub mod container_apps_source_controls {
         use super::models;
         pub struct Response(azure_core::Response);
         #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7521,7 +9179,10 @@ pub mod container_apps_source_controls {
         }
         impl RequestBuilder {
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Send the request and returns the response."]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
             pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
