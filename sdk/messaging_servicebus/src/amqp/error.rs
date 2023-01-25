@@ -11,12 +11,12 @@ use fe2o3_amqp::{
 };
 use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
-use tokio::time::error::Elapsed;
 
 use crate::{
     primitives::service_bus_retry_policy::{
         should_try_recover_from_management_error, ServiceBusRetryPolicyError,
     },
+    primitives::error::TimeoutElapsed,
     ServiceBusMessage,
 };
 
@@ -33,7 +33,7 @@ pub(crate) enum AmqpConnectionScopeError {
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     #[error(transparent)]
     Begin(#[from] BeginError),
@@ -46,6 +46,14 @@ pub(crate) enum AmqpConnectionScopeError {
 
     #[error("The connection scope is disposed")]
     ScopeDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for AmqpConnectionScopeError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 /// Error with AMQP client
@@ -65,7 +73,7 @@ pub enum AmqpClientError {
 
     /// Operation timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// Error beginning the AMQP session
     #[error(transparent)]
@@ -86,6 +94,14 @@ pub enum AmqpClientError {
     /// Client is already disposed
     #[error("The client is disposed")]
     ClientDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for AmqpClientError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -449,11 +465,19 @@ pub enum AmqpSendError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for AmqpSendError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 impl ServiceBusRetryPolicyError for LinkStateError {
@@ -529,7 +553,7 @@ pub enum AmqpRecvError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// The lock token is not found in the message
     #[error("A valid lock token was not found in the message")]
@@ -538,6 +562,14 @@ pub enum AmqpRecvError {
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for AmqpRecvError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 impl ServiceBusRetryPolicyError for AmqpRecvError {
@@ -571,11 +603,19 @@ pub enum AmqpDispositionError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for AmqpDispositionError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 impl ServiceBusRetryPolicyError for AmqpDispositionError {
@@ -603,11 +643,19 @@ pub enum AmqpRequestResponseError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for AmqpRequestResponseError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
@@ -704,11 +752,19 @@ pub enum CreateRuleError {
 
     /// Operation timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
+}
+
+cfg_not_wasm32! {
+    impl From<tokio::time::error::Elapsed> for CreateRuleError {
+        fn from(_: tokio::time::error::Elapsed) -> Self {
+            Self::Elapsed(TimeoutElapsed { })
+        }
+    }
 }
 
 impl From<CorrelationFilterError> for CreateRuleError {

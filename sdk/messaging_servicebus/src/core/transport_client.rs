@@ -53,6 +53,7 @@ pub(crate) trait TransportClient: Sized + Sealed {
     /// Rule manager type
     type RuleManager: TransportRuleManager;
 
+    #[cfg(not(target_arch = "wasm32"))]
     /// Creates a new instance of Self.
     async fn create_transport_client(
         host: &str,
@@ -60,6 +61,16 @@ pub(crate) trait TransportClient: Sized + Sealed {
         transport_type: ServiceBusTransportType,
         custom_endpoint: Option<Url>,
         retry_timeout: StdDuration,
+    ) -> Result<Self, Self::CreateClientError>;
+
+    /// Creates a new instance of Self.
+    async fn create_transport_client_on_local_set(
+        host: &str,
+        credential: ServiceBusTokenCredential,
+        transport_type: ServiceBusTransportType,
+        custom_endpoint: Option<Url>,
+        retry_timeout: StdDuration,
+        local_set: &tokio::task::LocalSet,
     ) -> Result<Self, Self::CreateClientError>;
 
     /// Get the transport type

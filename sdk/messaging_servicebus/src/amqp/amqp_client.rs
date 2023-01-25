@@ -72,6 +72,7 @@ where
     type SessionReceiver = AmqpSessionReceiver;
     type RuleManager = AmqpRuleManager;
 
+    #[cfg(not(target_arch = "wasm32"))]
     async fn create_transport_client(
         host: &str,
         credential: ServiceBusTokenCredential,
@@ -87,6 +88,7 @@ where
 
         let connection_endpoint = match custom_endpoint.as_ref().and_then(|url| url.host_str()) {
             Some(custom_host) => match transport_type {
+                #[cfg(not(target_arch = "wasm32"))]
                 ServiceBusTransportType::AmqpTcp => {
                     let addr = format!("{}://{}", transport_type.url_scheme(), custom_host);
                     Url::parse(&addr)?
@@ -102,6 +104,7 @@ where
                 }
             },
             None => match transport_type {
+                #[cfg(not(target_arch = "wasm32"))]
                 ServiceBusTransportType::AmqpTcp => service_endpoint.clone(),
                 ServiceBusTransportType::AmqpWebSocket => {
                     let addr = format!(
@@ -132,6 +135,18 @@ where
             retry_policy: PhantomData,
             is_connection_scope_disposed: false,
         })
+    }
+
+    /// Creates a new instance of Self.
+    async fn create_transport_client_on_local_set(
+        host: &str,
+        credential: ServiceBusTokenCredential,
+        transport_type: ServiceBusTransportType,
+        custom_endpoint: Option<Url>,
+        retry_timeout: Duration,
+        local_set: &tokio::task::LocalSet,
+    ) -> Result<Self, Self::CreateClientError> {
+        todo!()
     }
 
     fn transport_type(&self) -> ServiceBusTransportType {

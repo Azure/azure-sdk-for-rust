@@ -7,6 +7,15 @@ macro_rules! cfg_not_wasm32 {
     }
 }
 
+macro_rules! cfg_wasm32 {
+    ($($item:item)*) => {
+        $(
+            #[cfg(target_arch = "wasm32")]
+            $item
+        )*
+    }
+}
+
 #[allow(unused_macros)] // This macro will not be invoked if the target is wasm32
 macro_rules! cfg_either_rustls_or_native_tls {
     ($($item:item)*) => {
