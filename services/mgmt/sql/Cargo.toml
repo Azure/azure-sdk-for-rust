@@ -8,6 +8,9 @@ description = "generated REST API bindings"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_mgmt_sql"
+# Require 1.64.0 for IntoFuture support
+# https://blog.rust-lang.org/2022/09/22/Rust-1.64.0.html#enhancing-await-with-intofuture
+rust-version = "1.64.0"
 
 [lib]
 doctest = false
