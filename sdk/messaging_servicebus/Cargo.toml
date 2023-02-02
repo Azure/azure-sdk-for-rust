@@ -52,6 +52,7 @@ fe2o3-amqp-ws = { version = "0.3.1" }
 serde_amqp = {version = "0.5.6", features = ["time"]}
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+timer-kit = { version = "0.1", features = ["tokio"] }
 tokio-util = {version = "0.7.3", features = ["time"]}
 tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
 
@@ -59,6 +60,9 @@ tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "n
 # Add dependency to getrandom to enable WASM support
 getrandom = { version = "0.2", features = ["js"] }
 tokio = { version = "1", features = ["rt", "macros"]}
+tokio-util = {version = "0.7.3"}
+fluvio-wasm-timer = "0.2"
+timer-kit = { version = "0.1", features = ["fluvio-wasm-timer"] }
 
 # wasm32 target is not supported yet
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
