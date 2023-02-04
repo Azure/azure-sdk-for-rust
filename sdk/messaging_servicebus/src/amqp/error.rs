@@ -48,14 +48,6 @@ pub(crate) enum AmqpConnectionScopeError {
     ScopeDisposed,
 }
 
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for AmqpConnectionScopeError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
-}
-
 /// Error with AMQP client
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpClientError {
@@ -94,14 +86,6 @@ pub enum AmqpClientError {
     /// Client is already disposed
     #[error("The client is disposed")]
     ClientDisposed,
-}
-
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for AmqpClientError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -472,14 +456,6 @@ pub enum AmqpSendError {
     ConnectionScopeDisposed,
 }
 
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for AmqpSendError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
-}
-
 impl ServiceBusRetryPolicyError for LinkStateError {
     fn should_try_recover(&self) -> bool {
         matches!(
@@ -564,14 +540,6 @@ pub enum AmqpRecvError {
     ConnectionScopeDisposed,
 }
 
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for AmqpRecvError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
-}
-
 impl ServiceBusRetryPolicyError for AmqpRecvError {
     fn should_try_recover(&self) -> bool {
         matches!(
@@ -610,14 +578,6 @@ pub enum AmqpDispositionError {
     ConnectionScopeDisposed,
 }
 
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for AmqpDispositionError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
-}
-
 impl ServiceBusRetryPolicyError for AmqpDispositionError {
     fn should_try_recover(&self) -> bool {
         match self {
@@ -648,14 +608,6 @@ pub enum AmqpRequestResponseError {
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
-}
-
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for AmqpRequestResponseError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
 }
 
 impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
@@ -757,14 +709,6 @@ pub enum CreateRuleError {
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
-}
-
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for CreateRuleError {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
-        }
-    }
 }
 
 impl From<CorrelationFilterError> for CreateRuleError {

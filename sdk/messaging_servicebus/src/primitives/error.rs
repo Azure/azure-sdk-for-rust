@@ -33,6 +33,12 @@ impl std::fmt::Display for TimeoutElapsed {
 
 impl std::error::Error for TimeoutElapsed {}
 
+impl From<timer_kit::error::Elapsed> for TimeoutElapsed {
+    fn from(_: timer_kit::error::Elapsed) -> Self {
+        Self::new()
+    }
+}
+
 // TODO: split this into a few different error types
 //
 /// Error with service bus connection
@@ -99,14 +105,6 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::Dispose(err) => Self::Dispose(err),
             AmqpClientError::ReceiverAttach(err) => Self::ReceiverAttach(err),
             AmqpClientError::ClientDisposed => Self::ClientDisposed,
-        }
-    }
-}
-
-cfg_not_wasm32! {
-    impl From<tokio::time::error::Elapsed> for Error {
-        fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }

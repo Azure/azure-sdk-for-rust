@@ -225,11 +225,8 @@ impl AmqpReceiver {
         max_messages: u32,
         max_wait_time: StdDuration,
     ) -> Result<(), AmqpRecvError> {
-        // let mut message_buffer: Vec<ServiceBusReceivedMessage> =
-        //     Vec::with_capacity(max_messages as usize);
-
         tokio::select! {
-            _ = tokio::time::sleep(max_wait_time) => {
+            _ = crate::util::time::sleep(max_wait_time) => {
                 if prefetch_count == 0 { // credit mode is manual
                     if let Err(err) = self.receiver.drain().await {
                         log::error!("{}", err);

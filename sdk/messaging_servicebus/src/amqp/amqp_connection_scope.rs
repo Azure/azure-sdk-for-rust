@@ -48,10 +48,6 @@ use super::{
     LINK_IDENTIFIER,
 };
 
-cfg_not_wasm32! {
-    use tokio::time::timeout;
-}
-
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
 pub(crate) enum ReceiverType {
@@ -135,12 +131,12 @@ impl AmqpConnectionScope {
             let credential = Arc::new(credential);
 
             let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
-            let connection_handle = timeout(operation_timeout, fut).await??;
+            let connection_handle = crate::util::time::timeout(operation_timeout, fut).await??;
             let mut connection = AmqpConnection::new(connection_handle);
 
             // TODO: should timeout account for time used previously?
             let session_handle =
-                timeout(operation_timeout, Session::begin(&mut connection.handle)).await??;
+                crate::util::time::timeout(operation_timeout, Session::begin(&mut connection.handle)).await??;
             let mut session = AmqpSession::new(session_handle);
 
             #[cfg(feature = "transaction")]
@@ -512,7 +508,7 @@ cfg_not_wasm32! {
                 // recover
                 let fut =
                     Self::open_connection(&self.connection_endpoint, &self.transport_type, &self.id);
-                let connection_handle = timeout(self.recover_operation_timeout, fut).await??;
+                let connection_handle = crate::util::time::timeout(self.recover_operation_timeout, fut).await??;
                 self.connection.handle = connection_handle;
             }
 
@@ -522,7 +518,7 @@ cfg_not_wasm32! {
                     log::error!("Error ending session during recovering: {:?}", err);
                 }
 
-                let session_handle = timeout(
+                let session_handle = crate::util::time::timeout(
                     self.recover_operation_timeout,
                     Session::begin(&mut self.connection.handle),
                 )

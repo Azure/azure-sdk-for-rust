@@ -10,8 +10,8 @@ use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
-use tokio_util::time::delay_queue;
-use tokio_util::time::DelayQueue;
+
+use crate::util::time::{DelayQueue, Key};
 
 use super::error::AmqpCbsEventLoopStopped;
 use super::{cbs_token_provider::CbsTokenProvider, error::CbsAuthError};
@@ -92,7 +92,7 @@ impl AmqpCbsLinkHandle {
 pub(crate) struct AmqpCbsLink {
     pub stop: CancellationToken,
     pub commands: mpsc::Receiver<Command>,
-    pub active_link_identifiers: HashMap<LinkIdentifier, delay_queue::Key>,
+    pub active_link_identifiers: HashMap<LinkIdentifier, Key>,
     pub delay_queue: DelayQueue<Refresher>,
     pub cbs_token_provider: CbsTokenProvider,
     pub cbs_client: CbsClient,
@@ -176,7 +176,7 @@ impl AmqpCbsLink {
                         if let Some(expires_at) = expires_at {
                             if expires_at > StdInstant::now() {
                                 let link_identifier = auth.link_identifier;
-                                let when = tokio::time::Instant::from_std(expires_at);
+                                let when = crate::util::time::Instant::from_std(expires_at);
                                 let key = self
                                     .delay_queue
                                     .insert_at(Refresher::Authorization(auth), when);
@@ -220,7 +220,7 @@ impl AmqpCbsLink {
                     Ok(expires_at) => {
                         if let Some(expires_at) = expires_at {
                             if expires_at > StdInstant::now() {
-                                let when = tokio::time::Instant::from_std(expires_at);
+                                let when = crate::util::time::Instant::from_std(expires_at);
                                 let key = self
                                     .delay_queue
                                     .insert_at(Refresher::Authorization(auth), when);
