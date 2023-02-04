@@ -51,7 +51,7 @@ pub(crate) enum AmqpConnectionScopeError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for AmqpConnectionScopeError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
@@ -99,7 +99,7 @@ pub enum AmqpClientError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for AmqpClientError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
@@ -475,7 +475,7 @@ pub enum AmqpSendError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for AmqpSendError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
@@ -567,7 +567,7 @@ pub enum AmqpRecvError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for AmqpRecvError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
@@ -613,7 +613,7 @@ pub enum AmqpDispositionError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for AmqpDispositionError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
@@ -653,7 +653,7 @@ pub enum AmqpRequestResponseError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for AmqpRequestResponseError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
@@ -762,7 +762,7 @@ pub enum CreateRuleError {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for CreateRuleError {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }

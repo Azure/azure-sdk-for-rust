@@ -1,5 +1,7 @@
 //! Error types for the service bus primitives.
 
+use std::marker::PhantomData;
+
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
 
 use crate::{
@@ -11,7 +13,17 @@ use super::service_bus_connection_string_properties::FormatError;
 
 /// The operation timed out
 #[derive(Debug)]
-pub struct TimeoutElapsed {}
+pub struct TimeoutElapsed {
+    _sealed: PhantomData<()>,
+}
+
+impl TimeoutElapsed {
+    pub(crate) fn new() -> Self {
+        Self {
+            _sealed: PhantomData,
+        }
+    }
+}
 
 impl std::fmt::Display for TimeoutElapsed {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -81,7 +93,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::UrlParseError(err) => Self::UrlParseError(err),
             AmqpClientError::Open(err) => Self::Open(err),
             AmqpClientError::WebSocket(err) => Self::WebSocket(err),
-            AmqpClientError::Elapsed(err) => Self::Elapsed(TimeoutElapsed { }),
+            AmqpClientError::Elapsed(err) => Self::Elapsed(TimeoutElapsed::new()),
             AmqpClientError::Begin(err) => Self::Begin(err),
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpClientError::Dispose(err) => Self::Dispose(err),
@@ -94,7 +106,7 @@ impl From<AmqpClientError> for Error {
 cfg_not_wasm32! {
     impl From<tokio::time::error::Elapsed> for Error {
         fn from(_: tokio::time::error::Elapsed) -> Self {
-            Self::Elapsed(TimeoutElapsed { })
+            Self::Elapsed(TimeoutElapsed::new())
         }
     }
 }
