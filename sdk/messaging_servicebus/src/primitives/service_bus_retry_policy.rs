@@ -111,15 +111,17 @@ macro_rules! run_operation {
             // We are in a server busy state before we start processing. Since
             // ServerBusyBaseSleepTime > remaining time for the operation, we don't wait for the
             // entire Sleep time.
-            crate::util::time::sleep($try_timeout).await;
+            let _sleep_result = crate::util::time::sleep($try_timeout).await;
+            crate::util::time::handle_delay_value(_sleep_result, &mut _is_scope_disposed);
         }
 
         let outcome = loop {
             if crate::primitives::service_bus_retry_policy::ServiceBusRetryPolicyState::is_server_busy($policy.state()) {
-                crate::util::time::sleep(
+                let _sleep_result = crate::util::time::sleep(
                     crate::primitives::service_bus_retry_policy::SERVER_BUSY_BASE_SLEEP_TIME,
                 )
                 .await;
+                crate::util::time::handle_delay_value(_sleep_result, &mut _is_scope_disposed);
             }
 
             // Recover before trying the operation
@@ -172,7 +174,8 @@ macro_rules! run_operation {
                     match (_retry_delay, _is_scope_disposed) {
                         (Some(retry_delay), false) => {
                             log::error!("{}", &error);
-                            crate::util::time::sleep(retry_delay).await;
+                            let _sleep_result = crate::util::time::sleep(retry_delay).await;
+                            crate::util::time::handle_delay_value(_sleep_result, &mut _is_scope_disposed);
                             $try_timeout = $policy.calculate_try_timeout(_failed_attempt_count);
                         }
                         _ => return Err(crate::primitives::error::RetryError::Operation(error)),

@@ -271,6 +271,7 @@ fn format_service_endpoint(host: &str) -> Result<Url, url::ParseError> {
     Url::parse(&addr)
 }
 
+#[cfg_attr(target_arch = "wasm32", allow(unused_variables))]
 fn format_connection_endpoint(
     host: &str,
     transport_type: ServiceBusTransportType,

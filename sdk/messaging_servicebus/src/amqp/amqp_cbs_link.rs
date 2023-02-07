@@ -98,29 +98,57 @@ pub(crate) struct AmqpCbsLink {
 }
 
 impl AmqpCbsLink {
-    pub(crate) fn spawn(
+    pub(crate) fn new(
         cbs_token_provider: CbsTokenProvider,
         cbs_client: CbsClient,
-    ) -> AmqpCbsLinkHandle {
-        let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
-        let stop_sender = CancellationToken::new();
-        let stop = stop_sender.child_token();
+        commands: mpsc::Receiver<Command>,
+        stop: CancellationToken,
+    ) -> Self {
         let mut delay_queue = DelayQueue::new();
         delay_queue.insert(
             Refresher::Placeholder,
             DELAY_QUEUE_PLACEHOLDER_REFRESH_DURATION,
         );
 
-        let amqp_cbs_link = AmqpCbsLink {
+        AmqpCbsLink {
             stop,
             commands,
             active_link_identifiers: HashMap::new(),
             delay_queue,
             cbs_token_provider,
             cbs_client,
-        };
+        }
+    }
 
-        let join_handle = tokio::spawn(amqp_cbs_link.event_loop());
+    cfg_not_wasm32! {
+        pub(crate) fn spawn(
+            cbs_token_provider: CbsTokenProvider,
+            cbs_client: CbsClient,
+        ) -> AmqpCbsLinkHandle {
+            let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
+            let stop_sender = CancellationToken::new();
+            let stop = stop_sender.child_token();
+            let amqp_cbs_link = AmqpCbsLink::new(cbs_token_provider, cbs_client, commands, stop);
+
+            let join_handle = tokio::spawn(amqp_cbs_link.event_loop());
+            AmqpCbsLinkHandle {
+                command_sender,
+                stop_sender,
+                join_handle,
+            }
+        }
+    }
+
+    pub(crate) fn spawn_local(
+        cbs_token_provider: CbsTokenProvider,
+        cbs_client: CbsClient,
+    ) -> AmqpCbsLinkHandle {
+        let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
+        let stop_sender = CancellationToken::new();
+        let stop = stop_sender.child_token();
+        let amqp_cbs_link = AmqpCbsLink::new(cbs_token_provider, cbs_client, commands, stop);
+
+        let join_handle = tokio::task::spawn_local(amqp_cbs_link.event_loop());
         AmqpCbsLinkHandle {
             command_sender,
             stop_sender,

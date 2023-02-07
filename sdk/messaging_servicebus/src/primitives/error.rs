@@ -99,7 +99,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::UrlParseError(err) => Self::UrlParseError(err),
             AmqpClientError::Open(err) => Self::Open(err),
             AmqpClientError::WebSocket(err) => Self::WebSocket(err),
-            AmqpClientError::Elapsed(err) => Self::Elapsed(TimeoutElapsed::new()),
+            AmqpClientError::Elapsed(err) => Self::Elapsed(err),
             AmqpClientError::Begin(err) => Self::Begin(err),
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpClientError::Dispose(err) => Self::Dispose(err),

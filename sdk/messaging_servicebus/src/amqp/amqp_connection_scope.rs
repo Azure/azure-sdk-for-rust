@@ -150,7 +150,10 @@ impl AmqpConnectionScope {
             credential.clone(),
             Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
         );
+        #[cfg(not(target_arch = "wasm32"))]
         let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+        #[cfg(target_arch = "wasm32")]
+        let cbs_link = AmqpCbsLink::spawn_local(cbs_token_provider, cbs_client);
 
         Ok(Self {
             is_disposed: false,
@@ -472,6 +475,9 @@ impl TransportConnectionScope for AmqpConnectionScope {
     }
 
     async fn dispose(&mut self) -> Result<(), Self::Error> {
+        use fe2o3_amqp::session::error::TryEndError;
+        use fe2o3_amqp::connection::TryCloseError;
+
         if self.is_disposed {
             return Ok(());
         }
@@ -483,19 +489,24 @@ impl TransportConnectionScope for AmqpConnectionScope {
         let _cbs_close_result = self.cbs_link.join_handle_mut().await;
 
         #[cfg(not(target_arch = "wasm32"))]
-        let session_close_err = self.session.handle.close().await;
+        let session_close_result = self.session.handle.close().await;
         #[cfg(target_arch = "wasm32")]
-        let session_close_err = crate::util::time::timeout(StdDuration::from_millis(500), future);
-
-        #[cfg(not(target_arch = "wasm32"))]
-        let connection_close_err = self.connection.handle.close().await;
-        #[cfg(target_arch = "wasm32")]
-        let connection_close_err = {
-            drop(self.connection.handle);
-            Ok(())
+        let session_close_result = match self.session.handle.try_end() {
+            Ok(res) => res,
+            Err(TryEndError::AlreadyEnded) => Err(fe2o3_amqp::session::Error::IllegalState),
+            Err(TryEndError::RemoteEndNotReceived) => Ok(()), // FIXME: somehow wasm fails to receive the remote end
         };
 
-        match (session_close_err, connection_close_err) {
+        #[cfg(not(target_arch = "wasm32"))]
+        let connection_close_result = self.connection.handle.close().await;
+        #[cfg(target_arch = "wasm32")]
+        let connection_close_result = match self.connection.handle.try_close() {
+            Ok(res) => res,
+            Err(TryCloseError::AlreadyClosed) => Err(fe2o3_amqp::connection::Error::IllegalState),
+            Err(TryCloseError::RemoteCloseNotReceived) => Ok(()), // FIXME: somehow wasm fails to receive the remote end
+        };
+
+        match (session_close_result, connection_close_result) {
             (Ok(_), Ok(_)) => Ok(()),
             // Connection error has priority
             (_, Err(e)) => Err(DisposeError::ConnectionCloseError(e)),
