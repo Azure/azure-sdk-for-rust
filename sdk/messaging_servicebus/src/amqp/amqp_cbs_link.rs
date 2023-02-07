@@ -139,20 +139,22 @@ impl AmqpCbsLink {
         }
     }
 
-    pub(crate) fn spawn_local(
-        cbs_token_provider: CbsTokenProvider,
-        cbs_client: CbsClient,
-    ) -> AmqpCbsLinkHandle {
-        let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
-        let stop_sender = CancellationToken::new();
-        let stop = stop_sender.child_token();
-        let amqp_cbs_link = AmqpCbsLink::new(cbs_token_provider, cbs_client, commands, stop);
+    cfg_wasm32! {
+        pub(crate) fn spawn_local(
+            cbs_token_provider: CbsTokenProvider,
+            cbs_client: CbsClient,
+        ) -> AmqpCbsLinkHandle {
+            let (command_sender, commands) = mpsc::channel(CBS_LINK_COMMAND_QUEUE_SIZE);
+            let stop_sender = CancellationToken::new();
+            let stop = stop_sender.child_token();
+            let amqp_cbs_link = AmqpCbsLink::new(cbs_token_provider, cbs_client, commands, stop);
 
-        let join_handle = tokio::task::spawn_local(amqp_cbs_link.event_loop());
-        AmqpCbsLinkHandle {
-            command_sender,
-            stop_sender,
-            join_handle,
+            let join_handle = tokio::task::spawn_local(amqp_cbs_link.event_loop());
+            AmqpCbsLinkHandle {
+                command_sender,
+                stop_sender,
+                join_handle,
+            }
         }
     }
 

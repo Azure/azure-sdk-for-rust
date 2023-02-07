@@ -7,10 +7,10 @@ cfg_not_wasm32! {
     pub(crate) type Instant = tokio::time::Instant;
 
     pub(crate) fn handle_delay_value(
-        value: <Delay as timer_kit::Delay>::Value,
-        is_scope_disposed: &mut bool,
+        _value: <Delay as timer_kit::Delay>::Value,
+        _is_scope_disposed: &mut bool,
     ) {
-        // There is no value for non-wasm32 targets
+        // There is nothing for non-wasm32 targets
     }
 
     pub(crate) fn now_utc() -> time::OffsetDateTime {

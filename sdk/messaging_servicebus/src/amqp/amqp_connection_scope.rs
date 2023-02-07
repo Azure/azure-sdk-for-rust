@@ -475,8 +475,10 @@ impl TransportConnectionScope for AmqpConnectionScope {
     }
 
     async fn dispose(&mut self) -> Result<(), Self::Error> {
-        use fe2o3_amqp::session::error::TryEndError;
-        use fe2o3_amqp::connection::TryCloseError;
+        cfg_wasm32! {
+            use fe2o3_amqp::session::error::TryEndError;
+            use fe2o3_amqp::connection::TryCloseError;
+        }
 
         if self.is_disposed {
             return Ok(());
