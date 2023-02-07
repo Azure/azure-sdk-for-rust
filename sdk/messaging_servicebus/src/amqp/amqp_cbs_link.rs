@@ -2,7 +2,6 @@ use fe2o3_amqp::link::DetachError;
 use futures_util::StreamExt;
 use std::collections::HashMap;
 use std::time::Duration as StdDuration;
-use std::time::Instant as StdInstant;
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
 use time::OffsetDateTime;
@@ -134,7 +133,7 @@ impl AmqpCbsLink {
         endpoint: impl AsRef<str>,
         resource: impl AsRef<str>,
         required_claims: impl IntoIterator<Item = impl AsRef<str>>,
-    ) -> Result<Option<StdInstant>, CbsAuthError> {
+    ) -> Result<Option<crate::util::time::Instant>, CbsAuthError> {
         let resource = resource.as_ref();
         let token = self
             .cbs_token_provider
@@ -146,15 +145,15 @@ impl AmqpCbsLink {
 
         // TODO: Is there any way to convert directly from OffsetDateTime/Timestamp to StdInstant?
         let expires_at_instant = expires_at_utc.map(|expires_at| {
-            let now_instant = time::Instant::now();
+            let now_instant = crate::util::time::Instant::now();
             let now = OffsetDateTime::now_utc(); // TODO: is there any way to convert instant to datetime?
             let timespan = expires_at - now;
-            now_instant + timespan
+            now_instant + timespan.unsigned_abs()
         });
 
         self.cbs_client.put_token(resource, token).await?;
 
-        Ok(expires_at_instant.map(|t| t.into_inner()))
+        Ok(expires_at_instant)
     }
 
     async fn handle_command(&mut self, command: Command) {
@@ -174,12 +173,11 @@ impl AmqpCbsLink {
                 match result {
                     Ok(expires_at) => {
                         if let Some(expires_at) = expires_at {
-                            if expires_at > StdInstant::now() {
+                            if expires_at > crate::util::time::Instant::now() {
                                 let link_identifier = auth.link_identifier;
-                                let when = crate::util::time::Instant::from_std(expires_at);
                                 let key = self
                                     .delay_queue
-                                    .insert_at(Refresher::Authorization(auth), when);
+                                    .insert_at(Refresher::Authorization(auth), expires_at);
                                 self.active_link_identifiers.insert(link_identifier, key);
                             }
                         }
@@ -219,11 +217,10 @@ impl AmqpCbsLink {
                 match result {
                     Ok(expires_at) => {
                         if let Some(expires_at) = expires_at {
-                            if expires_at > StdInstant::now() {
-                                let when = crate::util::time::Instant::from_std(expires_at);
+                            if expires_at > crate::util::time::Instant::now() {
                                 let key = self
                                     .delay_queue
-                                    .insert_at(Refresher::Authorization(auth), when);
+                                    .insert_at(Refresher::Authorization(auth), expires_at);
                                 self.active_link_identifiers.insert(link_identifier, key);
                             }
                         }
@@ -265,28 +262,4 @@ impl AmqpCbsLink {
             }
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    #[tokio::test]
-    async fn test_delay_queue() {
-        use futures_util::StreamExt;
-        use std::time::Duration;
-        use tokio_util::time::DelayQueue;
-
-        let mut delay_queue = DelayQueue::new();
-        delay_queue.insert("a", Duration::from_secs(1));
-        delay_queue.insert("b", Duration::from_secs(2));
-        delay_queue.insert("c", Duration::from_secs(3));
-
-        let mut count = 0;
-        while let Some(_) = delay_queue.next().await {
-            count += 1;
-        }
-
-        assert_eq!(count, 3);
-    }
-
-    // TODO: mock tests
 }

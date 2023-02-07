@@ -21,7 +21,7 @@ use fe2o3_amqp_types::{
 };
 use fe2o3_amqp_ws::WebSocketStream;
 use time::Duration as TimeSpan;
-use tokio::{sync::mpsc};
+use tokio::sync::mpsc;
 
 use crate::{
     authorization::{service_bus_claim, service_bus_token_credential::ServiceBusTokenCredential},
@@ -111,95 +111,121 @@ impl AmqpConnectionScope {
 }
 
 impl AmqpConnectionScope {
-    cfg_not_wasm32! {
-        /// Initializes a new instance of the [`AmqpConnectionScope`] class.
-        pub(crate) async fn new(
-            service_endpoint: &Url,
-            connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
-            credential: ServiceBusTokenCredential,
-            transport_type: ServiceBusTransportType,
-            // use_single_session: bool,
-            operation_timeout: StdDuration,
-            // metrics: Option<ServiceBusTransportMetrics>, // TODO: implement metrics
-        ) -> Result<Self, AmqpConnectionScopeError> {
-            // `Guid` from dotnet:
-            // This is a convenient static method that you can call to get a new Guid. The method
-            // creates a Version 4 Universally Unique Identifier (UUID) as described in RFC 4122, Sec.
-            // 4.4. The returned Guid is guaranteed to not equal Guid.Empty.
-            let uuid = uuid::Uuid::new_v4();
-            let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
-            let credential = Arc::new(credential);
+    /// Initializes a new instance of the [`AmqpConnectionScope`] class.
+    pub(crate) async fn new(
+        service_endpoint: &Url,
+        connection_endpoint: Url, // FIXME: this will be the same as service_endpoint if a custom endpoint is not supplied
+        credential: ServiceBusTokenCredential,
+        transport_type: ServiceBusTransportType,
+        // use_single_session: bool,
+        operation_timeout: StdDuration,
+        // metrics: Option<ServiceBusTransportMetrics>, // TODO: implement metrics
+    ) -> Result<Self, AmqpConnectionScopeError> {
+        // `Guid` from dotnet:
+        // This is a convenient static method that you can call to get a new Guid. The method
+        // creates a Version 4 Universally Unique Identifier (UUID) as described in RFC 4122, Sec.
+        // 4.4. The returned Guid is guaranteed to not equal Guid.Empty.
+        let uuid = uuid::Uuid::new_v4();
+        let id = format!("{}-{}", service_endpoint, &uuid.to_string()[0..8]);
+        let credential = Arc::new(credential);
 
-            let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
-            let connection_handle = crate::util::time::timeout(operation_timeout, fut).await??;
-            let mut connection = AmqpConnection::new(connection_handle);
+        let fut = Self::open_connection(&connection_endpoint, &transport_type, &id);
+        let connection_handle = crate::util::time::timeout(operation_timeout, fut).await??;
+        let mut connection = AmqpConnection::new(connection_handle);
 
-            // TODO: should timeout account for time used previously?
-            let session_handle =
-                crate::util::time::timeout(operation_timeout, Session::begin(&mut connection.handle)).await??;
-            let mut session = AmqpSession::new(session_handle);
+        // TODO: should timeout account for time used previously?
+        let fut = Self::begin_session(&mut connection.handle);
+        let session_handle = crate::util::time::timeout(operation_timeout, fut).await??;
+        let mut session = AmqpSession::new(session_handle);
 
+        #[cfg(feature = "transaction")]
+        let transaction_controller = timeout(
+            operation_timeout,
+            Self::attach_txn_controller(&mut session.handle, &id),
+        )
+        .await??;
+
+        let cbs_client = attach_cbs_client(&mut session.handle).await?;
+        let cbs_token_provider = CbsTokenProvider::new(
+            credential.clone(),
+            Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+        );
+        let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+
+        Ok(Self {
+            is_disposed: false,
+            id,
+            connection_endpoint,
+            transport_type,
+            connection,
+            session,
+            cbs_link,
+            recover_operation_timeout: operation_timeout,
+            credential,
             #[cfg(feature = "transaction")]
-            let transaction_controller = timeout(
-                operation_timeout,
-                Self::attach_txn_controller(&mut session.handle, &id),
-            )
-            .await??;
+            transaction_controller,
+        })
+    }
 
-            let cbs_client = attach_cbs_client(&mut session.handle).await?;
-            let cbs_token_provider = CbsTokenProvider::new(
-                credential.clone(),
-                Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
-            );
-            let cbs_link = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+    async fn begin_session(
+        connection_handle: &mut ConnectionHandle<()>,
+    ) -> Result<SessionHandle<()>, AmqpConnectionScopeError> {
+        let builder = Session::builder();
 
-            Ok(Self {
-                is_disposed: false,
-                id,
-                connection_endpoint,
-                transport_type,
-                connection,
-                session,
-                cbs_link,
-                recover_operation_timeout: operation_timeout,
-                credential,
-                #[cfg(feature = "transaction")]
-                transaction_controller,
-            })
-        }
+        #[cfg(not(target_arch = "wasm32"))]
+        let session_handle = builder.begin(connection_handle).await?;
+        #[cfg(target_arch = "wasm32")]
+        let session_handle = builder
+            .begin_on_current_local_set(connection_handle)
+            .await?;
 
-        async fn open_connection(
-            connection_endpoint: &Url,
-            transport_type: &ServiceBusTransportType,
-            scope_identifier: &str,
-            // timeout: TimeSpan, // FIXME: do timeout outside?
-        ) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
-            // This is the `hostname` field in the `Open` frame
-            // let service_host_name = service_endpoint.host_str();
-            // This is what will be used for Tcp/Tls or Ws/Wss connection
-            // let connection_host_name = connection_endpoint.host_str();
+        Ok(session_handle)
+    }
 
-            let idle_time_out = Self::CONNECTION_IDLE_TIMEOUT.as_millis() as u32; // FIXME: bound check?
-            let max_frame_size = amqp_constants::DEFAULT_MAX_FRAME_SIZE;
-            let container_id = scope_identifier;
+    async fn open_connection(
+        connection_endpoint: &Url,
+        transport_type: &ServiceBusTransportType,
+        scope_identifier: &str,
+        // timeout: TimeSpan, // FIXME: do timeout outside?
+    ) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
+        // This is the `hostname` field in the `Open` frame
+        // let service_host_name = service_endpoint.host_str();
+        // This is what will be used for Tcp/Tls or Ws/Wss connection
+        // let connection_host_name = connection_endpoint.host_str();
 
-            let connection_builder = Connection::builder()
-                .container_id(container_id)
-                .hostname(connection_endpoint.host_str())
-                .alt_tls_establishment(true)
-                .sasl_profile(SaslProfile::Anonymous)
-                .max_frame_size(max_frame_size)
-                .idle_time_out(idle_time_out);
-            let connection = match transport_type {
-                ServiceBusTransportType::AmqpTcp => {
-                    connection_builder.open(connection_endpoint.clone()).await?
-                }
-                ServiceBusTransportType::AmqpWebSocket => {
-                    let ws_stream = WebSocketStream::connect(connection_endpoint).await?;
-                    connection_builder.open_with_stream(ws_stream).await?
-                }
-            };
-            Ok(connection)
+        let idle_time_out = Self::CONNECTION_IDLE_TIMEOUT.as_millis() as u32; // FIXME: bound check?
+        let max_frame_size = amqp_constants::DEFAULT_MAX_FRAME_SIZE;
+        let container_id = scope_identifier;
+
+        let connection_builder = Connection::builder()
+            .container_id(container_id)
+            .hostname(connection_endpoint.host_str())
+            .alt_tls_establishment(true)
+            .sasl_profile(SaslProfile::Anonymous)
+            .max_frame_size(max_frame_size)
+            .idle_time_out(idle_time_out);
+        match transport_type {
+            #[cfg(not(target_arch = "wasm32"))]
+            ServiceBusTransportType::AmqpTcp => connection_builder
+                .open(connection_endpoint.clone())
+                .await
+                .map_err(Into::into),
+            ServiceBusTransportType::AmqpWebSocket => {
+                let ws_stream = WebSocketStream::connect(connection_endpoint).await?;
+
+                #[cfg(not(target_arch = "wasm32"))]
+                let result = connection_builder
+                    .open_with_stream(ws_stream)
+                    .await
+                    .map_err(Into::into);
+                #[cfg(target_arch = "wasm32")]
+                let result = connection_builder
+                    .open_with_stream_on_current_local_set(ws_stream)
+                    .await
+                    .map_err(Into::into);
+
+                result
+            }
         }
     }
 
@@ -459,10 +485,7 @@ impl TransportConnectionScope for AmqpConnectionScope {
         #[cfg(not(target_arch = "wasm32"))]
         let session_close_err = self.session.handle.close().await;
         #[cfg(target_arch = "wasm32")]
-        let session_close_err = {
-            drop(self.session.handle);
-            Ok(())
-        };
+        let session_close_err = crate::util::time::timeout(StdDuration::from_millis(500), future);
 
         #[cfg(not(target_arch = "wasm32"))]
         let connection_close_err = self.connection.handle.close().await;

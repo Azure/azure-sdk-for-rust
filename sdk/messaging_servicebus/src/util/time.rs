@@ -15,7 +15,7 @@ cfg_wasm32! {
 pub(crate) use timer_kit::Key;
 pub(crate) type DelayQueue<T> = timer_kit::DelayQueue<Delay, T>;
 
-pub(crate) async fn sleep(duration: Duration) {
+pub(crate) async fn sleep(duration: Duration) -> <Delay as timer_kit::Delay>::Value {
     timer_kit::sleep::<Delay>(duration).await
 }
 
