@@ -34,3 +34,7 @@
 ## Configuring the transport
 
 - [AMQP over WebSocket](./amqp_over_websocket.rs)
+
+## WebAssembly
+
+- [Send and receive in a WebAssembly running in browser](./wasm32_in_browser)
