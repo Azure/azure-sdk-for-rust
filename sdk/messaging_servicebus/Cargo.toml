@@ -35,35 +35,44 @@ rand = "0.8.5"
 serde = "1"
 sha2 = "0.10"
 thiserror = "1.0"
-time = "0.3.10"
+time = { version = "0.3.10", features = ["macros"] }
 url = "2.2"
 urlencoding = "2"
 uuid = { version = "1", features=["v4"] }
+indexmap = { version = "1.9", features = ["std"] }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# Azure dependencies
 azure_core = { path = "../core", version = "0.8" }
-tokio-util = {version = "0.7.3", features = ["time"]}
-tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
 
 # AMQP dependencies
-fe2o3-amqp = {version = "0.8.11"} # TODO: let user choose rustls or native-tls?
+fe2o3-amqp-types = "0.7"
+fe2o3-amqp = {version = "0.8.15"} # TODO: let user choose rustls or native-tls?
 fe2o3-amqp-cbs = "0.2"
 fe2o3-amqp-management = "0.2.1"
-fe2o3-amqp-types = "0.7"
-fe2o3-amqp-ws = { version = "0.3" }
+fe2o3-amqp-ws = { version = "0.3.1" }
 serde_amqp = {version = "0.5.6", features = ["time"]}
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+timer-kit = { version = "0.1", features = ["tokio"] }
+tokio-util = {version = "0.7.3", features = ["time"]}
+tokio = {version = "1", features = ["rt", "macros", "sync", "time", "net"]} # "net" and "time" are not supported on wasm32-unknown-unknown
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 # Add dependency to getrandom to enable WASM support
 getrandom = { version = "0.2", features = ["js"] }
+tokio = { version = "1", features = ["rt", "macros"]}
+tokio-util = {version = "0.7.3"}
+fluvio-wasm-timer = "0.2"
+timer-kit = { version = "0.1", features = ["fluvio-wasm-timer"] }
+js-sys = "0.3"
 
 # wasm32 target is not supported yet
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 anyhow = "1.0"
+mockall = "0.11"
 dotenv = "0.15"
 futures = "0.3"
-tokio = {version = "1.0", features = ["macros", "rt-multi-thread"]}
-mockall = "0.11"
+tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
 env_logger = "0.10"
 
 [features]

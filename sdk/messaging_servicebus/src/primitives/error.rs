@@ -1,7 +1,8 @@
 //! Error types for the service bus primitives.
 
+use std::marker::PhantomData;
+
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
-use tokio::time::error::Elapsed;
 
 use crate::{
     amqp::error::{AmqpClientError, DisposeError},
@@ -9,6 +10,34 @@ use crate::{
 };
 
 use super::service_bus_connection_string_properties::FormatError;
+
+/// The operation timed out
+#[derive(Debug)]
+pub struct TimeoutElapsed {
+    _sealed: PhantomData<()>,
+}
+
+impl TimeoutElapsed {
+    pub(crate) fn new() -> Self {
+        Self {
+            _sealed: PhantomData,
+        }
+    }
+}
+
+impl std::fmt::Display for TimeoutElapsed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "The operation timed out")
+    }
+}
+
+impl std::error::Error for TimeoutElapsed {}
+
+impl From<timer_kit::error::Elapsed> for TimeoutElapsed {
+    fn from(_: timer_kit::error::Elapsed) -> Self {
+        Self::new()
+    }
+}
 
 // TODO: split this into a few different error types
 //
@@ -41,7 +70,7 @@ pub enum Error {
 
     /// Opening the connection timed out
     #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    Elapsed(#[from] TimeoutElapsed),
 
     /// Error beginning the AMQP session
     #[error(transparent)]

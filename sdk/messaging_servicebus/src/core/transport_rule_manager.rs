@@ -6,7 +6,8 @@ use crate::{
 };
 
 /// Trait for rule manager implementations.
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 pub(crate) trait TransportRuleManager: Sealed {
     /// Error with creating a rule
     type CreateRuleError: std::error::Error + Send;

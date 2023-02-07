@@ -10,16 +10,19 @@ pub(crate) mod shared_access_signature;
 pub use azure_named_key_credential::AzureNamedKeyCredential;
 pub use azure_sas_credential::AzureSasCredential;
 
-#[cfg(test)]
-pub(crate) mod tests {
-    use mockall::mock;
+cfg_not_wasm32! {
+    #[cfg(test)]
+    pub(crate) mod tests {
+        use mockall::mock;
 
-    mock! {
-        pub TokenCredential {}
+        mock! {
+            pub TokenCredential {}
 
-        #[async_trait::async_trait]
-        impl azure_core::auth::TokenCredential for TokenCredential {
-            async fn get_token(&self, resource: &str) -> azure_core::Result<azure_core::auth::TokenResponse>;
+            #[async_trait::async_trait]
+            impl azure_core::auth::TokenCredential for TokenCredential {
+                async fn get_token(&self, resource: &str) -> azure_core::Result<azure_core::auth::TokenResponse>;
+            }
         }
     }
 }
+

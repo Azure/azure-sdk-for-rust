@@ -41,7 +41,8 @@ pub struct AmqpRuleManager {
     pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl RecoverableTransport for AmqpRuleManager {
     type RecoverError = OpenRuleManagerError;
 
@@ -108,7 +109,8 @@ impl AmqpRuleManager {
 
 impl Sealed for AmqpRuleManager {}
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl TransportRuleManager for AmqpRuleManager {
     type CreateRuleError = RetryError<CreateRuleError>;
     type DeleteRuleError = RetryError<AmqpRequestResponseError>;

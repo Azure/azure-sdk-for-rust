@@ -221,6 +221,7 @@ where
                     connection_string_properties.shared_access_key(),
                     "shared_access_key"
                 )?;
+
                 SharedAccessSignature::try_from_parts(
                     resource,
                     shared_access_key_name,
@@ -232,6 +233,7 @@ where
 
         let shared_access_credential =
             SharedAccessCredential::from_signature(shared_access_signature);
+
         let token_credential: ServiceBusTokenCredential =
             ServiceBusTokenCredential::SharedAccessCredential(shared_access_credential);
 

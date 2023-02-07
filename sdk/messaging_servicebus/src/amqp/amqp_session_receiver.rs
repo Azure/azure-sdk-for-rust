@@ -54,7 +54,8 @@ pub struct AmqpSessionReceiver {
     pub(crate) inner: AmqpReceiver,
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl RecoverableTransport for AmqpSessionReceiver {
     type RecoverError = RecoverReceiverError;
 
@@ -118,7 +119,8 @@ impl AmqpSessionReceiver {
 
 impl Sealed for AmqpSessionReceiver {}
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl TransportReceiver for AmqpSessionReceiver {
     type RequestResponseError = <AmqpReceiver as TransportReceiver>::RequestResponseError;
     type ReceiveError = <AmqpReceiver as TransportReceiver>::ReceiveError;
@@ -250,7 +252,8 @@ impl TransportReceiver for AmqpSessionReceiver {
     }
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl TransportSessionReceiver for AmqpSessionReceiver {
     fn session_id(&self) -> Option<&str> {
         self.inner
