@@ -12,7 +12,8 @@ use crate::ServiceBusSender;
 /// instance may provide operations for a specific transport, such as AMQP or JMS.  It is intended
 /// that the public [`ServiceBusSender`] employ a transport producer via containment and delegate
 /// operations to it rather than understanding protocol-specific details for different transports.
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 pub(crate) trait TransportSender: Sealed {
     /// Error with sending a message
     type SendError: std::error::Error + Send;

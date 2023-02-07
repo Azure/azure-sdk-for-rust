@@ -137,7 +137,8 @@ pub struct AmqpReceiver {
     pub(crate) connection_scope: Arc<Mutex<AmqpConnectionScope>>,
 }
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl RecoverableTransport for AmqpReceiver {
     type RecoverError = RecoverReceiverError;
 
@@ -396,7 +397,8 @@ impl AmqpReceiver {
 
 impl Sealed for AmqpReceiver {}
 
-#[async_trait]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 impl TransportReceiver for AmqpReceiver {
     type RequestResponseError = RetryError<AmqpRequestResponseError>;
     type ReceiveError = RetryError<AmqpRecvError>;

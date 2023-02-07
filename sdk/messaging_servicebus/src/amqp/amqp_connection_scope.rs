@@ -595,7 +595,7 @@ cfg_not_wasm32! {
 }
 
 cfg_wasm32! {
-    #[async_trait]
+    #[async_trait(?Send)]
     impl RecoverableTransport for AmqpConnectionScope {
         type RecoverError = AmqpConnectionScopeError;
 
