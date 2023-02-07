@@ -23,7 +23,8 @@
 //! - [Supported Service Bus Features](#supported-service-bus-features)
 //! - [TLS Support](#tls-support)
 //! - [Feature flags](#feature-flags)
-//! - [Change log](https://github.com/minghuaw/azure-sdk-for-rust/blob/separate_servicebus_crate/sdk/messaging_servicebus/CHANGELOG.md)
+//! - [Change
+//!   log](https://github.com/minghuaw/azure-sdk-for-rust/blob/separate_servicebus_crate/sdk/messaging_servicebus/CHANGELOG.md)
 //!
 //! # Examples
 //!
@@ -154,8 +155,8 @@
 //! Communication between a client application and an Azure Service Bus namespace is encrypted using
 //! Transport Layer Security (TLS). The TLS implementation is exposed to the user through the
 //! corresponding feature flags (please see the feature flag section below). The user should ensure
-//! either the `rustls` or `native-tls` feature is enabled, and one and only one TLS implementation is
-//! enabled. Enabling both features is **not** supported and will result in a compile-time error.
+//! either the `rustls` or `native-tls` feature is enabled, and one and only one TLS implementation
+//! is enabled. Enabling both features is **not** supported and will result in a compile-time error.
 //!
 //! The `native-tls` feature is enabled by default, and it will use the `native-tls` crate to
 //! provide TLS support. The `rustls` feature will use the `rustls` crate and `webpki-roots` crate
@@ -174,7 +175,9 @@
 //!
 //! # WebAssembly Support
 //!
-//! This crate currently does not support WebAssembly but is planned for the future.
+//! WebAssembly is supported. Please see the [`wasm32_in_browser`
+//! example](https://github.com/minghuaw/azure-sdk-for-rust/tree/separate_servicebus_crate/sdk/messaging_servicebus/examples/wasm32_in_browser)
+//! for more details.
 //!
 //! # MSRV (Minimum Supported Rust Version)
 //!
