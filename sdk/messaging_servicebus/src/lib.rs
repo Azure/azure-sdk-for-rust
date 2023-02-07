@@ -154,7 +154,7 @@ This crate supports the following feature flags:
 
 # WebAssembly Support
 
-This crate currently does not support WebAssembly but is planned for the future.
+WebAssembly is supported. Please see the `wasm32_in_browser` example for more details.
 
 # MSRV (Minimum Supported Rust Version)
 

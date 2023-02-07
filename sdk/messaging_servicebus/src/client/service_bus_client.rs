@@ -180,6 +180,11 @@ where
 /// interacted with. Any lower level types retrieved from here, such as [`ServiceBusSender`] and
 /// [`ServiceBusReceiver`] will share the same AMQP connection. Disposing the [`ServiceBusClient`]
 /// will cause the AMQP connection to close.
+///
+/// # WebAssembly support
+///
+/// Creating a [`ServiceBusClient`] is supported for `wasm32-unknown-unknown` targets; however, the
+/// user must ensure that the client is created within the scope of a `tokio::task::LocalSet`.
 #[derive(Debug)]
 pub struct ServiceBusClient<RP> {
     /// The name used to identify this [`ServiceBusClient`]
@@ -327,6 +332,11 @@ where
 {
     /// Creates a new [`ServiceBusSender`] which can be used to send messages to a specific queue or
     /// topic.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a sender for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn create_sender(
         &mut self,
         queue_or_topic_name: impl Into<String>,
@@ -362,6 +372,11 @@ where
 
     /// Creates a new [`ServiceBusReceiver`] which can be used to receive messages from a specific
     /// queue.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a receiver for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn create_receiver_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -373,6 +388,11 @@ where
 
     /// Creates a new [`ServiceBusReceiver`] which can be used to receive messages from a specific
     /// subscription.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a receiver for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn create_receiver_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
@@ -420,6 +440,11 @@ where
     /// an error.
     ///
     /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a receiver for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn accept_session_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -437,6 +462,11 @@ where
     /// an error.
     ///
     /// [`ServiceBusReceiverOptions::receive_mode`] can be specified to configure how messages are received.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a receiver for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn accept_session_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
@@ -488,6 +518,11 @@ where
     /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving and settling
     /// messages from a session-enabled queue by accepting the next unlocked session that contains
     /// Active messages.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a receiver for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn accept_next_session_for_queue(
         &mut self,
         queue_name: impl Into<String>,
@@ -500,6 +535,11 @@ where
     /// Creates a [`ServiceBusSessionReceiver`] instance that can be used for receiving and settling
     /// messages from a session-enabled subscription by accepting the next unlocked session that
     /// contains Active messages.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a receiver for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn accept_next_session_for_subscription(
         &mut self,
         topic_name: impl AsRef<str>,
@@ -556,6 +596,11 @@ where
 {
     /// Creates a [`ServiceBusRuleManager`] instance that can be used for managing rules on a
     /// subscription.
+    ///
+    /// # WebAssembly support
+    ///
+    /// When creating a rule manager for `wasm32-unknown-unknown` targets, the method must be called
+    /// within the scope of a `tokio::task::LocalSet`.
     pub async fn create_rule_manager(
         &mut self,
         topic_name: impl AsRef<str>,

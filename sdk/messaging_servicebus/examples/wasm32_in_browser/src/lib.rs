@@ -24,10 +24,12 @@ async fn local_set_main() -> Result<(), Box<dyn std::error::Error>> {
 
     console::log_1(&"Hello, world!".into());
 
+    // This must be called within a `LocalSet` to work.
     let mut client =
         ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", Default::default()).await?;
     console::log_1(&"Client created".into());
 
+    // This must be called within a `LocalSet` to work.
     let mut sender = client
         .create_sender("<QUEUE-NAME>", Default::default())
         .await?;
@@ -35,6 +37,7 @@ async fn local_set_main() -> Result<(), Box<dyn std::error::Error>> {
     console::log_1(&"Message sent".into());
     sender.dispose().await?;
 
+    // This must be called within a `LocalSet` to work.
     let mut receiver = client
         .create_receiver_for_queue("<QUEUE-NAME>", Default::default())
         .await?;

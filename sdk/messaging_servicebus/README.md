@@ -3,12 +3,15 @@
 Azure Service Bus crate for the unofficial Microsoft Azure SDK for Rust.
 This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 
-- [Examples](#examples)
-  - [Send messages to queue](#send-messages-to-queue)
-  - [Receive messages from queue](#receive-messages-from-queue)
-- [Supported Service Bus Features](#supported-service-bus-features)
-- [TLS Support](#tls-support)
-- [Feature flags](#feature-flags)
+- [azure\_messaging\_servicebus](#azure_messaging_servicebus)
+  - [Examples](#examples)
+    - [Send messages to queue](#send-messages-to-queue)
+    - [Receive messages from queue](#receive-messages-from-queue)
+  - [Supported Service Bus Features](#supported-service-bus-features)
+  - [TLS Support](#tls-support)
+  - [Feature flags](#feature-flags)
+  - [WebAssembly Support](#webassembly-support)
+  - [MSRV (Minimum Supported Rust Version)](#msrv-minimum-supported-rust-version)
 
 ## Examples
 
@@ -155,7 +158,7 @@ This crate supports the following feature flags:
 
 ## WebAssembly Support
 
-This crate currently does not support WebAssembly but is planned for the future.
+WebAssembly is supported. Please see the `wasm32_in_browser` example for more details.
 
 ## MSRV (Minimum Supported Rust Version)
 
