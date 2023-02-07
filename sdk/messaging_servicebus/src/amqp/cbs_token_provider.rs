@@ -3,7 +3,7 @@ use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
 use futures_util::{pin_mut, ready};
 use std::{future::Future, sync::Arc, task::Poll};
-use time::{Duration as TimeSpan, OffsetDateTime};
+use time::{Duration as TimeSpan};
 use tokio::sync::Semaphore;
 
 use crate::authorization::service_bus_token_credential::ServiceBusTokenCredential;
@@ -46,7 +46,7 @@ impl CbsTokenProvider {
 }
 
 fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpan) -> bool {
-    token.expires_on - token_expiration_buffer <= OffsetDateTime::now_utc()
+    token.expires_on - token_expiration_buffer <= crate::util::time::now_utc()
 }
 
 pub struct CbsTokenFut<'a> {
@@ -180,7 +180,7 @@ mod tests {
         #[tokio::test]
         async fn get_token_respects_cache_for_jwt_tokens() {
             let token_value = "ValuE_oF_tHE_tokEn";
-            let expires_on: OffsetDateTime = OffsetDateTime::now_utc() + TimeSpan::days(60);
+            let expires_on: OffsetDateTime = crate::util::time::now_utc() + TimeSpan::days(60);
             let mut mock_credential = MockTokenCredential::new();
 
             mock_credential
@@ -227,7 +227,7 @@ mod tests {
             let token_value = "ValuE_oF_tHE_tokEn";
             let buffer = TimeSpan::minutes(5);
             let expires_on: OffsetDateTime =
-                OffsetDateTime::now_utc() - buffer + TimeSpan::seconds(-10);
+                crate::util::time::now_utc() - buffer + TimeSpan::seconds(-10);
             let mut mock_credential = MockTokenCredential::new();
 
             mock_credential
@@ -286,7 +286,7 @@ mod tests {
         //     let token_value = "ValuE_oF_tHE_tokEn";
         //     let buffer = TimeSpan::minutes(5);
         //     let expires_on: OffsetDateTime =
-        //         OffsetDateTime::now_utc() - buffer + TimeSpan::seconds(-10);
+        //         crate::util::time::now_utc() - buffer + TimeSpan::seconds(-10);
         //     let mut mock_credential = MockTokenCredential::new();
 
         //     let mut seq = Sequence::new();
@@ -307,7 +307,7 @@ mod tests {
         //         .returning(move |_resource| {
         //             Ok(TokenResponse {
         //                 token: AccessToken::new(token_value),
-        //                 expires_on: OffsetDateTime::now_utc() + TimeSpan::days(1),
+        //                 expires_on: crate::util::time::now_utc() + TimeSpan::days(1),
         //             })
         //         });
         // }

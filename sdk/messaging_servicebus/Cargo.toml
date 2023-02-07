@@ -64,6 +64,7 @@ tokio = { version = "1", features = ["rt", "macros"]}
 tokio-util = {version = "0.7.3"}
 fluvio-wasm-timer = "0.2"
 timer-kit = { version = "0.1", features = ["fluvio-wasm-timer"] }
+js-sys = "0.3"
 
 # wasm32 target is not supported yet
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]

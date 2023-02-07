@@ -139,7 +139,7 @@ impl AmqpConnectionScope {
         let mut session = AmqpSession::new(session_handle);
 
         #[cfg(feature = "transaction")]
-        let transaction_controller = timeout(
+        let transaction_controller = crate::util::time::timeout(
             operation_timeout,
             Self::attach_txn_controller(&mut session.handle, &id),
         )
@@ -563,7 +563,7 @@ cfg_not_wasm32! {
                 // TODO: can txn controller be re-attached?
                 #[cfg(feature = "transaction")]
                 {
-                    let txn_controller = timeout(
+                    let txn_controller = crate::util::time::timeout(
                         self.recover_operation_timeout,
                         Self::attach_txn_controller(&mut self.session.handle, &self.id),
                     )
@@ -661,7 +661,7 @@ cfg_wasm32! {
                 // TODO: can txn controller be re-attached?
                 #[cfg(feature = "transaction")]
                 {
-                    let txn_controller = timeout(
+                    let txn_controller = crate::util::time::timeout(
                         self.recover_operation_timeout,
                         Self::attach_txn_controller(&mut self.session.handle, &self.id),
                     )

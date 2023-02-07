@@ -12,6 +12,10 @@ cfg_not_wasm32! {
     ) {
         // There is no value for non-wasm32 targets
     }
+
+    pub(crate) fn now_utc() -> time::OffsetDateTime {
+        time::OffsetDateTime::now_utc()
+    }
 }
 
 cfg_wasm32! {
@@ -26,6 +30,13 @@ cfg_wasm32! {
             log::error!("Timer error: {:?}", err);
             *is_scope_disposed = true;
         }
+    }
+
+    pub(crate) fn now_utc() -> time::OffsetDateTime {
+        let js_now = js_sys::Date::new_0();
+        let timestamp_nanos = (js_now.get_time() * 1_000_000.0) as i128;
+        time::OffsetDateTime::from_unix_timestamp_nanos(timestamp_nanos)
+            .expect("invalid timestamp: Timestamp cannot fit in range")
     }
 }
 

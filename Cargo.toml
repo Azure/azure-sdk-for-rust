@@ -6,4 +6,5 @@ members = [
 
 exclude = [
   "sdk/messaging_servicebus",
+  "sdk/messaging_servicebus/examples/wasm32_in_browser",
 ]

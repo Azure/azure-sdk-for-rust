@@ -130,7 +130,7 @@ impl SharedAccessSignature {
         let signature_validity_duration =
             signature_validity_duration.unwrap_or(Self::DEFAULT_SIGNATURE_VALIDITY_DURATION);
 
-        let now = OffsetDateTime::now_utc().replace_millisecond(0).unwrap(); // This won't fail
+        let now = crate::util::time::now_utc().replace_millisecond(0).unwrap(); // This won't fail
         let signature_expiration = now + signature_validity_duration;
 
         Self::try_new(
@@ -253,7 +253,7 @@ impl SharedAccessSignature {
         if self.shared_access_key.is_empty() {
             return Err(SasSignatureError::SharedAccessKeyIsRequired);
         }
-        let signature_expiration = OffsetDateTime::now_utc() + signature_validity_duration;
+        let signature_expiration = crate::util::time::now_utc() + signature_validity_duration;
         self.signature_expiration = signature_expiration;
         self.value = Self::build_signature(
             &self.resource,

@@ -174,7 +174,7 @@ impl AmqpCbsLink {
         // TODO: Is there any way to convert directly from OffsetDateTime/Timestamp to StdInstant?
         let expires_at_instant = expires_at_utc.map(|expires_at| {
             let now_instant = crate::util::time::Instant::now();
-            let now = OffsetDateTime::now_utc(); // TODO: is there any way to convert instant to datetime?
+            let now = crate::util::time::now_utc(); // TODO: is there any way to convert instant to datetime?
             let timespan = expires_at - now;
             now_instant + timespan.unsigned_abs()
         });
