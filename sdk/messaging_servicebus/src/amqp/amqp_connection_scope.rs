@@ -600,14 +600,94 @@ cfg_wasm32! {
         type RecoverError = AmqpConnectionScopeError;
 
         async fn recover(&mut self) -> Result<(), Self::RecoverError> {
-            use fe2o3_amqp::connection::OpenError;
-            use std::io;
+            use fe2o3_amqp::connection::TryCloseError;
+            use fe2o3_amqp::session::TryEndError;
 
-            Err(AmqpConnectionScopeError::Open(
-                OpenError::Io(
-                    io::Error::new(io::ErrorKind::Other, "Recovery not supported on wasm32")
+            // Perform some state checks before attempting to recover
+            if self.is_disposed {
+                return Err(AmqpConnectionScopeError::ScopeDisposed);
+            }
+
+            // Session and connection event loops are still running
+            if !self.session.handle.is_ended() && !self.connection.handle.is_closed() {
+                return Ok(());
+            }
+
+            // Recover connection first
+            if self.connection.handle.is_closed() {
+                match self.connection.handle.try_close() {
+                    Ok(Ok(_)) => {},
+                    Ok(Err(err)) => {
+                        log::error!("Error closing connection during recovering: {:?}", err);
+                    },
+                    Err(TryCloseError::AlreadyClosed) => {
+                        log::error!("Error closing connection during recovering: {:?}", "AlreadyClosed");
+                    },
+                    Err(TryCloseError::RemoteCloseNotReceived) => {
+                        log::error!("Error closing connection during recovering: {:?}", "RemoteCloseNotReceived");
+                    },
+                }
+
+                // recover
+                let fut =
+                    Self::open_connection(&self.connection_endpoint, &self.transport_type, &self.id);
+                let connection_handle = crate::util::time::timeout(self.recover_operation_timeout, fut).await??;
+                self.connection.handle = connection_handle;
+            }
+
+            // Recover session
+            if self.session.handle.is_ended() {
+                match self.session.handle.try_end() {
+                    Ok(Ok(_)) => {},
+                    Ok(Err(err)) => {
+                        log::error!("Error ending session during recovering: {:?}", err);
+                    },
+                    Err(TryEndError::AlreadyEnded) => {
+                        log::error!("Error ending session during recovering: {:?}", "AlreadyClosed");
+                    },
+                    Err(TryEndError::RemoteEndNotReceived) => {
+                        log::error!("Error ending session during recovering: {:?}", "RemoteCloseNotReceived");
+                    },
+                }
+
+                let session_handle = crate::util::time::timeout(
+                    self.recover_operation_timeout,
+                    Session::builder().begin_on_current_local_set(&mut self.connection.handle)
                 )
-            ))
+                .await??;
+                self.session.handle = session_handle;
+
+                // Transaction controller link must be re-created
+                // TODO: can txn controller be re-attached?
+                #[cfg(feature = "transaction")]
+                {
+                    let txn_controller = timeout(
+                        self.recover_operation_timeout,
+                        Self::attach_txn_controller(&mut self.session.handle, &self.id),
+                    )
+                    .await??;
+                    let prev_txn_controller =
+                        std::mem::replace(&mut self.transaction_controller, txn_controller);
+
+                    // TODO: Is it necessary to close the old txn controller?
+                    if let Err(err) = prev_txn_controller.close().await {
+                        log::error!("Error closing transaction controller: {:?}", err);
+                    }
+                }
+
+                // recover CBS link only if session was recovered
+                let _ = self.cbs_link.stop();
+                let _cbs_close_result = self.cbs_link.join_handle_mut().await;
+                let cbs_client = attach_cbs_client(&mut self.session.handle).await?;
+                let cbs_token_provider = CbsTokenProvider::new(
+                    self.credential.clone(),
+                    Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+                );
+                let cbs_link = AmqpCbsLink::spawn_local(cbs_token_provider, cbs_client);
+                self.cbs_link = cbs_link;
+            }
+
+            Ok(())
         }
     }
 }
