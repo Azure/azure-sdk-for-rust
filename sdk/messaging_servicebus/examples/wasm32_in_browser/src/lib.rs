@@ -24,12 +24,27 @@ async fn local_set_main() -> Result<(), Box<dyn std::error::Error>> {
 
     console::log_1(&"Hello, world!".into());
 
-    let mut client = ServiceBusClient::new(
-        "Endpoint=sb://fe2o3-amqp-example.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=NwTiLlqS0fqL56yr+oqYdzSOJWqckVzyyqLyZITwox0=",
-        Default::default()
-    ).await?;
-
+    let mut client =
+        ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", Default::default()).await?;
     console::log_1(&"Client created".into());
+
+    let mut sender = client
+        .create_sender("<QUEUE-NAME>", Default::default())
+        .await?;
+    sender.send_message("hello ServiceBus from WASM!").await?;
+    console::log_1(&"Message sent".into());
+    sender.dispose().await?;
+
+    let mut receiver = client
+        .create_receiver_for_queue("<QUEUE-NAME>", Default::default())
+        .await?;
+    let message = receiver.receive_message().await?;
+    receiver.complete_message(&message).await?;
+    receiver.dispose().await?;
+
+    let body = message.body()?;
+    let body = format!("Received message: {:?}", std::str::from_utf8(body)?);
+    console::log_1(&body.into());
 
     client.dispose().await?;
 
