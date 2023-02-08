@@ -32,7 +32,7 @@ async fn main() -> azure_core::Result<()> {
     let mut block_list = BlockList::default();
     let mut upload_block_futures = vec![];
     for i in 1..=3 {
-        let block_id = format!("block-{}", i);
+        let block_id = format!("block-{i}");
         let data = block_id.as_bytes().to_vec();
         let task = blob_client.put_block(block_id.clone(), data).into_future();
         upload_block_futures.push(task);
@@ -46,7 +46,7 @@ async fn main() -> azure_core::Result<()> {
 
     // Commit uploaded blocks.
     let resp = blob_client.put_block_list(block_list).await?;
-    println!("PutBlockListResponse: {:?}", resp);
+    println!("PutBlockListResponse: {resp:?}");
 
     Ok(())
 }

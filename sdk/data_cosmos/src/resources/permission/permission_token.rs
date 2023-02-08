@@ -32,8 +32,7 @@ impl std::fmt::Display for PermissionToken {
         };
         write!(
             f,
-            "{}{}&{}1.0&{}{}",
-            PERMISSION_TYPE_PREFIX, permission_type, VERSION_PREFIX, SIGNATURE_PREFIX, signature
+            "{PERMISSION_TYPE_PREFIX}{permission_type}&{VERSION_PREFIX}1.0&{SIGNATURE_PREFIX}{signature}"
         )
     }
 }

@@ -26,7 +26,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("response = {:#?}", response);
+    println!("response = {response:#?}");
 
     let response = service_client
         .container_client("$logs")
@@ -35,7 +35,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("response = {:#?}", response);
+    println!("response = {response:#?}");
 
     Ok(())
 }

@@ -78,7 +78,7 @@ impl UpdateOrReplaceTwinBuilder {
 
             let mut request = self.client.finalize_request(&uri, self.method)?;
             if let Some(if_match) = self.if_match {
-                request.insert_header(headers::IF_MATCH, format!("\"{}\"", if_match));
+                request.insert_header(headers::IF_MATCH, format!("\"{if_match}\""));
             }
             let body = azure_core::to_json(&body)?;
 

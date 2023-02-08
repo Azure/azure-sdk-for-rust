@@ -17,7 +17,7 @@ where
 }
 
 /// Deserialize JSON null as default
-/// https://github.com/serde-rs/serde/issues/1098
+/// <https://github.com/serde-rs/serde/issues/1098>
 pub fn deserialize_null_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     T: Default + Deserialize<'de>,

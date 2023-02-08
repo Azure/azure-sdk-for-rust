@@ -28,20 +28,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(client_secret),
         &tenant_id,
         Url::parse("http://localhost:3003/redirect").unwrap(),
-        &format!(
-            "https://{}.blob.core.windows.net/user_impersonation",
-            storage_account_name
-        ),
+        &format!("https://{storage_account_name}.blob.core.windows.net/user_impersonation"),
     );
 
-    println!("c == {:?}", c);
+    println!("c == {c:?}");
     println!("\nbrowse this url:\n{}", c.authorize_url);
 
     // Start a naive redirect server to receive the redirect with the token.
     // This naive server is blocking so you should use something better.
     let code = development::naive_redirect_server(&c, 3003).unwrap();
 
-    println!("code received: {:?}", code);
+    println!("code received: {code:?}");
 
     // Exchange the token with one that can be used for authorization
     let token = c
@@ -49,18 +46,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
-    println!("token received: {:?}", token);
+    println!("token received: {token:?}");
 
     println!("token secret: {}", token.access_token().secret());
 
     let dt = OffsetDateTime::now_utc();
     let time = date::to_rfc1123(&dt);
-    println!("x-ms-date ==> {}", time);
+    println!("x-ms-date ==> {time}");
 
     let resp = reqwest::Client::new()
         .get(&format!(
-            "https://{}.blob.core.windows.net/{}?restype=container&comp=list",
-            storage_account_name, container_name
+            "https://{storage_account_name}.blob.core.windows.net/{container_name}?restype=container&comp=list"
         ))
         .header(
             "Authorization",
@@ -73,7 +69,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .text()
         .await?;
 
-    println!("\n\nresp {:?}", resp);
+    println!("\n\nresp {resp:?}");
 
     Ok(())
 }

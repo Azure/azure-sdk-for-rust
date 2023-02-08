@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }

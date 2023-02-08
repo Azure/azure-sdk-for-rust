@@ -49,11 +49,11 @@ async fn main() -> azure_core::Result<()> {
         .metadata(metadata)
         .await?;
 
-    println!("{:?}", res);
+    println!("{res:?}");
 
     // let get back the metadata
     let res = blob_client.get_metadata().await?;
-    println!("{:?}", res);
+    println!("{res:?}");
 
     Ok(())
 }

@@ -22,7 +22,7 @@ fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
         let module = module.to_pascal_case();
-        parse_ident(&format!("{}_{}", module, function))
+        parse_ident(&format!("{module}_{function}"))
     } else {
         parse_ident(&function)
     }
@@ -130,7 +130,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
             #[must_use]
             pub fn build(self) -> Client {
                 let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-                let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+                let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
                 Client::new(endpoint, self.credential, scopes, self.options)
             }
         }
@@ -715,7 +715,7 @@ impl HeaderCode {
             ("integer", Some("int64")) => Ok(TypeName::Int64),
             ("boolean", None) => Ok(TypeName::Boolean),
             (header_type, header_format) => Err(Error::with_message(ErrorKind::CodeGen, || {
-                format!("header type '{}' format '{:?}' not matched", header_type, header_format)
+                format!("header type '{header_type}' format '{header_format:?}' not matched")
             })),
         }?;
         let type_name_code = TypeNameCode::new(&type_name)?;
@@ -1333,7 +1333,7 @@ impl ToTokens for ClientFunctionCode {
             for required_param in self.parameters.required_params().iter() {
                 if let Some(desc) = &required_param.description {
                     if !desc.is_empty() {
-                        let doc_comment = format!("* `{}`: {}", required_param.variable_name, desc);
+                        let doc_comment = format!("* `{}`: {desc}", required_param.variable_name);
                         param_descriptions.push(quote! { #[doc = #doc_comment] });
                     }
                 }

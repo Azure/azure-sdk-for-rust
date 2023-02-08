@@ -66,7 +66,7 @@ pub struct Reference {
 
 impl Reference {
     pub fn parse(str: &str) -> Result<Self, serde_json::Error> {
-        let str = format!("\"{}\"", str);
+        let str = format!("\"{str}\"");
         serde_json::from_str(&str)
     }
     pub fn from_file(file: &str) -> Self {

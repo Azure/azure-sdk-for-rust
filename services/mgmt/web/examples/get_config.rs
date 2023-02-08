@@ -16,6 +16,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .web_apps_client()
         .get_configuration(resource_group_name, webapp_name, subscription_id)
         .await?;
-    println!("{:#?}", config);
+    println!("{config:#?}");
     Ok(())
 }

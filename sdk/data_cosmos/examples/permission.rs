@@ -35,19 +35,16 @@ async fn main() -> azure_core::Result<()> {
     let user = database.user_client(args.user_name);
 
     let get_database_response = database.get_database().await?;
-    println!("get_database_response == {:#?}", get_database_response);
+    println!("get_database_response == {get_database_response:#?}");
 
     let get_collection_response = collection.get_collection().await?;
-    println!("get_collection_response == {:#?}", get_collection_response);
+    println!("get_collection_response == {get_collection_response:#?}");
 
     let get_collection2_response = collection2.get_collection().await?;
-    println!(
-        "get_collection2_response == {:#?}",
-        get_collection2_response
-    );
+    println!("get_collection2_response == {get_collection2_response:#?}");
 
     let create_user_response = user.create_user().await?;
-    println!("create_user_response == {:#?}", create_user_response);
+    println!("create_user_response == {create_user_response:#?}");
 
     // create the first permission!
     let permission = user.permission_client("matrix");
@@ -59,10 +56,7 @@ async fn main() -> azure_core::Result<()> {
         .expiry_seconds(18000u64)
         .await
         .unwrap();
-    println!(
-        "create_permission_response == {:#?}",
-        create_permission_response
-    );
+    println!("create_permission_response == {create_permission_response:#?}");
 
     // create the second permission!
     let permission = user.permission_client("neo".to_owned());
@@ -74,10 +68,7 @@ async fn main() -> azure_core::Result<()> {
         .await
         .unwrap();
 
-    println!(
-        "create_permission2_response == {:#?}",
-        create_permission2_response
-    );
+    println!("create_permission2_response == {create_permission2_response:#?}");
     let user = user;
 
     let list_permissions_response = user
@@ -89,10 +80,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .unwrap()?;
-    println!(
-        "list_permissions_response == {:#?}",
-        list_permissions_response
-    );
+    println!("list_permissions_response == {list_permissions_response:#?}");
 
     let get_permission_response = permission
         .get_permission()
@@ -101,7 +89,7 @@ async fn main() -> azure_core::Result<()> {
         ))
         .await
         .unwrap();
-    println!("get_permission_response == {:#?}", get_permission_response);
+    println!("get_permission_response == {get_permission_response:#?}");
 
     let permission_mode = get_permission_response.permission.permission_mode;
 
@@ -114,10 +102,7 @@ async fn main() -> azure_core::Result<()> {
         ))
         .await
         .unwrap();
-    println!(
-        "replace_permission_response == {:#?}",
-        replace_permission_response
-    );
+    println!("replace_permission_response == {replace_permission_response:#?}");
 
     let delete_permission_response = permission
         .delete_permission()
@@ -127,10 +112,7 @@ async fn main() -> azure_core::Result<()> {
         .await
         .unwrap();
 
-    println!(
-        "delete_permission_response == {:#?}",
-        delete_permission_response
-    );
+    println!("delete_permission_response == {delete_permission_response:#?}");
 
     let delete_user_response = user
         .delete_user()
@@ -138,7 +120,7 @@ async fn main() -> azure_core::Result<()> {
             delete_permission_response.session_token,
         ))
         .await?;
-    println!("delete_user_response == {:#?}", delete_user_response);
+    println!("delete_user_response == {delete_user_response:#?}");
 
     Ok(())
 }

@@ -36,16 +36,16 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::None)
         .await?;
-    println!("Container {} created", container_name);
+    println!("Container {container_name} created");
 
     // create 10 blobs
     for i in 0..10u8 {
         container_client
-            .blob_client(format!("blob{}.txt", i))
+            .blob_client(format!("blob{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
-        println!("\tAdded blob {}", i);
+        println!("\tAdded blob {i}");
     }
 
     let max_results = NonZeroU32::new(3).unwrap();
@@ -58,7 +58,7 @@ async fn main() -> azure_core::Result<()> {
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
         let len = value?.blobs.blobs().count();
-        println!("received {} blobs", len);
+        println!("received {len} blobs");
         match cnt {
             0 | 1 | 2 => assert_eq!(len, 3),
             3 => assert_eq!(len, 1),
@@ -68,7 +68,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     container_client.delete().await?;
-    println!("Container {} deleted", container_name);
+    println!("Container {container_name} deleted");
 
     Ok(())
 }

@@ -23,15 +23,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &tenant_id,
     )
     .await?;
-    println!("Non interactive authorization == {:?}", token);
+    println!("Non interactive authorization == {token:?}");
 
     // Let's enumerate the Azure SQL Databases instances
     // in the subscription. Note: this way of calling the REST API
     // will be different (and easier) using other Azure Rust SDK
     // crates, this is just an example.
     let url = Url::parse(&format!(
-            "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
-            subscription_id
+            "https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview"
         ))?;
 
     let resp = reqwest::Client::new()
@@ -45,6 +44,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .text()
         .await?;
 
-    println!("\n\nresp {:?}", resp);
+    println!("\n\nresp {resp:?}");
     Ok(())
 }

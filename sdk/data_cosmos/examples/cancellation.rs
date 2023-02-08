@@ -29,8 +29,8 @@ async fn main() -> azure_core::Result<()> {
     let future = client.create_database("my_database").into_future();
     let deadline = Instant::now() + Duration::from_secs(1);
     match future.timeout_at(deadline).await {
-        Ok(Ok(r)) => println!("successful response: {:?}", r),
-        Ok(Err(e)) => println!("request was made but failed: {:?}", e),
+        Ok(Ok(r)) => println!("successful response: {r:?}"),
+        Ok(Err(e)) => println!("request was made but failed: {e:?}"),
         Err(_) => println!("request timed out!"),
     };
 
@@ -44,8 +44,8 @@ async fn main() -> azure_core::Result<()> {
         tokio::spawn(async move {
             let future = client.create_database("my_database").into_future();
             match future.timeout_at(deadline).await {
-                Ok(Ok(r)) => println!("successful response: {:?}", r),
-                Ok(Err(e)) => println!("request was made but failed: {:?}", e),
+                Ok(Ok(r)) => println!("successful response: {r:?}"),
+                Ok(Err(e)) => println!("request was made but failed: {e:?}"),
                 Err(_) => println!("request was cancelled!"),
             };
         });

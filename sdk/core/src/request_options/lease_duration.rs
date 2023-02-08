@@ -16,7 +16,7 @@ impl Header for LeaseDuration {
         match self {
             LeaseDuration::Infinite => "-1".to_owned(),
             LeaseDuration::Seconds(seconds) => {
-                format!("{}", seconds)
+                format!("{seconds}")
             }
         }
         .into()

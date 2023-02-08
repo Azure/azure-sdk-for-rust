@@ -19,7 +19,7 @@ fn test_redis_ref_files() -> Result<()> {
     let doc_file = REDIS_SPEC;
     let api = &spec::openapi::parse(doc_file)?;
     let files = spec::openapi::get_reference_file_paths(doc_file, api);
-    println!("{:#?}", files);
+    println!("{files:#?}");
     assert_eq!(2, files.len());
     assert!(files.contains("../../../../../common-types/resource-management/v2/types.json"));
     Ok(())
@@ -41,7 +41,7 @@ fn test_links_ref_files() -> Result<()> {
     let doc_file = LINKS_SPEC;
     let api = &spec::openapi::parse(doc_file)?;
     let files = spec::openapi::get_reference_file_paths(doc_file, api);
-    println!("{:#?}", files);
+    println!("{files:#?}");
     assert_eq!(1, files.len());
     assert!(files.contains("./types.json"));
     Ok(())
