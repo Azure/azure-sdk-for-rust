@@ -82,10 +82,11 @@ impl AsyncRead for BytesStream {
             let remaining_bytes = self_mut.bytes.len() - bytes_read;
 
             let bytes_to_copy = std::cmp::min(remaining_bytes, buf.len());
+            let bytes_to_read_end = self_mut.bytes_read + bytes_to_copy;
 
             for (buf_byte, bytes_byte) in buf
                 .iter_mut()
-                .zip(self_mut.bytes.slice(self_mut.bytes_read..bytes_to_copy))
+                .zip(self_mut.bytes.slice(self_mut.bytes_read..bytes_to_read_end))
             {
                 *buf_byte = bytes_byte;
             }
