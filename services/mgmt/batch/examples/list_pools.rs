@@ -32,19 +32,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("name: {:?}", pool.proxy_resource.name.unwrap_or_default());
             if let Some(properties) = &pool.properties {
                 if let Some(provisioning_state) = &properties.provisioning_state {
-                    println!("provisioning state: {:?}", provisioning_state);
+                    println!("provisioning state: {provisioning_state:?}");
                 }
                 if let Some(vm_size) = &properties.vm_size {
-                    println!("vm_size: {}", vm_size);
+                    println!("vm_size: {vm_size}");
                 }
 
                 if let Some(image_reference) = properties
                     .deployment_configuration
                     .as_ref()
-                    .map(|x| x.virtual_machine_configuration.as_ref().map(|x| &x.image_reference))
-                    .flatten()
+                    .and_then(|x| x.virtual_machine_configuration.as_ref().map(|x| &x.image_reference))
                 {
-                    println!("image reference: {:?}", image_reference);
+                    println!("image reference: {image_reference:?}");
                 }
             }
         }
