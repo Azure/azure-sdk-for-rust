@@ -24,7 +24,7 @@ async fn main() -> azure_core::Result<()> {
         count += list_blobs_response.blobs.blobs().count();
     }
 
-    println!("blob count {}", count);
+    println!("blob count {count}");
 
     Ok(())
 }

@@ -5,5 +5,5 @@ fn main() {
         Ok(version) => version.to_string(),
         Err(_) => "unknown".to_owned(),
     };
-    println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={}", version);
+    println!("cargo:rustc-env=AZSDK_RUSTC_VERSION={version}");
 }

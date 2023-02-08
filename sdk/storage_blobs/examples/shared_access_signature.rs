@@ -29,7 +29,7 @@ fn code() -> azure_core::Result<()> {
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let service_client = BlobServiceClient::new(account, storage_credentials);
     let container_client = service_client.container_client(container_name);
-    let blob_client = container_client.blob_client(&blob_name);
+    let blob_client = container_client.blob_client(blob_name);
 
     let sas = service_client
         .shared_access_signature(
@@ -45,7 +45,7 @@ fn code() -> azure_core::Result<()> {
 
     println!("blob account level token: '{}'", sas.token());
     let url = blob_client.generate_signed_blob_url(&sas)?;
-    println!("blob account level url: '{}'", url);
+    println!("blob account level url: '{url}'");
 
     let sas = blob_client
         .shared_access_signature(
@@ -58,7 +58,7 @@ fn code() -> azure_core::Result<()> {
         .start(now);
     println!("blob service token: {}", sas.token());
     let url = blob_client.generate_signed_blob_url(&sas)?;
-    println!("blob service level url: '{}'", url);
+    println!("blob service level url: '{url}'");
 
     let sas = container_client
         .shared_access_signature(
@@ -75,7 +75,7 @@ fn code() -> azure_core::Result<()> {
 
     println!("container sas token: {}", sas.token());
     let url = container_client.generate_signed_container_url(&sas)?;
-    println!("container level url: '{}'", url);
+    println!("container level url: '{url}'");
 
     Ok(())
 }

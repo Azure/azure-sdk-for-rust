@@ -26,10 +26,7 @@ async fn main() -> azure_core::Result<()> {
         &tenant_id,
         &client_id,
         &[
-            &format!(
-                "https://{}.blob.core.windows.net/user_impersonation",
-                storage_account_name
-            ),
+            &format!("https://{storage_account_name}.blob.core.windows.net/user_impersonation"),
             "offline_access",
         ],
     )
@@ -54,7 +51,7 @@ async fn main() -> azure_core::Result<()> {
         }
     };
 
-    println!("{:?}", authorization);
+    println!("{authorization:?}");
 
     println!(
         "\nReceived valid bearer token: {}",
@@ -81,14 +78,14 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("\nList containers completed succesfully: {:?}", containers);
+    println!("\nList containers completed succesfully: {containers:?}");
 
     // now let's refresh the token, if available
     if let Some(refresh_token) = authorization.refresh_token() {
         let refreshed_token =
             refresh_token::exchange(http_client, &tenant_id, &client_id, None, refresh_token)
                 .await?;
-        println!("refreshed token == {:#?}", refreshed_token);
+        println!("refreshed token == {refreshed_token:#?}");
     }
 
     Ok(())

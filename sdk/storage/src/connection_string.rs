@@ -31,7 +31,7 @@ impl std::fmt::Display for EndpointProtocol {
             EndpointProtocol::Https => "https",
             EndpointProtocol::Http => "http",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -139,7 +139,7 @@ impl<'a> ConnectionString<'a> {
                     "false" => use_development_storage = Some(false),
                     _ => {
                         return Err(Error::with_message(ErrorKind::Other, || {
-                            format!("connection string unexpected value. {}: {}. Please specify true or false.", USE_DEVELOPMENT_STORAGE_KEY_NAME, v)
+                            format!("connection string unexpected value. {USE_DEVELOPMENT_STORAGE_KEY_NAME}: {v}. Please specify true or false.")
                         }));
                     }
                 },
@@ -218,7 +218,7 @@ fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, Strin
     let url = if sas_token.starts_with('?') {
         url.parse(sas_token)
     } else {
-        url.parse(&format!("?{}", sas_token))
+        url.parse(&format!("?{sas_token}"))
     }
     .with_context(ErrorKind::DataConversion, || {
         format!("failed to parse SAS token: {sas_token}")

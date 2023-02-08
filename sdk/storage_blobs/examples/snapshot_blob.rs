@@ -41,7 +41,7 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .hash(hash)
         .await?;
-    println!("put_blob {:?}", res);
+    println!("put_blob {res:?}");
 
     let res = blob_client.snapshot().await?;
     println!("blob snapshot: {:?}", res.snapshot);
@@ -50,7 +50,7 @@ async fn main() -> azure_core::Result<()> {
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .await?;
-    println!("Delete blob == {:?}", res);
+    println!("Delete blob == {res:?}");
 
     Ok(())
 }

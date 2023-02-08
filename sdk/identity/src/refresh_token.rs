@@ -36,8 +36,7 @@ pub async fn exchange(
     };
 
     let url = Url::parse(&format!(
-        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-        tenant_id
+        "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     ))?;
 
     let mut req = Request::new(url, Method::Post);
@@ -132,7 +131,7 @@ impl fmt::Display for RefreshTokenError {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         writeln!(f, "error: {}", self.error)?;
         if let Some(suberror) = &self.suberror {
-            writeln!(f, "suberror: {}", suberror)?;
+            writeln!(f, "suberror: {suberror}")?;
         }
         writeln!(f, "description: {}", self.error_description)
     }

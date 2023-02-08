@@ -40,8 +40,8 @@ impl Policy for MockTransportRecorderPolicy {
         let mut response_path = request_path.clone();
 
         let number = self.transaction.number();
-        request_path.push(format!("{}_request.json", number));
-        response_path.push(format!("{}_response.json", number));
+        request_path.push(format!("{number}_request.json"));
+        response_path.push(format!("{number}_response.json"));
 
         let request_contents = serde_json::to_string(&RequestSerializer::new(request)).unwrap();
         {

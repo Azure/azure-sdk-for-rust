@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential::new());
     let keyvault_name = std::env::args().nth(1).expect("please specify an existing keyvault");
     let key_name = std::env::args().nth(2).expect("please specify the name of the key to create");
-    let endpoint = format!("https://{}.vault.azure.net", keyvault_name);
+    let endpoint = format!("https://{keyvault_name}.vault.azure.net");
     let scopes = &["https://vault.azure.net"];
     let client = azure_svc_keyvault::Client::builder(credential)
         .endpoint(endpoint)
@@ -41,9 +41,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     key_create_params.key_size = Some(2048);
     key_create_params.attributes = Some(key_attributes);
 
-    println!("Creating key '{}' in key vault '{}'.", key_name, keyvault_name);
+    println!("Creating key '{key_name}' in key vault '{keyvault_name}'.");
     client.create_key(&key_name, key_create_params).send().await?;
-    println!("Key '{}' created!", key_name);
+    println!("Key '{key_name}' created!");
 
     Ok(())
 }

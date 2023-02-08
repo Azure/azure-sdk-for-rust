@@ -37,8 +37,8 @@ impl Policy for MockTransportPlayerPolicy {
             let mut response_path = request_path.clone();
 
             let number = self.transaction.number();
-            request_path.push(format!("{}_request.json", number));
-            response_path.push(format!("{}_response.json", number));
+            request_path.push(format!("{number}_request.json"));
+            response_path.push(format!("{number}_response.json"));
 
             let request = std::fs::read_to_string(&request_path)?;
             let response = std::fs::read_to_string(&response_path)?;
@@ -54,10 +54,7 @@ impl Policy for MockTransportPlayerPolicy {
         let actual_uri = request.path_and_query();
         if expected_uri != actual_uri {
             return Err(Error::with_message(ErrorKind::MockFramework, || {
-                format!(
-                    "mismatched request uri. Actual '{0}', Expected: '{1}'",
-                    actual_uri, expected_uri
-                )
+                format!("mismatched request uri. Actual '{actual_uri}', Expected: '{expected_uri}'")
             }));
         }
 

@@ -16,6 +16,6 @@ impl Header for ContentLength {
 
     fn value(&self) -> headers::HeaderValue {
         let count = if self.0 < 0 { -1 } else { self.0 };
-        format!("{}", count).into()
+        format!("{count}").into()
     }
 }

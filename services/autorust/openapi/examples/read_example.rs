@@ -22,7 +22,7 @@ fn main() -> Result<()> {
                         let body = serde_json::to_vec(body)?;
                         println!("  {}: {} bytes", code, body.len());
                     }
-                    (code, None) => println!("  {}: 0 bytes", code),
+                    (code, None) => println!("  {code}: 0 bytes"),
                 }
             }
         }

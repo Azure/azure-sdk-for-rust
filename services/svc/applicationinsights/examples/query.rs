@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query = std::env::args().nth(2).expect("please specify query");
     let timespan = std::env::args().nth(3);
 
-    let endpoint = format!("{}/v1", ENDPOINT);
+    let endpoint = format!("{ENDPOINT}/v1");
     let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_applicationinsights::Client::builder(credential)
         .endpoint(endpoint)
@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for table in &query_results.tables {
         for row in table.rows.as_array().unwrap().iter() {
             for (j, value) in row.as_array().unwrap().iter().enumerate() {
-                print!("{}:{} ", table.columns[j].name.as_ref().unwrap_or_else(|| &unnamed), value);
+                print!("{}:{} ", table.columns[j].name.as_ref().unwrap_or(&unnamed), value);
             }
             println!();
         }

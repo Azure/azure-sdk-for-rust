@@ -60,7 +60,7 @@ impl std::convert::TryFrom<&bytes::Bytes> for DocumentAttributes {
             azure_core::error::Error::full(
                 azure_core::error::ErrorKind::DataConversion,
                 e,
-                format!("failed to convert json '{}' into DocumentAttributes", str),
+                format!("failed to convert json '{str}' into DocumentAttributes"),
             )
         })
     }

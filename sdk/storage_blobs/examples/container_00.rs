@@ -34,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
         }
     }
 
-    println!("List containers returned {} containers.", count);
+    println!("List containers returned {count} containers.");
 
     let mut stream = container_client
         .list_blobs()
@@ -54,7 +54,7 @@ async fn main() -> azure_core::Result<()> {
         }
     }
 
-    println!("List blob returned {} blobs.", count);
+    println!("List blob returned {count} blobs.");
 
     Ok(())
 }

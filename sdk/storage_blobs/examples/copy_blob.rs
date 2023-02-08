@@ -63,10 +63,10 @@ async fn main() -> azure_core::Result<()> {
 
         source_blob.generate_signed_blob_url(&sas)?
     };
-    println!("read only SAS url: '{}'", sas_url);
+    println!("read only SAS url: '{sas_url}'");
 
     let response = destination_blob.copy(sas_url).await?;
-    println!("copy response == {:#?}", response);
+    println!("copy response == {response:#?}");
 
     Ok(())
 }

@@ -158,10 +158,7 @@ fn generate_authorization(
         AuthorizationToken::Resource(key) => ("resource", Cow::Borrowed(key)),
     };
 
-    let str_unencoded = format!(
-        "type={}&ver={}&sig={}",
-        authorization_type, VERSION_NUMBER, signature
-    );
+    let str_unencoded = format!("type={authorization_type}&ver={VERSION_NUMBER}&sig={signature}");
     trace!(
         "generate_authorization::str_unencoded == {:?}",
         str_unencoded

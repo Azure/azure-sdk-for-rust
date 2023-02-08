@@ -64,7 +64,7 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
     log::info!("replaced user defined functions");
 
     log::info!("querying documents");
-    let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
+    let query_stmt = format!("SELECT udf.{USER_DEFINED_FUNCTION_NAME}(100)");
     let ret = collection
         .query_documents(Query::new(query_stmt))
         .consistency_level(&ret)
@@ -82,7 +82,7 @@ async fn user_defined_function_operations() -> azure_core::Result<()> {
     log::info!("queried documents");
 
     log::info!("querying documents again");
-    let query_stmt = format!("SELECT udf.{}(10000)", USER_DEFINED_FUNCTION_NAME);
+    let query_stmt = format!("SELECT udf.{USER_DEFINED_FUNCTION_NAME}(10000)");
     let ret = collection
         .query_documents(Query::new(query_stmt))
         .consistency_level(&ret)
