@@ -64,10 +64,7 @@ async fn main() -> azure_core::Result<()> {
             _ => panic!("cannot find supplied partition key as string"),
         };
 
-        println!(
-            "deleting id =={:#?}, partition key == {:#?}",
-            id, partition_key
-        );
+        println!("deleting id =={id:#?}, partition key == {partition_key:#?}");
 
         collection
             .document_client(id.clone(), &partition_key)?

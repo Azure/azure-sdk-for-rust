@@ -22,7 +22,7 @@ fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
     let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
         let module = module.to_pascal_case();
-        parse_ident(&format!("{}_{}", module, function))
+        parse_ident(&format!("{module}_{function}"))
     } else {
         parse_ident(&function)
     }
@@ -715,7 +715,7 @@ impl HeaderCode {
             ("integer", Some("int64")) => Ok(TypeName::Int64),
             ("boolean", None) => Ok(TypeName::Boolean),
             (header_type, header_format) => Err(Error::with_message(ErrorKind::CodeGen, || {
-                format!("header type '{}' format '{:?}' not matched", header_type, header_format)
+                format!("header type '{header_type}' format '{header_format:?}' not matched")
             })),
         }?;
         let type_name_code = TypeNameCode::new(&type_name)?;

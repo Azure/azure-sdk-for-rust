@@ -215,10 +215,10 @@ impl SasToken for AccountSharedAccessSignature {
             elements.push(format!("st={}", format_form(format_date(*start))))
         }
         if let Some(ip) = &self.ip {
-            elements.push(format!("sip={}", ip))
+            elements.push(format!("sip={ip}"))
         }
         if let Some(protocol) = &self.protocol {
-            elements.push(format!("spr={}", protocol))
+            elements.push(format!("spr={protocol}"))
         }
         let sig = AccountSharedAccessSignature::signature(self);
         elements.push(format!("sig={}", format_form(sig)));

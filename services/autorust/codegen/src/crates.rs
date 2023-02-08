@@ -32,12 +32,12 @@ pub fn list_dirs() -> Result<Vec<Utf8PathBuf>> {
 pub fn list_crate_names() -> Result<Vec<String>> {
     let mut names: Vec<_> = list_dirs_in("../mgmt")?
         .into_iter()
-        .filter_map(|d| d.file_name().map(|d| format!("azure_mgmt_{}", d)))
+        .filter_map(|d| d.file_name().map(|d| format!("azure_mgmt_{d}")))
         .collect();
     names.extend(
         list_dirs_in("../svc")?
             .into_iter()
-            .filter_map(|d| d.file_name().map(|d| format!("azure_svc_{}", d))),
+            .filter_map(|d| d.file_name().map(|d| format!("azure_svc_{d}"))),
     );
     names.sort();
     Ok(names)
@@ -51,7 +51,7 @@ pub fn has_version(name: &str, version: &str) -> Result<bool> {
 /// Expects https://github.com/rust-lang/crates.io-index to be cloned as a sibling directory.
 fn get_versions(crate_name: &str) -> Result<Vec<CrateVersion>> {
     // all of these crates begin with "azure".
-    let path = format!("../../../crates.io-index/az/ur/{}", crate_name);
+    let path = format!("../../../crates.io-index/az/ur/{crate_name}");
     let path = Utf8PathBuf::from_str(&path).map_kind(ErrorKind::Parse)?;
     let mut versions = Vec::new();
     if path.exists() {

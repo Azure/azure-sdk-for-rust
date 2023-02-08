@@ -38,7 +38,7 @@ impl Policy for AuthorizationPolicy {
                 request
             }
             IoTHubCredentials::BearerToken(token) => {
-                request.insert_header(AUTHORIZATION, format!("Bearer {}", token));
+                request.insert_header(AUTHORIZATION, format!("Bearer {token}"));
                 request
             }
             IoTHubCredentials::TokenCredential(token_credential) => {

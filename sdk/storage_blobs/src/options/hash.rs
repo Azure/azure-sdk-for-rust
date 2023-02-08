@@ -18,7 +18,7 @@ impl Header for Hash {
     fn value(&self) -> headers::HeaderValue {
         match self {
             Hash::MD5(md5) => base64::encode(md5),
-            Hash::CRC64(crc64) => format!("{}", crc64),
+            Hash::CRC64(crc64) => format!("{crc64}"),
         }
         .into()
     }

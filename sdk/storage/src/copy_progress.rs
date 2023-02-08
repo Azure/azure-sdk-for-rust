@@ -30,12 +30,12 @@ impl FromStr for CopyProgress {
             bytes_copied: tokens[0]
                 .parse()
                 .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse bytes_copied from copy progress: {}", s)
+                    format!("failed to parse bytes_copied from copy progress: {s}")
                 })?,
             bytes_total: tokens[1]
                 .parse()
                 .with_context(ErrorKind::DataConversion, || {
-                    format!("failed to parse bytes_total from copy progress: {}", s)
+                    format!("failed to parse bytes_total from copy progress: {s}")
                 })?,
         })
     }

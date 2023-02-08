@@ -40,7 +40,7 @@ async fn main() -> azure_core::Result<()> {
     context.insert(custom_headers);
 
     let response = database.get_database().context(context).await?;
-    println!("response == {:?}", response);
+    println!("response == {response:?}");
 
     Ok(())
 }

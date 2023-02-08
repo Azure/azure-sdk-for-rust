@@ -83,8 +83,7 @@ pub(crate) fn resource_quotas_from_str(
         } else {
             return Err(Error::with_message(ErrorKind::DataConversion, || {
                 format!(
-                    "resource quota has an unrecognized part - part: \"{}\" full string: \"{}\"",
-                    token, full_string
+                    "resource quota has an unrecognized part - part: \"{token}\" full string: \"{full_string}\""
                 )
             }));
         }
@@ -99,10 +98,7 @@ fn parse_int_error(e: std::num::ParseIntError, n: &str, resource_quota: &str) ->
     Error::full(
         ErrorKind::DataConversion,
         e,
-        format!(
-            "failed to convert '{}' as int when parsing resource quote '{}'",
-            n, resource_quota
-        ),
+        format!("failed to convert '{n}' as int when parsing resource quote '{resource_quota}'"),
     )
 }
 

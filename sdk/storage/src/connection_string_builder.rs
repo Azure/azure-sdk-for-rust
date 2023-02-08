@@ -12,69 +12,62 @@ impl<'a> ConnectionStringBuilder<'a> {
         let mut kv_pairs = Vec::new();
 
         if let Some(account_name) = self.0.account_name {
-            kv_pairs.push(format!("{}={}", ACCOUNT_NAME_KEY_NAME, account_name));
+            kv_pairs.push(format!("{ACCOUNT_NAME_KEY_NAME}={account_name}"));
         }
         if let Some(account_key) = self.0.account_key {
-            kv_pairs.push(format!("{}={}", ACCOUNT_KEY_KEY_NAME, account_key));
+            kv_pairs.push(format!("{ACCOUNT_KEY_KEY_NAME}={account_key}"));
         }
         if let Some(sas) = self.0.sas {
-            kv_pairs.push(format!("{}={}", SAS_KEY_NAME, sas));
+            kv_pairs.push(format!("{SAS_KEY_NAME}={sas}"));
         }
         if let Some(use_development_storage) = self.0.use_development_storage {
             kv_pairs.push(format!(
-                "{}={}",
-                USE_DEVELOPMENT_STORAGE_KEY_NAME, use_development_storage
+                "{USE_DEVELOPMENT_STORAGE_KEY_NAME}={use_development_storage}"
             ));
         }
         if let Some(development_storage_proxy_uri) = self.0.development_storage_proxy_uri {
             kv_pairs.push(format!(
-                "{}={}",
-                DEVELOPMENT_STORAGE_PROXY_URI_KEY_NAME, development_storage_proxy_uri
+                "{DEVELOPMENT_STORAGE_PROXY_URI_KEY_NAME}={development_storage_proxy_uri}"
             ));
         }
         if let Some(endpoint_suffix) = self.0.endpoint_suffix {
-            kv_pairs.push(format!("{}={}", ENDPOINT_SUFFIX_KEY_NAME, endpoint_suffix));
+            kv_pairs.push(format!("{ENDPOINT_SUFFIX_KEY_NAME}={endpoint_suffix}"));
         }
         if let Some(default_endpoints_protocol) = self.0.default_endpoints_protocol.as_ref() {
             kv_pairs.push(format!(
-                "{}={}",
-                DEFAULT_ENDPOINTS_PROTOCOL_KEY_NAME, default_endpoints_protocol
+                "{DEFAULT_ENDPOINTS_PROTOCOL_KEY_NAME}={default_endpoints_protocol}"
             ));
         }
         if let Some(blob_endpoint) = self.0.blob_endpoint {
-            kv_pairs.push(format!("{}={}", BLOB_ENDPOINT_KEY_NAME, blob_endpoint));
+            kv_pairs.push(format!("{BLOB_ENDPOINT_KEY_NAME}={blob_endpoint}"));
         }
         if let Some(blob_secondary_endpoint) = self.0.blob_secondary_endpoint {
             kv_pairs.push(format!(
-                "{}={}",
-                BLOB_SECONDARY_ENDPOINT_KEY_NAME, blob_secondary_endpoint
+                "{BLOB_SECONDARY_ENDPOINT_KEY_NAME}={blob_secondary_endpoint}"
             ));
         }
         if let Some(table_endpoint) = self.0.table_endpoint {
-            kv_pairs.push(format!("{}={}", TABLE_ENDPOINT_KEY_NAME, table_endpoint));
+            kv_pairs.push(format!("{TABLE_ENDPOINT_KEY_NAME}={table_endpoint}"));
         }
         if let Some(table_secondary_endpoint) = self.0.table_secondary_endpoint {
             kv_pairs.push(format!(
-                "{}={}",
-                TABLE_SECONDARY_ENDPOINT_KEY_NAME, table_secondary_endpoint
+                "{TABLE_SECONDARY_ENDPOINT_KEY_NAME}={table_secondary_endpoint}"
             ));
         }
         if let Some(queue_endpoint) = self.0.queue_endpoint {
-            kv_pairs.push(format!("{}={}", QUEUE_ENDPOINT_KEY_NAME, queue_endpoint));
+            kv_pairs.push(format!("{QUEUE_ENDPOINT_KEY_NAME}={queue_endpoint}"));
         }
         if let Some(queue_secondary_endpoint) = self.0.queue_secondary_endpoint {
             kv_pairs.push(format!(
-                "{}={}",
-                QUEUE_SECONDARY_ENDPOINT_KEY_NAME, queue_secondary_endpoint
+                "{QUEUE_SECONDARY_ENDPOINT_KEY_NAME}={queue_secondary_endpoint}"
             ));
         }
         if let Some(file_endpoint) = self.0.file_endpoint {
-            kv_pairs.push(format!("{}={}", FILE_ENDPOINT_KEY_NAME, file_endpoint));
+            kv_pairs.push(format!("{FILE_ENDPOINT_KEY_NAME}={file_endpoint}"));
         }
         if let Some(file_secondary_endpoint) = self.0.file_secondary_endpoint {
             kv_pairs.push(format!(
-                "{}={}",
-                FILE_SECONDARY_ENDPOINT_KEY_NAME, file_secondary_endpoint
+                "{FILE_SECONDARY_ENDPOINT_KEY_NAME}={file_secondary_endpoint}"
             ));
         }
 

@@ -31,11 +31,11 @@ async fn main() -> azure_core::Result<()> {
 
     for i in 0..3 {
         container_client
-            .blob_client(format!("blob{}.txt", i))
+            .blob_client(format!("blob{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
-        println!("\tAdded blob {}", i);
+        println!("\tAdded blob {i}");
     }
 
     // list full container
@@ -48,7 +48,7 @@ async fn main() -> azure_core::Result<()> {
     println!("List blob returned {} blobs.", page.blobs.blobs().count());
 
     container_client.delete().await?;
-    println!("Container {} deleted", container_name);
+    println!("Container {container_name} deleted");
 
     Ok(())
 }

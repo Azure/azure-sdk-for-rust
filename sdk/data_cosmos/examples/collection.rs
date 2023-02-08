@@ -73,7 +73,7 @@ async fn main() -> azure_core::Result<()> {
                 .get_collection()
                 .await?;
 
-            println!("\tcollection_response {:?}", collection_response);
+            println!("\tcollection_response {collection_response:?}");
         }
     }
 

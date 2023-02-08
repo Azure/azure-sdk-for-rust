@@ -26,24 +26,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &client_id,
         &client_secret,
         &[&format!(
-            "https://{}.blob.core.windows.net/.default",
-            storage_account_name
+            "https://{storage_account_name}.blob.core.windows.net/.default"
         )],
         &tenant_id,
     )
     .await?;
 
-    println!("token received: {:?}", token);
+    println!("token received: {token:?}");
     println!("token secret: {}", token.access_token().secret());
 
     let dt = OffsetDateTime::now_utc();
     let time = date::to_rfc1123(&dt);
-    println!("x-ms-date ==> {}", time);
+    println!("x-ms-date ==> {time}");
 
     let resp = reqwest::Client::new()
         .get(&format!(
-            "https://{}.blob.core.windows.net/{}?restype=container&comp=list",
-            storage_account_name, container_name
+            "https://{storage_account_name}.blob.core.windows.net/{container_name}?restype=container&comp=list"
         ))
         .header(
             "Authorization",
@@ -56,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .text()
         .await?;
 
-    println!("\n\nresp {:?}", resp);
+    println!("\n\nresp {resp:?}");
 
     Ok(())
 }

@@ -29,10 +29,7 @@ where
     T: Into<Cow<'a, str>>,
 {
     let tenant_id = tenant_id.into();
-    let url = &format!(
-        "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode",
-        tenant_id
-    );
+    let url = &format!("https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/devicecode");
 
     let encoded = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id)

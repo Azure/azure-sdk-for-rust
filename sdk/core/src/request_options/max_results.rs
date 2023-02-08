@@ -36,8 +36,7 @@ impl TryFrom<u32> for MaxResults {
         match NonZeroU32::new(max_results) {
             Some(max_results) => Ok(max_results.into()),
             None => Err(format!(
-                "number {} is not a valid NonZeroU32 value",
-                max_results
+                "number {max_results} is not a valid NonZeroU32 value"
             )),
         }
     }

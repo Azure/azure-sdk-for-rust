@@ -19,7 +19,7 @@ pub fn naive_redirect_server(
     auth_obj: &AuthorizationCodeFlow,
     port: u32,
 ) -> azure_core::Result<AuthorizationCode> {
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
+    let listener = TcpListener::bind(format!("127.0.0.1:{port}")).unwrap();
 
     // The server will terminate itself after collecting the first code.
     if let Some(mut stream) = listener.incoming().flatten().next() {
@@ -32,7 +32,7 @@ pub fn naive_redirect_server(
             Some(redirect_url) => redirect_url,
             None => {
                 return Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("unexpected redirect url: {}", request_line)
+                    format!("unexpected redirect url: {request_line}")
                 }))
             }
         };
