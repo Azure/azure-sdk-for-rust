@@ -130,7 +130,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
             #[must_use]
             pub fn build(self) -> Client {
                 let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-                let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+                let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
                 Client::new(endpoint, self.credential, scopes, self.options)
             }
         }
@@ -1333,7 +1333,7 @@ impl ToTokens for ClientFunctionCode {
             for required_param in self.parameters.required_params().iter() {
                 if let Some(desc) = &required_param.description {
                     if !desc.is_empty() {
-                        let doc_comment = format!("* `{}`: {}", required_param.variable_name, desc);
+                        let doc_comment = format!("* `{}`: {desc}", required_param.variable_name);
                         param_descriptions.push(quote! { #[doc = #doc_comment] });
                     }
                 }
