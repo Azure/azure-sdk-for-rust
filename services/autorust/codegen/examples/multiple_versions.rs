@@ -28,7 +28,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
                     if versions.len() > 1 {
                         println!("{} {}", readme.spec(), &tag.name());
                         for version in versions {
-                            println!("  {}", version);
+                            println!("  {version}");
                         }
                         tags += 1;
                         services.insert(readme.spec());
@@ -40,10 +40,10 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
         }
     }
     println!();
-    println!("{} tags", tags);
+    println!("{tags} tags");
     println!("{} services:", services.len());
     for service in services {
-        println!("  {}", service);
+        println!("  {service}");
     }
     Ok(())
 }

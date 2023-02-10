@@ -29,6 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{:?}", cloud.tracked_resource.resource.id);
         }
     }
-    println!("# of private clouds {}", count);
+    println!("# of private clouds {count}");
     Ok(())
 }

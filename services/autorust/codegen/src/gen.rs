@@ -71,10 +71,7 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
         let mut versions = cg.spec.api_versions();
         versions.sort_unstable();
         api_version_totals.insert(tag.name(), versions.len());
-        api_versions.insert(
-            tag.name(),
-            versions.iter().map(|v| format!("`{}`", v)).collect::<Vec<_>>().join(", "),
-        );
+        api_versions.insert(tag.name(), versions.iter().map(|v| format!("`{v}`")).collect::<Vec<_>>().join(", "));
         if !has_xml {
             has_xml = cg.spec.has_xml()
         }

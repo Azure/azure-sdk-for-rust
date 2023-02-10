@@ -38,12 +38,12 @@ async fn main() {
         .await
         .expect("Failed to send message while testing receive");
 
-    println!("Sent Message: {}", message_to_send);
+    println!("Sent Message: {message_to_send}");
 
     let received_message = receiver
         .receive_and_delete_message()
         .await
         .expect("Failed to receive message");
 
-    println!("Received Message: {}", received_message);
+    println!("Received Message: {received_message}");
 }

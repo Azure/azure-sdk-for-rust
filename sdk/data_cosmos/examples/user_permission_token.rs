@@ -32,10 +32,10 @@ async fn main() -> azure_core::Result<()> {
     let user = database.user_client(args.user_name);
 
     let get_collection_response = collection.get_collection().await?;
-    println!("get_collection_response == {:#?}", get_collection_response);
+    println!("get_collection_response == {get_collection_response:#?}");
 
     let create_user_response = user.create_user().await?;
-    println!("create_user_response == {:#?}", create_user_response);
+    println!("create_user_response == {create_user_response:#?}");
 
     // test list documents
     let list_documents_response = collection
@@ -59,10 +59,7 @@ async fn main() -> azure_core::Result<()> {
         .expiry_seconds(18000u64) // 5 hours, max!
         .await
         .unwrap();
-    println!(
-        "create_permission_response == {:#?}",
-        create_permission_response
-    );
+    println!("create_permission_response == {create_permission_response:#?}");
 
     // change the AuthorizationToken using the token
     // of the permission.
@@ -71,10 +68,7 @@ async fn main() -> azure_core::Result<()> {
         .permission_token
         .into();
 
-    println!(
-        "Replacing authorization_token with {:?}.",
-        new_authorization_token
-    );
+    println!("Replacing authorization_token with {new_authorization_token:?}.");
     let client = client.clone().auth_token(new_authorization_token);
 
     // let's list the documents with the new auth token
@@ -115,7 +109,7 @@ async fn main() -> azure_core::Result<()> {
         .await
     {
         Ok(_) => panic!("this should not happen!"),
-        Err(error) => println!("Insert failed: {:#?}", error),
+        Err(error) => println!("Insert failed: {error:#?}"),
     }
 
     permission.delete_permission().await?;
@@ -127,20 +121,14 @@ async fn main() -> azure_core::Result<()> {
         .expiry_seconds(18000u64)
         .await
         .unwrap();
-    println!(
-        "create_permission_response == {:#?}",
-        create_permission_response
-    );
+    println!("create_permission_response == {create_permission_response:#?}");
 
     let new_authorization_token: AuthorizationToken = create_permission_response
         .permission
         .permission_token
         .into();
 
-    println!(
-        "Replacing authorization_token with {:?}.",
-        new_authorization_token
-    );
+    println!("Replacing authorization_token with {new_authorization_token:?}.");
     let client = client.auth_token(new_authorization_token);
 
     // now we have an "All" authorization_token
@@ -152,14 +140,11 @@ async fn main() -> azure_core::Result<()> {
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
         .await?;
-    println!(
-        "create_document_response == {:#?}",
-        create_document_response
-    );
+    println!("create_document_response == {create_document_response:#?}");
 
     println!("Cleaning up user.");
     let delete_user_response = user.delete_user().await?;
-    println!("delete_user_response == {:#?}", delete_user_response);
+    println!("delete_user_response == {delete_user_response:#?}");
 
     Ok(())
 }

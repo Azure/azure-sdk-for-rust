@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
 
-    println!("Creating a new configuration with id: {}", configuration_id);
+    println!("Creating a new configuration with id: {configuration_id}");
 
     let configuration = service_client
         .create_configuration(&configuration_id, 10, "tags.environment='test'")
@@ -34,13 +34,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         configuration.id,
     );
 
-    println!("Getting configuration: {}", configuration_id);
+    println!("Getting configuration: {configuration_id}");
     let configuration = service_client.get_configuration(configuration_id).await?;
 
-    println!(
-        "Successfully retrieved the new configuration '{:?}'",
-        configuration
-    );
+    println!("Successfully retrieved the new configuration '{configuration:?}'");
 
     println!(
         "Updating the newly created configuration with id: {}",
@@ -65,10 +62,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
 
     let multiple_configurations = service_client.get_configurations().await?;
-    println!(
-        "Successfully retrieved all configurations '{:?}'",
-        multiple_configurations
-    );
+    println!("Successfully retrieved all configurations '{multiple_configurations:?}'");
 
     println!(
         "Succesfully updated the newly created configuration with id: {}",

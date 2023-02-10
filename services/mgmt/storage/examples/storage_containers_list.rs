@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("name: {}", x.azure_entity_resource.resource.name.unwrap_or_default());
         }
     }
-    println!("saw {} entries", count);
+    println!("saw {count} entries");
 
     Ok(())
 }

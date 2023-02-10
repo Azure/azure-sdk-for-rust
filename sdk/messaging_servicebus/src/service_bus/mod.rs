@@ -61,7 +61,7 @@ fn generate_signature(
     let sr: String = form_urlencoded::byte_serialize(url.as_bytes()).collect(); // <namespace>.servicebus.windows.net
     let se = OffsetDateTime::now_utc().add(ttl).unix_timestamp(); // token expiry instant
 
-    let str_to_sign = format!("{}\n{}", sr, se);
+    let str_to_sign = format!("{sr}\n{se}");
     let sig = hmac::sign(signing_key, str_to_sign.as_bytes()); // shared access key
 
     // shadow sig
@@ -73,10 +73,7 @@ fn generate_signature(
     };
 
     // format sas
-    format!(
-        "SharedAccessSignature sr={}&{}&se={}&skn={}",
-        sr, sig, se, policy_name
-    )
+    format!("SharedAccessSignature sr={sr}&{sig}&se={se}&skn={policy_name}")
 }
 
 /// Sends a message to the queue or topic
@@ -88,10 +85,7 @@ async fn send_message(
     signing_key: &hmac::Key,
     msg: &str,
 ) -> azure_core::Result<()> {
-    let url = format!(
-        "https://{}.servicebus.windows.net/{}/messages",
-        namespace, queue_or_topic
-    );
+    let url = format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages");
 
     let req = finalize_request(
         &url,

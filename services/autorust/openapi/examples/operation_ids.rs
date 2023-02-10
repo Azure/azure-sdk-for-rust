@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             operation_ids.sort();
             for operation_id in operation_ids {
-                println!("{}", operation_id);
+                println!("{operation_id}");
             }
         }
     }

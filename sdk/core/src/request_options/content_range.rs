@@ -43,8 +43,7 @@ impl FromStr for ContentRange {
         let remaining = s.strip_prefix(PREFIX).ok_or_else(|| {
             Error::with_message(ErrorKind::Other, || {
                 format!(
-                    "expected token \"{}\" not found when parsing ContentRange from \"{}\"",
-                    PREFIX, s
+                    "expected token \"{PREFIX}\" not found when parsing ContentRange from \"{s}\""
                 )
             })
         })?;
@@ -180,7 +179,7 @@ mod test {
             total_length: 5000,
         };
 
-        let txt = format!("{}", range);
+        let txt = format!("{range}");
 
         assert_eq!(txt, "bytes 100-501/5000");
     }

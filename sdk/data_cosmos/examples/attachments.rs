@@ -59,7 +59,7 @@ async fn main() -> azure_core::Result<()> {
             println!("document created");
         }
         Err(err) => {
-            println!("already exists? ==> {:?}", err);
+            println!("already exists? ==> {err:?}");
         }
     };
 
@@ -72,7 +72,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .unwrap()?;
-    println!("list attachments == {:#?}", ret);
+    println!("list attachments == {ret:#?}");
 
     // reference attachment
     println!("creating");
@@ -84,7 +84,7 @@ async fn main() -> azure_core::Result<()> {
         )
         .consistency_level(ret)
         .await?;
-    println!("create reference == {:#?}", resp);
+    println!("create reference == {resp:#?}");
 
     // we pass the consistency level to make
     // sure to find the just created attachment
@@ -92,7 +92,7 @@ async fn main() -> azure_core::Result<()> {
 
     let resp = attachment.get().consistency_level(session_token).await?;
 
-    println!("get attachment == {:#?}", resp);
+    println!("get attachment == {resp:#?}");
     let session_token: ConsistencyLevel = resp.into();
 
     println!("replacing");
@@ -104,11 +104,11 @@ async fn main() -> azure_core::Result<()> {
         )
         .consistency_level(session_token)
         .await?;
-    println!("replace reference == {:#?}", resp);
+    println!("replace reference == {resp:#?}");
 
     println!("deleting");
     let resp_delete = attachment.delete().consistency_level(&resp).await?;
-    println!("delete attachment == {:#?}", resp_delete);
+    println!("delete attachment == {resp_delete:#?}");
 
     // slug attachment
     println!("creating slug attachment");
@@ -119,11 +119,11 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .await?;
 
-    println!("create slug == {:#?}", resp);
+    println!("create slug == {resp:#?}");
 
     println!("deleting");
     let resp_delete = attachment.delete().consistency_level(&resp).await?;
-    println!("delete attachment == {:#?}", resp_delete);
+    println!("delete attachment == {resp_delete:#?}");
 
     Ok(())
 }

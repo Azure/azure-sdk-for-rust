@@ -14,53 +14,44 @@ async fn main() -> azure_core::Result<()> {
 
     println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client.create().await?;
-    println!("create file system response == {:?}\n", create_fs_response);
+    println!("create file system response == {create_fs_response:?}\n");
 
     let file_path = "some/path/example-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
     let mut file_properties = Properties::new();
     file_properties.insert("AddedVia", "Azure SDK for Rust");
 
-    println!("creating file '{}'...", file_path);
+    println!("creating file '{file_path}'...");
     let create_file_response = file_client
         .create()
         .properties(file_properties.clone())
         .await?;
-    println!("create file response == {:?}\n", create_file_response);
+    println!("create file response == {create_file_response:?}\n");
 
-    println!("getting properties for file '{}'...", file_path);
+    println!("getting properties for file '{file_path}'...");
     let get_properties_response = file_client.get_properties().await?;
-    println!(
-        "get file properties response == {:?}\n",
-        get_properties_response
-    );
+    println!("get file properties response == {get_properties_response:?}\n");
 
-    println!("setting properties for file '{}'...", file_path);
+    println!("setting properties for file '{file_path}'...");
     file_properties.insert("ModifiedBy", "Iota");
     let set_properties_response = file_client.set_properties(file_properties).await?;
-    println!(
-        "set file properties response == {:?}\n",
-        set_properties_response
-    );
+    println!("set file properties response == {set_properties_response:?}\n");
 
-    println!("creating file '{}' if not exists...", file_path);
+    println!("creating file '{file_path}' if not exists...");
     let create_file_if_not_exists_result = file_client.create_if_not_exists().await;
-    println!(
-        "create file result (should fail) == {:?}\n",
-        create_file_if_not_exists_result
-    );
+    println!("create file result (should fail) == {create_file_if_not_exists_result:?}\n");
 
-    println!("creating file '{}' (overwrite)...", file_path);
+    println!("creating file '{file_path}' (overwrite)...");
     let create_file_response = file_client.create().await?;
-    println!("create file response == {:?}\n", create_file_response);
+    println!("create file response == {create_file_response:?}\n");
 
-    println!("deleting file '{}'...", file_path);
+    println!("deleting file '{file_path}'...");
     let delete_file_response = file_client.delete().await?;
-    println!("delete_file file response == {:?}\n", delete_file_response);
+    println!("delete_file file response == {delete_file_response:?}\n");
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    println!("delete file system response == {delete_fs_response:?}\n");
 
     Ok(())
 }

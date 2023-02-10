@@ -85,12 +85,7 @@ impl TryFrom<&Url> for CloudLocation {
         if domain.len() < 2 {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
-                || {
-                    format!(
-                        "URL refers to a domain that is not a Public or China domain: {}",
-                        host
-                    )
-                },
+                || format!("URL refers to a domain that is not a Public or China domain: {host}"),
             ));
         }
 
@@ -109,12 +104,7 @@ impl TryFrom<&Url> for CloudLocation {
             }),
             _ => Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
-                || {
-                    format!(
-                        "URL refers to a domain that is not a Public or China domain: {}",
-                        host
-                    )
-                },
+                || format!("URL refers to a domain that is not a Public or China domain: {host}"),
             )),
         }
     }

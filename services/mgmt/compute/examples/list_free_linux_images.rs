@@ -58,8 +58,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 versions.sort();
 
                 for version in versions {
-                    let id = format!("{}:{}:{}:{}", publisher, offer, sku, version);
-                    eprintln!("checking {}", id);
+                    let id = format!("{publisher}:{offer}:{sku}:{version}");
+                    eprintln!("checking {id}");
 
                     let vm = client.get(&location, &publisher, &offer, &sku, &version, &subscription_id).await?;
 
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         if let Some(os) = props.os_disk_image {
                             if os.operating_system == OperatingSystem::Linux {
-                                println!("{}", id);
+                                println!("{id}");
                                 break;
                             }
                         }

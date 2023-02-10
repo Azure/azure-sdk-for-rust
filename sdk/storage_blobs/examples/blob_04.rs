@@ -39,13 +39,13 @@ async fn main() -> azure_core::Result<()> {
     for i in 0..(1024 / 256) {
         let slice = data.slice(i * 256..(i + 1) * 256);
 
-        let block_id = Bytes::from(format!("{}", i));
+        let block_id = Bytes::from(format!("{i}"));
         block_ids.push(block_id.clone());
         let hash = md5::compute(slice.clone());
 
         let put_block_response = blob_client.put_block(block_id, slice).hash(hash).await?;
 
-        println!("put_block_response == {:#?}", put_block_response);
+        println!("put_block_response == {put_block_response:#?}");
     }
 
     let mut block_list = BlockList::default();
@@ -57,12 +57,12 @@ async fn main() -> azure_core::Result<()> {
         .put_block_list(block_list)
         .content_md5(md5::compute(data))
         .await?;
-    println!("PutBlockList == {:?}", res);
+    println!("PutBlockList == {res:?}");
 
     let blob = blob_client.get_content().await?;
 
     let s = String::from_utf8(blob).map_kind(ErrorKind::DataConversion)?;
-    println!("retrieved contents == {}", s);
+    println!("retrieved contents == {s}");
 
     Ok(())
 }

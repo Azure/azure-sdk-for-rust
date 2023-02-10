@@ -36,7 +36,7 @@ async fn main() -> azure_core::Result<()> {
     );
 
     let response = queue.create().metadata(metadata.clone()).await?;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // let's add some more metadata
     metadata.insert("version".to_owned(), "TBD".to_owned());
@@ -45,14 +45,14 @@ async fn main() -> azure_core::Result<()> {
         format!("{:?}", OffsetDateTime::now_utc()),
     );
 
-    println!("metadata == {:#?}", metadata);
+    println!("metadata == {metadata:#?}");
 
     let response = queue.set_metadata(metadata).await?;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // let's get back the metadata
     let response = queue.get_metadata().await?;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // use two queue stored access policies
     let policies = vec![
@@ -72,15 +72,15 @@ async fn main() -> azure_core::Result<()> {
     ];
 
     let response = queue.set_acl(policies).await?;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // get the queue ACL
     let response = queue.get_acl().await?;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // now let's delete it
     let response = queue.delete().await?;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     Ok(())
 }

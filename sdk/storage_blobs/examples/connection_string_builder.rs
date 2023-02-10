@@ -18,5 +18,5 @@ pub fn main() {
         .default_endpoints_protocol(default_endpoints_protocol)
         .build();
 
-    println!("The connection string is: '{}'", connection_string);
+    println!("The connection string is: '{connection_string}'");
 }

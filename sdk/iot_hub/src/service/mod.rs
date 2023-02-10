@@ -134,13 +134,13 @@ impl ServiceClient {
         let sas_token: &str = &encode(result.into_bytes());
 
         let encoded: String = url::form_urlencoded::Serializer::new(String::new())
-            .append_pair("sr", &format!("{}.azure-devices.net", iot_hub_name))
+            .append_pair("sr", &format!("{iot_hub_name}.azure-devices.net"))
             .append_pair("sig", sas_token)
             .append_pair("skn", key_name)
             .append_pair("se", &expiry_date_seconds.to_string())
             .finish();
 
-        Ok(format!("SharedAccessSignature {}", encoded))
+        Ok(format!("SharedAccessSignature {encoded}"))
     }
 
     /// Create a new IoTHubService struct based on a given IoT Hub name and a private key

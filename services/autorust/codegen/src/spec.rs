@@ -99,8 +99,8 @@ impl Spec {
 
     pub fn endpoint(&self) -> Option<String> {
         match (self.host(), self.base_path()) {
-            (Some(host), Some(base_path)) => Some(format!("https://{}{}", host, base_path).trim_end_matches('/').to_owned()),
-            (Some(host), None) => Some(format!("https://{}", host)),
+            (Some(host), Some(base_path)) => Some(format!("https://{host}{base_path}").trim_end_matches('/').to_owned()),
+            (Some(host), None) => Some(format!("https://{host}")),
             _ => None,
         }
     }

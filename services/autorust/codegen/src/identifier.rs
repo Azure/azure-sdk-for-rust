@@ -97,7 +97,7 @@ fn replace_first(text: &str, uppercase: bool, remove: bool) -> String {
     let first = text.chars().next().unwrap_or_default();
     if first.is_numeric() {
         let n = if uppercase { 'N' } else { 'n' };
-        format!("{}{}", n, text)
+        format!("{n}{text}")
     } else if !first.is_ascii_alphanumeric() {
         if text.len() > 1 {
             if remove {
@@ -116,7 +116,7 @@ fn replace_first(text: &str, uppercase: bool, remove: bool) -> String {
 /// add an underscore suffix it is a keyword
 fn suffix_keyword(text: &str) -> String {
     if is_keyword(text) {
-        format!("{}_", text)
+        format!("{text}_")
     } else {
         text.to_owned()
     }

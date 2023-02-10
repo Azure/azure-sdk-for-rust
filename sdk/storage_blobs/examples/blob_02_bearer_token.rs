@@ -29,7 +29,7 @@ async fn main() -> azure_core::Result<()> {
     trace!("Requesting blob");
 
     let blob = blob_client.get_content().await?;
-    println!("response == {:?}", blob);
+    println!("response == {blob:?}");
 
     Ok(())
 }

@@ -25,6 +25,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("# of storage accounts {}", count);
+    println!("# of storage accounts {count}");
     Ok(())
 }

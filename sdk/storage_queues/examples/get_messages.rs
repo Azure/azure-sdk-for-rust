@@ -31,14 +31,14 @@ async fn main() -> azure_core::Result<()> {
         .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .await?;
 
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     let get_messages_response = queue
         .get_messages()
         .number_of_messages(2)
         .visibility_timeout(Duration::from_secs(10)) // the message will become visible again after 10 secs
         .await?;
-    println!("get_messages_response == {:#?}", get_messages_response);
+    println!("get_messages_response == {get_messages_response:#?}");
 
     // we will now update the contents of the retrieved messages
     // Note that we have to specify how long the message will stay
@@ -52,7 +52,7 @@ async fn main() -> azure_core::Result<()> {
                 Duration::from_secs(4),
             )
             .await?;
-        println!("response == {:#?}", response);
+        println!("response == {response:#?}");
     }
 
     Ok(())
