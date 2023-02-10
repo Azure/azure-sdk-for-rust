@@ -64,9 +64,8 @@ impl TransactionBuilder {
         self,
         row_key: RK,
         entity: E,
-        if_match_condition: IfMatchCondition,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Put, Some(if_match_condition))
+        self.entity_operation(row_key, entity, Method::Put, None)
     }
 
     /// Update an existing entity by updating the entity's properties. This
@@ -91,9 +90,8 @@ impl TransactionBuilder {
         self,
         row_key: RK,
         entity: E,
-        if_match_condition: IfMatchCondition,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Merge, Some(if_match_condition))
+        self.entity_operation(row_key, entity, Method::Merge, None)
     }
 
     /// Delete an existing entity in a table.
