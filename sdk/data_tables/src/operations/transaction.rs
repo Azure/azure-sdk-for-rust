@@ -51,8 +51,9 @@ impl TransactionBuilder {
         self,
         row_key: RK,
         entity: E,
+        match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Put, None)
+        self.entity_operation(row_key, entity, Method::Put, match_condition)
     }
 
     /// Replaces an existing entity or inserts a new entity if it does not exist
@@ -64,9 +65,8 @@ impl TransactionBuilder {
         self,
         row_key: RK,
         entity: E,
-        if_match_condition: IfMatchCondition,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Put, Some(if_match_condition))
+        self.entity_operation(row_key, entity, Method::Put, None)
     }
 
     /// Update an existing entity by updating the entity's properties. This
@@ -78,8 +78,9 @@ impl TransactionBuilder {
         self,
         row_key: RK,
         entity: E,
+        match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Merge, None)
+        self.entity_operation(row_key, entity, Method::Merge, match_condition)
     }
 
     /// Update an existing entity or inserts a new entity if it does not exist
@@ -91,21 +92,24 @@ impl TransactionBuilder {
         self,
         row_key: RK,
         entity: E,
-        if_match_condition: IfMatchCondition,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Merge, Some(if_match_condition))
+        self.entity_operation(row_key, entity, Method::Merge, None)
     }
 
     /// Delete an existing entity in a table.
     ///
     /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/delete-entity1>
-    pub fn delete<RK: Into<String>>(mut self, row_key: RK) -> azure_core::Result<Self> {
+    pub fn delete<RK: Into<String>>(
+        mut self,
+        row_key: RK,
+        match_condition: Option<IfMatchCondition>,
+    ) -> azure_core::Result<Self> {
         let entity_client = self.client.entity_client(row_key)?;
         let url = entity_client.url()?;
 
         let mut request = Request::new(url, Method::Delete);
         request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
-        request.insert_header(IF_MATCH, "*");
+        request.add_optional_header(&match_condition);
         request.set_body("");
 
         self.transaction.add(TransactionOperation::new(request));

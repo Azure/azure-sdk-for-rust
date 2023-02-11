@@ -75,12 +75,12 @@ async fn main() -> azure_core::Result<()> {
 
     let response = partition_key_client
         .transaction()
-        .delete(&entity1.surname)?
+        .delete(&entity1.surname, None)?
         .insert(&entity2)?
-        .update(&entity3.surname, &entity3)?
-        .merge(&entity4.surname, &entity4)?
-        .insert_or_replace(&entity5.surname, &entity5, IfMatchCondition::Any)?
-        .insert_or_merge(&entity6.surname, &entity6, IfMatchCondition::Any)?
+        .update(&entity3.surname, &entity3, None)?
+        .merge(&entity4.surname, &entity4, None)?
+        .insert_or_replace(&entity5.surname, &entity5)?
+        .insert_or_merge(&entity6.surname, &entity6)?
         .await?;
 
     // check all the events in the transaction completed successfully.
