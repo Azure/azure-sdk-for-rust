@@ -17,7 +17,7 @@ pub struct ClientBuilder {
     scopes: Option<Vec<String>>,
     options: azure_core::ClientOptions,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://169.254.169.254/metadata";
+pub const DEFAULT_ENDPOINT: &str = "http://169.254.169.254/metadata";
 impl ClientBuilder {
     #[doc = "Create a new instance of `ClientBuilder`."]
     #[must_use]
