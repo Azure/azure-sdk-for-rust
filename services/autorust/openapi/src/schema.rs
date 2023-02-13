@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::*;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -13,6 +15,17 @@ pub enum Scheme {
     Https,
     Ws,
     Wss,
+}
+
+impl Display for Scheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Scheme::Http => write!(f, "http"),
+            Scheme::Https => write!(f, "https"),
+            Scheme::Ws => write!(f, "ws"),
+            Scheme::Wss => write!(f, "wss"),
+        }
+    }
 }
 
 impl Default for Scheme {

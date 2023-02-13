@@ -17,7 +17,7 @@ pub struct ClientBuilder {
     scopes: Option<Vec<String>>,
     options: azure_core::ClientOptions,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://localhost:19080";
+pub const DEFAULT_ENDPOINT: &str = "http://localhost:19080";
 impl ClientBuilder {
     #[doc = "Create a new instance of `ClientBuilder`."]
     #[must_use]
