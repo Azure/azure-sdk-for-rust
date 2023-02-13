@@ -4753,6 +4753,8 @@ pub mod gallery_target_extended_location {
         StandardLrs,
         #[serde(rename = "Standard_ZRS")]
         StandardZrs,
+        #[serde(rename = "StandardSSD_LRS")]
+        StandardSsdLrs,
         #[serde(rename = "Premium_LRS")]
         PremiumLrs,
         #[serde(skip_deserializing)]
@@ -4782,7 +4784,8 @@ pub mod gallery_target_extended_location {
             match self {
                 Self::StandardLrs => serializer.serialize_unit_variant("StorageAccountType", 0u32, "Standard_LRS"),
                 Self::StandardZrs => serializer.serialize_unit_variant("StorageAccountType", 1u32, "Standard_ZRS"),
-                Self::PremiumLrs => serializer.serialize_unit_variant("StorageAccountType", 2u32, "Premium_LRS"),
+                Self::StandardSsdLrs => serializer.serialize_unit_variant("StorageAccountType", 2u32, "StandardSSD_LRS"),
+                Self::PremiumLrs => serializer.serialize_unit_variant("StorageAccountType", 3u32, "Premium_LRS"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

@@ -11,6 +11,7 @@ pub enum ActionType {
     Block,
     Log,
     Redirect,
+    AnomalyScoring,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -40,6 +41,7 @@ impl Serialize for ActionType {
             Self::Block => serializer.serialize_unit_variant("ActionType", 1u32, "Block"),
             Self::Log => serializer.serialize_unit_variant("ActionType", 2u32, "Log"),
             Self::Redirect => serializer.serialize_unit_variant("ActionType", 3u32, "Redirect"),
+            Self::AnomalyScoring => serializer.serialize_unit_variant("ActionType", 4u32, "AnomalyScoring"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -815,6 +817,42 @@ pub struct CustomRuleList {
 impl CustomRuleList {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Error response indicates Front Door service is not able to process the incoming request. The reason is provided in the error message."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DefaultErrorResponse {
+    #[doc = "Error model."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<default_error_response::Error>,
+}
+impl azure_core::Continuable for DefaultErrorResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl DefaultErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod default_error_response {
+    use super::*;
+    #[doc = "Error model."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Error {
+        #[doc = "Error code."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[doc = "Error message indicating why the operation failed."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+    }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[doc = "Defines the endpoint properties"]

@@ -780,6 +780,11 @@ pub mod domain_service_properties {
             }
         }
     }
+    impl Default for SyncScope {
+        fn default() -> Self {
+            Self::All
+        }
+    }
 }
 #[doc = "Forest Trust Setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

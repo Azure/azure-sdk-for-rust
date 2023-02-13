@@ -5915,6 +5915,9 @@ impl InstanceFailoverGroupListResult {
 #[doc = "Properties of a instance failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstanceFailoverGroupProperties {
+    #[doc = "Type of the geo-secondary instance. Set 'Standby' if the instance is used as a DR option only."]
+    #[serde(rename = "secondaryType", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_type: Option<instance_failover_group_properties::SecondaryType>,
     #[doc = "Read-write endpoint of the failover group instance."]
     #[serde(rename = "readWriteEndpoint")]
     pub read_write_endpoint: InstanceFailoverGroupReadWriteEndpoint,
@@ -5941,6 +5944,7 @@ impl InstanceFailoverGroupProperties {
         managed_instance_pairs: Vec<ManagedInstancePairInfo>,
     ) -> Self {
         Self {
+            secondary_type: None,
             read_write_endpoint,
             read_only_endpoint: None,
             replication_role: None,
@@ -5952,6 +5956,43 @@ impl InstanceFailoverGroupProperties {
 }
 pub mod instance_failover_group_properties {
     use super::*;
+    #[doc = "Type of the geo-secondary instance. Set 'Standby' if the instance is used as a DR option only."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "SecondaryType")]
+    pub enum SecondaryType {
+        Geo,
+        Standby,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for SecondaryType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for SecondaryType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for SecondaryType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Geo => serializer.serialize_unit_variant("SecondaryType", 0u32, "Geo"),
+                Self::Standby => serializer.serialize_unit_variant("SecondaryType", 1u32, "Standby"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
     #[doc = "Local replication role of the failover group instance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ReplicationRole")]
@@ -8438,9 +8479,19 @@ pub struct ManagedDatabaseProperties {
     #[doc = "The resource identifier of the source database associated with create operation of this database."]
     #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub source_database_id: Option<String>,
+    #[doc = "The resource identifier of the cross-subscription source database associated with create operation of this database."]
+    #[serde(rename = "crossSubscriptionSourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub cross_subscription_source_database_id: Option<String>,
     #[doc = "The restorable dropped database resource id to restore when creating this database."]
     #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub restorable_dropped_database_id: Option<String>,
+    #[doc = "The restorable cross-subscription dropped database resource id to restore when creating this database."]
+    #[serde(
+        rename = "crossSubscriptionRestorableDroppedDatabaseId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cross_subscription_restorable_dropped_database_id: Option<String>,
     #[doc = "Conditional. If createMode is RestoreExternalBackup, this value is used. Specifies the identity used for storage container authentication. Can be 'SharedAccessSignature' or 'ManagedIdentity'; if not specified 'SharedAccessSignature' is assumed."]
     #[serde(rename = "storageContainerIdentity", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_identity: Option<String>,
@@ -8462,6 +8513,13 @@ pub struct ManagedDatabaseProperties {
     #[doc = "Last backup file name for restore of this managed database."]
     #[serde(rename = "lastBackupName", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_name: Option<String>,
+    #[doc = "Target managed instance id used in cross-subscription restore."]
+    #[serde(
+        rename = "crossSubscriptionTargetManagedInstanceId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cross_subscription_target_managed_instance_id: Option<String>,
 }
 impl ManagedDatabaseProperties {
     pub fn new() -> Self {
@@ -8481,6 +8539,11 @@ pub mod managed_database_properties {
         Inaccessible,
         Restoring,
         Updating,
+        Stopping,
+        Stopped,
+        Starting,
+        DbMoving,
+        DbCopying,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -8513,6 +8576,11 @@ pub mod managed_database_properties {
                 Self::Inaccessible => serializer.serialize_unit_variant("Status", 4u32, "Inaccessible"),
                 Self::Restoring => serializer.serialize_unit_variant("Status", 5u32, "Restoring"),
                 Self::Updating => serializer.serialize_unit_variant("Status", 6u32, "Updating"),
+                Self::Stopping => serializer.serialize_unit_variant("Status", 7u32, "Stopping"),
+                Self::Stopped => serializer.serialize_unit_variant("Status", 8u32, "Stopped"),
+                Self::Starting => serializer.serialize_unit_variant("Status", 9u32, "Starting"),
+                Self::DbMoving => serializer.serialize_unit_variant("Status", 10u32, "DbMoving"),
+                Self::DbCopying => serializer.serialize_unit_variant("Status", 11u32, "DbCopying"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

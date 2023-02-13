@@ -572,6 +572,17 @@ pub struct FarmBeatsSolutionProperties {
     #[doc = "Application id of the multi tenant application to be used by partner to access FarmBeats data."]
     #[serde(rename = "accessFBApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub access_fb_application_id: Option<String>,
+    #[doc = "Application id of the SaaS multi tenant application."]
+    #[serde(rename = "saaSApplicationId", default, skip_serializing_if = "Option::is_none")]
+    pub saa_s_application_id: Option<String>,
+    #[doc = "List of ActionIds needed to make the SaaS multi tenant application access relevant fb data."]
+    #[serde(
+        rename = "actionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub action_ids: Vec<String>,
     #[doc = "Role Id of the SaaS multi tenant application to access relevant fb data."]
     #[serde(rename = "roleId", default, skip_serializing_if = "Option::is_none")]
     pub role_id: Option<String>,
