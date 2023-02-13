@@ -1,8 +1,7 @@
-use std::fmt::Display;
-
 use crate::*;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 // http://json.schemastore.org/swagger-2.0
 
