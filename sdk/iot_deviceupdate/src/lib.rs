@@ -14,9 +14,9 @@ mod tests {
     use std::sync::Arc;
     use time::OffsetDateTime;
 
-    pub(crate) fn mock_client() -> crate::client::DeviceUpdateClient {
+    pub(crate) fn mock_client(server_url: String) -> crate::client::DeviceUpdateClient {
         crate::client::DeviceUpdateClient {
-            device_update_url: url::Url::parse(&mockito::server_url()).unwrap(),
+            device_update_url: url::Url::parse(&server_url).unwrap(),
             endpoint: "".to_string(),
             token_credential: AutoRefreshingTokenCredential::new(Arc::new(MockCredential)),
         }
