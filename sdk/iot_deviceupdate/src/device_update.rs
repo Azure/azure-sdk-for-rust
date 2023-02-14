@@ -517,7 +517,7 @@ mod tests {
     #[tokio::test]
     async fn can_import_update() -> azure_core::Result<()> {
         let mut server = Server::new_async().await;
-        let m = server
+        let _m = server
             .mock("POST", "/deviceupdate/test-instance/updates")
             .match_query(Matcher::UrlEncoded(
                 "api-version".into(),
@@ -527,7 +527,7 @@ mod tests {
             .with_status(202)
             .create_async()
             .await;
-        let op = server.mock("GET", "/op_location")
+        let _op = server.mock("GET", "/op_location")
             .with_header("content-type", "application/json")
             .with_body(
                 json!({
@@ -567,13 +567,6 @@ mod tests {
             update.last_action_date_time,
             date::parse_rfc3339("1999-09-10T02:05:07.3845533Z").unwrap()
         );
-
-        // `Mock::drop` calls `futures::executor::block_on` which will spin
-        // forever, so we need to avoid this.  Our `Server` will be dropped at
-        // the end of the test, which the mocks are registered, so the impact
-        // here is minimal.  Ref: <https://github.com/lipanski/mockito/issues/155>
-        std::mem::forget(m);
-        std::mem::forget(op);
 
         Ok(())
     }
