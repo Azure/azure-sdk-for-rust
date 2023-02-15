@@ -1951,6 +1951,69 @@ impl IntegrationRuntimeDataProxyProperties {
         Self::default()
     }
 }
+#[doc = "Integration Runtime Operation Status Properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IntegrationRuntimeEnableinteractivequery {
+    #[doc = "EnableInteractivequery status of  Integrationruntimes."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<integration_runtime_enableinteractivequery::Status>,
+    #[doc = "The operation name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The operation properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+    #[doc = "The operation error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+impl IntegrationRuntimeEnableinteractivequery {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod integration_runtime_enableinteractivequery {
+    use super::*;
+    #[doc = "EnableInteractivequery status of  Integrationruntimes."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        InProgress,
+        Succeeded,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::InProgress => serializer.serialize_unit_variant("Status", 0u32, "InProgress"),
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 1u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 2u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "A list of integration runtime resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeListResponse {
@@ -5123,6 +5186,10 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub newer_versions: Vec<String>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<i32>,
+    #[serde(rename = "targetFramework", default, skip_serializing_if = "Option::is_none")]
+    pub target_framework: Option<i32>,
 }
 impl SelfHostedIntegrationRuntimeStatusTypeProperties {
     pub fn new() -> Self {

@@ -3238,7 +3238,7 @@ pub struct ManagedClusterProperties {
     #[doc = "(DEPRECATING) Whether to enable Kubernetes pod security policy (preview). This feature is set for removal on October 15th, 2020. Learn more at aka.ms/aks/azpodpolicy."]
     #[serde(rename = "enablePodSecurityPolicy", default, skip_serializing_if = "Option::is_none")]
     pub enable_pod_security_policy: Option<bool>,
-    #[doc = "The default value is false. It can be enabled/disabled on creation and updation of the managed cluster. See [https://aka.ms/NamespaceARMResource](https://aka.ms/NamespaceARMResource) for more details on Namespace as a ARM Resource."]
+    #[doc = "The default value is false. It can be enabled/disabled on creation and updating of the managed cluster. See [https://aka.ms/NamespaceARMResource](https://aka.ms/NamespaceARMResource) for more details on Namespace as a ARM Resource."]
     #[serde(rename = "enableNamespaceResources", default, skip_serializing_if = "Option::is_none")]
     pub enable_namespace_resources: Option<bool>,
     #[doc = "Profile of network configuration."]

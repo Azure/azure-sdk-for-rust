@@ -773,6 +773,11 @@ pub mod mhsm_network_rule_set {
             }
         }
     }
+    impl Default for Bypass {
+        fn default() -> Self {
+            Self::AzureServices
+        }
+    }
     #[doc = "The default action when no rule from ipRules and from virtualNetworkRules match. This is only used after the bypass property has been evaluated."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "DefaultAction")]
@@ -808,6 +813,11 @@ pub mod mhsm_network_rule_set {
                 Self::Deny => serializer.serialize_unit_variant("DefaultAction", 1u32, "Deny"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for DefaultAction {
+        fn default() -> Self {
+            Self::Allow
         }
     }
 }

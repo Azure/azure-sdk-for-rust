@@ -92,6 +92,102 @@ pub mod error_response {
         }
     }
 }
+#[doc = "Old Agreement Terms definition"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OldAgreementProperties {
+    #[doc = "A unique identifier of the agreement."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Publisher identifier string of image being deployed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[doc = "Offer identifier string of image being deployed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offer: Option<String>,
+    #[doc = "Date and time in UTC of when the terms were accepted. This is empty if state is cancelled."]
+    #[serde(rename = "signDate", default, with = "azure_core::date::rfc3339::option")]
+    pub sign_date: Option<time::OffsetDateTime>,
+    #[doc = "Date and time in UTC of when the terms were cancelled. This is empty if state is active."]
+    #[serde(rename = "cancelDate", default, with = "azure_core::date::rfc3339::option")]
+    pub cancel_date: Option<time::OffsetDateTime>,
+    #[doc = "Whether the agreement is active or cancelled"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<old_agreement_properties::State>,
+}
+impl OldAgreementProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod old_agreement_properties {
+    use super::*;
+    #[doc = "Whether the agreement is active or cancelled"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Active,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Active => serializer.serialize_unit_variant("State", 0u32, "Active"),
+                Self::Canceled => serializer.serialize_unit_variant("State", 1u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Terms properties for provided Publisher/Offer/Plan tuple"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OldAgreementTerms {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Old Agreement Terms definition"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OldAgreementProperties>,
+}
+impl OldAgreementTerms {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Agreement Terms definition list"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OldAgreementTermsList {
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<OldAgreementTerms>,
+}
+impl OldAgreementTermsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Microsoft.MarketplaceOrdering REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {

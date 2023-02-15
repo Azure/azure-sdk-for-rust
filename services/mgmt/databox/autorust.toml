@@ -17,4 +17,6 @@ boxed = [
     ["../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2022-02-01/databox.json", "transferAllDetails", "include"],
     ["../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2022-09-01/databox.json", "transferAllDetails", "include"],
     ["../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2022-09-01/databox.json", "transferFilterDetails", "include"],
+    ["../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2022-12-01/databox.json", "transferFilterDetails", "include"],
+    ["../../../azure-rest-api-specs/specification/databox/resource-manager/Microsoft.DataBox/stable/2022-12-01/databox.json", "transferAllDetails", "include"],
 ]

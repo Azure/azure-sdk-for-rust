@@ -1667,16 +1667,16 @@ pub struct CustomDomain {
     #[doc = "Custom Domain binding type."]
     #[serde(rename = "bindingType", default, skip_serializing_if = "Option::is_none")]
     pub binding_type: Option<custom_domain::BindingType>,
-    #[doc = "Resource Id of the Certificate to be bound to this hostname. Must exist in the Managed Environment."]
-    #[serde(rename = "certificateId")]
-    pub certificate_id: String,
+    #[doc = "Resource Id of the Certificate to be bound to this hostname."]
+    #[serde(rename = "certificateId", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_id: Option<String>,
 }
 impl CustomDomain {
-    pub fn new(name: String, certificate_id: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
             binding_type: None,
-            certificate_id,
+            certificate_id: None,
         }
     }
 }

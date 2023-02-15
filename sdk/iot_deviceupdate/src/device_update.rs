@@ -509,22 +509,25 @@ impl DeviceUpdateClient {
 #[cfg(test)]
 mod tests {
     use azure_core::date;
-    use mockito::{mock, Matcher};
+    use mockito::{Matcher, Server};
     use serde_json::json;
 
     use crate::{client::API_VERSION, tests::mock_client};
 
     #[tokio::test]
     async fn can_import_update() -> azure_core::Result<()> {
-        let _m = mock("POST", "/deviceupdate/test-instance/updates")
+        let mut server = Server::new_async().await;
+        let _m = server
+            .mock("POST", "/deviceupdate/test-instance/updates")
             .match_query(Matcher::UrlEncoded(
                 "api-version".into(),
                 API_VERSION.into(),
             ))
             .with_header("operation-location", "/op_location")
             .with_status(202)
-            .create();
-        let _op = mock("GET", "/op_location")
+            .create_async()
+            .await;
+        let _op = server.mock("GET", "/op_location")
             .with_header("content-type", "application/json")
             .with_body(
                 json!({
@@ -544,9 +547,9 @@ mod tests {
                 .to_string(),
             )
             .with_status(200)
-            .create();
+            .create_async().await;
 
-        let client = mock_client();
+        let client = mock_client(server.url());
 
         let update = client
             .import_update(

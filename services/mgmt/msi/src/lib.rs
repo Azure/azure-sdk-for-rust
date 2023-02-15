@@ -11,6 +11,10 @@ pub use package_preview_2022_01::*;
 pub mod package_preview_2021_09_30;
 #[cfg(all(feature = "package-preview-2021-09-30", not(feature = "no-default-tag")))]
 pub use package_preview_2021_09_30::*;
+#[cfg(feature = "package-2023-01-31")]
+pub mod package_2023_01_31;
+#[cfg(all(feature = "package-2023-01-31", not(feature = "no-default-tag")))]
+pub use package_2023_01_31::*;
 #[cfg(feature = "package-2018-11-30")]
 pub mod package_2018_11_30;
 #[cfg(all(feature = "package-2018-11-30", not(feature = "no-default-tag")))]

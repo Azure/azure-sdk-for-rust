@@ -476,6 +476,13 @@ pub mod resources_history_request_options {
         ObjectArray,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourcesHistoryResult {}
+impl ResourcesHistoryResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type Row = Vec<serde_json::Value>;
 #[doc = "Query output in tabular format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

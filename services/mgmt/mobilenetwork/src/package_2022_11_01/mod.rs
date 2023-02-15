@@ -115,9 +115,6 @@ impl Client {
     pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
-    pub fn packet_core_control_plane_client(&self) -> packet_core_control_plane::Client {
-        packet_core_control_plane::Client(self.clone())
-    }
     pub fn packet_core_control_plane_versions_client(&self) -> packet_core_control_plane_versions::Client {
         packet_core_control_plane_versions::Client(self.clone())
     }
@@ -129,9 +126,6 @@ impl Client {
     }
     pub fn services_client(&self) -> services::Client {
         services::Client(self.clone())
-    }
-    pub fn sim_client(&self) -> sim::Client {
-        sim::Client(self.clone())
     }
     pub fn sim_groups_client(&self) -> sim_groups::Client {
         sim_groups::Client(self.clone())
@@ -2195,6 +2189,66 @@ pub mod packet_core_control_planes {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Roll back the specified packet core control plane to the previous version, \"rollbackVersion\". Multiple consecutive rollbacks are not possible. This action may cause a service outage."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        pub fn rollback(
+            &self,
+            resource_group_name: impl Into<String>,
+            packet_core_control_plane_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> rollback::RequestBuilder {
+            rollback::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                packet_core_control_plane_name: packet_core_control_plane_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Reinstall the specified packet core control plane. This action will remove any transaction state from the packet core to return it to a known state. This action will cause a service outage."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        pub fn reinstall(
+            &self,
+            resource_group_name: impl Into<String>,
+            packet_core_control_plane_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> reinstall::RequestBuilder {
+            reinstall::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                packet_core_control_plane_name: packet_core_control_plane_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Collect a diagnostics package for the specified packet core control plane. This action will upload the diagnostics to a storage account."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
+        #[doc = "* `parameters`: Parameters supplied to the packet core control plane collect diagnostics package operation."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        pub fn collect_diagnostics_package(
+            &self,
+            resource_group_name: impl Into<String>,
+            packet_core_control_plane_name: impl Into<String>,
+            parameters: impl Into<models::PacketCoreControlPlaneCollectDiagnosticsPackage>,
+            subscription_id: impl Into<String>,
+        ) -> collect_diagnostics_package::RequestBuilder {
+            collect_diagnostics_package::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                packet_core_control_plane_name: packet_core_control_plane_name.into(),
+                parameters: parameters.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
     }
     pub mod get {
         use super::models;
@@ -2752,72 +2806,6 @@ pub mod packet_core_control_planes {
                     }
                 };
                 azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-}
-pub mod packet_core_control_plane {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Roll back the specified packet core control plane to the previous version, \"rollbackVersion\". Multiple consecutive rollbacks are not possible. This action may cause a service outage."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn rollback(
-            &self,
-            resource_group_name: impl Into<String>,
-            packet_core_control_plane_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> rollback::RequestBuilder {
-            rollback::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                packet_core_control_plane_name: packet_core_control_plane_name.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        #[doc = "Reinstall the specified packet core control plane. This action will remove any transaction state from the packet core to return it to a known state. This action will cause a service outage."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn reinstall(
-            &self,
-            resource_group_name: impl Into<String>,
-            packet_core_control_plane_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> reinstall::RequestBuilder {
-            reinstall::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                packet_core_control_plane_name: packet_core_control_plane_name.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        #[doc = "Collect a diagnostics package for the specified packet core control plane. This action will upload the diagnostics to a storage account."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `packet_core_control_plane_name`: The name of the packet core control plane."]
-        #[doc = "* `parameters`: Parameters supplied to the packet core control plane collect diagnostics package operation."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        pub fn collect_diagnostics_package(
-            &self,
-            resource_group_name: impl Into<String>,
-            packet_core_control_plane_name: impl Into<String>,
-            parameters: impl Into<models::PacketCoreControlPlaneCollectDiagnosticsPackage>,
-            subscription_id: impl Into<String>,
-        ) -> collect_diagnostics_package::RequestBuilder {
-            collect_diagnostics_package::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                packet_core_control_plane_name: packet_core_control_plane_name.into(),
-                parameters: parameters.into(),
-                subscription_id: subscription_id.into(),
             }
         }
     }
@@ -4536,6 +4524,72 @@ pub mod sims {
                 sim_group_name: sim_group_name.into(),
             }
         }
+        #[doc = "Bulk upload SIMs to a SIM group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `parameters`: Parameters supplied to the bulk SIM upload operation."]
+        pub fn bulk_upload(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            sim_group_name: impl Into<String>,
+            parameters: impl Into<models::SimUploadList>,
+        ) -> bulk_upload::RequestBuilder {
+            bulk_upload::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+                sim_group_name: sim_group_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        #[doc = "Bulk delete SIMs from a SIM group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `parameters`: Parameters supplied to the bulk SIM delete operation."]
+        pub fn bulk_delete(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            sim_group_name: impl Into<String>,
+            parameters: impl Into<models::SimDeleteList>,
+        ) -> bulk_delete::RequestBuilder {
+            bulk_delete::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+                sim_group_name: sim_group_name.into(),
+                parameters: parameters.into(),
+            }
+        }
+        #[doc = "Bulk upload SIMs in encrypted form to a SIM group. The SIM credentials must be encrypted."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `sim_group_name`: The name of the SIM Group."]
+        #[doc = "* `parameters`: Parameters supplied to the encrypted SIMs upload operation."]
+        pub fn bulk_upload_encrypted(
+            &self,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            sim_group_name: impl Into<String>,
+            parameters: impl Into<models::EncryptedSimUploadList>,
+        ) -> bulk_upload_encrypted::RequestBuilder {
+            bulk_upload_encrypted::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+                sim_group_name: sim_group_name.into(),
+                parameters: parameters.into(),
+            }
+        }
     }
     pub mod get {
         use super::models;
@@ -4899,78 +4953,6 @@ pub mod sims {
                     }
                 };
                 azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-}
-pub mod sim {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Bulk upload SIMs to a SIM group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `sim_group_name`: The name of the SIM Group."]
-        #[doc = "* `parameters`: Parameters supplied to the bulk SIM upload operation."]
-        pub fn bulk_upload(
-            &self,
-            resource_group_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-            sim_group_name: impl Into<String>,
-            parameters: impl Into<models::SimUploadList>,
-        ) -> bulk_upload::RequestBuilder {
-            bulk_upload::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                subscription_id: subscription_id.into(),
-                sim_group_name: sim_group_name.into(),
-                parameters: parameters.into(),
-            }
-        }
-        #[doc = "Bulk delete SIMs from a SIM group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `sim_group_name`: The name of the SIM Group."]
-        #[doc = "* `parameters`: Parameters supplied to the bulk SIM delete operation."]
-        pub fn bulk_delete(
-            &self,
-            resource_group_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-            sim_group_name: impl Into<String>,
-            parameters: impl Into<models::SimDeleteList>,
-        ) -> bulk_delete::RequestBuilder {
-            bulk_delete::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                subscription_id: subscription_id.into(),
-                sim_group_name: sim_group_name.into(),
-                parameters: parameters.into(),
-            }
-        }
-        #[doc = "Bulk upload SIMs in encrypted form to a SIM group. The SIM credentials must be encrypted."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `sim_group_name`: The name of the SIM Group."]
-        #[doc = "* `parameters`: Parameters supplied to the encrypted SIMs upload operation."]
-        pub fn bulk_upload_encrypted(
-            &self,
-            resource_group_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-            sim_group_name: impl Into<String>,
-            parameters: impl Into<models::EncryptedSimUploadList>,
-        ) -> bulk_upload_encrypted::RequestBuilder {
-            bulk_upload_encrypted::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                subscription_id: subscription_id.into(),
-                sim_group_name: sim_group_name.into(),
-                parameters: parameters.into(),
             }
         }
     }

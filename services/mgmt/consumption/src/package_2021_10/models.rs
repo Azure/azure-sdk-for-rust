@@ -419,14 +419,14 @@ impl BudgetsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChargeSummary {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Specifies the kind of charge summary."]
     pub kind: charge_summary::Kind,
 }
 impl ChargeSummary {
     pub fn new(kind: charge_summary::Kind) -> Self {
         Self {
-            resource: Resource::default(),
+            proxy_resource: ProxyResource::default(),
             kind,
         }
     }
@@ -1773,6 +1773,9 @@ pub struct ModernChargeSummaryProperties {
     #[doc = "Is charge Invoiced"]
     #[serde(rename = "isInvoiced", default, skip_serializing_if = "Option::is_none")]
     pub is_invoiced: Option<bool>,
+    #[doc = "Subscription guid."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 impl ModernChargeSummaryProperties {
     pub fn new() -> Self {
