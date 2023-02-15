@@ -1,0 +1,39 @@
+[package]
+name = "appconfiguration"
+version = "0.1.0"
+edition = "2021"
+authors = ["Microsoft Corp."]
+description = "Rust wrapper around Microsoft Azure REST APIs for Azure App Configuration"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_security_keyvault"
+keywords = ["azure", "microsoft", "sdk", "appconfiguration", "cloud"]
+categories = ["api-bindings"]
+readme = "README.md"
+license = "MIT"
+rust-version = "1.64.0"
+
+[dependencies]
+async-trait = "0.1"
+futures = "0.3"
+base64 = "0.13"
+time = "0.3"
+const_format = "0.2.13"
+serde_json = "1.0"
+url = "2.2"
+serde = { version = "1.0", features = ["derive"] }
+azure_core = { path = "../core", version = "0.8", default-features = false }
+azure_svc_appconfiguration = { path = "../../services/svc/appconfiguration", version = "0.9", features = [] }
+rand = "0.8"
+chrono = "0.4.23"
+
+[dev-dependencies]
+azure_identity = { path = "../identity", default-features = false }
+mockito = "0.31"
+async-trait = "0.1"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+
+[features]
+default = ["enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
