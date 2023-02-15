@@ -574,7 +574,7 @@ pub struct ActiveDirectory {
     #[doc = "Id of the Active Directory"]
     #[serde(rename = "activeDirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub active_directory_id: Option<String>,
-    #[doc = "Username of Active Directory domain administrator"]
+    #[doc = "A domain user account with permission to create machine accounts"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[doc = "Plain text password of Active Directory domain administrator, value is masked in the response"]

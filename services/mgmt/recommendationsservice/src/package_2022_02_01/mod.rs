@@ -2170,9 +2170,9 @@ pub mod operation_statuses {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::OperationStatusResult> {
+            pub async fn into_body(self) -> azure_core::Result<models::OperationStatus> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::OperationStatusResult = serde_json::from_slice(&bytes)?;
+                let body: models::OperationStatus = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2245,8 +2245,8 @@ pub mod operation_statuses {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::OperationStatusResult>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::OperationStatusResult>>;
+            type Output = azure_core::Result<models::OperationStatus>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::OperationStatus>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

@@ -505,7 +505,7 @@ impl CheckOciDriverTaskProperties {
         }
     }
 }
-#[doc = "Base class for all types of DMS command properties. If command is not supported by current client, this object is returned."]
+#[doc = "Base class for all types of DMS (classic) command properties. If command is not supported by current client, this object is returned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandProperties {
     #[doc = "Command type."]
@@ -1817,7 +1817,7 @@ impl DataMigrationProjectMetadata {
         Self::default()
     }
 }
-#[doc = "A Database Migration Service resource"]
+#[doc = "An Azure Database Migration Service (classic) resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMigrationService {
     #[serde(flatten)]
@@ -1828,7 +1828,7 @@ pub struct DataMigrationService {
     #[doc = "The resource kind. Only 'vm' (the default) is supported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
-    #[doc = "Properties of the Database Migration Service instance"]
+    #[doc = "Properties of the Azure Database Migration Service (classic) instance"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataMigrationServiceProperties>,
     #[doc = "An Azure SKU instance"]
@@ -1867,7 +1867,7 @@ impl DataMigrationServiceList {
         Self::default()
     }
 }
-#[doc = "Properties of the Database Migration Service instance"]
+#[doc = "Properties of the Azure Database Migration Service (classic) instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMigrationServiceProperties {
     #[doc = "The resource's provisioning state"]
@@ -8429,7 +8429,7 @@ pub struct ProjectTask {
     #[doc = "HTTP strong entity tag value. This is ignored if submitted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Base class for all types of DMS task properties. If task is not supported by current client, this object is returned."]
+    #[doc = "Base class for all types of DMS (classic) task properties. If task is not supported by current client, this object is returned."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProjectTaskProperties>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -8440,7 +8440,7 @@ impl ProjectTask {
         Self::default()
     }
 }
-#[doc = "Base class for all types of DMS task properties. If task is not supported by current client, this object is returned."]
+#[doc = "Base class for all types of DMS (classic) task properties. If task is not supported by current client, this object is returned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectTaskProperties {
     #[doc = "Task type."]
@@ -8934,7 +8934,7 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Describes an available DMS SKU."]
+#[doc = "Describes an available DMS (classic) SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSku {
     #[doc = "The type of resource the SKU applies to."]
@@ -8943,7 +8943,7 @@ pub struct ResourceSku {
     #[doc = "The name of SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Specifies the tier of DMS in a scale set."]
+    #[doc = "Specifies the tier of DMS (classic) in a scale set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
     #[doc = "The Size of the SKU."]
@@ -9194,12 +9194,12 @@ pub mod resource_sku_restrictions {
         }
     }
 }
-#[doc = "The DMS List SKUs operation response."]
+#[doc = "The DMS (classic) List SKUs operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkusResult {
     #[doc = "The list of SKUs available for the subscription."]
     pub value: Vec<ResourceSku>,
-    #[doc = "The uri to fetch the next page of DMS SKUs. Call ListNext() with this to fetch the next page of DMS SKUs."]
+    #[doc = "The uri to fetch the next page of DMS (classic) SKUs. Call ListNext() with this to fetch the next page of DMS (classic) SKUs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -9537,7 +9537,7 @@ impl ServerProperties {
         Self::default()
     }
 }
-#[doc = "Description of an action supported by the Database Migration Service"]
+#[doc = "Description of an action supported by the Azure Database Migration Service (classic)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceOperation {
     #[doc = "The fully qualified action name, e.g. Microsoft.DataMigration/services/read"]
@@ -10089,13 +10089,13 @@ impl SqlServerSqlMiSyncTaskInput {
 #[doc = "SSIS migration info with SSIS store type, overwrite policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsisMigrationInfo {
-    #[doc = "An enumeration of supported source SSIS store type in DMS"]
+    #[doc = "An enumeration of supported source SSIS store type in DMS (classic)"]
     #[serde(rename = "ssisStoreType", default, skip_serializing_if = "Option::is_none")]
     pub ssis_store_type: Option<SsisStoreType>,
-    #[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS now and future may add Reuse option for container object"]
+    #[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS (classic) now and future may add Reuse option for container object"]
     #[serde(rename = "projectOverwriteOption", default, skip_serializing_if = "Option::is_none")]
     pub project_overwrite_option: Option<SsisMigrationOverwriteOption>,
-    #[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS now and future may add Reuse option for container object"]
+    #[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS (classic) now and future may add Reuse option for container object"]
     #[serde(rename = "environmentOverwriteOption", default, skip_serializing_if = "Option::is_none")]
     pub environment_overwrite_option: Option<SsisMigrationOverwriteOption>,
 }
@@ -10104,7 +10104,7 @@ impl SsisMigrationInfo {
         Self::default()
     }
 }
-#[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS now and future may add Reuse option for container object"]
+#[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS (classic) now and future may add Reuse option for container object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "SsisMigrationOverwriteOption")]
 pub enum SsisMigrationOverwriteOption {
@@ -10182,7 +10182,7 @@ impl Serialize for SsisMigrationStage {
         }
     }
 }
-#[doc = "An enumeration of supported source SSIS store type in DMS"]
+#[doc = "An enumeration of supported source SSIS store type in DMS (classic)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "SsisStoreType")]
 pub enum SsisStoreType {

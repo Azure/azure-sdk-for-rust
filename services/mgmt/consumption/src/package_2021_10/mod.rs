@@ -1807,7 +1807,7 @@ pub mod reservations_details {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists the reservations details for provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 502 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
+        #[doc = "Lists the reservations details for provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 400 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
@@ -1823,7 +1823,7 @@ pub mod reservations_details {
                 filter: filter.into(),
             }
         }
-        #[doc = "Lists the reservations details for provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 502 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
+        #[doc = "Lists the reservations details for provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 400 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `reservation_order_id`: Order Id of the reservation"]
@@ -1842,7 +1842,7 @@ pub mod reservations_details {
                 filter: filter.into(),
             }
         }
-        #[doc = "Lists the reservations details for the defined scope and provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 502 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
+        #[doc = "Lists the reservations details for the defined scope and provided date range. Note: ARM has a payload size limit of 12MB, so currently callers get 400 when the response size exceeds the ARM limit. In such cases, API call should be made with smaller date ranges."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_scope`: The scope associated with reservations details operations. This includes '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for BillingAccount scope (legacy), and '/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope (modern). "]

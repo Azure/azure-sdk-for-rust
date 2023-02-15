@@ -140,18 +140,6 @@ impl ExecuteGovernanceRuleParams {
         Self::default()
     }
 }
-#[doc = "Execute status of governance rule over a given scope"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ExecuteRuleStatus {
-    #[doc = "Unique key for the execution of governance rule"]
-    #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
-    pub operation_id: Option<String>,
-}
-impl ExecuteRuleStatus {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Governance assignment over a given scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceAssignment {
@@ -414,7 +402,7 @@ pub struct GovernanceRuleProperties {
     #[doc = "Defines whether there is a grace period on the governance rule"]
     #[serde(rename = "isGracePeriod", default, skip_serializing_if = "Option::is_none")]
     pub is_grace_period: Option<bool>,
-    #[doc = "The governance rule priority, priority to the lower number. Rules with the same priority on the same subscription will not be allowed"]
+    #[doc = "The governance rule priority, priority to the lower number. Rules with the same priority on the same scope will not be allowed"]
     #[serde(rename = "rulePriority")]
     pub rule_priority: i32,
     #[doc = "Defines whether the rule is active/inactive"]
@@ -548,6 +536,60 @@ pub mod governance_rule_properties {
         {
             match self {
                 Self::Assessments => serializer.serialize_unit_variant("SourceResourceType", 0u32, "Assessments"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Long run operation status of governance rule over a given scope"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationResult {
+    #[doc = "The status of the long run operation result of governance rule"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<operation_result::Status>,
+}
+impl OperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod operation_result {
+    use super::*;
+    #[doc = "The status of the long run operation result of governance rule"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Succeeded,
+        Failed,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 1u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("Status", 2u32, "Canceled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

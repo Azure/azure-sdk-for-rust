@@ -3736,7 +3736,7 @@ pub struct SettingsListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Setting>,
+    pub settings: Vec<Setting>,
 }
 impl SettingsListResult {
     pub fn new() -> Self {

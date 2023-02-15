@@ -1683,10 +1683,62 @@ pub struct AzureBlobStorageLinkedServiceTypeProperties {
     #[doc = "Credential reference type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<CredentialReference>,
+    #[doc = "The type used for authentication. Type: string."]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<azure_blob_storage_linked_service_type_properties::AuthenticationType>,
+    #[doc = "Container uri of the Azure Blob Storage resource only support for anonymous access. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "containerUri", default, skip_serializing_if = "Option::is_none")]
+    pub container_uri: Option<serde_json::Value>,
 }
 impl AzureBlobStorageLinkedServiceTypeProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod azure_blob_storage_linked_service_type_properties {
+    use super::*;
+    #[doc = "The type used for authentication. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AuthenticationType")]
+    pub enum AuthenticationType {
+        Anonymous,
+        AccountKey,
+        SasUri,
+        ServicePrincipal,
+        Msi,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AuthenticationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AuthenticationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AuthenticationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Anonymous => serializer.serialize_unit_variant("AuthenticationType", 0u32, "Anonymous"),
+                Self::AccountKey => serializer.serialize_unit_variant("AuthenticationType", 1u32, "AccountKey"),
+                Self::SasUri => serializer.serialize_unit_variant("AuthenticationType", 2u32, "SasUri"),
+                Self::ServicePrincipal => serializer.serialize_unit_variant("AuthenticationType", 3u32, "ServicePrincipal"),
+                Self::Msi => serializer.serialize_unit_variant("AuthenticationType", 4u32, "Msi"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "The location of azure blob dataset."]
@@ -5219,6 +5271,21 @@ impl Serialize for CopyBehaviorType {
             Self::MergeFiles => serializer.serialize_unit_variant("CopyBehaviorType", 2u32, "MergeFiles"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "CopyComputeScale properties for managed integration runtime."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CopyComputeScaleProperties {
+    #[doc = "DIU number setting reserved for copy activity execution. Supported values are multiples of 4 in range 4-256."]
+    #[serde(rename = "dataIntegrationUnit", default, skip_serializing_if = "Option::is_none")]
+    pub data_integration_unit: Option<i32>,
+    #[doc = "Time to live (in minutes) setting of integration runtime which will execute copy activity."]
+    #[serde(rename = "timeToLive", default, skip_serializing_if = "Option::is_none")]
+    pub time_to_live: Option<i32>,
+}
+impl CopyComputeScaleProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A copy activity sink."]
@@ -12375,6 +12442,16 @@ pub struct IntegrationRuntimeComputeProperties {
     #[doc = "VNet properties for managed integration runtime."]
     #[serde(rename = "vNetProperties", default, skip_serializing_if = "Option::is_none")]
     pub v_net_properties: Option<IntegrationRuntimeVNetProperties>,
+    #[doc = "CopyComputeScale properties for managed integration runtime."]
+    #[serde(rename = "copyComputeScaleProperties", default, skip_serializing_if = "Option::is_none")]
+    pub copy_compute_scale_properties: Option<CopyComputeScaleProperties>,
+    #[doc = "PipelineExternalComputeScale properties for managed integration runtime."]
+    #[serde(
+        rename = "pipelineExternalComputeScaleProperties",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub pipeline_external_compute_scale_properties: Option<PipelineExternalComputeScaleProperties>,
 }
 impl IntegrationRuntimeComputeProperties {
     pub fn new() -> Self {
@@ -17097,6 +17174,18 @@ pub struct PipelineElapsedTimeMetricPolicy {
     pub duration: Option<serde_json::Value>,
 }
 impl PipelineElapsedTimeMetricPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "PipelineExternalComputeScale properties for managed integration runtime."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PipelineExternalComputeScaleProperties {
+    #[doc = "Time to live (in minutes) setting of integration runtime which will execute pipeline and external activity."]
+    #[serde(rename = "timeToLive", default, skip_serializing_if = "Option::is_none")]
+    pub time_to_live: Option<i32>,
+}
+impl PipelineExternalComputeScaleProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -22165,6 +22254,59 @@ impl SnowflakeSource {
         }
     }
 }
+#[doc = "Spark configuration reference."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkConfigurationParametrizationReference {
+    #[doc = "Spark configuration reference type."]
+    #[serde(rename = "type")]
+    pub type_: spark_configuration_parametrization_reference::Type,
+    #[doc = "Reference spark configuration name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "referenceName")]
+    pub reference_name: serde_json::Value,
+}
+impl SparkConfigurationParametrizationReference {
+    pub fn new(type_: spark_configuration_parametrization_reference::Type, reference_name: serde_json::Value) -> Self {
+        Self { type_, reference_name }
+    }
+}
+pub mod spark_configuration_parametrization_reference {
+    use super::*;
+    #[doc = "Spark configuration reference type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        SparkConfigurationReference,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::SparkConfigurationReference => serializer.serialize_unit_variant("Type", 0u32, "SparkConfigurationReference"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Spark Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkDatasetTypeProperties {
@@ -24012,6 +24154,9 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[doc = "The main file used for the job, which will override the 'file' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<serde_json::Value>,
+    #[doc = "Scanning subfolders from the root folder of the main definition file, these files will be added as reference files. The folders named 'jars', 'pyFiles', 'files' or 'archives' will be scanned, and the folders name are case sensitive. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "scanFolder", default, skip_serializing_if = "Option::is_none")]
+    pub scan_folder: Option<serde_json::Value>,
     #[doc = "The fully-qualified identifier or the main class that is in the main definition file, which will override the 'className' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
     #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
     pub class_name: Option<serde_json::Value>,
@@ -24050,9 +24195,18 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[doc = "Number of core and memory to be used for driver allocated in the specified Spark pool for the job, which will be used for overriding 'driverCores' and 'driverMemory' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
     #[serde(rename = "driverSize", default, skip_serializing_if = "Option::is_none")]
     pub driver_size: Option<serde_json::Value>,
-    #[doc = "Number of executors to launch for this job, which will override the 'numExecutors' of the spark job definition you provide."]
+    #[doc = "Number of executors to launch for this job, which will override the 'numExecutors' of the spark job definition you provide. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
-    pub num_executors: Option<i32>,
+    pub num_executors: Option<serde_json::Value>,
+    #[doc = "The type of the spark config."]
+    #[serde(rename = "configurationType", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_type: Option<synapse_spark_job_activity_type_properties::ConfigurationType>,
+    #[doc = "Spark configuration reference."]
+    #[serde(rename = "targetSparkConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub target_spark_configuration: Option<SparkConfigurationParametrizationReference>,
+    #[doc = "Spark configuration property."]
+    #[serde(rename = "sparkConfig", default, skip_serializing_if = "Option::is_none")]
+    pub spark_config: Option<serde_json::Value>,
 }
 impl SynapseSparkJobActivityTypeProperties {
     pub fn new(spark_job: SynapseSparkJobReference) -> Self {
@@ -24060,6 +24214,7 @@ impl SynapseSparkJobActivityTypeProperties {
             spark_job,
             args: Vec::new(),
             file: None,
+            scan_folder: None,
             class_name: None,
             files: Vec::new(),
             python_code_reference: Vec::new(),
@@ -24069,6 +24224,51 @@ impl SynapseSparkJobActivityTypeProperties {
             conf: None,
             driver_size: None,
             num_executors: None,
+            configuration_type: None,
+            target_spark_configuration: None,
+            spark_config: None,
+        }
+    }
+}
+pub mod synapse_spark_job_activity_type_properties {
+    use super::*;
+    #[doc = "The type of the spark config."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ConfigurationType")]
+    pub enum ConfigurationType {
+        Default,
+        Customized,
+        Artifact,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ConfigurationType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ConfigurationType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ConfigurationType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("ConfigurationType", 0u32, "Default"),
+                Self::Customized => serializer.serialize_unit_variant("ConfigurationType", 1u32, "Customized"),
+                Self::Artifact => serializer.serialize_unit_variant("ConfigurationType", 2u32, "Artifact"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
