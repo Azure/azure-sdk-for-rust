@@ -109,7 +109,9 @@ impl TransactionBuilder {
 
         let mut request = Request::new(url, Method::Delete);
         request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
-        request.add_optional_header(&match_condition);
+
+        let match_condition = match_condition.unwrap_or(IfMatchCondition::Any);
+        request.add_mandatory_header(&match_condition);
         request.set_body("");
 
         self.transaction.add(TransactionOperation::new(request));
