@@ -8,10 +8,5 @@ information on the project, and an overview of other crates, please refer to
 
 License: MIT
 
-
-
- - app config - /label
-
-
-   - feture man
-            -featureFileter - 3
+# Run example
+ENVs cargo run --package appconfiguration --example feature_manager
