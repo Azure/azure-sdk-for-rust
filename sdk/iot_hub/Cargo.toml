@@ -5,6 +5,9 @@ authors = ["Microsoft Corp."]
 edition = "2021"
 description = "Azure IoT Hub"
 license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_iot_hub"
 rust-version = "1.64.0"
 
 [dependencies]
