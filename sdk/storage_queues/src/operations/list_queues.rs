@@ -95,6 +95,7 @@ impl ListQueuesResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ListQueuesResponseInternal {
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
     pub prefix: Option<String>,
     pub marker: Option<String>,
@@ -123,7 +124,20 @@ mod test {
 
     #[test]
     fn try_parse() {
-        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?><EnumerationResults ServiceEndpoint=\"https://azureskdforrust.queue.core.windows.net/\"><Prefix>a</Prefix><MaxResults>2</MaxResults><Queues><Queue><Name>azureiscool</Name></Queue><Queue><Name>azurerocks</Name></Queue></Queues><NextMarker /></EnumerationResults>";
+        let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+            <EnumerationResults ServiceEndpoint=\"https://azureskdforrust.queue.core.windows.net/\">
+                <Prefix>a</Prefix>
+                <MaxResults>2</MaxResults>
+                <Queues>
+                    <Queue>
+                        <Name>azureiscool</Name>
+                    </Queue>
+                    <Queue>
+                        <Name>azurerocks</Name>
+                    </Queue>
+                </Queues>
+                <NextMarker />
+            </EnumerationResults>";
 
         let response: ListQueuesResponseInternal = read_xml(range.as_bytes()).unwrap();
 
