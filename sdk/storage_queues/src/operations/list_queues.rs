@@ -95,6 +95,7 @@ impl ListQueuesResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct ListQueuesResponseInternal {
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
     pub prefix: Option<String>,
     pub marker: Option<String>,

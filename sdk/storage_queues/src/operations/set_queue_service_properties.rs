@@ -1,9 +1,5 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
-use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
-    headers::Headers,
-    Method, Response as AzureResponse,
-};
+use azure_core::{error::Error, headers::Headers, xml::to_xml, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -21,8 +17,7 @@ impl SetQueueServicePropertiesBuilder {
             url.query_pairs_mut().append_pair("restype", "service");
             url.query_pairs_mut().append_pair("comp", "properties");
 
-            let xml_body =
-                serde_xml_rs::to_string(&self.properties).map_kind(ErrorKind::DataConversion)?;
+            let xml_body = to_xml(&self.properties)?;
 
             let mut request = self.client.finalize_request(
                 url,
