@@ -49,7 +49,7 @@ impl BlockWithSizeList {
 
         let mut lbs = BlockWithSizeList { blocks: Vec::new() };
 
-        if let Some(commited) = bl.committed_blocks {
+        if let Some(committed) = bl.committed_blocks {
             for b_val in commited.block {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Committed(
@@ -62,7 +62,7 @@ impl BlockWithSizeList {
             }
         }
 
-        if let Some(commited) = bl.uncommitted_blocks {
+        if let Some(committed) = bl.uncommitted_blocks {
             for b_val in commited.block {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Uncommitted(
