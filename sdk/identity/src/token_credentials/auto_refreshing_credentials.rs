@@ -15,7 +15,7 @@ fn is_expired(token: &TokenResponse) -> bool {
 pub struct AutoRefreshingTokenCredential {
     credential: Arc<dyn TokenCredential>,
     // Tokens are specific to a resource, so we cache tokens by resource.
-    token_cache: Arc<RwLock<HashMap<String, azure_core::Result<TokenResponse>>>>,
+    token_cache: Arc<RwLock<HashMap<String, TokenResponse>>>,
 }
 
 impl std::fmt::Debug for AutoRefreshingTokenCredential {
@@ -42,7 +42,7 @@ impl TokenCredential for AutoRefreshingTokenCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
         // if the current cached token for this resource is good, return it.
         let token_cache = self.token_cache.read().await;
-        if let Some(Ok(token)) = token_cache.get(resource) {
+        if let Some(token) = token_cache.get(resource) {
             if !is_expired(token) {
                 return Ok(token.clone());
             }
@@ -54,27 +54,27 @@ impl TokenCredential for AutoRefreshingTokenCredential {
 
         // check again in case another thread refreshed the token while we were
         // waiting on the write lock
-        if let Some(Ok(token)) = token_cache.get(resource) {
+        if let Some(token) = token_cache.get(resource) {
             if !is_expired(token) {
                 return Ok(token.clone());
             }
         }
 
-        let res = self.credential.get_token(resource).await;
+        let result = self.credential.get_token(resource).await;
 
         // NOTE: we do not check to see if the token is expired here, as at
         // least one credential, `AzureCliCredential`, specifies the token is
         // immediately expired after it is returned, which indicates the token
         // should always be refreshed upon use.
-        let result = match &res {
-            Ok(token) => Ok(token.clone()),
+        match &result {
+            Ok(token) => {
+                token_cache.insert(resource.to_string(), token.clone());
+                result
+            }
             Err(err) => Err(Error::with_message(ErrorKind::Credential, || {
                 err.to_string()
             })),
-        };
-
-        token_cache.insert(resource.to_string(), res);
-        result
+        }
     }
 }
 
