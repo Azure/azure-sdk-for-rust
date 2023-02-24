@@ -1,6 +1,5 @@
 use async_lock::RwLock;
 use azure_core::auth::{TokenCredential, TokenResponse};
-use azure_core::error::{Error, ErrorKind};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -60,21 +59,14 @@ impl TokenCredential for AutoRefreshingTokenCredential {
             }
         }
 
-        let result = self.credential.get_token(resource).await;
+        let token = self.credential.get_token(resource).await?;
 
         // NOTE: we do not check to see if the token is expired here, as at
         // least one credential, `AzureCliCredential`, specifies the token is
         // immediately expired after it is returned, which indicates the token
         // should always be refreshed upon use.
-        match &result {
-            Ok(token) => {
-                token_cache.insert(resource.to_string(), token.clone());
-                result
-            }
-            Err(err) => Err(Error::with_message(ErrorKind::Credential, || {
-                err.to_string()
-            })),
-        }
+        token_cache.insert(resource.to_string(), token.clone());
+        Ok(token)
     }
 }
 
