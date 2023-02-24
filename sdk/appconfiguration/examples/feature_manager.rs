@@ -13,14 +13,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build(),
     );
 
-    let features = FeatureHolder::new(creds);
+    let features = FeatureManager::new(creds);
     println!("Features {features:?}");
 
     println!("*****");
     let mut feature_name = String::from("targeting");
     let user = String::from("test");
     println!(
-        "Faature - {:?} is {:?} for User - {:?}",
+        "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
         if features.is_enabled(feature_name.clone()) {
             "enabled"
@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("*****");
     feature_name = String::from("percentage");
     println!(
-        "Faature - {:?} is {:?} for User - {:?}",
+        "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
         if features.is_enabled(feature_name.clone()) {
             "enabled"
@@ -46,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("*****");
     feature_name = String::from("on_off");
     println!(
-        "Faature - {:?} is {:?} for User - {:?}",
+        "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
         if features.is_enabled(feature_name.clone()) {
             "enabled"
@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("*****");
     feature_name = String::from("time_window");
     println!(
-        "Faature - {:?} is {:?} for User - {:?}",
+        "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
         if features.is_enabled(feature_name.clone()) {
             "enabled"
@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("*****");
     feature_name = String::from("time_window_never");
     println!(
-        "Faature - {:?} is {:?} for User - {:?}",
+        "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
         if features.is_enabled(feature_name.clone()) {
             "enabled"
@@ -83,9 +83,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     println!("*****");
+    std::thread::sleep(std::time::Duration::from_secs(20));
+
     feature_name = String::from("time_window_on");
     println!(
-        "Faature - {:?} is {:?} for User - {:?}",
+        "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
         if features.is_enabled(feature_name.clone()) {
             "enabled"
