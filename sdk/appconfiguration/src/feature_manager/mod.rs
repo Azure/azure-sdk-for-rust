@@ -93,29 +93,31 @@ struct AppContext {
 }
 
 impl AppContext {
-    fn new() -> AppContext {
-        AppContext {
-            id: String::from("test"),
-            groups: vec![],
-        }
+    fn new(id: String, groups: Vec<String>) -> AppContext {
+        AppContext { id, groups }
     }
 }
 
 trait FeatureFilter {
-    fn evaluate(&self, context: AppContext) -> bool;
+    fn evaluate(&self, context: Option<Arc<dyn ContextHolder>>) -> bool;
 }
 
 impl FeatureFilter for Feature {
-    fn evaluate(&self, context: AppContext) -> bool {
+    fn evaluate(&self, context: Option<Arc<dyn ContextHolder>>) -> bool {
         match self {
             Feature::Percentage(ctx) => {
                 ctx.enabled && (ctx.value.is_some() && is_percentage(ctx.value.unwrap()))
             }
             Feature::Targeting(ctx) => {
+                let context_value = match context {
+                    Some(context) => context.get_context(),
+                    None => AppContext::new(String::from("test"), vec![]),
+                };
+
                 ctx.enabled
-                    && (ctx.users.iter().any(|it| it.eq(&context.id))
+                    && (ctx.users.iter().any(|it| it.eq(&context_value.id))
                         || ctx.groups.iter().any(|it| {
-                            context.groups.contains(&it.Name)
+                            context_value.groups.contains(&it.Name)
                                 && is_percentage(ctx.default_rollout_percentage)
                         })
                         || (is_percentage(ctx.default_rollout_percentage)))
@@ -141,9 +143,14 @@ impl FeatureFilter for Feature {
     }
 }
 
+trait ContextHolder {
+    fn get_context(&self) -> AppContext;
+}
+
 #[derive(Clone)]
 pub struct FeatureManager {
     holder: Arc<dyn FeatureHolder>,
+    context: Option<Arc<dyn ContextHolder>>,
     on_off: HashMap<String, Vec<Feature>>,
     client: azure_svc_appconfiguration::Client,
 }
@@ -178,21 +185,22 @@ impl FeatureManager {
 
         FeatureManager {
             holder: Arc::new(AutoRefreshingFeatures::new(client.clone())),
+            context: None,
             on_off,
             client,
         }
     }
 
     pub fn is_enabled(&self, name: String) -> bool {
-        let feature = self.get_feature(name);
+        let feature = self.get_features(name);
 
         !feature.is_empty()
             && feature
                 .iter()
-                .all(|feature| feature.evaluate(AppContext::new()))
+                .all(|feature| feature.evaluate(self.context.clone()))
     }
 
-    fn get_feature(&self, name: String) -> Vec<Feature> {
+    fn get_features(&self, name: String) -> Vec<Feature> {
         if std::env::var("FEATURE_FETCH_ALL_OFF").is_ok() {
             self.on_off
                 .get(&name)
@@ -220,11 +228,12 @@ impl FeatureManager {
         match result {
             Ok(rs) => match rs.into_body().await {
                 Ok(key_value) => {
-                    match serde_json::from_str::<models::FeaturesFilter>(&key_value.value.unwrap()) {
+                    match serde_json::from_str::<models::FeaturesFilter>(&key_value.value.unwrap())
+                    {
                         Ok(key_value) => Feature::new(key_value),
-                        Err(_) => vec![Feature::OnOff(false)]
+                        Err(_) => vec![Feature::OnOff(false)],
                     }
-                },
+                }
                 Err(err) => {
                     println!("*ERROR :  {:?}", err);
                     vec![Feature::OnOff(false)]
