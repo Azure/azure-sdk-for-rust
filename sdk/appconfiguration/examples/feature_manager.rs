@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build(),
     );
 
-    let features = FeatureManager::new(creds);
+    let features = FeatureManager::new(creds, None);
     println!("Features {features:?}");
 
     println!("*****");

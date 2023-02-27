@@ -87,13 +87,13 @@ impl FeatureContext {
 }
 
 #[derive(Debug, Clone)]
-struct AppContext {
+pub struct AppContext {
     id: String,
     groups: Vec<String>,
 }
 
 impl AppContext {
-    fn new(id: String, groups: Vec<String>) -> AppContext {
+    pub fn new(id: String, groups: Vec<String>) -> AppContext {
         AppContext { id, groups }
     }
 }
@@ -143,7 +143,7 @@ impl FeatureFilter for Feature {
     }
 }
 
-trait ContextHolder {
+pub trait ContextHolder {
     fn get_context(&self) -> AppContext;
 }
 
@@ -165,7 +165,10 @@ impl std::fmt::Debug for FeatureManager {
 }
 
 impl FeatureManager {
-    pub fn new(token_credential: Arc<dyn TokenCredential>) -> FeatureManager {
+    pub fn new(
+        token_credential: Arc<dyn TokenCredential>,
+        context: Option<Arc<dyn ContextHolder>>,
+    ) -> FeatureManager {
         let on_off: HashMap<String, Vec<Feature>> = if std::env::var("FEATURE_ON_OFF").is_ok() {
             // todo read from file? onOff features
             HashMap::new()
@@ -185,7 +188,7 @@ impl FeatureManager {
 
         FeatureManager {
             holder: Arc::new(AutoRefreshingFeatures::new(client.clone())),
-            context: None,
+            context,
             on_off,
             client,
         }
