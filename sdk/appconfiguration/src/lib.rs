@@ -7,5 +7,6 @@
 #[macro_use]
 extern crate azure_core;
 
+pub(crate) mod auto_refresh;
 pub mod feature_manager;
 pub mod prelude;

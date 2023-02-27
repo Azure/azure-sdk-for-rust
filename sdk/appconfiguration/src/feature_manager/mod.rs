@@ -7,6 +7,8 @@ use std::{collections::HashMap, sync::Arc};
 
 pub mod models;
 
+use crate::auto_refresh::{AutoRefreshing, ExpiresValue};
+
 use self::models::Group;
 
 const CONTENT_TYPE: &str = "application/vnd.microsoft.appconfig.ff+json;charset=utf-8";
@@ -117,7 +119,7 @@ impl FeatureFilter for Feature {
                 ctx.enabled
                     && (ctx.users.iter().any(|it| it.eq(&context_value.id))
                         || ctx.groups.iter().any(|it| {
-                            context_value.groups.contains(&it.Name)
+                            context_value.groups.contains(&it.name)
                                 && is_percentage(ctx.default_rollout_percentage)
                         })
                         || (is_percentage(ctx.default_rollout_percentage)))
@@ -149,7 +151,7 @@ pub trait ContextHolder {
 
 #[derive(Clone)]
 pub struct FeatureManager {
-    holder: Arc<dyn FeatureHolder>,
+    holder: Arc<FeatureHolder>,
     context: Option<Arc<dyn ContextHolder>>,
     on_off: HashMap<String, Vec<Feature>>,
     client: azure_svc_appconfiguration::Client,
@@ -187,7 +189,7 @@ impl FeatureManager {
             .build();
 
         FeatureManager {
-            holder: Arc::new(AutoRefreshingFeatures::new(client.clone())),
+            holder: Arc::new(FeatureHolder::new(client.clone())),
             context,
             on_off,
             client,
@@ -250,70 +252,18 @@ impl FeatureManager {
     }
 }
 
-trait FeatureHolder {
-    fn get_features(&self) -> HashMap<String, Vec<Feature>>;
-}
-
-struct FeatureMap {
-    features: HashMap<String, Vec<Feature>>,
-    expires_on: time::OffsetDateTime,
-}
-
-struct AutoRefreshingFeatures {
-    current_features: Arc<RwLock<Option<FeatureMap>>>,
+#[derive(Clone)]
+struct FeatureHolder {
     client: azure_svc_appconfiguration::Client,
+    features: Arc<RwLock<Option<ExpiresValue<HashMap<String, Vec<Feature>>>>>>,
 }
 
-impl FeatureHolder for AutoRefreshingFeatures {
-    fn get_features(&self) -> HashMap<String, Vec<Feature>> {
-        block_on(async {
-            // if the current cached features is good, return that.
-            if let Some(feature_map) = self.current_features.read().await.as_ref() {
-                if !is_expired(feature_map) {
-                    return feature_map.features.clone();
-                }
-            }
-
-            let mut guard = self.current_features.write().await;
-
-            // check again in case another thread refreshed the features while we were
-            // waiting on the write lock
-            if let Some(feature_map) = guard.as_ref() {
-                if !is_expired(feature_map) {
-                    return feature_map.features.clone();
-                }
-            }
-
-            let result = self.fetch_all().await;
-            *guard = Some(FeatureMap {
-                features: result.clone(),
-                expires_on: time::OffsetDateTime::now_utc()
-                    + std::time::Duration::from_secs(match std::env::var("FEATURE_EXPIRE_ON") {
-                        Ok(s) => match s.parse::<u64>() {
-                            Ok(i) => i,
-                            Err(_) => 20,
-                        },
-                        Err(_) => 20,
-                    }),
-            });
-
-            result
-        })
+#[async_trait::async_trait]
+impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
+    fn get_current(&self) -> Arc<RwLock<Option<ExpiresValue<HashMap<String, Vec<Feature>>>>>> {
+        Arc::clone(&self.features)
     }
-}
-
-impl AutoRefreshingFeatures {
-    fn new(client: azure_svc_appconfiguration::Client) -> Self {
-        AutoRefreshingFeatures {
-            client,
-            current_features: Arc::new(RwLock::new(Option::Some(FeatureMap {
-                features: HashMap::new(),
-                expires_on: time::OffsetDateTime::now_utc(),
-            }))),
-        }
-    }
-
-    async fn fetch_all(&self) -> HashMap<String, Vec<Feature>> {
+    async fn get_latest(&self) -> HashMap<String, Vec<Feature>> {
         let mut features_tmp = HashMap::new();
         let mut stream = self.client.clone().get_key_values().into_stream();
         while let Some(rs) = stream.next().await {
@@ -349,13 +299,24 @@ impl AutoRefreshingFeatures {
                 }
             }
         }
-
         features_tmp
     }
 }
 
-fn is_expired(map: &FeatureMap) -> bool {
-    map.expires_on < time::OffsetDateTime::now_utc()
+impl FeatureHolder {
+    fn new(client: azure_svc_appconfiguration::Client) -> Self {
+        FeatureHolder {
+            client,
+            features: Arc::new(RwLock::new(Option::Some(ExpiresValue {
+                value: HashMap::new(),
+                expires_on: time::OffsetDateTime::now_utc(),
+            }))),
+        }
+    }
+
+    fn get_features(&self) -> HashMap<String, Vec<Feature>> {
+        block_on(self.get_value())
+    }
 }
 
 fn is_percentage(value: i64) -> bool {
