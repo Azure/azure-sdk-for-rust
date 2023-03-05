@@ -89,6 +89,8 @@ pub enum IndexingMode {
     Consistent,
     /// indexing occurs asynchronously during insertion, replacment or deletion of documents
     Lazy,
+    /// no indexing is done at all for basic key/value stuff or bulk upload
+    None,
 }
 
 /// Path to be indexed
