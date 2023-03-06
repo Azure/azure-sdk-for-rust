@@ -89,6 +89,8 @@ pub enum IndexingMode {
     Consistent,
     /// indexing occurs asynchronously during insertion, replacment or deletion of documents
     Lazy,
+    /// indexing is disabled on the container
+    None,
 }
 
 /// Path to be indexed
