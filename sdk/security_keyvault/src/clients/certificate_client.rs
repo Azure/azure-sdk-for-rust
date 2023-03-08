@@ -250,6 +250,38 @@ impl CertificateClient {
         DeleteCertificateBuilder::new(self.clone(), name.into())
     }
 
+    /// Deletes a certificate in the Key Vault.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Name of the certificate
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     client.delete_operation("NAME").await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn delete_operation<N>(&self, name: N) -> DeleteCertificateOperationBuilder
+    where
+        N: Into<String>,
+    {
+        DeleteCertificateOperationBuilder::new(self.clone(), name.into())
+    }
+
     /// Lists all the certificates in the Key Vault.
     ///
     /// ```no_run
