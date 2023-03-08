@@ -2,13 +2,13 @@ use crate::prelude::*;
 use azure_core::{headers::Headers, CollectedResponse, Method};
 
 operation! {
-    DeleteCertificate,
+    DeleteCertificateOperation,
     client: CertificateClient,
     name: String,
 }
 
-impl DeleteCertificateBuilder {
-    pub fn into_future(mut self) -> DeleteCertificate {
+impl DeleteCertificateOperationBuilder {
+    pub fn into_future(mut self) -> DeleteCertificateOperation {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("certificates/{}/pending", self.name));
@@ -33,4 +33,4 @@ impl DeleteCertificateBuilder {
     }
 }
 
-type DeleteCertificateResponse = CertificateOperationResponse;
+type DeleteCertificateOperationResponse = CertificateOperationResponse;

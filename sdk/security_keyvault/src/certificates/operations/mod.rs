@@ -1,6 +1,7 @@
 mod backup;
 mod create;
 mod delete;
+mod delete_operation;
 mod get_certificate;
 mod get_versions;
 mod import;
@@ -9,6 +10,7 @@ mod update_properties;
 pub use backup::*;
 pub use create::*;
 pub use delete::*;
+pub use delete_operation::*;
 pub use get_certificate::*;
 pub use get_versions::*;
 pub use import::*;
