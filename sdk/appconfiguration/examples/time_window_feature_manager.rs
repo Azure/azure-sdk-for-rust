@@ -16,9 +16,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let features = FeatureManager::new(creds, None);
     println!("Features {features:?}");
 
-    println!("*****");
-    let mut feature_name = String::from("targeting");
     let user = String::from("test");
+    println!("***time_window***");
+    let mut feature_name = String::from("time_window");
     println!(
         "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
@@ -30,46 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         user,
     );
 
-    println!("*****");
-    feature_name = String::from("percentage");
-    println!(
-        "Feature - {:?} is {:?} for User - {:?}",
-        feature_name,
-        if features.is_enabled(feature_name.clone()) {
-            "enabled"
-        } else {
-            "not enabled"
-        },
-        user,
-    );
-
-    println!("*****");
-    feature_name = String::from("on_off");
-    println!(
-        "Feature - {:?} is {:?} for User - {:?}",
-        feature_name,
-        if features.is_enabled(feature_name.clone()) {
-            "enabled"
-        } else {
-            "not enabled"
-        },
-        user,
-    );
-
-    println!("*****");
-    feature_name = String::from("time_window");
-    println!(
-        "Feature - {:?} is {:?} for User - {:?}",
-        feature_name,
-        if features.is_enabled(feature_name.clone()) {
-            "enabled"
-        } else {
-            "not enabled"
-        },
-        user,
-    );
-
-    println!("*****");
+    println!("***time_window_never***");
     feature_name = String::from("time_window_never");
     println!(
         "Feature - {:?} is {:?} for User - {:?}",
@@ -82,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         user,
     );
 
-    println!("*****");
+    println!("***time_window_on***");
     std::thread::sleep(std::time::Duration::from_secs(20));
 
     feature_name = String::from("time_window_on");
