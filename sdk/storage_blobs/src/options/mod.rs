@@ -46,7 +46,7 @@ request_query!(
     ///
     ///See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>"]
     VersionId,
-    "version_id"
+    "versionid"
 );
 
 request_query!(
