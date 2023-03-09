@@ -79,6 +79,35 @@ impl CertificateClient {
         GetCertificateVersionsBuilder::new(self.clone(), name.into())
     }
 
+    /// Gets a certificate operation from the Key Vault.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     let certificate = client.get_operation("NAME").await.unwrap();
+    ///     dbg!(&certificate);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn get_operation<N>(&self, name: N) -> GetCertificateOperationBuilder
+    where
+        N: Into<String>,
+    {
+        GetCertificateOperationBuilder::new(self.clone(), name.into())
+    }
+
     /// Creates a new certificate.
     /// If this is the first version, the certificate resource is created.
     /// This operation requires the certificates/create permission.
