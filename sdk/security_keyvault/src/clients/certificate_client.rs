@@ -79,7 +79,7 @@ impl CertificateClient {
         GetCertificateVersionsBuilder::new(self.clone(), name.into())
     }
 
-    /// Gets a certificate operation from the Key Vault.
+    /// Gets the creation operation of a certificate.
     ///
     /// # Example
     ///
@@ -279,7 +279,7 @@ impl CertificateClient {
         DeleteCertificateBuilder::new(self.clone(), name.into())
     }
 
-    /// Deletes a certificate in the Key Vault.
+    /// Deletes the creation operation for a specific certificate.
     ///
     /// # Arguments
     ///
