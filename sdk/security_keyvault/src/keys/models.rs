@@ -245,13 +245,13 @@ impl Display for SignatureAlgorithm {
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub enum EncryptionAlgorithm {
+    #[default]
     #[serde(rename = "A128CBC")]
     A128Cbc,
     #[serde(rename = "A128CBCPAD")]
     A128CbcPad,
     #[serde(rename = "A128GCM")]
     A128Gcm,
-    #[default]
     #[serde(rename = "A192CBC")]
     A192Cbc,
     #[serde(rename = "A192CBCPAD")]
