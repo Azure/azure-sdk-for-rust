@@ -32,12 +32,12 @@ env_logger = "0.10"
 all-features = true
 
 [features]
-default = ["package-preview-2022-03", "enable_reqwest"]
+default = ["package-preview-2022-08", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
+"package-preview-2022-08" = []
 "package-preview-2022-03" = []
+"package-2023-02-15-preview" = []
 "package-2022-12-01-preview" = []
 "package-2022-07-01-preview" = []
-"package-2022-05-01-preview" = []
-"package-2022-02-01-preview" = []

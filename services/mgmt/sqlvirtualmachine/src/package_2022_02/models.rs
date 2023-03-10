@@ -61,9 +61,7 @@ pub mod ag_replica {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Role")]
     pub enum Role {
-        #[serde(rename = "PRIMARY")]
         Primary,
-        #[serde(rename = "SECONDARY")]
         Secondary,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -90,8 +88,8 @@ pub mod ag_replica {
             S: Serializer,
         {
             match self {
-                Self::Primary => serializer.serialize_unit_variant("Role", 0u32, "PRIMARY"),
-                Self::Secondary => serializer.serialize_unit_variant("Role", 1u32, "SECONDARY"),
+                Self::Primary => serializer.serialize_unit_variant("Role", 0u32, "Primary"),
+                Self::Secondary => serializer.serialize_unit_variant("Role", 1u32, "Secondary"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -100,9 +98,9 @@ pub mod ag_replica {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Commit")]
     pub enum Commit {
-        #[serde(rename = "SYNCHRONOUS_COMMIT")]
+        #[serde(rename = "Synchronous_Commit")]
         SynchronousCommit,
-        #[serde(rename = "ASYNCHRONOUS_COMMIT")]
+        #[serde(rename = "Asynchronous_Commit")]
         AsynchronousCommit,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -129,8 +127,8 @@ pub mod ag_replica {
             S: Serializer,
         {
             match self {
-                Self::SynchronousCommit => serializer.serialize_unit_variant("Commit", 0u32, "SYNCHRONOUS_COMMIT"),
-                Self::AsynchronousCommit => serializer.serialize_unit_variant("Commit", 1u32, "ASYNCHRONOUS_COMMIT"),
+                Self::SynchronousCommit => serializer.serialize_unit_variant("Commit", 0u32, "Synchronous_Commit"),
+                Self::AsynchronousCommit => serializer.serialize_unit_variant("Commit", 1u32, "Asynchronous_Commit"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -139,9 +137,7 @@ pub mod ag_replica {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Failover")]
     pub enum Failover {
-        #[serde(rename = "AUTOMATIC")]
         Automatic,
-        #[serde(rename = "MANUAL")]
         Manual,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -168,8 +164,8 @@ pub mod ag_replica {
             S: Serializer,
         {
             match self {
-                Self::Automatic => serializer.serialize_unit_variant("Failover", 0u32, "AUTOMATIC"),
-                Self::Manual => serializer.serialize_unit_variant("Failover", 1u32, "MANUAL"),
+                Self::Automatic => serializer.serialize_unit_variant("Failover", 0u32, "Automatic"),
+                Self::Manual => serializer.serialize_unit_variant("Failover", 1u32, "Manual"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -178,11 +174,9 @@ pub mod ag_replica {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ReadableSecondary")]
     pub enum ReadableSecondary {
-        #[serde(rename = "NO")]
         No,
-        #[serde(rename = "ALL")]
         All,
-        #[serde(rename = "READ_ONLY")]
+        #[serde(rename = "Read_Only")]
         ReadOnly,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -209,9 +203,9 @@ pub mod ag_replica {
             S: Serializer,
         {
             match self {
-                Self::No => serializer.serialize_unit_variant("ReadableSecondary", 0u32, "NO"),
-                Self::All => serializer.serialize_unit_variant("ReadableSecondary", 1u32, "ALL"),
-                Self::ReadOnly => serializer.serialize_unit_variant("ReadableSecondary", 2u32, "READ_ONLY"),
+                Self::No => serializer.serialize_unit_variant("ReadableSecondary", 0u32, "No"),
+                Self::All => serializer.serialize_unit_variant("ReadableSecondary", 1u32, "All"),
+                Self::ReadOnly => serializer.serialize_unit_variant("ReadableSecondary", 2u32, "Read_Only"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

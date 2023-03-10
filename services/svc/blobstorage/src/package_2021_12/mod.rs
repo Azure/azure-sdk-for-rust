@@ -4097,6 +4097,13 @@ pub mod blob {
             pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
             }
+            #[doc = "Returns the date and time the blob was created."]
+            pub fn x_ms_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(
+                    self.0
+                        .get_str(&azure_core::headers::HeaderName::from_static("x-ms-creation-time"))?,
+                )
+            }
             pub fn x_ms_meta(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-meta"))
             }
