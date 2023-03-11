@@ -7,6 +7,10 @@ edition = "2021"
 
 [dependencies]
 time = "0.3"
+url = "2"
 
 # Azure dependencies
 azure_core = { path = "../core" }
+
+# AMQP dependencies
+fe2o3-amqp = "0.8"
