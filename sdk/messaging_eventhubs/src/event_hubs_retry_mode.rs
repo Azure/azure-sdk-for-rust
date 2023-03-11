@@ -5,7 +5,7 @@ pub enum EventHubsRetryMode {
     Fixed,
 
     /// Retry attempts will delay based on a back-off strategy, where each attempt will increase the duration that it waits before retrying
-    Exponential
+    Exponential,
 }
 
 impl Default for EventHubsRetryMode {

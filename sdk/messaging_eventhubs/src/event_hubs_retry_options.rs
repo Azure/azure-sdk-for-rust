@@ -1,4 +1,3 @@
-use time::Duration as TimeSpan;
 use std::time::Duration;
 
 use crate::event_hubs_retry_mode::EventHubsRetryMode;
@@ -32,10 +31,21 @@ impl TryFrom<u32> for MaxRetries {
 /// The set of options that can be specified to influence how
 /// retry attempts are made, and a failure is eligible to be retried.
 pub struct EventHubsRetryOptions {
+    /// The maximum number of retry attempts before considering the associated operation to have failed
     pub max_retries: MaxRetries,
+
+    /// The delay or back-off factor to apply between retry attempts
     pub delay: Duration,
+
+    /// The maximum delay to allow between retry attempts
     pub maximum_delay: Duration,
+
+    /// The maximum duration to wait for an operation, per attempt
     pub try_timeout: Duration,
+
+    /// The approach to use for calculating retry delays
+    ///
+    /// The default retry mode is [`EventHubsRetryMode::Exponential`]
     pub mode: EventHubsRetryMode,
 }
 
