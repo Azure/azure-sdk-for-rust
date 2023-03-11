@@ -1,0 +1,52 @@
+use time::Duration as TimeSpan;
+use std::time::Duration;
+
+use crate::event_hubs_retry_mode::EventHubsRetryMode;
+
+const MAX_RETRIES: u32 = 100;
+const DEFAULT_MAX_RETRIES: u32 = 3;
+const DEFAULT_DELAY: Duration = Duration::from_millis(800);
+const DEFAULT_MAXIMUM_DELAY: Duration = Duration::from_secs(60);
+const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(60);
+
+pub struct MaxRetries(u32);
+
+impl Default for MaxRetries {
+    fn default() -> Self {
+        Self(DEFAULT_MAX_RETRIES)
+    }
+}
+
+impl TryFrom<u32> for MaxRetries {
+    type Error = u32;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        if value > MAX_RETRIES {
+            Err(value)
+        } else {
+            Ok(Self(value))
+        }
+    }
+}
+
+/// The set of options that can be specified to influence how
+/// retry attempts are made, and a failure is eligible to be retried.
+pub struct EventHubsRetryOptions {
+    pub max_retries: MaxRetries,
+    pub delay: Duration,
+    pub maximum_delay: Duration,
+    pub try_timeout: Duration,
+    pub mode: EventHubsRetryMode,
+}
+
+impl Default for EventHubsRetryOptions {
+    fn default() -> Self {
+        Self {
+            max_retries: MaxRetries::default(),
+            delay: DEFAULT_DELAY,
+            maximum_delay: DEFAULT_MAXIMUM_DELAY,
+            try_timeout: DEFAULT_TRY_TIMEOUT,
+            mode: EventHubsRetryMode::default(),
+        }
+    }
+}
