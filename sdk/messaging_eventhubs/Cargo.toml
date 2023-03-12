@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 time = "0.3"
 url = "2"
+const_format = "0.2"
 
 # Azure dependencies
 azure_core = { path = "../core" }

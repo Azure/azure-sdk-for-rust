@@ -1,5 +1,7 @@
 use time::OffsetDateTime;
 
+use super::error::OffsetIsEmpty;
+
 const START_OF_STREAM_OFFSET: &str = "-1";
 const END_OF_STREAM_OFFSET: &str = "@latest";
 
@@ -32,32 +34,37 @@ impl EventPosition {
     /// position to begin receiving from the first event that was enqueued in the partition
     /// which has not expired due to the retention policy.
     pub fn earliest() -> Self {
-        Self::from_offset(START_OF_STREAM_OFFSET, false)
+        Self::Offset {
+            offset: START_OF_STREAM_OFFSET.to_string(),
+            is_inclusive: false,
+        }
     }
 
     /// Corresponds to the end of the partition, where no more events are currently enqueued.  Use this
     /// position to begin receiving from the next event to be enqueued in the partition after an event
     /// consumer begins reading with this position.
     pub fn latest() -> Self {
-        Self::from_offset(END_OF_STREAM_OFFSET, false)
+        Self::Offset {
+            offset: END_OF_STREAM_OFFSET.to_string(),
+            is_inclusive: false,
+        }
     }
 
-    /// Corresponds to the event in the partition at the provided offset.
+    /// Corresponds to the event in the partition at the provided offset. Returns an error if the offset is empty.
     ///
     /// # Parameters
     ///
     /// - `offset` - The offset of an event with respect to its relative position in the partition.
     /// - `is_inclusive` - >If true, the event at the `offset` is included; otherwise the next event in sequence will be received.
-    pub fn from_offset(offset: impl Into<String>, is_inclusive: bool) -> Self {
+    pub fn try_from_offset(offset: impl Into<String>, is_inclusive: bool) -> Result<Self, OffsetIsEmpty> {
         let offset = offset.into();
-        assert!(
-            !offset.is_empty(),
-            "offset must not be empty or whitespace"
-        );
-        Self::Offset {
+        if offset.is_empty() {
+            return Err(OffsetIsEmpty);
+        }
+        Ok(Self::Offset {
             offset,
             is_inclusive,
-        }
+        })
     }
 
     /// Corresponds to an event with the specified sequence number in the partition.  By default, the event
