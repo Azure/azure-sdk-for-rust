@@ -4,7 +4,6 @@
 
 pub(crate) mod amqp;
 pub(crate) mod authorization;
-pub(crate) mod consumer;
 pub(crate) mod core;
 pub(crate) mod diagnostics;
 pub(crate) mod primitives;
@@ -19,3 +18,5 @@ pub(crate) mod event_hubs_retry_options;
 pub(crate) mod event_hubs_retry_policy;
 pub(crate) mod event_hubs_transport_type;
 pub(crate) mod partition_properties;
+
+pub mod consumer;
