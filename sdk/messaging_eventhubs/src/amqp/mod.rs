@@ -3,3 +3,5 @@ pub(crate) mod amqp_connection;
 pub(crate) mod amqp_filter;
 pub(crate) mod amqp_constants;
 pub(crate) mod amqp_property;
+pub(crate) mod amqp_response;
+pub(crate) mod amqp_response_status_code;
