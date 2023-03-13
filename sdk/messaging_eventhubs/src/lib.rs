@@ -20,3 +20,11 @@ pub(crate) mod event_hubs_transport_type;
 pub(crate) mod partition_properties;
 
 pub mod consumer;
+
+pub mod prelude {
+//! Prelude for the Azure Event Hubs crate.
+
+    pub use crate::partition_properties::*;
+}
+
+pub use prelude::*;
