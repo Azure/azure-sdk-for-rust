@@ -7,9 +7,10 @@ use std::fmt::Display;
 
 /// The transfer protocol of the API. Values MUST be from the list: "http", "https", "ws", "wss".
 /// If the schemes is not included, the default scheme to be used is the one used to access the Swagger definition itself.
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Scheme {
+    #[default]
     Http,
     Https,
     Ws,
@@ -24,12 +25,6 @@ impl Display for Scheme {
             Scheme::Ws => write!(f, "ws"),
             Scheme::Wss => write!(f, "wss"),
         }
-    }
-}
-
-impl Default for Scheme {
-    fn default() -> Self {
-        Scheme::Http
     }
 }
 

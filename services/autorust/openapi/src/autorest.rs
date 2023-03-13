@@ -61,18 +61,13 @@ pub struct MsLongRunningOperationOptions {
     pub final_state_via: MsLongRunningOperationOptionsFinalStateVia,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
 pub enum MsLongRunningOperationOptionsFinalStateVia {
+    #[default]
     AzureAsyncOperation,
     Location,
     OriginalUri,
-}
-
-impl Default for MsLongRunningOperationOptionsFinalStateVia {
-    fn default() -> Self {
-        MsLongRunningOperationOptionsFinalStateVia::AzureAsyncOperation
-    }
 }
 
 /// https://github.com/Azure/autorest/blob/master/docs/extensions/readme.md#x-ms-parameter-location

@@ -87,7 +87,7 @@ pub static PARAM_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\{([\w-]+)\}").unwr
 /// Returns ["storage-account-name", "sas-definition-name"]
 pub fn parse_path_params(path: &str) -> Vec<String> {
     // capture 0 is the whole match and 1 is the actual capture like other languages
-    PARAM_RE.captures_iter(path).into_iter().map(|c| c[1].to_string()).collect()
+    PARAM_RE.captures_iter(path).map(|c| c[1].to_string()).collect()
 }
 
 /// Get a set of parameter names in the URI query
