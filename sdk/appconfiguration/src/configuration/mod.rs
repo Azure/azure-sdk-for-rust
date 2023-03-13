@@ -81,16 +81,53 @@ impl ConfigurationExplorer {
     }
 
     pub fn get_value(&self, key: String) -> String {
-        match self.values.values().find_map(|it| it.get(&key)) {
+        let value = block_on(async move {
+            match self.client.clone().get_key_value(key).await {
+                Ok(rs) => rs.value,
+                Err(err) => {
+                    log::debug!("*ERROR :  {:?}", err);
+                    None
+                }
+            }
+        });
+
+        match value {
             Some(value) => value.clone(),
             None => String::from(""),
         }
     }
 
     pub fn get_values(&self, label: String) -> HashMap<String, String> {
-        match self.values.get(&label) {
-            Some(map) => map.clone(),
-            None => HashMap::new(),
-        }
+        let map = block_on(async move {
+            let mut map = HashMap::new();
+            let mut stream = self
+                .client
+                .clone()
+                .get_key_values()
+                .label(label)
+                .into_stream();
+            while let Some(rs) = stream.next().await {
+                match rs {
+                    Ok(rs) => {
+                        let items = rs
+                            .items
+                            .iter()
+                            .map(|it| match (&it.key, &it.value) {
+                                (Some(key), Some(value)) => (key.to_string(), value.to_string()),
+                                _ => (String::from(""), String::from("")),
+                            })
+                            .collect::<HashMap<String, String>>();
+
+                        map.extend(items);
+                    }
+                    Err(err) => {
+                        log::debug!("*ERROR :  {:?}", err)
+                    }
+                }
+            }
+            map
+        });
+
+        map
     }
 }

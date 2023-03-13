@@ -61,7 +61,7 @@ impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
 
 impl FeatureHolder {
     pub fn new(client: azure_svc_appconfiguration::Client) -> Self {
-        FeatureHolder {
+        Self {
             client,
             features: Arc::new(RwLock::new(Option::Some(ExpiresValue {
                 value: HashMap::new(),
