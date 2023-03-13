@@ -11,6 +11,10 @@ pub use package_preview_7_4_preview_1::*;
 pub mod package_preview_7_3_preview;
 #[cfg(all(feature = "package-preview-7_3-preview", not(feature = "no-default-tag")))]
 pub use package_preview_7_3_preview::*;
+#[cfg(feature = "package-7_4")]
+pub mod package_7_4;
+#[cfg(all(feature = "package-7_4", not(feature = "no-default-tag")))]
+pub use package_7_4::*;
 #[cfg(feature = "package-7_3")]
 pub mod package_7_3;
 #[cfg(all(feature = "package-7_3", not(feature = "no-default-tag")))]
@@ -19,7 +23,3 @@ pub use package_7_3::*;
 pub mod package_7_2_preview;
 #[cfg(all(feature = "package-7_2-preview", not(feature = "no-default-tag")))]
 pub use package_7_2_preview::*;
-#[cfg(feature = "package-7_2")]
-pub mod package_7_2;
-#[cfg(all(feature = "package-7_2", not(feature = "no-default-tag")))]
-pub use package_7_2::*;

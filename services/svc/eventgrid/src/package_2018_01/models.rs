@@ -453,6 +453,143 @@ impl AcsChatThreadWithUserDeletedEventData {
         Self::default()
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailDeliveryReportReceived event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsEmailDeliveryReportReceivedEventData {
+    #[doc = "The Sender Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+    #[doc = "The recipient Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipient: Option<String>,
+    #[doc = "The Id of the email been sent"]
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[doc = "The status of the email"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<acs_email_delivery_report_received_event_data::Status>,
+    #[doc = "The time at which the email delivery report received timestamp"]
+    #[serde(rename = "deliveryAttemptTimeStamp", default, with = "azure_core::date::rfc3339::option")]
+    pub delivery_attempt_time_stamp: Option<time::OffsetDateTime>,
+}
+impl AcsEmailDeliveryReportReceivedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_email_delivery_report_received_event_data {
+    use super::*;
+    #[doc = "The status of the email"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Failed,
+        Delivered,
+        FilteredSpam,
+        Quarantined,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Failed => serializer.serialize_unit_variant("Status", 0u32, "Failed"),
+                Self::Delivered => serializer.serialize_unit_variant("Status", 1u32, "Delivered"),
+                Self::FilteredSpam => serializer.serialize_unit_variant("Status", 2u32, "FilteredSpam"),
+                Self::Quarantined => serializer.serialize_unit_variant("Status", 3u32, "Quarantined"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailEngagementTrackingReportReceived event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsEmailEngagementTrackingReportReceivedEventData {
+    #[doc = "The Sender Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+    #[doc = "The Id of the email that has been sent"]
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[doc = "The time at which the user interacted with the email"]
+    #[serde(rename = "userActionTimeStamp", default, with = "azure_core::date::rfc3339::option")]
+    pub user_action_time_stamp: Option<time::OffsetDateTime>,
+    #[doc = "The context of the type of engagement user had with email"]
+    #[serde(rename = "engagementContext", default, skip_serializing_if = "Option::is_none")]
+    pub engagement_context: Option<String>,
+    #[doc = "The user agent interacting with the email"]
+    #[serde(rename = "userAgent", default, skip_serializing_if = "Option::is_none")]
+    pub user_agent: Option<String>,
+    #[doc = "The type of engagement user have with email"]
+    #[serde(rename = "engagementType", default, skip_serializing_if = "Option::is_none")]
+    pub engagement_type: Option<acs_email_engagement_tracking_report_received_event_data::EngagementType>,
+}
+impl AcsEmailEngagementTrackingReportReceivedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_email_engagement_tracking_report_received_event_data {
+    use super::*;
+    #[doc = "The type of engagement user have with email"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "EngagementType")]
+    pub enum EngagementType {
+        #[serde(rename = "view")]
+        View,
+        #[serde(rename = "click")]
+        Click,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for EngagementType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for EngagementType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for EngagementType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::View => serializer.serialize_unit_variant("EngagementType", 0u32, "view"),
+                Self::Click => serializer.serialize_unit_variant("EngagementType", 1u32, "click"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Schema for all properties of  Recording Chunk Information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsRecordingChunkInfoProperties {

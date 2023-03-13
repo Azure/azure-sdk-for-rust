@@ -13715,8 +13715,6 @@ impl VirtualMachineScaleSetHardwareProfile {
 #[doc = "Describes a virtual machine scale set network profile's IP configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetIpConfiguration {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
     #[doc = "The IP configuration name."]
     pub name: String,
     #[doc = "Describes a virtual machine scale set network profile's IP configuration properties."]
@@ -13725,11 +13723,7 @@ pub struct VirtualMachineScaleSetIpConfiguration {
 }
 impl VirtualMachineScaleSetIpConfiguration {
     pub fn new(name: String) -> Self {
-        Self {
-            sub_resource: SubResource::default(),
-            name,
-            properties: None,
-        }
+        Self { name, properties: None }
     }
 }
 #[doc = "Describes a virtual machine scale set network profile's IP configuration properties."]
@@ -14025,8 +14019,6 @@ impl VirtualMachineScaleSetManagedDiskParameters {
 #[doc = "Describes a virtual machine scale set network profile's network configurations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetNetworkConfiguration {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
     #[doc = "The network configuration name."]
     pub name: String,
     #[doc = "Describes a virtual machine scale set network profile's IP configuration."]
@@ -14035,11 +14027,7 @@ pub struct VirtualMachineScaleSetNetworkConfiguration {
 }
 impl VirtualMachineScaleSetNetworkConfiguration {
     pub fn new(name: String) -> Self {
-        Self {
-            sub_resource: SubResource::default(),
-            name,
-            properties: None,
-        }
+        Self { name, properties: None }
     }
 }
 #[doc = "Describes a virtual machines scale sets network configuration's DNS settings."]
@@ -15352,10 +15340,62 @@ pub struct VirtualMachineScaleSetVmInstanceView {
     #[doc = "The placement group in which the VM is running. If the VM is deallocated it will not have a placementGroupId."]
     #[serde(rename = "placementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub placement_group_id: Option<String>,
+    #[doc = "Specifies the host OS name of the virtual machine. <br><br> This name cannot be updated after the VM is created. <br><br> **Max-length (Windows):** 15 characters <br><br> **Max-length (Linux):** 64 characters. <br><br> For naming conventions and restrictions see [Azure infrastructure services implementation guidelines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-infrastructure-subscription-accounts-guidelines?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json#1-naming-conventions)."]
+    #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
+    pub computer_name: Option<String>,
+    #[doc = "The Operating System running on the hybrid machine."]
+    #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
+    pub os_name: Option<String>,
+    #[doc = "The version of Operating System running on the hybrid machine."]
+    #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
+    pub os_version: Option<String>,
+    #[doc = "The hypervisor generation of the Virtual Machine [V1, V2]"]
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<virtual_machine_scale_set_vm_instance_view::HyperVGeneration>,
 }
 impl VirtualMachineScaleSetVmInstanceView {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod virtual_machine_scale_set_vm_instance_view {
+    use super::*;
+    #[doc = "The hypervisor generation of the Virtual Machine [V1, V2]"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "HyperVGeneration")]
+    pub enum HyperVGeneration {
+        V1,
+        V2,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for HyperVGeneration {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for HyperVGeneration {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for HyperVGeneration {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::V1 => serializer.serialize_unit_variant("HyperVGeneration", 0u32, "V1"),
+                Self::V2 => serializer.serialize_unit_variant("HyperVGeneration", 1u32, "V2"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "The List Virtual Machine Scale Set VMs operation response."]

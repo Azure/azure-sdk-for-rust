@@ -230,8 +230,8 @@ pub mod grants {
         #[doc = "Get details for a specific grant linked to the provided billing account and billing profile."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
         pub fn list(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> list::RequestBuilder {
             list::RequestBuilder {
                 client: self.0.clone(),
@@ -243,8 +243,8 @@ pub mod grants {
         #[doc = "Get details for a specific grant linked to the provided billing account and billing profile."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
         pub fn get(&self, billing_account_name: impl Into<String>, billing_profile_name: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
                 client: self.0.clone(),
@@ -592,8 +592,8 @@ pub mod labs {
         #[doc = "Get a list of labs associated with the provided billing account name and billing profile name."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
         pub fn list_all(
             &self,
             billing_account_name: impl Into<String>,
@@ -610,9 +610,9 @@ pub mod labs {
         #[doc = "Get the details for a specific lab associated with the provided billing account name, billing profile name, and invoice section name."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         pub fn list(
             &self,
             billing_account_name: impl Into<String>,
@@ -630,9 +630,9 @@ pub mod labs {
         #[doc = "Get the details for a specific lab associated with the provided billing account name, billing profile name, and invoice section name."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         pub fn get(
             &self,
             billing_account_name: impl Into<String>,
@@ -650,9 +650,9 @@ pub mod labs {
         #[doc = "Create a new lab or update a previously created lab."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         #[doc = "* `parameters`: Request parameters that are provided to create lab resource."]
         pub fn create_or_update(
             &self,
@@ -672,9 +672,9 @@ pub mod labs {
         #[doc = "Delete a specific lab associated with the provided billing account name, billing profile name, and invoice section name. Note all students must be removed from the lab in order to delete the lab."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         pub fn delete(
             &self,
             billing_account_name: impl Into<String>,
@@ -691,9 +691,9 @@ pub mod labs {
         #[doc = "Generate invite code for a lab"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         #[doc = "* `parameters`: Request parameters that are provided to generate invite code."]
         pub fn generate_invite_code(
             &self,
@@ -1306,9 +1306,9 @@ pub mod join_requests {
         #[doc = "get student join requests"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         pub fn list(
             &self,
             billing_account_name: impl Into<String>,
@@ -1326,10 +1326,10 @@ pub mod join_requests {
         #[doc = "get student join requests"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
-        #[doc = "* `join_request_name`: Join name"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
+        #[doc = "* `join_request_name`: The ID that uniquely identifies a join request."]
         pub fn get(
             &self,
             billing_account_name: impl Into<String>,
@@ -1348,10 +1348,10 @@ pub mod join_requests {
         #[doc = "Approve student joining the redeemable lab"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
-        #[doc = "* `join_request_name`: Join name"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
+        #[doc = "* `join_request_name`: The ID that uniquely identifies a join request."]
         pub fn approve(
             &self,
             billing_account_name: impl Into<String>,
@@ -1370,10 +1370,10 @@ pub mod join_requests {
         #[doc = "Deny student joining the redeemable lab"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
-        #[doc = "* `join_request_name`: Join name"]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
+        #[doc = "* `join_request_name`: The ID that uniquely identifies a join request."]
         pub fn deny(
             &self,
             billing_account_name: impl Into<String>,
@@ -1776,9 +1776,9 @@ pub mod students {
         #[doc = "Get a list of details about students that are associated with the specified lab."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         pub fn list(
             &self,
             billing_account_name: impl Into<String>,
@@ -1796,9 +1796,9 @@ pub mod students {
         #[doc = "Get the details for a specific student in the specified lab by student alias"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         #[doc = "* `student_alias`: Student alias."]
         pub fn get(
             &self,
@@ -1818,9 +1818,9 @@ pub mod students {
         #[doc = "Create and add a new student to the specified lab or update the details of an existing student in a lab. Note the student must have a valid tenant to accept the lab after they have been added to lab."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         #[doc = "* `student_alias`: Student alias."]
         #[doc = "* `parameters`: Request parameters that are provided to update student properties."]
         pub fn create_or_update(
@@ -1843,9 +1843,9 @@ pub mod students {
         #[doc = "Delete the specified student based on the student alias."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `billing_account_name`: Billing account name."]
-        #[doc = "* `billing_profile_name`: Billing profile name."]
-        #[doc = "* `invoice_section_name`: Invoice section name."]
+        #[doc = "* `billing_account_name`: The ID that uniquely identifies a billing account."]
+        #[doc = "* `billing_profile_name`: The ID that uniquely identifies a billing profile."]
+        #[doc = "* `invoice_section_name`: The ID that uniquely identifies an invoice section."]
         #[doc = "* `student_alias`: Student alias."]
         pub fn delete(
             &self,
@@ -2222,7 +2222,7 @@ pub mod student_labs {
         #[doc = "Get the details for a specified lab associated with the student lab."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `student_lab_name`: Student lab name."]
+        #[doc = "* `student_lab_name`: The ID that uniquely identifies a student lab."]
         pub fn get(&self, student_lab_name: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
                 client: self.0.clone(),

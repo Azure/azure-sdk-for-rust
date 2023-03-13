@@ -273,6 +273,7 @@ pub mod usage_aggregates {
                         };
                         let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::Accepted => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,

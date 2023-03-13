@@ -827,6 +827,16 @@ pub struct DataBoxDiskCopyProgress {
     #[doc = "The Status of the copy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<data_box_disk_copy_progress::Status>,
+    #[doc = "Provides additional information about an http error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudError>,
+    #[doc = "Available actions on the job."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub actions: Vec<String>,
 }
 impl DataBoxDiskCopyProgress {
     pub fn new() -> Self {
@@ -1895,6 +1905,16 @@ pub struct GranularCopyProgress {
     #[doc = "To indicate if enumeration of data is in progress. \r\nUntil this is true, the TotalBytesToProcess may not be valid."]
     #[serde(rename = "isEnumerationInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_enumeration_in_progress: Option<bool>,
+    #[doc = "Provides additional information about an http error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudError>,
+    #[doc = "Available actions on the job."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub actions: Vec<String>,
 }
 impl GranularCopyProgress {
     pub fn new() -> Self {

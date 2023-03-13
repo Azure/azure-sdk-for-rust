@@ -26,11 +26,7 @@ impl ErrorResponse {
 }
 #[doc = "Key-value pairs of instance details in the legacy format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct InfoField {
-    #[doc = "Identifies the name of the instance provisioned by the user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project: Option<String>,
-}
+pub struct InfoField {}
 impl InfoField {
     pub fn new() -> Self {
         Self::default()

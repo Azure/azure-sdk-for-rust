@@ -618,6 +618,12 @@ pub mod catalog {
         #[doc = "Pricing information containing the amount and the currency code"]
         #[serde(rename = "p1Y", default, skip_serializing_if = "Option::is_none")]
         pub p1_y: Option<Price>,
+        #[doc = "Pricing information containing the amount and the currency code"]
+        #[serde(rename = "p3Y", default, skip_serializing_if = "Option::is_none")]
+        pub p3_y: Option<Price>,
+        #[doc = "Pricing information containing the amount and the currency code"]
+        #[serde(rename = "p5Y", default, skip_serializing_if = "Option::is_none")]
+        pub p5_y: Option<Price>,
     }
     impl Msrp {
         pub fn new() -> Self {
@@ -1634,7 +1640,7 @@ pub struct PatchProperties {
     #[doc = "Type of the Applied Scope."]
     #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
-    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared."]
+    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared. This property will be deprecated and replaced by appliedScopeProperties instead for Single AppliedScopeType."]
     #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
     pub applied_scopes: Option<AppliedScopes>,
     #[doc = "Properties specific to applied scope type. Not required if not applicable. Required and need to provide tenantId and managementGroupId if AppliedScopeType is ManagementGroup"]
@@ -1870,7 +1876,7 @@ pub struct PurchaseRequestProperties {
     #[doc = "Type of the Applied Scope."]
     #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
-    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared."]
+    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared. This property will be deprecated and replaced by appliedScopeProperties instead for Single AppliedScopeType."]
     #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
     pub applied_scopes: Option<AppliedScopes>,
     #[doc = "Properties specific to applied scope type. Not required if not applicable. Required and need to provide tenantId and managementGroupId if AppliedScopeType is ManagementGroup"]
@@ -2943,7 +2949,7 @@ pub struct ReservationsProperties {
     #[doc = "Friendly name for user to easily identify the reservation"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared."]
+    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared. This property will be deprecated and replaced by appliedScopeProperties instead for Single AppliedScopeType."]
     #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
     pub applied_scopes: Option<AppliedScopes>,
     #[doc = "Type of the Applied Scope."]

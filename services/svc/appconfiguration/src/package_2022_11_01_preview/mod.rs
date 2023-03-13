@@ -219,7 +219,7 @@ impl Client {
             sync_token: None,
             after: None,
             select: Vec::new(),
-            status: None,
+            status: Vec::new(),
         }
     }
     #[doc = "Requests the headers and status of the given resource."]
@@ -260,7 +260,7 @@ impl Client {
     #[doc = "Updates the state of a key-value snapshot."]
     #[doc = ""]
     #[doc = "Arguments:"]
-    #[doc = "* `name`: The name of the key-value snapshot to delete."]
+    #[doc = "* `name`: The name of the key-value snapshot to update."]
     #[doc = "* `entity`: The parameters used to update the snapshot."]
     pub fn update_snapshot(
         &self,
@@ -689,7 +689,7 @@ pub mod get_key_values {
             self.select = select;
             self
         }
-        #[doc = "A filter used get key-values for a snapshot. Not valid when used with 'key' and 'label' filters."]
+        #[doc = "A filter used get key-values for a snapshot. The value should be the name of the snapshot. Not valid when used with 'key' and 'label' filters."]
         pub fn snapshot(mut self, snapshot: impl Into<String>) -> Self {
             self.snapshot = Some(snapshot.into());
             self
@@ -1458,7 +1458,7 @@ pub mod get_snapshots {
         pub(crate) sync_token: Option<String>,
         pub(crate) after: Option<String>,
         pub(crate) select: Vec<String>,
-        pub(crate) status: Option<String>,
+        pub(crate) status: Vec<String>,
     }
     impl RequestBuilder {
         #[doc = "A filter for the name of the returned snapshots."]
@@ -1482,8 +1482,8 @@ pub mod get_snapshots {
             self
         }
         #[doc = "Used to filter returned snapshots by their status property."]
-        pub fn status(mut self, status: impl Into<String>) -> Self {
-            self.status = Some(status.into());
+        pub fn status(mut self, status: Vec<String>) -> Self {
+            self.status = status;
             self
         }
         pub fn into_stream(self) -> azure_core::Pageable<models::SnapshotListResult, azure_core::error::Error> {
@@ -1532,9 +1532,6 @@ pub mod get_snapshots {
                             }
                             if let Some(after) = &this.after {
                                 req.url_mut().query_pairs_mut().append_pair("After", after);
-                            }
-                            if let Some(status) = &this.status {
-                                req.url_mut().query_pairs_mut().append_pair("Status", status);
                             }
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
@@ -1801,6 +1798,10 @@ pub mod create_snapshot {
         pub fn link(&self) -> azure_core::Result<&str> {
             self.0.get_str(&azure_core::headers::HeaderName::from_static("link"))
         }
+        #[doc = "The URL to track the status of the long running operation."]
+        pub fn operation_location(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("operation-location"))
+        }
     }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
@@ -1829,6 +1830,7 @@ pub mod create_snapshot {
             self.sync_token = Some(sync_token.into());
             self
         }
+        #[doc = "only the first response will be fetched as long running operations are not supported yet"]
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
         #[doc = ""]
         #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]

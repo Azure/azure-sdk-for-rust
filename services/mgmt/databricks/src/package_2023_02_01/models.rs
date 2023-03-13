@@ -8,9 +8,9 @@ use std::str::FromStr;
 pub struct AccessConnector {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "Identity for the resource."]
+    #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<IdentityData>,
+    pub identity: Option<ManagedServiceIdentity>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -111,9 +111,9 @@ pub struct AccessConnectorUpdate {
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-    #[doc = "Identity for the resource."]
+    #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<IdentityData>,
+    pub identity: Option<ManagedServiceIdentity>,
 }
 impl AccessConnectorUpdate {
     pub fn new() -> Self {
@@ -476,68 +476,6 @@ impl GroupIdInformationProperties {
         Self::default()
     }
 }
-#[doc = "Identity for the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityData {
-    #[doc = "The principal ID of resource identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The tenant ID of resource."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "The identity type."]
-    #[serde(rename = "type")]
-    pub type_: identity_data::Type,
-}
-impl IdentityData {
-    pub fn new(type_: identity_data::Type) -> Self {
-        Self {
-            principal_id: None,
-            tenant_id: None,
-            type_,
-        }
-    }
-}
-pub mod identity_data {
-    use super::*;
-    #[doc = "The identity type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        None,
-        SystemAssigned,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::None => serializer.serialize_unit_variant("Type", 0u32, "None"),
-                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 1u32, "SystemAssigned"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "The object that contains details of encryption used on the workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedDiskEncryption {
@@ -637,6 +575,76 @@ pub struct ManagedIdentityConfiguration {
 impl ManagedIdentityConfiguration {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Managed service identity (system assigned and/or user assigned identities)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedServiceIdentity {
+    #[doc = "The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
+    #[serde(rename = "type")]
+    pub type_: ManagedServiceIdentityType,
+    #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedIdentities>,
+}
+impl ManagedServiceIdentity {
+    pub fn new(type_: ManagedServiceIdentityType) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+            user_assigned_identities: None,
+        }
+    }
+}
+#[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ManagedServiceIdentityType")]
+pub enum ManagedServiceIdentityType {
+    None,
+    SystemAssigned,
+    UserAssigned,
+    #[serde(rename = "SystemAssigned,UserAssigned")]
+    SystemAssignedUserAssigned,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ManagedServiceIdentityType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ManagedServiceIdentityType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ManagedServiceIdentityType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("ManagedServiceIdentityType", 0u32, "None"),
+            Self::SystemAssigned => serializer.serialize_unit_variant("ManagedServiceIdentityType", 1u32, "SystemAssigned"),
+            Self::UserAssigned => serializer.serialize_unit_variant("ManagedServiceIdentityType", 2u32, "UserAssigned"),
+            Self::SystemAssignedUserAssigned => {
+                serializer.serialize_unit_variant("ManagedServiceIdentityType", 3u32, "SystemAssigned,UserAssigned")
+            }
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "REST API operation"]
@@ -1095,6 +1103,29 @@ impl TrackedResource {
             tags: None,
             location,
         }
+    }
+}
+#[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentities {}
+impl UserAssignedIdentities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "User assigned identity properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentity {
+    #[doc = "The principal ID of the assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The client ID of the assigned identity."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Peerings in a VirtualNetwork resource"]

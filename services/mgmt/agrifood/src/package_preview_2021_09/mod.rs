@@ -115,6 +115,9 @@ impl Client {
     pub fn locations_client(&self) -> locations::Client {
         locations::Client(self.clone())
     }
+    pub fn operation_results_client(&self) -> operation_results::Client {
+        operation_results::Client(self.clone())
+    }
     pub fn operations_client(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -1035,28 +1038,6 @@ pub mod farm_beats_models {
                 skip_token: None,
             }
         }
-        #[doc = "Get operationResults for a FarmBeats resource."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `farm_beats_resource_name`: FarmBeats resource name."]
-        #[doc = "* `operation_results_id`: The operation results id."]
-        pub fn get_operation_result(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            farm_beats_resource_name: impl Into<String>,
-            operation_results_id: impl Into<String>,
-        ) -> get_operation_result::RequestBuilder {
-            get_operation_result::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                farm_beats_resource_name: farm_beats_resource_name.into(),
-                operation_results_id: operation_results_id.into(),
-            }
-        }
     }
     pub mod get {
         use super::models;
@@ -1665,7 +1646,32 @@ pub mod farm_beats_models {
             }
         }
     }
-    pub mod get_operation_result {
+}
+pub mod operation_results {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Get operationResults for a FarmBeats resource."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription. The value must be an UUID."]
+        #[doc = "* `locations`: Location."]
+        #[doc = "* `operation_results_id`: operation Results Id."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            locations: impl Into<String>,
+            operation_results_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                locations: locations.into(),
+                operation_results_id: operation_results_id.into(),
+            }
+        }
+    }
+    pub mod get {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1709,8 +1715,7 @@ pub mod farm_beats_models {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) farm_beats_resource_name: String,
+            pub(crate) locations: String,
             pub(crate) operation_results_id: String,
         }
         impl RequestBuilder {
@@ -1723,11 +1728,10 @@ pub mod farm_beats_models {
                     let this = self.clone();
                     async move {
                         let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.AgFoodPlatform/farmBeats/{}/operationResults/{}",
+                            "{}/subscriptions/{}/providers/Microsoft.AgFoodPlatform/locations/{}/operationResults/{}",
                             this.client.endpoint(),
                             &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.farm_beats_resource_name,
+                            &this.locations,
                             &this.operation_results_id
                         ))?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);

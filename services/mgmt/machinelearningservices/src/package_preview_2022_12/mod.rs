@@ -17800,7 +17800,7 @@ pub mod online_deployments {
                 deployment_name: deployment_name.into(),
             }
         }
-        #[doc = "Polls an Endpoint operation."]
+        #[doc = "Retrieve online deployment logs."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]

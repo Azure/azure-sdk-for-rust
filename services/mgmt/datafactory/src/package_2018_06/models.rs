@@ -1446,10 +1446,11 @@ impl AzureBlobFsLinkedService {
     }
 }
 #[doc = "Azure Data Lake Storage Gen2 linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBlobFsLinkedServiceTypeProperties {
     #[doc = "Endpoint for the Azure Data Lake Storage Gen2 service. Type: string (or Expression with resultType string)."]
-    pub url: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<serde_json::Value>,
     #[doc = "Account key for the Azure Data Lake Storage Gen2 service. Type: string (or Expression with resultType string)."]
     #[serde(rename = "accountKey", default, skip_serializing_if = "Option::is_none")]
     pub account_key: Option<serde_json::Value>,
@@ -1477,21 +1478,16 @@ pub struct AzureBlobFsLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_credential: Option<SecretBase>,
+    #[doc = "SAS URI of the Azure Data Lake Storage Gen2 service. Type: string, SecureString or AzureKeyVaultSecretReference."]
+    #[serde(rename = "sasUri", default, skip_serializing_if = "Option::is_none")]
+    pub sas_uri: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "sasToken", default, skip_serializing_if = "Option::is_none")]
+    pub sas_token: Option<SecretBase>,
 }
 impl AzureBlobFsLinkedServiceTypeProperties {
-    pub fn new(url: serde_json::Value) -> Self {
-        Self {
-            url,
-            account_key: None,
-            service_principal_id: None,
-            service_principal_key: None,
-            tenant: None,
-            azure_cloud_type: None,
-            encrypted_credential: None,
-            credential: None,
-            service_principal_credential_type: None,
-            service_principal_credential: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The location of azure blobFS dataset."]
