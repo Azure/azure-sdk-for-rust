@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use super::{
     app_context::{AppContext, ContextHolder},
-    feature::Feature,
+    feature_type::Feature,
     models::{ClientFilter, Group},
 };
 
@@ -15,7 +15,6 @@ pub trait FeatureFilter {
 
 #[derive(Debug, Clone)]
 pub struct FeatureContext {
-    name: String,
     enabled: bool,
     users: Vec<String>,
     groups: Vec<Group>,
@@ -26,9 +25,8 @@ pub struct FeatureContext {
 }
 
 impl FeatureContext {
-    pub fn new(id: String, enabled: bool, params: &ClientFilter) -> FeatureContext {
+    pub fn new(enabled: bool, params: &ClientFilter) -> FeatureContext {
         FeatureContext {
-            name: id,
             enabled,
             users: params.get_users(),
             groups: params.get_groups(),

@@ -3,40 +3,40 @@ use futures::executor::block_on;
 use std::{collections::HashMap, sync::Arc};
 
 use self::{
-    app_context::ContextHolder, feature::Feature, feature_filter::FeatureFilter,
-    feature_holder::FeatureHolder,
+    app_context::ContextHolder, feature_filter::FeatureFilter, feature_holder::FeatureHolder,
+    feature_type::Feature,
 };
 
 pub mod app_context;
-mod feature;
 mod feature_filter;
 mod feature_holder;
+mod feature_type;
 mod models;
 
 pub const FEATURE_PREFIX: &str = ".appconfig.featureflag/";
 
 #[derive(Clone)]
-pub struct FeatureManager {
+pub struct FeatureExplorer {
     holder: Arc<FeatureHolder>,
     context: Option<Arc<dyn ContextHolder>>,
     on_off: HashMap<String, Vec<Feature>>,
     client: azure_svc_appconfiguration::Client,
 }
 
-impl std::fmt::Debug for FeatureManager {
+impl std::fmt::Debug for FeatureExplorer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FeatureHolder")
+        f.debug_struct("FeatureExplorer")
             .field("features", &self.holder.get_features())
             .field("on_off", &self.on_off)
             .finish()
     }
 }
 
-impl FeatureManager {
+impl FeatureExplorer {
     pub fn new(
         token_credential: Arc<dyn TokenCredential>,
         context: Option<Arc<dyn ContextHolder>>,
-    ) -> FeatureManager {
+    ) -> Self {
         let on_off: HashMap<String, Vec<Feature>> = if std::env::var("FEATURE_ON_OFF").is_ok() {
             // todo read from file? onOff features
             HashMap::new()
@@ -54,7 +54,7 @@ impl FeatureManager {
             .scopes(scopes)
             .build();
 
-        FeatureManager {
+        Self {
             holder: Arc::new(FeatureHolder::new(client.clone())),
             context,
             on_off,
@@ -106,12 +106,12 @@ impl FeatureManager {
                     }
                 }
                 Err(err) => {
-                    println!("*ERROR :  {:?}", err);
+                    log::debug!("*ERROR :  {:?}", err);
                     vec![Feature::OnOff(false)]
                 }
             },
             Err(err) => {
-                println!("*ERROR :  {:?}", err);
+                log::debug!("*ERROR :  {:?}", err);
                 vec![Feature::OnOff(false)]
             }
         }

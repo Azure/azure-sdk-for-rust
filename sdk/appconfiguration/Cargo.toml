@@ -21,6 +21,7 @@ time = "0.3"
 const_format = "0.2.13"
 serde_json = "1.0"
 url = "2.2"
+log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 azure_core = { path = "../core", version = "0.10.0", default-features = false }
 azure_svc_appconfiguration = { path = "../../services/svc/appconfiguration", version = "0.10.0", features = ["default"] }

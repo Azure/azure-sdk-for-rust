@@ -12,10 +12,6 @@ impl FeaturesFilter {
         self.conditions.client_filters.as_slice()
     }
 
-    pub fn get_id(&self) -> &str {
-        &self.id
-    }
-
     pub fn is_enabled(&self) -> bool {
         self.enabled
     }

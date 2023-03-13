@@ -8,5 +8,8 @@
 extern crate azure_core;
 
 pub(crate) mod auto_refresh;
+
+pub mod configuration;
 pub mod feature_manager;
+
 pub mod prelude;

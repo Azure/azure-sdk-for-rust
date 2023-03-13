@@ -23,23 +23,11 @@ impl Feature {
             .iter()
             .map(|it| {
                 if FEATURE_TARGETING.eq(it.get_name()) {
-                    Feature::Targeting(FeatureContext::new(
-                        filter.get_id().to_string(),
-                        filter.is_enabled(),
-                        it,
-                    ))
+                    Feature::Targeting(FeatureContext::new(filter.is_enabled(), it))
                 } else if FEATURE_PERCENTAGE.eq(it.get_name()) {
-                    Feature::Percentage(FeatureContext::new(
-                        filter.get_id().to_string(),
-                        filter.is_enabled(),
-                        it,
-                    ))
+                    Feature::Percentage(FeatureContext::new(filter.is_enabled(), it))
                 } else if FEATURE_TIME_WINDOW.eq(it.get_name()) {
-                    Feature::TimeWindow(FeatureContext::new(
-                        filter.get_id().to_string(),
-                        filter.is_enabled(),
-                        it,
-                    ))
+                    Feature::TimeWindow(FeatureContext::new(filter.is_enabled(), it))
                 } else {
                     Feature::OnOff(filter.is_enabled())
                 }

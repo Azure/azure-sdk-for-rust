@@ -4,7 +4,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::auto_refresh::{AutoRefreshing, ExpiresValue};
 
-use super::{feature::Feature, models::FeaturesFilter, FEATURE_PREFIX};
+use super::{feature_type::Feature, models::FeaturesFilter, FEATURE_PREFIX};
 
 const CONTENT_TYPE: &str = "application/vnd.microsoft.appconfig.ff+json;charset=utf-8";
 
@@ -51,7 +51,7 @@ impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
                     features_tmp.extend(items);
                 }
                 Err(err) => {
-                    println!("*ERROR :  {:?}", err)
+                    log::debug!("*ERROR :  {:?}", err)
                 }
             }
         }
