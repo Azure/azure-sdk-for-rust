@@ -28,7 +28,7 @@ azure_identity = { path = "../identity", version="0.10", default_features = fals
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-mockito = "0.32.2"
+mockito = "1.0.0"
 async-trait = "0.1"
 
 [features]
