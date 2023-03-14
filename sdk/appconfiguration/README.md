@@ -12,6 +12,6 @@ information on the project, and an overview of other crates, please refer to
 
 
 # Examples
-`cargo run --package appconfiguration --example example_name`
+`cargo run --package appconfiguration --example targeting_feature_manager --features "default, feature_manager"`
 
 License: MIT
