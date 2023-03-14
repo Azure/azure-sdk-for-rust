@@ -5,3 +5,7 @@ pub(crate) mod amqp_constants;
 pub(crate) mod amqp_property;
 pub(crate) mod amqp_response;
 pub(crate) mod amqp_response_status_code;
+pub(crate) mod amqp_message_extension;
+pub(crate) mod amqp_message_constants;
+pub(crate) mod error;
+pub(crate) mod amqp_system_properties;

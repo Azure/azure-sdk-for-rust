@@ -1,4 +1,4 @@
-use crate::event_data::EventData;
+use crate::event::Event;
 
 use super::PartitionContext;
 
@@ -9,12 +9,12 @@ pub struct PartitionEvent {
     pub(crate) partition_context: PartitionContext,
 
     /// An event that was read from the associated <see cref="PartitionEvent.Partition" />.
-    pub(crate) data: EventData,
+    pub(crate) data: Event
 }
 
 impl PartitionEvent {
     /// Initializes a new instance of the <see cref="PartitionEvent"/> structure.
-    pub fn new(partition_context: PartitionContext, data: EventData) -> Self {
+    pub fn new(partition_context: PartitionContext, data: Event) -> Self {
         Self {
             partition_context,
             data,
@@ -27,7 +27,7 @@ impl PartitionEvent {
     }
 
     /// An event that was read from the associated <see cref="PartitionEvent.Partition" />.
-    pub fn data(&self) -> &EventData {
+    pub fn data(&self) -> &Event {
         &self.data
     }
 }

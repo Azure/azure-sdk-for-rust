@@ -1,6 +1,6 @@
 use tokio::sync::watch;
 
-use crate::event_data::EventData;
+use crate::event::Event;
 
 use super::LastEnqueuedEventProperties;
 
@@ -9,7 +9,7 @@ use super::LastEnqueuedEventProperties;
 ///
 /// TODO: this seems like only associated with a processor. Implement this later.
 ///
-/// There was only one use of source consumer which is to obtain the `LastReceivedEvent`, which is an `EventData`. This
+/// There was only one use of source consumer which is to obtain the `LastReceivedEvent`, which is an `Event`. This
 /// can be achieved by using a `tokio::sync::watch` channel.
 #[derive(Debug)]
 pub struct PartitionContext {
@@ -17,7 +17,7 @@ pub struct PartitionContext {
     pub(crate) event_hub_name: String,
     pub(crate) consumer_group: String,
     pub(crate) partition_id: String,
-    pub(crate) watch_last_received_event: watch::Receiver<Option<EventData>>,
+    pub(crate) watch_last_received_event: watch::Receiver<Option<Event>>,
 }
 
 impl PartitionContext {
