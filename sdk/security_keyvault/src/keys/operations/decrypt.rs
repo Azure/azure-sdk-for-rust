@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{base64, headers::Headers, CollectedResponse, Method};
 use serde_json::{Map, Value};
 
 operation! {

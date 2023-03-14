@@ -1,5 +1,6 @@
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
+use azure_core::base64;
 use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
 use azure_core::{date, Context, Policy, PolicyResult, Request};
 use hmac::{Hmac, Mac};

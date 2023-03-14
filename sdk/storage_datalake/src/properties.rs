@@ -1,6 +1,8 @@
-use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::headers::Headers;
-use azure_core::headers::{self, Header, PROPERTIES};
+use azure_core::{
+    base64,
+    error::{Error, ErrorKind},
+    headers::{self, Header, Headers, PROPERTIES},
+};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -104,10 +106,8 @@ impl TryFrom<&str> for Properties {
             .collect::<crate::Result<Vec<(&str, &str)>>>()? // if we have an error, return error
             .into_iter()
             .map(|(key, value)| {
-                let value = std::str::from_utf8(
-                    &base64::decode(value).map_kind(ErrorKind::DataConversion)?,
-                )?
-                .to_owned(); // the value is base64 encoded se we decode it
+                // the value is base64 encoded se we decode it
+                let value = String::from_utf8(base64::decode(value)?)?;
                 Ok((key, value))
             })
             .collect::<crate::Result<Vec<(&str, String)>>>()? // if we have an error, return error

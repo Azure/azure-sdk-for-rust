@@ -9,10 +9,9 @@ use azure_identity::{
 };
 use azure_security_keyvault::KeyvaultClient;
 use oauth2::ClientId;
-use url::Url;
-
 use std::env;
 use std::error::Error;
+use url::Url;
 
 async fn get_certficate(
     vault_name: &str,
@@ -25,7 +24,7 @@ async fn get_certficate(
     )?
     .secret_client();
     let secret = client.get(certificate_name).await?;
-    let cert = base64::decode(secret.value)?;
+    let cert = BASE64_STANDARD.decode(secret.value)?;
     Ok(cert)
 }
 
@@ -50,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let creds = ClientCertificateCredential::new(
         tenant_id.to_string(),
         client_id.to_string(),
-        base64::encode(cert),
+        BASE64_STANDARD.encode(cert),
         "".to_string(),
         options,
     );
