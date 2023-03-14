@@ -22,9 +22,6 @@ use url::{form_urlencoded, Url};
 /// Refresh time to use in seconds
 const DEFAULT_REFRESH_TIME: i64 = 300;
 
-/// Base64 encoder for url safe encoding
-const BASE64_URL_SAFE: Config = Config::new(CharacterSet::UrlSafe, false);
-
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
 #[derive(Clone, Debug, PartialEq)]
@@ -123,7 +120,7 @@ impl ClientCertificateCredential {
     }
 
     fn as_jwt_part(part: &[u8]) -> String {
-        base64::encode_config(part, BASE64_URL_SAFE)
+        base64::encode_url_safe(part)
     }
 }
 
@@ -139,7 +136,7 @@ struct AadTokenResponse {
 fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
     Ok(format!(
         "\"{}\"",
-        BASE64_STANDARD.encode(cert.to_pem().map_err(openssl_error)?)
+        base64::encode(cert.to_pem().map_err(openssl_error)?)
     ))
 }
 
@@ -158,8 +155,7 @@ impl TokenCredential for ClientCertificateCredential {
             self.tenant_id
         );
 
-        let certificate = BASE64_STANDARD
-            .decode(&self.client_certificate)
+        let certificate = base64::decode(&self.client_certificate)
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
         let certificate = Pkcs12::from_der(&certificate)
             .map_err(openssl_error)?
@@ -172,7 +168,7 @@ impl TokenCredential for ClientCertificateCredential {
         let uuid = uuid::Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
-        let x5t = BASE64_STANDARD.encode(&thumbprint);
+        let x5t = base64::encode(&thumbprint);
 
         let header = match options.send_certificate_chain {
             true => {

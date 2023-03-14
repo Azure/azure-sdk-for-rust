@@ -72,7 +72,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let token = match permission_type {
             "master" => AuthorizationToken::Primary(
                 base64::decode(signature)
-                    .map_err(|e| PermissionTokenParseError::InvalidBase64Encoding(e))?,
+                    .map_err(PermissionTokenParseError::InvalidBase64Encoding)?,
             ),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
