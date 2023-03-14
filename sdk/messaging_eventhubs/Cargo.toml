@@ -17,5 +17,5 @@ azure_core = { path = "../core" }
 
 # AMQP dependencies
 fe2o3-amqp = "0.8"
-fe2o3-amqp-types = "0.7"
+fe2o3-amqp-types = "0.7.1"
 serde_amqp = { version = "0.5.8", features = ["derive", "time"] }

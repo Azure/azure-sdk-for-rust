@@ -19,7 +19,7 @@ use super::{
     amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
     error::{
         MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError, SetPartitionKeyError,
-    },
+    }, amqp_property,
 };
 
 pub(crate) trait AmqpMessageExt {
@@ -45,7 +45,18 @@ pub(crate) trait AmqpMessageExt {
 
     fn reply_to(&self) -> Option<&str>;
 
-    fn scheduled_enqueue_time(&self) -> OffsetDateTime;
+    /// Retrieves the time that an event was enqueued in the partition
+    fn enqueued_time(&self) -> Option<OffsetDateTime>;
+
+    fn offset(&self) -> Option<i64>;
+
+    fn last_partition_sequence_number(&self) -> Option<i64>;
+
+    fn last_partition_offset(&self) -> Option<i64>;
+
+    fn last_partition_enqueued_time(&self) -> Option<OffsetDateTime>;
+
+    fn last_partition_properties_retrieval_time(&self) -> Option<OffsetDateTime>;
 }
 
 pub(crate) trait AmqpMessageMutExt {
@@ -105,7 +116,7 @@ impl<B> AmqpMessageExt for Message<B> {
     fn partition_key(&self) -> Option<&str> {
         self.message_annotations
             .as_ref()?
-            .get(&amqp_message_constants::PARTITION_KEY_NAME as &dyn AnnotationKey)
+            .get(&amqp_property::PARTITION_KEY as &dyn AnnotationKey)
             .map(|value| match value {
                 Value::String(s) => s.as_str(),
                 _ => unreachable!("Expecting a String"),
@@ -178,23 +189,84 @@ impl<B> AmqpMessageExt for Message<B> {
         self.properties.as_ref()?.reply_to.as_deref()
     }
 
-    /// The default `DateTimeOffset` value from dotnet is taken as the default value
-    /// if the scheduled_enqueue_time is `None`
+    /// # Panic
+    ///
+    /// This method panics if the enqueued time is not a `Timestamp` value
     #[inline]
-    fn scheduled_enqueue_time(&self) -> OffsetDateTime {
+    fn enqueued_time(&self) -> Option<OffsetDateTime> {
         self.message_annotations
             .as_ref()
-            .and_then(|m| m.get(&SCHEDULED_ENQUEUE_TIME_UTC_NAME as &dyn AnnotationKey))
+            .and_then(|m| m.get(&amqp_property::ENQUEUED_TIME as &dyn AnnotationKey))
             .map(|value| match value {
                 Value::Timestamp(timestamp) => {
-                    // let millis = timestamp.milliseconds();
-                    // let duration = TimeSpan::milliseconds(millis);
                     let timespan = TimeSpan::from(timestamp.clone());
                     OffsetDateTime::UNIX_EPOCH + timespan
                 }
                 _ => unreachable!("Expecting a Timestamp"),
             })
-            .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
+    }
+
+    /// # Panic
+    ///
+    /// This method panics if the offset is not a `Long` value (ie. i64)
+    #[inline]
+    fn offset(&self) -> Option<i64> {
+        self.message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&amqp_property::OFFSET as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => *val,
+                _ => unreachable!("Expecting a Long"),
+            })
+    }
+
+    #[inline]
+    fn last_partition_sequence_number(&self) -> Option<i64> {
+        self.message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&amqp_property::PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => *val,
+                _ => unreachable!("Expecting a Long"),
+            })
+    }
+    #[inline]
+    fn last_partition_offset(&self) -> Option<i64> {
+        self.message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&amqp_property::PARTITION_LAST_ENQUEUED_OFFSET as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => *val,
+                _ => unreachable!("Expecting a Long"),
+            })
+    }
+
+    #[inline]
+    fn last_partition_enqueued_time(&self) -> Option<OffsetDateTime> {
+        self.message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&amqp_property::PARTITION_LAST_ENQUEUED_TIME_UTC as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Timestamp(timestamp) => {
+                    let timespan = TimeSpan::from(timestamp.clone());
+                    OffsetDateTime::UNIX_EPOCH + timespan
+                }
+                _ => unreachable!("Expecting a Timestamp"),
+            })
+    }
+
+    #[inline]
+    fn last_partition_properties_retrieval_time(&self) -> Option<OffsetDateTime> {
+        self.message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&amqp_property::LAST_PARTITION_PROPERTIES_RETRIEVAL_TIME_UTC as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Timestamp(timestamp) => {
+                    let timespan = TimeSpan::from(timestamp.clone());
+                    OffsetDateTime::UNIX_EPOCH + timespan
+                }
+                _ => unreachable!("Expecting a Timestamp"),
+            })
     }
 }
 

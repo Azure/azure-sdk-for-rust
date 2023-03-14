@@ -2,6 +2,8 @@ use std::borrow::Cow;
 
 use fe2o3_amqp_types::messaging::{Properties, MessageAnnotations, Message};
 
+/// The system properties of an AMQP message
+#[derive(Debug)]
 pub struct AmqpSystemProperties<'a> {
     pub(crate) amqp_properties: Option<Cow<'a, Properties>>,
     pub(crate) amqp_message_annotations: Option<Cow<'a, MessageAnnotations>>,

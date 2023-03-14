@@ -27,6 +27,7 @@ pub mod prelude {
 
     pub use crate::partition_properties::*;
     pub use crate::event::*;
+    pub use crate::amqp::amqp_system_properties::AmqpSystemProperties;
 }
 
 pub use prelude::*;
