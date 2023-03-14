@@ -1,12 +1,10 @@
 use super::authority_hosts;
 use azure_core::{
     auth::{AccessToken, TokenCredential, TokenResponse},
-    content_type,
+    base64, content_type,
     error::{Error, ErrorKind},
     headers, new_http_client, HttpClient, Method, Request,
 };
-use base64::{prelude::BASE64_STANDARD, Engine};
-use base64::{CharacterSet, Config};
 use openssl::{
     error::ErrorStack,
     hash::{hash, DigestBytes, MessageDigest},

@@ -254,8 +254,20 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl From<base64::DecodeError> for Error {
+    fn from(error: base64::DecodeError) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
+impl From<std::string::FromUtf8Error> for Error {
+    fn from(error: std::string::FromUtf8Error) -> Self {
         Self::new(ErrorKind::DataConversion, error)
     }
 }

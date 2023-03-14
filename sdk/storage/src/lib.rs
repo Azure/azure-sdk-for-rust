@@ -59,8 +59,10 @@ pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub use consistency::{ConsistencyCRC64, ConsistencyMD5};
 
 mod consistency {
-    use azure_core::error::{Error, ErrorKind, ResultExt};
-    use base64::{prelude::BASE64_STANDARD, Engine};
+    use azure_core::{
+        base64,
+        error::{Error, ErrorKind},
+    };
     use bytes::Bytes;
     use serde::{Deserialize, Deserializer};
     use std::{convert::TryInto, str::FromStr};
@@ -73,10 +75,7 @@ mod consistency {
     impl ConsistencyCRC64 {
         /// Decodes from base64 encoded input
         pub fn decode(input: impl AsRef<[u8]>) -> azure_core::Result<Self> {
-            let bytes = BASE64_STANDARD.decode(input).context(
-                ErrorKind::DataConversion,
-                "ConsistencyCRC64 failed base64 decode",
-            )?;
+            let bytes = base64::decode(input)?;
             let bytes = Bytes::from(bytes);
             match bytes.len() {
                 CRC64_BYTE_LENGTH => Ok(Self(bytes)),
@@ -128,9 +127,7 @@ mod consistency {
     impl ConsistencyMD5 {
         /// Decodes from base64 encoded input
         pub fn decode(input: impl AsRef<[u8]>) -> azure_core::Result<Self> {
-            let bytes = BASE64_STANDARD
-                .decode(input)
-                .context(ErrorKind::DataConversion, "ConsistencyMD5 failed decode")?;
+            let bytes = base64::decode(input)?;
             let bytes = Bytes::from(bytes);
             match bytes.len() {
                 MD5_BYTE_LENGTH => Ok(Self(bytes)),
@@ -182,7 +179,7 @@ mod consistency {
 
         #[test]
         fn should_deserialize_consistency_crc64() {
-            let input = BASE64_STANDARD.encode([1, 2, 4, 8, 16, 32, 64, 128]);
+            let input = base64::encode([1, 2, 4, 8, 16, 32, 64, 128]);
             let deserializer: StringDeserializer<Error> = input.into_deserializer();
             let content_crc64 = ConsistencyCRC64::deserialize(deserializer).unwrap();
             assert_eq!(
@@ -193,8 +190,7 @@ mod consistency {
 
         #[test]
         fn should_deserialize_consistency_md5() {
-            let input =
-                BASE64_STANDARD.encode([1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
+            let input = base64::encode([1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128]);
             let deserializer: StringDeserializer<Error> = input.into_deserializer();
             let content_md5 = ConsistencyMD5::deserialize(deserializer).unwrap();
             assert_eq!(

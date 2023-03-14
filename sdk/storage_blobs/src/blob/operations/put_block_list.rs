@@ -1,7 +1,6 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{base64, headers::*, prelude::*, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
-use base64::{prelude::BASE64_STANDARD, Engine};
 use bytes::Bytes;
 use time::OffsetDateTime;
 
@@ -34,7 +33,7 @@ impl PutBlockListBuilder {
             // if needed, but i think it's best to calculate it.
             let md5 = {
                 let hash = md5::compute(&body_bytes);
-                BASE64_STANDARD.encode(hash.0)
+                base64::encode(hash.0)
             };
 
             let mut headers = Headers::new();

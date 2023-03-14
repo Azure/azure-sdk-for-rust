@@ -1,6 +1,8 @@
-use azure_core::headers::{self, Header};
+use azure_core::{
+    base64,
+    headers::{self, Header},
+};
 use azure_storage::ConsistencyMD5;
-use base64::{prelude::BASE64_STANDARD, Engine};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct BlobContentMD5([u8; 16]);
@@ -23,6 +25,6 @@ impl Header for BlobContentMD5 {
     }
 
     fn value(&self) -> headers::HeaderValue {
-        BASE64_STANDARD.encode(self.0).into()
+        base64::encode(self.0).into()
     }
 }

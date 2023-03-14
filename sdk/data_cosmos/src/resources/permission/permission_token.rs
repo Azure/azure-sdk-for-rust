@@ -1,5 +1,5 @@
 use super::AuthorizationToken;
-use base64::{prelude::BASE64_STANDARD, Engine};
+use azure_core::base64;
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -29,7 +29,7 @@ impl std::fmt::Display for PermissionToken {
         use std::borrow::Cow;
         let (permission_type, signature) = match &self.token {
             AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
-            AuthorizationToken::Primary(s) => ("master", Cow::Owned(BASE64_STANDARD.encode(s))),
+            AuthorizationToken::Primary(s) => ("master", Cow::Owned(base64::encode(s))),
         };
         write!(
             f,
@@ -70,7 +70,10 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let permission_type = try_get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
         let signature = try_get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
-            "master" => AuthorizationToken::Primary(BASE64_STANDARD.decode(signature)?),
+            "master" => AuthorizationToken::Primary(
+                base64::decode(signature)
+                    .map_err(|e| PermissionTokenParseError::InvalidBase64Encoding(e))?,
+            ),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
                 return Err(PermissionTokenParseError::UnrecognizedPermissionType {
@@ -155,7 +158,7 @@ pub enum PermissionTokenParseError {
     )]
     UnrecognizedPermissionType { provided_type: String },
     #[error("the authorization token was not properly base64 encoded: {0}")]
-    InvalidBase64Encoding(#[from] base64::DecodeError),
+    InvalidBase64Encoding(#[source] azure_core::error::Error),
 }
 
 #[cfg(test)]

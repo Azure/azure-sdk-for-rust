@@ -1,6 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
-use base64::{prelude::BASE64_STANDARD, Engine};
+use azure_core::{base64, headers::Headers, CollectedResponse, Method};
 use serde_json::{Map, Value};
 
 operation! {
@@ -24,7 +23,7 @@ impl DecryptBuilder {
             let mut request_body = Map::new();
             request_body.insert(
                 "value".to_owned(),
-                Value::String(BASE64_STANDARD.encode(self.decrypt_parameters.ciphertext)),
+                Value::String(base64::encode(self.decrypt_parameters.ciphertext)),
             );
 
             let algorithm = match self.decrypt_parameters.decrypt_parameters_encryption {

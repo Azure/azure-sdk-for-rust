@@ -8,7 +8,6 @@ use azure_identity::{
     CertificateCredentialOptions, ClientCertificateCredential, DefaultAzureCredential,
 };
 use azure_security_keyvault::KeyvaultClient;
-use base64::{prelude::BASE64_STANDARD, Engine};
 use oauth2::ClientId;
 use std::env;
 use std::error::Error;

@@ -1,7 +1,8 @@
-use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::headers::Headers;
-use azure_core::headers::{self, Header, PROPERTIES};
-use base64::{prelude::BASE64_STANDARD, Engine};
+use azure_core::{
+    base64,
+    error::{Error, ErrorKind},
+    headers::{self, Header, Headers, PROPERTIES},
+};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -50,7 +51,7 @@ impl Header for Properties {
         // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
         self.0
             .iter()
-            .map(|(k, v)| format!("{}={}", k.as_ref(), BASE64_STANDARD.encode(v.as_ref())))
+            .map(|(k, v)| format!("{}={}", k.as_ref(), base64::encode(v.as_ref())))
             .collect::<Vec<_>>()
             .join(",")
             .into()
@@ -105,12 +106,8 @@ impl TryFrom<&str> for Properties {
             .collect::<crate::Result<Vec<(&str, &str)>>>()? // if we have an error, return error
             .into_iter()
             .map(|(key, value)| {
-                let value = std::str::from_utf8(
-                    &BASE64_STANDARD
-                        .decode(value)
-                        .map_kind(ErrorKind::DataConversion)?,
-                )?
-                .to_owned(); // the value is base64 encoded se we decode it
+                // the value is base64 encoded se we decode it
+                let value = String::from_utf8(base64::decode(value)?)?;
                 Ok((key, value))
             })
             .collect::<crate::Result<Vec<(&str, String)>>>()? // if we have an error, return error

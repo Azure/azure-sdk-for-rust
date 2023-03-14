@@ -1,9 +1,9 @@
 use crate::blob::{BlobBlockType, BlobBlockWithSize};
 use azure_core::{
+    base64,
     error::{ErrorKind, ResultExt},
     xml::read_xml_str,
 };
-use base64::{prelude::BASE64_STANDARD, Engine};
 
 #[derive(Debug, Deserialize)]
 struct Name {
@@ -54,10 +54,7 @@ impl BlockWithSizeList {
             for b_val in committed.block {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Committed(
-                        BASE64_STANDARD
-                            .decode(&b_val.name.value)
-                            .map_kind(ErrorKind::DataConversion)?
-                            .into(),
+                        base64::decode(&b_val.name.value)?.into(),
                     ),
                     size_in_bytes: b_val.size.value,
                 });
@@ -68,10 +65,7 @@ impl BlockWithSizeList {
             for b_val in committed.block {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Uncommitted(
-                        BASE64_STANDARD
-                            .decode(&b_val.name.value)
-                            .map_kind(ErrorKind::DataConversion)?
-                            .into(),
+                        base64::decode(&b_val.name.value)?.into(),
                     ),
                     size_in_bytes: b_val.size.value,
                 });

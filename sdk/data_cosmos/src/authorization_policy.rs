@@ -1,8 +1,8 @@
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
+use azure_core::base64;
 use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
 use azure_core::{date, Context, Policy, PolicyResult, Request};
-use base64::{prelude::BASE64_STANDARD, Engine};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::borrow::Cow;
@@ -226,7 +226,7 @@ fn encode_str_to_sign(data: &str, key: &[u8]) -> String {
     let mut hmac = Hmac::<Sha256>::new_from_slice(key).unwrap();
     hmac.update(data.as_bytes());
     let signature = hmac.finalize().into_bytes();
-    BASE64_STANDARD.encode(signature)
+    base64::encode(signature)
 }
 
 #[cfg(test)]
