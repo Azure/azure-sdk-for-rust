@@ -31,12 +31,12 @@ async-lock = "2.5"
 
 [dev-dependencies]
 azure_identity = { path = "../identity", default-features = false }
-mockito = "0.31"
+mockito = "1.0.0"
 async-trait = "0.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["enable_reqwest", "configuration"]
+default = ["enable_reqwest", "configuration", "feature_manager"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 configuration = []

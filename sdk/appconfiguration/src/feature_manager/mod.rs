@@ -1,6 +1,6 @@
 use azure_core::auth::TokenCredential;
 use futures::executor::block_on;
-use std::{collections::HashMap, sync::Arc};
+use std::{collections::HashMap, fs::File, path::Path, sync::Arc};
 
 use self::{
     app_context::ContextHolder, feature_filter::FeatureFilter, feature_holder::FeatureHolder,
@@ -19,6 +19,7 @@ pub const FEATURE_PREFIX: &str = ".appconfig.featureflag/";
 pub struct FeatureExplorer {
     holder: Arc<FeatureHolder>,
     context: Option<Arc<dyn ContextHolder>>,
+    // use for dev perspective, to override the feature value from the remote
     on_off: HashMap<String, Vec<Feature>>,
     client: azure_svc_appconfiguration::Client,
 }
@@ -26,7 +27,10 @@ pub struct FeatureExplorer {
 impl std::fmt::Debug for FeatureExplorer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("FeatureExplorer")
-            .field("features", &self.holder.get_features())
+            .field(
+                "features",
+                &serde_json::to_string(&self.holder.get_features()).unwrap(),
+            )
             .field("on_off", &self.on_off)
             .finish()
     }
@@ -38,8 +42,16 @@ impl FeatureExplorer {
         context: Option<Arc<dyn ContextHolder>>,
     ) -> Self {
         let on_off: HashMap<String, Vec<Feature>> = if std::env::var("FEATURE_ON_OFF").is_ok() {
-            // todo read from file? onOff features
-            HashMap::new()
+            let env_path = std::env::var("FEATURE_ON_OFF").unwrap();
+            let path = Path::new(&env_path);
+            let file = File::open(path).expect("Cant open the file. Check the path");
+            match serde_json::from_reader(file) {
+                Ok(it) => it,
+                Err(err) => {
+                    println!("MAP, {:?}", err);
+                    HashMap::new()
+                }
+            }
         } else {
             HashMap::new()
         };

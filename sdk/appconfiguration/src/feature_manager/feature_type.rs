@@ -1,10 +1,12 @@
+use serde::{Deserialize, Serialize};
+
 use super::{feature_filter::FeatureContext, models::FeaturesFilter};
 
 const FEATURE_TARGETING: &str = "Microsoft.Targeting";
 const FEATURE_PERCENTAGE: &str = "Microsoft.Percentage";
 const FEATURE_TIME_WINDOW: &str = "Microsoft.TimeWindow";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Feature {
     Percentage(FeatureContext),
     Targeting(FeatureContext),

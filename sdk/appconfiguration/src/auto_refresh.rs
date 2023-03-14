@@ -39,10 +39,7 @@ where
             value: result.clone(),
             expires_on: time::OffsetDateTime::now_utc()
                 + std::time::Duration::from_secs(match std::env::var("FEATURE_EXPIRE_ON") {
-                    Ok(s) => match s.parse::<u64>() {
-                        Ok(i) => i,
-                        Err(_) => 20,
-                    },
+                    Ok(s) => s.parse::<u64>().unwrap_or(20),
                     Err(_) => 20,
                 }),
         });

@@ -14,7 +14,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let configuration_manager = ConfigurationExplorer::new(creds);
-    println!("Configuration {configuration_manager:?}");
 
     let mut value = configuration_manager.get_value(String::from("t"));
     println!("Value {value:?}");

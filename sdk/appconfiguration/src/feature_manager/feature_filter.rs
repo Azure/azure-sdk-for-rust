@@ -1,6 +1,7 @@
 use chrono::DateTime;
 use futures::executor::block_on;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use super::{
@@ -13,7 +14,7 @@ pub trait FeatureFilter {
     fn evaluate(&self, context: Option<Arc<dyn ContextHolder>>) -> bool;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeatureContext {
     enabled: bool,
     users: Vec<String>,
