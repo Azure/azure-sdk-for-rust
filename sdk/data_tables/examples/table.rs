@@ -75,12 +75,12 @@ async fn main() -> azure_core::Result<()> {
 
     let response = partition_key_client
         .transaction()
-        .delete(&entity1.surname)?
+        .delete(&entity1.surname, None)?
         .insert(&entity2)?
-        .update(&entity3.surname, &entity3)?
-        .merge(&entity4.surname, &entity4)?
-        .insert_or_replace(&entity5.surname, &entity5, IfMatchCondition::Any)?
-        .insert_or_merge(&entity6.surname, &entity6, IfMatchCondition::Any)?
+        .update(&entity3.surname, &entity3, None)?
+        .merge(&entity4.surname, &entity4, None)?
+        .insert_or_replace(&entity5.surname, &entity5)?
+        .insert_or_merge(&entity6.surname, &entity6)?
         .await?;
 
     // check all the events in the transaction completed successfully.
@@ -101,15 +101,15 @@ async fn main() -> azure_core::Result<()> {
     // update the name passing the Etag received from the previous call.
     entity.name = "Ryan".to_owned();
     let response = entity_client.update(&entity, response.etag.into())?.await?;
-    println!("update with etag: response = {:?}\n", response);
+    println!("update with etag: response = {response:?}\n");
 
     let response = entity_client.delete().await?;
-    println!("delete entity response = {:?}\n", response);
+    println!("delete entity response = {response:?}\n");
 
     // now we perform an upsert
     entity.name = "Carl".to_owned();
     let response = entity_client.insert_or_replace(&entity)?.await?;
-    println!("insert_or_replace response = {:?}\n", response);
+    println!("insert_or_replace response = {response:?}\n");
 
     let mut stream = table_service.list().into_stream();
     while let Some(response) = stream.next().await {
@@ -132,7 +132,7 @@ async fn main() -> azure_core::Result<()> {
     while let Some(response) = stream.next().await {
         let response = response?;
         for entity in response.entities {
-            println!("{:?}", entity);
+            println!("{entity:?}");
         }
     }
 

@@ -25,7 +25,7 @@ async fn main() -> azure_core::Result<()> {
         .collection_client(args.collection_name);
 
     let resp = client.get_partition_key_ranges().await?;
-    println!("resp == {:#?}", resp);
+    println!("resp == {resp:#?}");
 
     Ok(())
 }

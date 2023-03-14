@@ -141,7 +141,7 @@ impl TokenCredential for ClientSecretCredential {
         let oauth_http_client = Oauth2HttpClient::new(self.http_client.clone());
         let token_result = client
             .exchange_client_credentials()
-            .add_scope(Scope::new(format!("{}/.default", resource)))
+            .add_scope(Scope::new(format!("{resource}/.default")))
             .request_async(|request| oauth_http_client.request(request))
             .await
             .map(|r| {

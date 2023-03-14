@@ -556,12 +556,6 @@ pub struct KeyValueListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for KeyValueListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
-    }
-}
 impl KeyValueListResult {
     pub fn new() -> Self {
         Self::default()

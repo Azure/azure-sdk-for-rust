@@ -48,7 +48,7 @@ fn check(plane: &str, readmes: &[SpecReadme]) -> Result<()> {
     }
     println!("{} {} services:", plane, services.len());
     for service in services {
-        println!("  {}", service);
+        println!("  {service}");
     }
     Ok(())
 }

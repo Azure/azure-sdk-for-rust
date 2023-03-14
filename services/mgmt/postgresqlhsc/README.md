@@ -6,8 +6,9 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/postgresql
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2020-10-05-privatepreview`.
+The default tag is `package-2022-11-08`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2022-11-08` has 35 operations from 1 API versions: `2022-11-08`. Use crate feature `package-2022-11-08` to enable. The operations will be in the `package_2022_11_08` module.
 - `package-2020-10-05-privatepreview` has 24 operations from 1 API versions: `2020-10-05-privatepreview`. Use crate feature `package-2020-10-05-privatepreview` to enable. The operations will be in the `package_2020_10_05_privatepreview` module.

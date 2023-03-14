@@ -54,8 +54,8 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
     let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt", x));
 
     for (i, (crate_type, spec)) in svc.chain(mgmt).enumerate() {
-        let output_folder = format!("../{}", crate_type);
-        let prefix = format!("azure_{}_", crate_type);
+        let output_folder = format!("../{crate_type}");
+        let prefix = format!("azure_{crate_type}_");
 
         let run_config = RunConfig::new(&prefix);
         let package_name = gen::package_name(&spec, &run_config);
@@ -63,7 +63,7 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
             continue;
         }
 
-        println!("{} ({})", package_name, i);
+        println!("{package_name} ({i})");
         gen::gen_crate(&package_name, &spec, &run_config, &output_folder)?;
     }
 

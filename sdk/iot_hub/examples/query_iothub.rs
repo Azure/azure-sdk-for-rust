@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .expect("Set env variable IOTHUB_CONNECTION_STRING first!");
 
     let query = "SELECT * FROM devices";
-    println!("Invoking query '{}' on the IoT Hub", query);
+    println!("Invoking query '{query}' on the IoT Hub");
 
     let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
 

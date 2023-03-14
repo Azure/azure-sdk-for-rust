@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
-cd sdk
-for crate in *
-do
+set -eux -o pipefail
+cd $(dirname ${BASH_SOURCE[0]})/../../
+
+for crate in sdk/*;  do
   if [ -d "$crate" ]; then
-    cd "$crate"
-    echo Updating README.md for "$crate"
-    cargo readme > README.md
-    cd ..
+    (cd "$crate"; cargo readme > README.md)
   fi
 done
-cd ..

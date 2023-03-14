@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let job_id = std::env::args().nth(4).expect("please specify job_id");
     let task_id = std::env::args().nth(5).expect("please specify task_id");
 
-    let endpoint = format!("https://{}.{}.batch.azure.com", account_name, region);
+    let endpoint = format!("https://{account_name}.{region}.batch.azure.com");
     let scopes = &["https://batch.core.windows.net/"];
     let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_batch::Client::builder(credential)

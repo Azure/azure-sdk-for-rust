@@ -140,7 +140,8 @@ impl<'a> PackageConfig {
 pub fn read(path: &Utf8Path) -> Result<PackageConfig> {
     if path.exists() {
         let bytes = io::read_file(path)?;
-        Ok(toml::from_slice(&bytes)?)
+        let as_str = String::from_utf8_lossy(&bytes);
+        Ok(toml::from_str(&as_str)?)
     } else {
         Ok(PackageConfig::default())
     }

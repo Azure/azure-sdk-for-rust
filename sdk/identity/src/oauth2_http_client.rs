@@ -51,7 +51,7 @@ fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_co
         oauth2::http::Method::PATCH => Ok(azure_core::Method::Patch),
         oauth2::http::Method::TRACE => Ok(azure_core::Method::Trace),
         _ => Err(Error::with_message(ErrorKind::DataConversion, || {
-            format!("unsupported oauth2::http::Method {}", method)
+            format!("unsupported oauth2::http::Method {method}")
         })),
     }
 }
@@ -64,14 +64,14 @@ fn try_from_headers(
         let name = name.as_str();
         let header_name = oauth2::http::header::HeaderName::from_str(name)
             .with_context(ErrorKind::DataConversion, || {
-                format!("unable to convert http header name '{}'", name)
+                format!("unable to convert http header name '{name}'")
             })?;
         let value = value.as_str().to_owned();
         header_map.append(
             header_name,
             oauth2::http::HeaderValue::from_str(&value)
                 .with_context(ErrorKind::DataConversion, || {
-                    format!("unable to convert http header value for '{}'", name)
+                    format!("unable to convert http header value for '{name}'")
                 })?,
         );
     }

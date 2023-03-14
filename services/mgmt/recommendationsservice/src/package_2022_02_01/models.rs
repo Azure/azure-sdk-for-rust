@@ -800,10 +800,30 @@ impl OperationListResult {
 }
 #[doc = "The current status of an async operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatus {
+    #[serde(flatten)]
+    pub operation_status_result: OperationStatusResult,
+    #[doc = "Custom operation properties, populated only for a successful operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+impl OperationStatus {
+    pub fn new(operation_status_result: OperationStatusResult) -> Self {
+        Self {
+            operation_status_result,
+            properties: None,
+        }
+    }
+}
+#[doc = "The current status of an async operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusResult {
     #[doc = "Fully qualified ID for the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Fully qualified ID of the resource against which the original async operation was started."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
     #[doc = "Name of the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -833,6 +853,7 @@ impl OperationStatusResult {
     pub fn new(status: String) -> Self {
         Self {
             id: None,
+            resource_id: None,
             name: None,
             status,
             percent_complete: None,

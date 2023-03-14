@@ -76,7 +76,7 @@ async fn main() -> azure_core::Result<()> {
         Some(db) => db,
         None => client.create_database(DATABASE).await?.database,
     };
-    println!("database == {:?}", database);
+    println!("database == {database:?}");
 
     // Now we look for a specific collection. If is not already present
     // we will create it. The collection creation is more complex and
@@ -106,7 +106,7 @@ async fn main() -> azure_core::Result<()> {
         }
     };
 
-    println!("collection = {:?}", collection);
+    println!("collection = {collection:?}");
 
     // Now that we have a database and a collection we can insert
     // data in them. Let's create a Document. The only constraint
@@ -130,10 +130,7 @@ async fn main() -> azure_core::Result<()> {
     // the document attributes.
 
     let create_document_response = collection.create_document(doc.clone()).await?;
-    println!(
-        "create_document_response == {:#?}",
-        create_document_response
-    );
+    println!("create_document_response == {create_document_response:#?}");
 
     // Now we list all the documents in our collection. It
     // should show we have 1 document.
@@ -156,7 +153,7 @@ async fn main() -> azure_core::Result<()> {
         .document_client(doc.id.clone(), &doc.id)?
         .get_document::<MySampleStruct>()
         .await?;
-    println!("get_document_response == {:#?}", get_document_response);
+    println!("get_document_response == {get_document_response:#?}");
 
     // The document can be no longer there so the result is
     // an Option<Document<T>>
@@ -174,10 +171,7 @@ async fn main() -> azure_core::Result<()> {
             .replace_document(doc)
             .if_match_condition(IfMatchCondition::Match(document.etag))
             .await?;
-        println!(
-            "replace_document_response == {:#?}",
-            replace_document_response
-        );
+        println!("replace_document_response == {replace_document_response:#?}");
     }
 
     // We will perform some cleanup. First we delete the collection...

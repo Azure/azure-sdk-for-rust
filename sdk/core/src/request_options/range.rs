@@ -28,7 +28,7 @@ impl AsHeaders for Range {
     type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Self::Iter {
-        let mut headers = vec![(headers::MS_RANGE, format!("{}", self).into())];
+        let mut headers = vec![(headers::MS_RANGE, format!("{self}").into())];
         if self.len() < 1024 * 1024 * 4 {
             headers.push((
                 headers::RANGE_GET_CONTENT_CRC64,
@@ -124,7 +124,7 @@ mod test {
             end: 501,
         };
 
-        let txt = format!("{}", range);
+        let txt = format!("{range}");
 
         assert_eq!(txt, "bytes=100-500");
     }

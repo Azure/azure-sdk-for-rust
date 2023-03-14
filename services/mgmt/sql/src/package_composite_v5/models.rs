@@ -1701,6 +1701,65 @@ pub mod database_identity {
         }
     }
 }
+#[doc = "Database level key used for encryption at rest."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DatabaseKey {
+    #[doc = "The database key type. Only supported value is 'AzureKeyVault'."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<database_key::Type>,
+    #[doc = "Thumbprint of the database key."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbprint: Option<String>,
+    #[doc = "The database key creation date."]
+    #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
+    pub creation_date: Option<time::OffsetDateTime>,
+    #[doc = "Subregion of the server key."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subregion: Option<String>,
+}
+impl DatabaseKey {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod database_key {
+    use super::*;
+    #[doc = "The database key type. Only supported value is 'AzureKeyVault'."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        AzureKeyVault,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::AzureKeyVault => serializer.serialize_unit_variant("Type", 0u32, "AzureKeyVault"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "A list of databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseListResult {
@@ -1981,12 +2040,27 @@ pub struct DatabaseProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
+    #[doc = "The resource ids of the user assigned identities to use"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keys: Option<serde_json::Value>,
+    #[doc = "The azure key vault URI of the database if it's configured with per Database Customer Managed Keys."]
+    #[serde(rename = "encryptionProtector", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_protector: Option<String>,
     #[doc = "Type of enclave requested on the database i.e. Default or VBS enclaves."]
     #[serde(rename = "preferredEnclaveType", default, skip_serializing_if = "Option::is_none")]
     pub preferred_enclave_type: Option<database_properties::PreferredEnclaveType>,
     #[doc = "The resource identifier of the source associated with the create operation of this database.\r\n\r\nThis property is only supported for DataWarehouse edition and allows to restore across subscriptions.\r\n\r\nWhen sourceResourceId is specified, sourceDatabaseId, recoverableDatabaseId, restorableDroppedDatabaseId and sourceDatabaseDeletionDate must not be specified and CreateMode must be PointInTimeRestore, Restore or Recover.\r\n\r\nWhen createMode is PointInTimeRestore, sourceResourceId must be the resource ID of the existing database or existing sql pool, and restorePointInTime must be specified.\r\n\r\nWhen createMode is Restore, sourceResourceId must be the resource ID of restorable dropped database or restorable dropped sql pool.\r\n\r\nWhen createMode is Recover, sourceResourceId must be the resource ID of recoverable database or recoverable sql pool.\r\n\r\nWhen source subscription belongs to a different tenant than target subscription, “x-ms-authorization-auxiliary” header must contain authentication token for the source tenant. For more details about “x-ms-authorization-auxiliary” header see https://docs.microsoft.com/en-us/azure/azure-resource-manager/management/authenticate-multi-tenant "]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
+    #[doc = "Whether or not customer controlled manual cutover needs to be done during Update Database operation to Hyperscale tier.\r\n\r\nThis property is only applicable when scaling database from Business Critical/General Purpose/Premium/Standard tier to Hyperscale tier.\r\n\r\nWhen manualCutover is specified, the scaling operation will wait for user input to trigger cutover to Hyperscale database.\r\n\r\nTo trigger cutover, please provide 'performCutover' parameter when the Scaling operation is in Waiting state."]
+    #[serde(rename = "manualCutover", default, skip_serializing_if = "Option::is_none")]
+    pub manual_cutover: Option<bool>,
+    #[doc = "To trigger customer controlled manual cutover during the wait state while Scaling operation is in progress.\r\n\r\nThis property parameter is only applicable for scaling operations that are initiated along with 'manualCutover' parameter.\r\n\r\nThis property is only applicable when scaling database from Business Critical/General Purpose/Premium/Standard tier to Hyperscale tier is already in progress.\r\n\r\nWhen performCutover is specified, the scaling operation will trigger cutover and perform role-change to Hyperscale database."]
+    #[serde(rename = "performCutover", default, skip_serializing_if = "Option::is_none")]
+    pub perform_cutover: Option<bool>,
+    #[doc = "Specifies the availability zone the database is pinned to."]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<database_properties::AvailabilityZone>,
 }
 impl DatabaseProperties {
     pub fn new() -> Self {
@@ -2447,6 +2521,50 @@ pub mod database_properties {
             match self {
                 Self::Default => serializer.serialize_unit_variant("PreferredEnclaveType", 0u32, "Default"),
                 Self::Vbs => serializer.serialize_unit_variant("PreferredEnclaveType", 1u32, "VBS"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Specifies the availability zone the database is pinned to."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AvailabilityZone")]
+    pub enum AvailabilityZone {
+        NoPreference,
+        #[serde(rename = "1")]
+        N1,
+        #[serde(rename = "2")]
+        N2,
+        #[serde(rename = "3")]
+        N3,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AvailabilityZone {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AvailabilityZone {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AvailabilityZone {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NoPreference => serializer.serialize_unit_variant("AvailabilityZone", 0u32, "NoPreference"),
+                Self::N1 => serializer.serialize_unit_variant("AvailabilityZone", 1u32, "1"),
+                Self::N2 => serializer.serialize_unit_variant("AvailabilityZone", 2u32, "2"),
+                Self::N3 => serializer.serialize_unit_variant("AvailabilityZone", 3u32, "3"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2934,9 +3052,21 @@ pub struct DatabaseUpdateProperties {
     #[doc = "The Client id used for cross tenant per database CMK scenario"]
     #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
     pub federated_client_id: Option<String>,
+    #[doc = "The resource ids of the user assigned identities to use"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keys: Option<serde_json::Value>,
+    #[doc = "The azure key vault URI of the database if it's configured with per Database Customer Managed Keys."]
+    #[serde(rename = "encryptionProtector", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_protector: Option<String>,
     #[doc = "Type of enclave requested on the database i.e. Default or VBS enclaves."]
     #[serde(rename = "preferredEnclaveType", default, skip_serializing_if = "Option::is_none")]
     pub preferred_enclave_type: Option<database_update_properties::PreferredEnclaveType>,
+    #[doc = "Whether or not customer controlled manual cutover needs to be done during Update Database operation to Hyperscale tier.\r\n\r\nThis property is only applicable when scaling database from Business Critical/General Purpose/Premium/Standard tier to Hyperscale tier.\r\n\r\nWhen manualCutover is specified, the scaling operation will wait for user input to trigger cutover to Hyperscale database.\r\n\r\nTo trigger cutover, please provide 'performCutover' parameter when the Scaling operation is in Waiting state."]
+    #[serde(rename = "manualCutover", default, skip_serializing_if = "Option::is_none")]
+    pub manual_cutover: Option<bool>,
+    #[doc = "To trigger customer controlled manual cutover during the wait state while Scaling operation is in progress.\r\n\r\nThis property parameter is only applicable for scaling operations that are initiated along with 'manualCutover' parameter.\r\n\r\nThis property is only applicable when scaling database from Business Critical/General Purpose/Premium/Standard tier to Hyperscale tier is already in progress.\r\n\r\nWhen performCutover is specified, the scaling operation will trigger cutover and perform role-change to Hyperscale database."]
+    #[serde(rename = "performCutover", default, skip_serializing_if = "Option::is_none")]
+    pub perform_cutover: Option<bool>,
 }
 impl DatabaseUpdateProperties {
     pub fn new() -> Self {
@@ -4811,6 +4941,38 @@ impl EndpointCertificateProperties {
         Self::default()
     }
 }
+#[doc = "A domain name that the managed instance service needs to communicate with, along with additional details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EndpointDependency {
+    #[doc = "The domain name of the dependency."]
+    #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
+    pub domain_name: Option<String>,
+    #[doc = "The IP Addresses and Ports used when connecting to DomainName."]
+    #[serde(
+        rename = "endpointDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub endpoint_details: Vec<EndpointDetail>,
+}
+impl EndpointDependency {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A domain name that the managed instance service needs to communicate with, along with additional details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EndpointDetail {
+    #[doc = "The port an endpoint is connected to."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+}
+impl EndpointDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Contains the information necessary to perform export database operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportDatabaseDefinition {
@@ -5915,6 +6077,9 @@ impl InstanceFailoverGroupListResult {
 #[doc = "Properties of a instance failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstanceFailoverGroupProperties {
+    #[doc = "Type of the geo-secondary instance. Set 'Standby' if the instance is used as a DR option only."]
+    #[serde(rename = "secondaryType", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_type: Option<instance_failover_group_properties::SecondaryType>,
     #[doc = "Read-write endpoint of the failover group instance."]
     #[serde(rename = "readWriteEndpoint")]
     pub read_write_endpoint: InstanceFailoverGroupReadWriteEndpoint,
@@ -5941,6 +6106,7 @@ impl InstanceFailoverGroupProperties {
         managed_instance_pairs: Vec<ManagedInstancePairInfo>,
     ) -> Self {
         Self {
+            secondary_type: None,
             read_write_endpoint,
             read_only_endpoint: None,
             replication_role: None,
@@ -5952,6 +6118,43 @@ impl InstanceFailoverGroupProperties {
 }
 pub mod instance_failover_group_properties {
     use super::*;
+    #[doc = "Type of the geo-secondary instance. Set 'Standby' if the instance is used as a DR option only."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "SecondaryType")]
+    pub enum SecondaryType {
+        Geo,
+        Standby,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for SecondaryType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for SecondaryType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for SecondaryType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Geo => serializer.serialize_unit_variant("SecondaryType", 0u32, "Geo"),
+                Self::Standby => serializer.serialize_unit_variant("SecondaryType", 1u32, "Standby"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
     #[doc = "Local replication role of the failover group instance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ReplicationRole")]
@@ -8438,9 +8641,19 @@ pub struct ManagedDatabaseProperties {
     #[doc = "The resource identifier of the source database associated with create operation of this database."]
     #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub source_database_id: Option<String>,
+    #[doc = "The resource identifier of the cross-subscription source database associated with create operation of this database."]
+    #[serde(rename = "crossSubscriptionSourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
+    pub cross_subscription_source_database_id: Option<String>,
     #[doc = "The restorable dropped database resource id to restore when creating this database."]
     #[serde(rename = "restorableDroppedDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub restorable_dropped_database_id: Option<String>,
+    #[doc = "The restorable cross-subscription dropped database resource id to restore when creating this database."]
+    #[serde(
+        rename = "crossSubscriptionRestorableDroppedDatabaseId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cross_subscription_restorable_dropped_database_id: Option<String>,
     #[doc = "Conditional. If createMode is RestoreExternalBackup, this value is used. Specifies the identity used for storage container authentication. Can be 'SharedAccessSignature' or 'ManagedIdentity'; if not specified 'SharedAccessSignature' is assumed."]
     #[serde(rename = "storageContainerIdentity", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_identity: Option<String>,
@@ -8462,6 +8675,13 @@ pub struct ManagedDatabaseProperties {
     #[doc = "Last backup file name for restore of this managed database."]
     #[serde(rename = "lastBackupName", default, skip_serializing_if = "Option::is_none")]
     pub last_backup_name: Option<String>,
+    #[doc = "Target managed instance id used in cross-subscription restore."]
+    #[serde(
+        rename = "crossSubscriptionTargetManagedInstanceId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub cross_subscription_target_managed_instance_id: Option<String>,
 }
 impl ManagedDatabaseProperties {
     pub fn new() -> Self {
@@ -8481,6 +8701,11 @@ pub mod managed_database_properties {
         Inaccessible,
         Restoring,
         Updating,
+        Stopping,
+        Stopped,
+        Starting,
+        DbMoving,
+        DbCopying,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -8513,6 +8738,11 @@ pub mod managed_database_properties {
                 Self::Inaccessible => serializer.serialize_unit_variant("Status", 4u32, "Inaccessible"),
                 Self::Restoring => serializer.serialize_unit_variant("Status", 5u32, "Restoring"),
                 Self::Updating => serializer.serialize_unit_variant("Status", 6u32, "Updating"),
+                Self::Stopping => serializer.serialize_unit_variant("Status", 7u32, "Stopping"),
+                Self::Stopped => serializer.serialize_unit_variant("Status", 8u32, "Stopped"),
+                Self::Starting => serializer.serialize_unit_variant("Status", 9u32, "Starting"),
+                Self::DbMoving => serializer.serialize_unit_variant("Status", 10u32, "DbMoving"),
+                Self::DbCopying => serializer.serialize_unit_variant("Status", 11u32, "DbCopying"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -10260,7 +10490,7 @@ pub struct ManagedInstanceProperties {
     #[doc = "The number of vCores. Allowed values: 8, 16, 24, 32, 40, 64, 80."]
     #[serde(rename = "vCores", default, skip_serializing_if = "Option::is_none")]
     pub v_cores: Option<i32>,
-    #[doc = "Storage size in GB. Minimum value: 32. Maximum value: 8192. Increments of 32 GB allowed only."]
+    #[doc = "Storage size in GB. Minimum value: 32. Maximum value: 16384. Increments of 32 GB allowed only. Maximum value depends on the selected hardware family and number of vCores."]
     #[serde(rename = "storageSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub storage_size_in_gb: Option<i32>,
     #[doc = "Collation of the managed instance."]
@@ -10771,6 +11001,100 @@ impl ManagedInstanceVulnerabilityAssessmentProperties {
             storage_container_sas_key: None,
             storage_account_access_key: None,
             recurring_scans: None,
+        }
+    }
+}
+#[doc = "Azure SQL Database ledger digest upload settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedLedgerDigestUploads {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a database ledger digest upload settings."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedLedgerDigestUploadsProperties>,
+}
+impl ManagedLedgerDigestUploads {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of ledger digest upload settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedLedgerDigestUploadsListResult {
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ManagedLedgerDigestUploads>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedLedgerDigestUploadsListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ManagedLedgerDigestUploadsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of a database ledger digest upload settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedLedgerDigestUploadsProperties {
+    #[doc = "The digest storage endpoint, which must be either an Azure blob storage endpoint or an URI for Azure Confidential Ledger."]
+    #[serde(rename = "digestStorageEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub digest_storage_endpoint: Option<String>,
+    #[doc = "Specifies the state of ledger digest upload."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<managed_ledger_digest_uploads_properties::State>,
+}
+impl ManagedLedgerDigestUploadsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod managed_ledger_digest_uploads_properties {
+    use super::*;
+    #[doc = "Specifies the state of ledger digest upload."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("State", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("State", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -11536,6 +11860,50 @@ impl azure_core::Continuable for OperationListResult {
     }
 }
 impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An endpoint that the managed instance service requires outbound network access to."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OutboundEnvironmentEndpoint {
+    #[doc = "The type of service accessed by the managed instance service, e.g., Azure Storage, Azure Active Directory, etc."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[doc = "The endpoints that the managed instance service communicates with in order to function correctly."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub endpoints: Vec<EndpointDependency>,
+}
+impl OutboundEnvironmentEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A collection of endpoints that the managed instance service requires outbound network access to."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OutboundEnvironmentEndpointCollection {
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<OutboundEnvironmentEndpoint>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl OutboundEnvironmentEndpointCollection {
     pub fn new() -> Self {
         Self::default()
     }
@@ -12740,12 +13108,12 @@ pub mod recommended_sensitivity_label_update_properties {
         Disable,
     }
 }
-#[doc = "A recoverable database"]
+#[doc = "A recoverable database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableDatabase {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "The properties of a recoverable database"]
+    #[doc = "The recoverable database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecoverableDatabaseProperties>,
 }
@@ -12754,38 +13122,49 @@ impl RecoverableDatabase {
         Self::default()
     }
 }
-#[doc = "The response to a list recoverable databases request"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[doc = "A list of recoverable databases."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableDatabaseListResult {
-    #[doc = "A list of recoverable databases"]
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub value: Vec<RecoverableDatabase>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl azure_core::Continuable for RecoverableDatabaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        None
+        self.next_link.clone()
     }
 }
 impl RecoverableDatabaseListResult {
-    pub fn new(value: Vec<RecoverableDatabase>) -> Self {
-        Self { value }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "The properties of a recoverable database"]
+#[doc = "The recoverable database's properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableDatabaseProperties {
-    #[doc = "The edition of the database"]
+    #[doc = "The edition of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<String>,
-    #[doc = "The service level objective name of the database"]
+    #[doc = "The service level objective name of the database."]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<String>,
     #[doc = "The elastic pool name of the database"]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
-    #[doc = "The last available backup date of the database (ISO8601 format)"]
+    #[doc = "The last available backup date."]
     #[serde(rename = "lastAvailableBackupDate", default, with = "azure_core::date::rfc3339::option")]
     pub last_available_backup_date: Option<time::OffsetDateTime>,
+    #[doc = "The resource ids of the user assigned identities to use"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keys: Option<serde_json::Value>,
 }
 impl RecoverableDatabaseProperties {
     pub fn new() -> Self {
@@ -12839,6 +13218,47 @@ pub struct RecoverableManagedDatabaseProperties {
     pub last_available_backup_date: Option<String>,
 }
 impl RecoverableManagedDatabaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An RefreshExternalGovernanceStatus operation result resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefreshExternalGovernanceStatusOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Contains the operation result properties for refresh external governance status operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RefreshExternalGovernanceStatusOperationResultProperties>,
+}
+impl RefreshExternalGovernanceStatusOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Contains the operation result properties for refresh external governance status operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RefreshExternalGovernanceStatusOperationResultProperties {
+    #[doc = "Request Id."]
+    #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
+    #[doc = "Request type."]
+    #[serde(rename = "requestType", default, skip_serializing_if = "Option::is_none")]
+    pub request_type: Option<String>,
+    #[doc = "Queued time."]
+    #[serde(rename = "queuedTime", default, skip_serializing_if = "Option::is_none")]
+    pub queued_time: Option<String>,
+    #[doc = "Server name."]
+    #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
+    pub server_name: Option<String>,
+    #[doc = "Operation status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = "Error message."]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+}
+impl RefreshExternalGovernanceStatusOperationResultProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -13239,6 +13659,9 @@ pub struct RestorableDroppedDatabaseProperties {
     #[doc = "The storage account type used to store backups for this database."]
     #[serde(rename = "backupStorageRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub backup_storage_redundancy: Option<restorable_dropped_database_properties::BackupStorageRedundancy>,
+    #[doc = "The resource ids of the user assigned identities to use"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keys: Option<serde_json::Value>,
 }
 impl RestorableDroppedDatabaseProperties {
     pub fn new() -> Self {
@@ -13449,6 +13872,129 @@ impl azure_core::Continuable for SqlVulnerabilityAssessmentScanListResult {
 impl SqlVulnerabilityAssessmentScanListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Schedule info describing when the server should be started or stopped."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduleItem {
+    #[doc = "Start day."]
+    #[serde(rename = "startDay")]
+    pub start_day: schedule_item::StartDay,
+    #[doc = "Start time."]
+    #[serde(rename = "startTime")]
+    pub start_time: String,
+    #[doc = "Stop day."]
+    #[serde(rename = "stopDay")]
+    pub stop_day: schedule_item::StopDay,
+    #[doc = "Stop time."]
+    #[serde(rename = "stopTime")]
+    pub stop_time: String,
+}
+impl ScheduleItem {
+    pub fn new(start_day: schedule_item::StartDay, start_time: String, stop_day: schedule_item::StopDay, stop_time: String) -> Self {
+        Self {
+            start_day,
+            start_time,
+            stop_day,
+            stop_time,
+        }
+    }
+}
+pub mod schedule_item {
+    use super::*;
+    #[doc = "Start day."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "StartDay")]
+    pub enum StartDay {
+        Sunday,
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday,
+        Saturday,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for StartDay {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for StartDay {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for StartDay {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sunday => serializer.serialize_unit_variant("StartDay", 0u32, "Sunday"),
+                Self::Monday => serializer.serialize_unit_variant("StartDay", 1u32, "Monday"),
+                Self::Tuesday => serializer.serialize_unit_variant("StartDay", 2u32, "Tuesday"),
+                Self::Wednesday => serializer.serialize_unit_variant("StartDay", 3u32, "Wednesday"),
+                Self::Thursday => serializer.serialize_unit_variant("StartDay", 4u32, "Thursday"),
+                Self::Friday => serializer.serialize_unit_variant("StartDay", 5u32, "Friday"),
+                Self::Saturday => serializer.serialize_unit_variant("StartDay", 6u32, "Saturday"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Stop day."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "StopDay")]
+    pub enum StopDay {
+        Sunday,
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday,
+        Saturday,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for StopDay {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for StopDay {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for StopDay {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sunday => serializer.serialize_unit_variant("StopDay", 0u32, "Sunday"),
+                Self::Monday => serializer.serialize_unit_variant("StopDay", 1u32, "Monday"),
+                Self::Tuesday => serializer.serialize_unit_variant("StopDay", 2u32, "Tuesday"),
+                Self::Wednesday => serializer.serialize_unit_variant("StopDay", 3u32, "Wednesday"),
+                Self::Thursday => serializer.serialize_unit_variant("StopDay", 4u32, "Thursday"),
+                Self::Friday => serializer.serialize_unit_variant("StopDay", 5u32, "Friday"),
+                Self::Saturday => serializer.serialize_unit_variant("StopDay", 6u32, "Saturday"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Properties of a security alert policy."]
@@ -14105,6 +14651,109 @@ impl ServerCommunicationLinkProperties {
         Self {
             state: None,
             partner_server,
+        }
+    }
+}
+#[doc = "A server configuration option"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerConfigurationOption {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of server configuration option."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerConfigurationOptionProperties>,
+}
+impl ServerConfigurationOption {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of server configuration options."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerConfigurationOptionListResult {
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ServerConfigurationOption>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ServerConfigurationOptionListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ServerConfigurationOptionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of server configuration option."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerConfigurationOptionProperties {
+    #[doc = "Value of the server configuration option."]
+    #[serde(rename = "serverConfigurationOptionValue")]
+    pub server_configuration_option_value: i32,
+    #[doc = "Provisioning state of server configuration option."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<server_configuration_option_properties::ProvisioningState>,
+}
+impl ServerConfigurationOptionProperties {
+    pub fn new(server_configuration_option_value: i32) -> Self {
+        Self {
+            server_configuration_option_value,
+            provisioning_state: None,
+        }
+    }
+}
+pub mod server_configuration_option_properties {
+    use super::*;
+    #[doc = "Provisioning state of server configuration option."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Created,
+        InProgress,
+        Succeeded,
+        Failed,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Created => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Created"),
+                Self::InProgress => serializer.serialize_unit_variant("ProvisioningState", 1u32, "InProgress"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -14808,7 +15457,7 @@ pub struct ServerProperties {
     #[doc = "Minimal TLS version. Allowed values: '1.0', '1.1', '1.2'"]
     #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<String>,
-    #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
+    #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled' or 'SecuredByPerimeter'"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<server_properties::PublicNetworkAccess>,
     #[doc = "Whether or not existing server has a workspace created and if it allows connection from workspace"]
@@ -14829,6 +15478,9 @@ pub struct ServerProperties {
     #[doc = "Whether or not to restrict outbound network access for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
     #[serde(rename = "restrictOutboundNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub restrict_outbound_network_access: Option<server_properties::RestrictOutboundNetworkAccess>,
+    #[doc = "Status of external governance."]
+    #[serde(rename = "externalGovernanceStatus", default, skip_serializing_if = "Option::is_none")]
+    pub external_governance_status: Option<server_properties::ExternalGovernanceStatus>,
 }
 impl ServerProperties {
     pub fn new() -> Self {
@@ -14837,12 +15489,13 @@ impl ServerProperties {
 }
 pub mod server_properties {
     use super::*;
-    #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
+    #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled' or 'SecuredByPerimeter'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "PublicNetworkAccess")]
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+        SecuredByPerimeter,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -14870,6 +15523,7 @@ pub mod server_properties {
             match self {
                 Self::Enabled => serializer.serialize_unit_variant("PublicNetworkAccess", 0u32, "Enabled"),
                 Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
+                Self::SecuredByPerimeter => serializer.serialize_unit_variant("PublicNetworkAccess", 2u32, "SecuredByPerimeter"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -14944,6 +15598,43 @@ pub mod server_properties {
             match self {
                 Self::Enabled => serializer.serialize_unit_variant("RestrictOutboundNetworkAccess", 0u32, "Enabled"),
                 Self::Disabled => serializer.serialize_unit_variant("RestrictOutboundNetworkAccess", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Status of external governance."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ExternalGovernanceStatus")]
+    pub enum ExternalGovernanceStatus {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ExternalGovernanceStatus {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ExternalGovernanceStatus {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ExternalGovernanceStatus {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("ExternalGovernanceStatus", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("ExternalGovernanceStatus", 1u32, "Disabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -16092,6 +16783,78 @@ pub struct SqlVulnerabilityAssessmentScanResults {
 impl SqlVulnerabilityAssessmentScanResults {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Managed instance's Start/Stop schedule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StartStopManagedInstanceSchedule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of managed instance's Start/Stop schedule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StartStopManagedInstanceScheduleProperties>,
+}
+impl StartStopManagedInstanceSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Managed instance's Start/Stop schedule list result."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StartStopManagedInstanceScheduleListResult {
+    #[doc = "Array of results."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<StartStopManagedInstanceSchedule>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for StartStopManagedInstanceScheduleListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl StartStopManagedInstanceScheduleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of managed instance's Start/Stop schedule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StartStopManagedInstanceScheduleProperties {
+    #[doc = "The description of the schedule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The time zone of the schedule."]
+    #[serde(rename = "timeZoneId", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone_id: Option<String>,
+    #[doc = "Schedule list."]
+    #[serde(rename = "scheduleList")]
+    pub schedule_list: Vec<ScheduleItem>,
+    #[doc = "Next action to be executed (Start or Stop)"]
+    #[serde(rename = "nextRunAction", default, skip_serializing_if = "Option::is_none")]
+    pub next_run_action: Option<String>,
+    #[doc = "Timestamp when the next action will be executed in the corresponding schedule time zone."]
+    #[serde(rename = "nextExecutionTime", default, skip_serializing_if = "Option::is_none")]
+    pub next_execution_time: Option<String>,
+}
+impl StartStopManagedInstanceScheduleProperties {
+    pub fn new(schedule_list: Vec<ScheduleItem>) -> Self {
+        Self {
+            description: None,
+            time_zone_id: None,
+            schedule_list,
+            next_run_action: None,
+            next_execution_time: None,
+        }
     }
 }
 #[doc = "The storage account type capability."]

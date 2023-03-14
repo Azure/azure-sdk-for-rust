@@ -30,17 +30,17 @@ async fn main() -> azure_core::Result<()> {
         .visibility_timeout(Duration::from_secs(5)) // the message will become visible again after 5 secs
         .await?;
 
-    println!("get_response == {:#?}", get_response);
+    println!("get_response == {get_response:#?}");
 
     if get_response.messages.is_empty() {
         println!("no message to delete");
     } else {
         for message_to_delete in get_response.messages {
-            println!("deleting message {:?}", message_to_delete);
+            println!("deleting message {message_to_delete:?}");
 
             let delete_response = queue.pop_receipt_client(message_to_delete).delete().await?;
 
-            println!("delete_response == {:#?}", delete_response);
+            println!("delete_response == {delete_response:#?}");
         }
     }
 

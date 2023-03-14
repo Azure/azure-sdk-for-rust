@@ -1,5 +1,8 @@
 use crate::blob::{BlobBlockType, BlobBlockWithSize};
-use azure_core::error::{ErrorKind, ResultExt};
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    xml::read_xml_str,
+};
 use base64::{prelude::BASE64_STANDARD, Engine};
 
 #[derive(Debug, Deserialize)]
@@ -15,7 +18,7 @@ struct Size {
 }
 
 #[derive(Debug, Deserialize)]
-struct InnerBlock {
+struct Block {
     #[serde(rename = "Name")]
     pub name: Name,
     #[serde(rename = "Size")]
@@ -24,15 +27,15 @@ struct InnerBlock {
 
 #[derive(Debug, Deserialize)]
 struct OuterBlock {
-    #[serde(rename = "Block")]
-    pub block: Option<Vec<InnerBlock>>,
+    #[serde(rename = "Block", default)]
+    pub block: Vec<Block>,
 }
 
 #[derive(Debug, Deserialize)]
 struct BlockList {
-    #[serde(rename = "CommittedBlocks")]
+    #[serde(rename = "CommittedBlocks", default)]
     pub committed_blocks: Option<OuterBlock>,
-    #[serde(rename = "UncommittedBlocks")]
+    #[serde(rename = "UncommittedBlocks", default)]
     pub uncommitted_blocks: Option<OuterBlock>,
 }
 
@@ -43,13 +46,12 @@ pub struct BlockWithSizeList {
 
 impl BlockWithSizeList {
     pub fn try_from_xml(xml: &str) -> azure_core::Result<Self> {
-        let bl: BlockList =
-            serde_xml_rs::de::from_reader(xml.as_bytes()).map_kind(ErrorKind::DataConversion)?;
+        let bl: BlockList = read_xml_str(xml).map_kind(ErrorKind::DataConversion)?;
 
         let mut lbs = BlockWithSizeList { blocks: Vec::new() };
 
-        if let Some(b) = bl.committed_blocks.and_then(|c| c.block) {
-            for b_val in b {
+        if let Some(committed) = bl.committed_blocks {
+            for b_val in committed.block {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Committed(
                         BASE64_STANDARD
@@ -62,8 +64,8 @@ impl BlockWithSizeList {
             }
         }
 
-        if let Some(b) = bl.uncommitted_blocks.and_then(|c| c.block) {
-            for b_val in b {
+        if let Some(committed) = bl.uncommitted_blocks {
+            for b_val in committed.block {
                 lbs.blocks.push(BlobBlockWithSize {
                     block_list_type: BlobBlockType::Uncommitted(
                         BASE64_STANDARD
@@ -85,7 +87,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn try_parse() {
+    fn try_parse1() {
         let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
             <BlockList>
               <CommittedBlocks>

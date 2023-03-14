@@ -300,6 +300,8 @@ pub enum ClientType {
     SpringBoot,
     #[serde(rename = "kafka-springBoot")]
     KafkaSpringBoot,
+    #[serde(rename = "dapr")]
+    Dapr,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -336,6 +338,7 @@ impl Serialize for ClientType {
             Self::Nodejs => serializer.serialize_unit_variant("ClientType", 8u32, "nodejs"),
             Self::SpringBoot => serializer.serialize_unit_variant("ClientType", 9u32, "springBoot"),
             Self::KafkaSpringBoot => serializer.serialize_unit_variant("ClientType", 10u32, "kafka-springBoot"),
+            Self::Dapr => serializer.serialize_unit_variant("ClientType", 11u32, "dapr"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -352,6 +355,9 @@ pub struct ConfigurationInfo {
     #[doc = "Optional. A dictionary of default key name and customized key name mapping. If not specified, default key name will be used for generate configurations"]
     #[serde(rename = "customizedKeys", default, skip_serializing_if = "Option::is_none")]
     pub customized_keys: Option<serde_json::Value>,
+    #[doc = "Indicates some additional properties for dapr client type"]
+    #[serde(rename = "daprProperties", default, skip_serializing_if = "Option::is_none")]
+    pub dapr_properties: Option<DaprProperties>,
     #[doc = "A dictionary of additional configurations to be added. Service will auto generate a set of basic configurations and this property is to full fill more customized configurations"]
     #[serde(rename = "additionalConfigurations", default, skip_serializing_if = "Option::is_none")]
     pub additional_configurations: Option<serde_json::Value>,
@@ -369,6 +375,9 @@ pub struct ConfigurationName {
     #[doc = "Description for the configuration name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Represent the configuration is required or not"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
 }
 impl ConfigurationName {
     pub fn new() -> Self {
@@ -423,6 +432,9 @@ pub struct ConfigurationNames {
     #[doc = "The authentication type."]
     #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
     pub auth_type: Option<AuthType>,
+    #[doc = "Indicates some additional properties for dapr client type"]
+    #[serde(rename = "daprProperties", default, skip_serializing_if = "Option::is_none")]
+    pub dapr_properties: Option<DaprProperties>,
     #[doc = "The configuration names to be set in compute service environment."]
     #[serde(
         default,
@@ -500,6 +512,56 @@ impl CreateOrUpdateDryrunParameters {
             dryrun_parameters,
             linker_properties: LinkerProperties::default(),
         }
+    }
+}
+#[doc = "The dapr component metadata."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DaprMetadata {
+    #[doc = "Metadata property name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Metadata property value."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[doc = "The secret name where dapr could get value"]
+    #[serde(rename = "secretRef", default, skip_serializing_if = "Option::is_none")]
+    pub secret_ref: Option<String>,
+}
+impl DaprMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Indicates some additional properties for dapr client type"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DaprProperties {
+    #[doc = "The dapr component version"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "The dapr component type"]
+    #[serde(rename = "componentType", default, skip_serializing_if = "Option::is_none")]
+    pub component_type: Option<String>,
+    #[doc = "The name of a secret store dapr to retrieve secret"]
+    #[serde(rename = "secretStoreComponent", default, skip_serializing_if = "Option::is_none")]
+    pub secret_store_component: Option<String>,
+    #[doc = "Additional dapr metadata"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub metadata: Vec<DaprMetadata>,
+    #[doc = "The dapr component scopes"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub scopes: Vec<String>,
+}
+impl DaprProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The extra auth info required by Database AAD authentication."]

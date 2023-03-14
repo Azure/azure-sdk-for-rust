@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
         .await
         .expect("stream failed")?;
 
-    println!("{:#?}", response);
+    println!("{response:#?}");
 
     let mut complete_response = vec![];
     // this is how you stream a blob. You can specify the range(...) value as above if necessary.
@@ -56,7 +56,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     let s_content = String::from_utf8(complete_response).map_kind(ErrorKind::DataConversion)?;
-    println!("s_content == {}", s_content);
+    println!("s_content == {s_content}");
 
     Ok(())
 }

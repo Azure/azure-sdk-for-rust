@@ -340,6 +340,38 @@ mod tests {
     }
 
     #[test]
+    fn deserde_azurite_without_server_encrypted() {
+        const S: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+        <EnumerationResults ServiceEndpoint=\"http://127.0.0.1:10000/devstoreaccount1\" ContainerName=\"temp\">
+            <Prefix>b39bc5c9-0f31-459c-a271-828467105470/</Prefix>
+            <Marker/>
+            <MaxResults>5000</MaxResults>
+            <Delimiter/>
+            <Blobs>
+                <Blob>
+                    <Name>b39bc5c9-0f31-459c-a271-828467105470/corrupted_data_2020-01-02T03_04_05.json</Name>
+                    <Properties>
+                        <Creation-Time>Sat, 18 Feb 2023 22:39:00 GMT</Creation-Time>
+                        <Last-Modified>Sat, 18 Feb 2023 22:39:00 GMT</Last-Modified>
+                        <Etag>0x23D9DB658CF7480</Etag>
+                        <Content-Length>64045</Content-Length>
+                        <Content-Type>application/octet-stream</Content-Type>
+                        <BlobType>BlockBlob</BlobType>
+                        <LeaseStatus>unlocked</LeaseStatus>
+                        <LeaseState>available</LeaseState>
+                        <AccessTier>Hot</AccessTier>
+                        <AccessTierInferred>true</AccessTierInferred>
+                    </Properties>
+                </Blob>
+            </Blobs>
+            <NextMarker/>
+        </EnumerationResults>";
+
+        let bytes = Bytes::from(S);
+        let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&bytes).unwrap();
+    }
+
+    #[test]
     fn parse_xml_with_blob_prefix() {
         const XML: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
         <EnumerationResults ServiceEndpoint="https://sisuautomatedtest.blob.core.windows.net/" ContainerName="lowlatencyrequests">

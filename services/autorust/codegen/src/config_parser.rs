@@ -154,7 +154,7 @@ mod literate_config {
     }
 
     // based on https://github.com/kivikakk/comrak/blob/main/examples/headers.rs
-    fn is_header_at_level<'a>(node: &'a AstNode<'a>, level: u32) -> bool {
+    fn is_header_at_level<'a>(node: &'a AstNode<'a>, level: u8) -> bool {
         match node.data.clone().into_inner().value {
             NodeValue::Heading(heading) => heading.level == level,
             _ => false,

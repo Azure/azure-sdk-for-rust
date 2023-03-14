@@ -60,7 +60,7 @@ impl Policy for AuthorizationPolicy {
                 request
             }
             StorageCredentials::BearerToken(token) => {
-                request.insert_header(AUTHORIZATION, format!("Bearer {}", token));
+                request.insert_header(AUTHORIZATION, format!("Bearer {token}"));
                 request
             }
             StorageCredentials::TokenCredential(token_credential) => {
@@ -95,7 +95,7 @@ fn generate_authorization(
         azure_core::error::ErrorKind::Credential,
         "failed to sign the hmac",
     )?;
-    Ok(format!("SharedKey {}:{}", account, auth))
+    Ok(format!("SharedKey {account}:{auth}"))
 }
 
 fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {

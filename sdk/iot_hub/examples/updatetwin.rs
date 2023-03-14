@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(2)
         .expect("Please pass the payload as the second parameter");
 
-    println!("Updating device twin for device: {}", device_id);
+    println!("Updating device twin for device: {device_id}");
 
     let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
     let updated_twin = service_client
@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .desired_properties(serde_json::from_str(&payload)?)
         .await?;
 
-    println!("Received device twin: {:?}", updated_twin);
+    println!("Received device twin: {updated_twin:?}");
 
     Ok(())
 }

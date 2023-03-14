@@ -66,13 +66,11 @@ where
         serde_json::Value::Number(num_val) => match num_val.as_i64() {
             Some(val) => Ok(val),
             None => Err(serde::de::Error::custom(format!(
-                "could not convert {:?} to i64",
-                num_val
+                "could not convert {num_val:?} to i64"
             ))),
         },
         other => Err(serde::de::Error::custom(format!(
-            "unexpected data format - expected string or number, got: {:?}",
-            other
+            "unexpected data format - expected string or number, got: {other:?}"
         ))),
     }
 }
@@ -86,8 +84,7 @@ where
         serde_json::Value::String(str_val) => str_val.parse().map_err(serde::de::Error::custom),
         serde_json::Value::Bool(bool_val) => Ok(bool_val),
         other => Err(serde::de::Error::custom(format!(
-            "unexpected data format - expected string or bool, got: {:?}",
-            other
+            "unexpected data format - expected string or bool, got: {other:?}"
         ))),
     }
 }

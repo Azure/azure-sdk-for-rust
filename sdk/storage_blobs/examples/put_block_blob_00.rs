@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .hash(hash)
         .await?;
-    println!("1-put_block_blob {:?}", res);
+    println!("1-put_block_blob {res:?}");
 
     let mut block_list = BlockList::default();
     block_list
@@ -54,46 +54,46 @@ async fn main() -> azure_core::Result<()> {
         .push(BlobBlockType::new_uncommitted("pollastro"));
 
     let res = blob_client.put_block("satanasso", data.clone()).await?;
-    println!("2-put_block {:?}", res);
+    println!("2-put_block {res:?}");
 
     let res = blob_client.put_block("pollastro", data).await?;
-    println!("3-put_block {:?}", res);
+    println!("3-put_block {res:?}");
 
     let ret = blob_client
         .get_block_list()
         .block_list_type(BlockListType::All)
         .await?;
 
-    println!("GetBlockList == {:?}", ret);
+    println!("GetBlockList == {ret:?}");
 
     let bl = ret.block_with_size_list.into();
-    println!("bl == {:?}", bl);
+    println!("bl == {bl:?}");
 
     let res = blob_client.put_block_list(bl).await?;
-    println!("PutBlockList == {:?}", res);
+    println!("PutBlockList == {res:?}");
 
     let res = blob_client.acquire_lease(Duration::from_secs(60)).await?;
-    println!("Acquire lease == {:?}", res);
+    println!("Acquire lease == {res:?}");
 
     let lease = blob_client.blob_lease_client(res.lease_id);
 
     let res = lease.renew().await?;
-    println!("Renew lease == {:?}", res);
+    println!("Renew lease == {res:?}");
 
     let res = blob_client
         .break_lease()
         .lease_break_period(Duration::from_secs(15))
         .await?;
-    println!("Break lease == {:?}", res);
+    println!("Break lease == {res:?}");
 
     let res = lease.release().await?;
-    println!("Release lease == {:?}", res);
+    println!("Release lease == {res:?}");
 
     let res = blob_client
         .delete()
         .delete_snapshots_method(DeleteSnapshotsMethod::Include)
         .await?;
-    println!("Delete blob == {:?}", res);
+    println!("Delete blob == {res:?}");
 
     Ok(())
 }

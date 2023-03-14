@@ -16,11 +16,11 @@ async fn main() -> azure_core::Result<()> {
 
     println!("getting service stats");
     let response = queue_service.get_queue_service_stats().await?;
-    println!("get_queue_service_properties.response == {:#?}", response);
+    println!("get_queue_service_properties.response == {response:#?}");
 
     println!("getting service properties");
     let response = queue_service.get_queue_service_properties().await?;
-    println!("get_queue_service_stats.response == {:#?}", response);
+    println!("get_queue_service_stats.response == {response:#?}");
 
     println!("enumerating queues starting with a");
     let response = queue_service
@@ -31,7 +31,7 @@ async fn main() -> azure_core::Result<()> {
         .into_stream()
         .next()
         .await;
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     println!("streaming queues");
     let mut stream = queue_service
@@ -42,12 +42,9 @@ async fn main() -> azure_core::Result<()> {
     while let Some(value) = stream.next().await {
         let value = value?;
         let len = value.queues.len();
-        println!("received {} queues", len);
+        println!("received {len} queues");
 
-        value
-            .queues
-            .iter()
-            .for_each(|queue| println!("{:#?}", queue));
+        value.queues.iter().for_each(|queue| println!("{queue:#?}"));
     }
 
     Ok(())

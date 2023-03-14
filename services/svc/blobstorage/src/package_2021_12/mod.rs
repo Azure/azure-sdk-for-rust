@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
@@ -4096,6 +4096,13 @@ pub mod blob {
             #[doc = "Returns the date and time the container was last modified. Any operation that modifies the blob, including an update of the blob's metadata or properties, changes the last-modified time of the blob."]
             pub fn last_modified(&self) -> azure_core::Result<time::OffsetDateTime> {
                 azure_core::date::parse_rfc1123(self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))?)
+            }
+            #[doc = "Returns the date and time the blob was created."]
+            pub fn x_ms_creation_time(&self) -> azure_core::Result<time::OffsetDateTime> {
+                azure_core::date::parse_rfc1123(
+                    self.0
+                        .get_str(&azure_core::headers::HeaderName::from_static("x-ms-creation-time"))?,
+                )
             }
             pub fn x_ms_meta(&self) -> azure_core::Result<&str> {
                 self.0.get_str(&azure_core::headers::HeaderName::from_static("x-ms-meta"))

@@ -17,7 +17,7 @@ pub struct ClientBuilder {
     scopes: Option<Vec<String>>,
     options: azure_core::ClientOptions,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://localhost:19080";
+pub const DEFAULT_ENDPOINT: &str = "http://localhost:19080";
 impl ClientBuilder {
     #[doc = "Create a new instance of `ClientBuilder`."]
     #[must_use]
@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }

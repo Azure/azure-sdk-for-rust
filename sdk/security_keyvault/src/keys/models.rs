@@ -245,8 +245,9 @@ impl Display for SignatureAlgorithm {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub enum EncryptionAlgorithm {
+    #[default]
     #[serde(rename = "A128CBC")]
     A128Cbc,
     #[serde(rename = "A128CBCPAD")]
@@ -271,12 +272,6 @@ pub enum EncryptionAlgorithm {
     RsaOaep256,
     #[serde(rename = "RSA1_5")]
     Rsa15,
-}
-
-impl Default for EncryptionAlgorithm {
-    fn default() -> Self {
-        EncryptionAlgorithm::A128Cbc
-    }
 }
 
 impl Display for EncryptionAlgorithm {

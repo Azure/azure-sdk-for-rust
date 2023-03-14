@@ -95,6 +95,13 @@ pub mod error_response {
         #[doc = "Error message indicating why the operation failed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+        #[doc = "List of inner error messages indicating why the operation failed."]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
+        pub details: Vec<serde_json::Value>,
     }
     impl Error {
         pub fn new() -> Self {

@@ -161,7 +161,7 @@ impl BlobSharedAccessSignature {
 impl SasToken for BlobSharedAccessSignature {
     fn token(&self) -> String {
         let mut elements: Vec<String> = vec![
-            format!("sv={}", SERVICE_SAS_VERSION),
+            format!("sv={SERVICE_SAS_VERSION}"),
             format!("sp={}", self.permissions),
             format!("sr={}", self.resource),
             format!("se={}", format_form(format_date(self.expiry))),
@@ -172,11 +172,11 @@ impl SasToken for BlobSharedAccessSignature {
         }
 
         if let Some(ip) = &self.ip {
-            elements.push(format!("sip={}", ip))
+            elements.push(format!("sip={ip}"))
         }
 
         if let Some(protocol) = &self.protocol {
-            elements.push(format!("spr={}", protocol))
+            elements.push(format!("spr={protocol}"))
         }
 
         let sig = self.sign();

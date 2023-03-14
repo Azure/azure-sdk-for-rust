@@ -54,19 +54,13 @@ impl EnvironmentCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for EnvironmentCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
-        let tenant_id =
-            std::env::var(AZURE_TENANT_ID_ENV_KEY).with_context(ErrorKind::Credential, || {
-                format!(
-                    "missing tenant id set in {} environment variable",
-                    AZURE_TENANT_ID_ENV_KEY
-                )
+        let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY)
+            .with_context(ErrorKind::Credential, || {
+                format!("missing tenant id set in {AZURE_TENANT_ID_ENV_KEY} environment variable")
             })?;
-        let client_id =
-            std::env::var(AZURE_CLIENT_ID_ENV_KEY).with_context(ErrorKind::Credential, || {
-                format!(
-                    "missing client id set in {} environment variable",
-                    AZURE_CLIENT_ID_ENV_KEY
-                )
+        let client_id = std::env::var(AZURE_CLIENT_ID_ENV_KEY)
+            .with_context(ErrorKind::Credential, || {
+                format!("missing client id set in {AZURE_CLIENT_ID_ENV_KEY} environment variable")
             })?;
 
         let client_secret = std::env::var(AZURE_CLIENT_SECRET_ENV_KEY);

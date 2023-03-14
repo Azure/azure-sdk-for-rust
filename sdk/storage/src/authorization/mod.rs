@@ -159,7 +159,7 @@ fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, Strin
     let url = if sas_token.starts_with('?') {
         url.parse(sas_token)
     } else {
-        url.parse(&format!("?{}", sas_token))
+        url.parse(&format!("?{sas_token}"))
     }
     .with_context(ErrorKind::DataConversion, || {
         format!("failed to parse SAS token: {sas_token}")

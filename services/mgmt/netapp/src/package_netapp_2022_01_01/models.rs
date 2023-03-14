@@ -574,7 +574,7 @@ pub struct ActiveDirectory {
     #[doc = "Id of the Active Directory"]
     #[serde(rename = "activeDirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub active_directory_id: Option<String>,
-    #[doc = "Username of Active Directory domain administrator"]
+    #[doc = "A domain user account with permission to create machine accounts"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[doc = "Plain text password of Active Directory domain administrator, value is masked in the response"]
@@ -3164,7 +3164,7 @@ pub struct VolumePatchProperties {
     #[doc = "The service level of the file system"]
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
     pub service_level: Option<ServiceLevel>,
-    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 500 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
+    #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
     #[serde(rename = "usageThreshold", default, skip_serializing_if = "Option::is_none")]
     pub usage_threshold: Option<i64>,
     #[doc = "Set of export policy rules"]

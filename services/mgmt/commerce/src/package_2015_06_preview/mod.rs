@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
@@ -273,6 +273,7 @@ pub mod usage_aggregates {
                         };
                         let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            azure_core::StatusCode::Accepted => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
                                 status: status_code,
                                 error_code: None,

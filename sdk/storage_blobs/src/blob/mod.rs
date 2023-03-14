@@ -155,6 +155,7 @@ pub struct BlobProperties {
     #[serde(default, with = "azure_core::date::rfc1123::option")]
     pub copy_completion_time: Option<OffsetDateTime>,
     pub copy_status_description: Option<String>,
+    #[serde(default)]
     pub server_encrypted: bool,
     pub customer_provided_key_sha256: Option<String>,
     pub encryption_scope: Option<String>,

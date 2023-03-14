@@ -23,15 +23,13 @@ pub fn start(
 ) -> AuthorizationCodeFlow {
     let auth_url = oauth2::AuthUrl::from_url(
         Url::parse(&format!(
-            "https://login.microsoftonline.com/{}/oauth2/v2.0/authorize",
-            tenant_id
+            "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize"
         ))
         .expect("Invalid authorization endpoint URL"),
     );
     let token_url = oauth2::TokenUrl::from_url(
         Url::parse(&format!(
-            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-            tenant_id
+            "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
         ))
         .expect("Invalid token endpoint URL"),
     );

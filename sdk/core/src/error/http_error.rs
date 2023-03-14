@@ -71,7 +71,7 @@ impl std::fmt::Display for HttpError {
         write!(f, "{tab}Headers: [{newline}")?;
         // TODO: sanitize headers
         for (k, v) in &self.headers {
-            write!(f, "{tab}{tab}{}:{}{newline}", k, v)?;
+            write!(f, "{tab}{tab}{k}:{v}{newline}")?;
         }
         write!(f, "{tab}],{newline}}}{newline}")?;
 

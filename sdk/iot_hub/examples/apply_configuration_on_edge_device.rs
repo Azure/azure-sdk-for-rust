@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please pass the device id as the first parameter");
 
-    println!("Applying configuration on device: {}", device_id);
+    println!("Applying configuration on device: {device_id}");
 
     let modules_content = serde_json::json!({
         "$edgeAgent": {

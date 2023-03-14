@@ -453,6 +453,143 @@ impl AcsChatThreadWithUserDeletedEventData {
         Self::default()
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailDeliveryReportReceived event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsEmailDeliveryReportReceivedEventData {
+    #[doc = "The Sender Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+    #[doc = "The recipient Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipient: Option<String>,
+    #[doc = "The Id of the email been sent"]
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[doc = "The status of the email"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<acs_email_delivery_report_received_event_data::Status>,
+    #[doc = "The time at which the email delivery report received timestamp"]
+    #[serde(rename = "deliveryAttemptTimeStamp", default, with = "azure_core::date::rfc3339::option")]
+    pub delivery_attempt_time_stamp: Option<time::OffsetDateTime>,
+}
+impl AcsEmailDeliveryReportReceivedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_email_delivery_report_received_event_data {
+    use super::*;
+    #[doc = "The status of the email"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Failed,
+        Delivered,
+        FilteredSpam,
+        Quarantined,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Failed => serializer.serialize_unit_variant("Status", 0u32, "Failed"),
+                Self::Delivered => serializer.serialize_unit_variant("Status", 1u32, "Delivered"),
+                Self::FilteredSpam => serializer.serialize_unit_variant("Status", 2u32, "FilteredSpam"),
+                Self::Quarantined => serializer.serialize_unit_variant("Status", 3u32, "Quarantined"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailEngagementTrackingReportReceived event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsEmailEngagementTrackingReportReceivedEventData {
+    #[doc = "The Sender Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sender: Option<String>,
+    #[doc = "The Id of the email that has been sent"]
+    #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
+    pub message_id: Option<String>,
+    #[doc = "The time at which the user interacted with the email"]
+    #[serde(rename = "userActionTimeStamp", default, with = "azure_core::date::rfc3339::option")]
+    pub user_action_time_stamp: Option<time::OffsetDateTime>,
+    #[doc = "The context of the type of engagement user had with email"]
+    #[serde(rename = "engagementContext", default, skip_serializing_if = "Option::is_none")]
+    pub engagement_context: Option<String>,
+    #[doc = "The user agent interacting with the email"]
+    #[serde(rename = "userAgent", default, skip_serializing_if = "Option::is_none")]
+    pub user_agent: Option<String>,
+    #[doc = "The type of engagement user have with email"]
+    #[serde(rename = "engagementType", default, skip_serializing_if = "Option::is_none")]
+    pub engagement_type: Option<acs_email_engagement_tracking_report_received_event_data::EngagementType>,
+}
+impl AcsEmailEngagementTrackingReportReceivedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_email_engagement_tracking_report_received_event_data {
+    use super::*;
+    #[doc = "The type of engagement user have with email"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "EngagementType")]
+    pub enum EngagementType {
+        #[serde(rename = "view")]
+        View,
+        #[serde(rename = "click")]
+        Click,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for EngagementType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for EngagementType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for EngagementType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::View => serializer.serialize_unit_variant("EngagementType", 0u32, "view"),
+                Self::Click => serializer.serialize_unit_variant("EngagementType", 1u32, "click"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Schema for all properties of  Recording Chunk Information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsRecordingChunkInfoProperties {
@@ -807,6 +944,138 @@ pub struct ApiManagementApiUpdatedEventData {
     pub resource_uri: Option<String>,
 }
 impl ApiManagementApiUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayAPIAdded event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayApiAddedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/apis/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayApiAddedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayAPIRemoved event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayApiRemovedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/apis/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayApiRemovedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCertificateAuthorityCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayCertificateAuthorityCreatedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/certificateAuthorities/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayCertificateAuthorityCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCertificateAuthorityDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayCertificateAuthorityDeletedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/certificateAuthorities/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayCertificateAuthorityDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCertificateAuthorityUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayCertificateAuthorityUpdatedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/certificateAuthorities/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayCertificateAuthorityUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayCreatedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayDeletedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayHostnameConfigurationCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayHostnameConfigurationCreatedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/hostnameConfigurations/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayHostnameConfigurationCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayHostnameConfigurationDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayHostnameConfigurationDeletedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/hostnameConfigurations/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayHostnameConfigurationDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayHostnameConfigurationUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayHostnameConfigurationUpdatedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<GatewayName>/hostnameConfigurations/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayHostnameConfigurationUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ApiManagement.GatewayUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiManagementGatewayUpdatedEventData {
+    #[doc = "The fully qualified ID of the resource that the compliance state change is for, including the resource name and resource type. Uses the format, `/subscriptions/<SubscriptionID>/resourceGroups/<ResourceGroup>/Microsoft.ApiManagement/service/<ServiceName>/gateways/<ResourceName>`"]
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+}
+impl ApiManagementGatewayUpdatedEventData {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1533,6 +1802,99 @@ pub struct CustomEventEvent {}
 impl CustomEventEvent {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyCompleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxCopyCompletedEventData {
+    #[doc = "Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated."]
+    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
+    pub serial_number: Option<String>,
+    #[doc = "Schema of DataBox Stage Name enumeration."]
+    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    pub stage_name: Option<DataBoxStageName>,
+    #[doc = "The time at which the stage happened."]
+    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
+    pub stage_time: Option<time::OffsetDateTime>,
+}
+impl DataBoxCopyCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.CopyStarted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxCopyStartedEventData {
+    #[doc = "Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated."]
+    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
+    pub serial_number: Option<String>,
+    #[doc = "Schema of DataBox Stage Name enumeration."]
+    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    pub stage_name: Option<DataBoxStageName>,
+    #[doc = "The time at which the stage happened."]
+    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
+    pub stage_time: Option<time::OffsetDateTime>,
+}
+impl DataBoxCopyStartedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.DataBox.OrderCompleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataBoxOrderCompletedEventData {
+    #[doc = "Serial Number of the device associated with the event. The list is comma separated if more than one serial number is associated."]
+    #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
+    pub serial_number: Option<String>,
+    #[doc = "Schema of DataBox Stage Name enumeration."]
+    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    pub stage_name: Option<DataBoxStageName>,
+    #[doc = "The time at which the stage happened."]
+    #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
+    pub stage_time: Option<time::OffsetDateTime>,
+}
+impl DataBoxOrderCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of DataBox Stage Name enumeration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DataBoxStageName")]
+pub enum DataBoxStageName {
+    CopyStarted,
+    CopyCompleted,
+    OrderCompleted,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DataBoxStageName {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DataBoxStageName {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DataBoxStageName {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::CopyStarted => serializer.serialize_unit_variant("DataBoxStageName", 0u32, "CopyStarted"),
+            Self::CopyCompleted => serializer.serialize_unit_variant("DataBoxStageName", 1u32, "CopyCompleted"),
+            Self::OrderCompleted => serializer.serialize_unit_variant("DataBoxStageName", 2u32, "OrderCompleted"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Information about the device connection state event."]

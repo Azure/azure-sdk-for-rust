@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
@@ -428,9 +428,9 @@ pub mod marketplace_agreements {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTerms> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::AgreementTerms = serde_json::from_slice(&bytes)?;
+                let body: models::OldAgreementTerms = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -508,8 +508,8 @@ pub mod marketplace_agreements {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AgreementTerms>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>>;
+            type Output = azure_core::Result<models::OldAgreementTerms>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::OldAgreementTerms>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -524,9 +524,9 @@ pub mod marketplace_agreements {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTerms> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::AgreementTerms = serde_json::from_slice(&bytes)?;
+                let body: models::OldAgreementTerms = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -604,8 +604,8 @@ pub mod marketplace_agreements {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AgreementTerms>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>>;
+            type Output = azure_core::Result<models::OldAgreementTerms>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::OldAgreementTerms>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -620,9 +620,9 @@ pub mod marketplace_agreements {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::AgreementTerms> {
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTerms> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::AgreementTerms = serde_json::from_slice(&bytes)?;
+                let body: models::OldAgreementTerms = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -699,8 +699,8 @@ pub mod marketplace_agreements {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::AgreementTerms>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AgreementTerms>>;
+            type Output = azure_core::Result<models::OldAgreementTerms>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::OldAgreementTerms>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -715,9 +715,9 @@ pub mod marketplace_agreements {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<Vec<models::AgreementTerms>> {
+            pub async fn into_body(self) -> azure_core::Result<models::OldAgreementTermsList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: Vec<models::AgreementTerms> = serde_json::from_slice(&bytes)?;
+                let body: models::OldAgreementTermsList = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -788,8 +788,8 @@ pub mod marketplace_agreements {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<Vec<models::AgreementTerms>>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<Vec<models::AgreementTerms>>>;
+            type Output = azure_core::Result<models::OldAgreementTermsList>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::OldAgreementTermsList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

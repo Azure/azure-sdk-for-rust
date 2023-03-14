@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("Please pass the device id as the first parameter");
 
-    println!("Getting device twin for device '{}'", device_id);
+    println!("Getting device twin for device '{device_id}'");
     let service_client = ServiceClient::new_connection_string(iot_hub_connection_string, 3600)?;
     let device = service_client
         .create_device_identity(
@@ -24,7 +24,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             ),
         )
         .await?;
-    let device: DeviceIdentityResponse = device.try_into()?;
 
     println!("Successfully created a new device '{}'", device.device_id);
 
@@ -48,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Getting device identity of '{}'", device.device_id);
     let device = service_client.get_device_identity(device.device_id).await?;
     let device: DeviceIdentityResponse = device.try_into()?;
-    println!("Identity is: {:?}", device);
+    println!("Identity is: {device:?}");
 
     println!("Deleting device '{}'", device.device_id);
     service_client

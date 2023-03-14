@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .get_module_identity(module.device_id, module.module_id)
         .await?;
     let module: ModuleIdentityResponse = module.try_into()?;
-    println!("Identity is: {:?}", module);
+    println!("Identity is: {module:?}");
 
     println!(
         "Deleting module '{}:{}'",
