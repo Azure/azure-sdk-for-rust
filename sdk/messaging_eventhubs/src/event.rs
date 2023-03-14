@@ -107,6 +107,14 @@ impl Event {
         AmqpSystemProperties::from(&self.amqp_message)
     }
 
+    /// The sequence number assigned to the event when it was enqueued in the associated Event Hub partition.
+    ///
+    /// This value is read-only and will only be populated for events that have been read from Event Hubs. The default value
+    /// when not populated is [`i64::MIN`].
+    pub fn sequence_number(&self) -> i64 {
+        self.amqp_message.sequence_number().unwrap_or(i64::MIN)
+    }
+
     /// The offset of the event when it was received from the associated Event Hub partition.
     ///
     /// This value is read-only and will only be populated for events that have been read from Event Hubs. The default value

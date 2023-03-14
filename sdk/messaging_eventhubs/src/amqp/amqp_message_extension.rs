@@ -48,6 +48,8 @@ pub(crate) trait AmqpMessageExt {
     /// Retrieves the time that an event was enqueued in the partition
     fn enqueued_time(&self) -> Option<OffsetDateTime>;
 
+    fn sequence_number(&self) -> Option<i64>;
+
     fn offset(&self) -> Option<i64>;
 
     fn last_partition_sequence_number(&self) -> Option<i64>;
@@ -203,6 +205,17 @@ impl<B> AmqpMessageExt for Message<B> {
                     OffsetDateTime::UNIX_EPOCH + timespan
                 }
                 _ => unreachable!("Expecting a Timestamp"),
+            })
+    }
+
+    #[inline]
+    fn sequence_number(&self) -> Option<i64> {
+        self.message_annotations
+            .as_ref()
+            .and_then(|m| m.get(&amqp_property::SEQUENCE_NUMBER as &dyn AnnotationKey))
+            .map(|value| match value {
+                Value::Long(val) => *val,
+                _ => unreachable!("Expecting a Long"),
             })
     }
 

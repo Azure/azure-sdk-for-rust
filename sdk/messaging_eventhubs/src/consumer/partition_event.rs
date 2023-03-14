@@ -92,6 +92,14 @@ impl PartitionEvent {
         AmqpSystemProperties::from(&self.raw_amqp_message)
     }
 
+    /// The sequence number assigned to the event when it was enqueued in the associated Event Hub partition.
+    ///
+    /// This value is read-only and will only be populated for events that have been read from Event Hubs. The default value
+    /// when not populated is [`i64::MIN`].
+    pub fn sequence_number(&self) -> i64 {
+        self.raw_amqp_message.sequence_number().unwrap_or(i64::MIN)
+    }
+
     /// The offset of the event when it was received from the associated Event Hub partition.
     ///
     /// This value is read-only and will only be populated for events that have been read from Event Hubs. The default value
@@ -115,5 +123,21 @@ impl PartitionEvent {
     /// This value is read-only and will only be populated for events that have been read from Event Hubs.
     pub fn partition_key(&self) -> Option<&str> {
         self.raw_amqp_message.partition_key()
+    }
+
+    pub(crate) fn last_partition_sequence_number(&self) -> Option<i64> {
+        self.raw_amqp_message.last_partition_sequence_number()
+    }
+
+    pub(crate) fn last_partition_offset(&self) -> Option<i64> {
+        self.raw_amqp_message.last_partition_offset()
+    }
+
+    pub(crate) fn last_partition_enqueued_time(&self) -> Option<OffsetDateTime> {
+        self.raw_amqp_message.last_partition_enqueued_time()
+    }
+
+    pub(crate) fn last_partition_properties_retrieval_time(&self) -> Option<OffsetDateTime> {
+        self.raw_amqp_message.last_partition_properties_retrieval_time()
     }
 }
