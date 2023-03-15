@@ -17,3 +17,6 @@ impl<'a, B> From<&'a Message<B>> for AmqpSystemProperties<'a> {
         }
     }
 }
+
+impl<'a> AmqpSystemProperties<'a> {
+}

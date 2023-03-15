@@ -11,12 +11,12 @@ use fe2o3_amqp_types::{
 use time::OffsetDateTime;
 
 use crate::constants::{
-    DEFAULT_OFFSET_DATE_TIME, MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH,
+    MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH,
     MAX_SESSION_ID_LENGTH,
 };
 
 use super::{
-    amqp_message_constants::{self, SCHEDULED_ENQUEUE_TIME_UTC_NAME},
+    amqp_message_constants::{self},
     error::{
         MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError, SetPartitionKeyError,
     }, amqp_property,
@@ -98,6 +98,12 @@ pub(crate) trait AmqpMessageMutExt {
     fn set_content_type(&mut self, content_type: impl Into<Option<String>>);
 
     fn set_reply_to(&mut self, reply_to: impl Into<Option<String>>);
+
+    fn set_producer_sequence_number(&mut self, sequence_number: impl Into<Option<i32>>);
+
+    fn set_producer_group_id(&mut self, group_id: impl Into<Option<i64>>);
+
+    fn set_producer_owner_level(&mut self, owner_level: impl Into<Option<i16>>);
 }
 
 impl<B> AmqpMessageExt for Message<B> {
@@ -468,5 +474,50 @@ impl<B> AmqpMessageMutExt for Message<B> {
         self.properties
             .get_or_insert(Properties::default())
             .reply_to = reply_to;
+    }
+
+    #[inline]
+    fn set_producer_sequence_number(&mut self, sequence_number: impl Into<Option<i32>>) {
+        match sequence_number.into() {
+            Some(sequence_number) => {
+                self.message_annotations
+                    .get_or_insert(MessageAnnotations::default())
+                    .insert(amqp_property::PRODUCER_SEQUENCE_NUMBER.into(), sequence_number.into());
+            }
+            None => {
+                self.message_annotations.as_mut()
+                    .map(|m| m.remove(&amqp_property::PRODUCER_SEQUENCE_NUMBER as &dyn AnnotationKey));
+            },
+        }
+    }
+
+    #[inline]
+    fn set_producer_group_id(&mut self, group_id: impl Into<Option<i64>>) {
+        match group_id.into() {
+            Some(group_id) => {
+                self.message_annotations
+                    .get_or_insert(MessageAnnotations::default())
+                    .insert(amqp_property::PRODUCER_GROUP_ID.into(), group_id.into());
+            }
+            None => {
+                self.message_annotations.as_mut()
+                    .map(|m| m.remove(&amqp_property::PRODUCER_GROUP_ID as &dyn AnnotationKey));
+            },
+        }
+    }
+
+    #[inline]
+    fn set_producer_owner_level(&mut self, owner_level: impl Into<Option<i16>>) {
+        match owner_level.into() {
+            Some(owner_level) => {
+                self.message_annotations
+                    .get_or_insert(MessageAnnotations::default())
+                    .insert(amqp_property::PRODUCER_OWNER_LEVEL.into(), owner_level.into());
+            }
+            None => {
+                self.message_annotations.as_mut()
+                    .map(|m| m.remove(&amqp_property::PRODUCER_OWNER_LEVEL as &dyn AnnotationKey));
+            },
+        }
     }
 }
