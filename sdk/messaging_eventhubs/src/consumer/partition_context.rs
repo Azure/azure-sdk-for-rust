@@ -1,7 +1,5 @@
 use tokio::sync::watch;
 
-use crate::event::Event;
-
 use super::{LastEnqueuedEventProperties, PartitionEvent};
 
 /// Represents an Event Hub partition and its relative state, as scoped to an associated

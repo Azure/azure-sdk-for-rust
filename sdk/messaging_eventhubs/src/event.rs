@@ -3,15 +3,12 @@ use std::borrow::Cow;
 use fe2o3_amqp_types::messaging::{Data, Message};
 use fe2o3_amqp_types::primitives::{OrderedMap, SimpleValue};
 use serde_amqp::primitives::Binary;
-use time::OffsetDateTime;
 
 use crate::{
     amqp::{
         amqp_message_extension::{AmqpMessageExt, AmqpMessageMutExt},
-        amqp_system_properties::AmqpSystemProperties,
         error::SetMessageIdError,
     },
-    constants::DEFAULT_OFFSET_DATE_TIME,
 };
 
 /// An Event Hubs event, encapsulating a set of data and its associated metadata.
@@ -99,66 +96,5 @@ impl Event {
             .application_properties
             .as_ref()
             .map(|p| &p.0)
-    }
-
-    /// The set of free-form event properties which were provided by the Event Hubs service to pass metadata associated with the
-    /// event or associated Event Hubs operation.
-    pub fn system_properties(&self) -> AmqpSystemProperties<'_> {
-        AmqpSystemProperties::from(&self.amqp_message)
-    }
-
-    /// The sequence number assigned to the event when it was enqueued in the associated Event Hub partition.
-    ///
-    /// This value is read-only and will only be populated for events that have been read from Event Hubs. The default value
-    /// when not populated is [`i64::MIN`].
-    pub fn sequence_number(&self) -> i64 {
-        self.amqp_message.sequence_number().unwrap_or(i64::MIN)
-    }
-
-    /// The offset of the event when it was received from the associated Event Hub partition.
-    ///
-    /// This value is read-only and will only be populated for events that have been read from Event Hubs. The default value
-    /// when not populated is [`i64::MIN`].
-    pub fn offset(&self) -> i64 {
-        self.amqp_message.offset().unwrap_or(i64::MIN)
-    }
-
-    /// The date and time, in UTC, of when the event was enqueued in the Event Hub partition.
-    ///
-    /// This value is read-only and will only be populated for events that have been read from Event
-    /// Hubs. The default value when not populated is [`DEFAULT_OFFSET_DATE_TIME`].
-    pub fn enqueued_time(&self) -> OffsetDateTime {
-        self.amqp_message
-            .enqueued_time()
-            .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
-    }
-
-    /// The partition hashing key applied to the batch that the associated [`Event`], was published with.
-    ///
-    /// This value is read-only and will only be populated for events that have been read from Event Hubs.
-    pub fn partition_key(&self) -> Option<&str> {
-        self.amqp_message.partition_key()
-    }
-
-    /// The sequence number of the event that was last enqueued into the Event Hub partition from
-    /// which this event was received.
-    ///
-    /// This value is read-only and will only be populated for events that have been read from Event
-    /// Hubs by a consumer specifying [`ReadEventOptions::track_last_enqueued_event_properties`]
-    /// as enabled.  The default value when not populated is [`None`].
-    pub(crate) fn last_partition_sequence_number(&self) -> Option<i64> {
-        self.amqp_message.last_partition_sequence_number()
-    }
-
-    pub(crate) fn last_partition_offset(&self) -> Option<i64> {
-        self.amqp_message.last_partition_offset()
-    }
-
-    pub(crate) fn last_partition_enqueued_time(&self) -> Option<OffsetDateTime> {
-        self.amqp_message.last_partition_enqueued_time()
-    }
-
-    pub(crate) fn last_partition_properties_retrieval_time(&self) -> Option<OffsetDateTime> {
-        self.amqp_message.last_partition_properties_retrieval_time()
     }
 }
