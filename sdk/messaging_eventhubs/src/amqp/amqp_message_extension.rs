@@ -11,14 +11,12 @@ use fe2o3_amqp_types::{
 use time::OffsetDateTime;
 
 use crate::constants::{
-    MAX_MESSAGE_ID_LENGTH, MAX_PARTITION_KEY_LENGTH,
-    MAX_SESSION_ID_LENGTH,
+    MAX_MESSAGE_ID_LENGTH
 };
 
 use super::{
-    // amqp_message_constants::{self},
     error::{
-        MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError, SetPartitionKeyError,
+        MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError,
     }, amqp_property,
 };
 
