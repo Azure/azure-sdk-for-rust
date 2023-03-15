@@ -55,25 +55,21 @@ pub(crate) struct BatchEnvelope {
     pub sendable: SendableEnvelope,
 }
 
-// pub(crate) fn create_message_from_event(event: Event, partition_key: Option<String>) -> BatchEnvelope {
-//     let message = build_amqp_message_from_event(event, partition_key);
-//     // let sendable = Sendable {
-//     //     message,
-//     //     message_format: Default::default(),
-//     //     settled: Default::default(),
-//     // };
+pub(crate) fn create_envelope_from_event(event: Event, partition_key: Option<String>) -> BatchEnvelope {
+    let message = build_amqp_message_from_event(event, partition_key);
+    let sendable = Sendable {
+        message,
+        message_format: Default::default(),
+        settled: Default::default(),
+    };
 
-//     // BatchEnvelope {
-//     //     state: BatchEnvelopeState::NotSent,
-//     //     sendable: SendableEnvelope::Single(sendable),
-//     // }
-// }
-
-pub(crate) fn create_message_from_event(event: Event, partition_key: Option<String>) -> Message<Data> {
-    build_amqp_message_from_event(event, partition_key)
+    BatchEnvelope {
+        state: BatchEnvelopeState::NotSent,
+        sendable: SendableEnvelope::Single(sendable),
+    }
 }
 
-pub(crate) fn create_batch_from_events(events: impl Iterator<Item = Event> + ExactSizeIterator, partition_key: Option<String>) -> Option<BatchEnvelope> {
+pub(crate) fn create_envelope_from_events(events: impl Iterator<Item = Event> + ExactSizeIterator, partition_key: Option<String>) -> Option<BatchEnvelope> {
     build_amqp_batch_from_events(events, partition_key)
 }
 
