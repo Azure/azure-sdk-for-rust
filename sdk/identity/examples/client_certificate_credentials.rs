@@ -3,7 +3,7 @@
 /// authenticate the app. If you are using subject name validation for the app
 /// please make sure to set the send_certificate_chain option to true otherwise
 /// the authentication will fail.
-use azure_core::auth::TokenCredential;
+use azure_core::{auth::TokenCredential, base64};
 use azure_identity::{
     CertificateCredentialOptions, ClientCertificateCredential, DefaultAzureCredential,
 };
@@ -24,7 +24,7 @@ async fn get_certficate(
     )?
     .secret_client();
     let secret = client.get(certificate_name).await?;
-    let cert = BASE64_STANDARD.decode(secret.value)?;
+    let cert = base64::decode(secret.value)?;
     Ok(cert)
 }
 
@@ -49,7 +49,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let creds = ClientCertificateCredential::new(
         tenant_id.to_string(),
         client_id.to_string(),
-        BASE64_STANDARD.encode(cert),
+        base64::encode(cert),
         "".to_string(),
         options,
     );
