@@ -40,7 +40,6 @@ members = [
   "mgmt/consumption",
   "mgmt/containerinstance",
   "mgmt/containerregistry",
-  "mgmt/containerservice",
   "mgmt/cosmosdb",
   "mgmt/costmanagement",
   "mgmt/cpim",
