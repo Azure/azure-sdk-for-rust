@@ -9,3 +9,11 @@ pub(crate) mod amqp_message_extension;
 pub(crate) mod amqp_message_converter;
 pub(crate) mod error;
 pub(crate) mod amqp_system_properties;
+pub(crate) mod amqp_event_batch;
+
+use std::sync::atomic::AtomicU32;
+
+// counter used for generating unique connection/session/link identifiers
+static CONNECTION_IDENTIFIER: AtomicU32 = AtomicU32::new(0);
+static SESSION_IDENTIFIER: AtomicU32 = AtomicU32::new(0);
+static LINK_IDENTIFIER: AtomicU32 = AtomicU32::new(0);

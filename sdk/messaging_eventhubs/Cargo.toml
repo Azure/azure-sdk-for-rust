@@ -8,9 +8,11 @@ edition = "2021"
 [dependencies]
 time = "0.3"
 url = "2"
+uuid = { version = "1", features = ["v4"] }
 const_format = "0.2"
 tokio = { version = "1", features = ["sync"] }
 thiserror = "1"
+timer-kit = { version = "0.1", features = ["tokio"] }
 
 # Azure dependencies
 azure_core = { path = "../core" }
@@ -19,3 +21,4 @@ azure_core = { path = "../core" }
 fe2o3-amqp = "0.8"
 fe2o3-amqp-types = "0.7.1"
 serde_amqp = { version = "0.5.8", features = ["derive", "time"] }
+fe2o3-amqp-ws = "0.3.1"

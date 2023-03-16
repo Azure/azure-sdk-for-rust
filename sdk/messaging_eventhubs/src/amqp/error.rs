@@ -1,8 +1,10 @@
 //! Error types for AMQP operations
 
+use std::marker::PhantomData;
+
 use fe2o3_amqp::{
-    connection::{self},
-    session::{self},
+    connection::{self, OpenError},
+    session::{self, BeginError}, link::{SenderAttachError, ReceiverAttachError},
 };
 
 /// The value exceeds the maximum length allowed
@@ -42,18 +44,6 @@ pub enum SetMessageIdError {
     MaxLengthExceeded(#[from] MaxLengthExceededError),
 }
 
-/// Error setting the partition key
-#[derive(Debug, thiserror::Error)]
-pub enum SetPartitionKeyError {
-    /// Max allowed length exceeded
-    #[error(transparent)]
-    MaxLengthExceeded(#[from] MaxLengthExceededError),
-
-    /// PartitionKey cannot be set to a different value from SessionId
-    #[error("PartitionKey cannot be set to a different value from SessionId")]
-    PartitionKeyAndSessionIdAreDifferent,
-}
-
 ///
 #[derive(Debug)]
 pub struct MaxAllowedTtlExceededError {}
@@ -83,46 +73,32 @@ impl std::fmt::Display for RawAmqpMessageError {
 
 impl std::error::Error for RawAmqpMessageError {}
 
-/// Error closing the AMQP connection and AMQP session
 #[derive(Debug, thiserror::Error)]
-pub enum DisposeError {
-    /// Error closing the AMQP session
+pub(crate) enum AmqpConnectionScopeError {
     #[error(transparent)]
-    SessionCloseError(#[from] session::Error),
+    Open(#[from] OpenError),
 
-    /// Error closing the AMQP connection
     #[error(transparent)]
-    ConnectionCloseError(#[from] connection::Error),
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error("Timeout elapsed")]
+    Elapsed,
+
+    #[error(transparent)]
+    Begin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderAttach(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    ReceiverAttach(#[from] ReceiverAttachError),
+
+    #[error("The connection scope is disposed")]
+    ScopeDisposed,
 }
 
-/// The requested message batch size is out of range
-#[derive(Debug)]
-pub struct RequestedSizeOutOfRange {}
-
-impl std::fmt::Display for RequestedSizeOutOfRange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Requested size is out of range")
+impl From<timer_kit::error::Elapsed> for AmqpConnectionScopeError {
+    fn from(_: timer_kit::error::Elapsed) -> Self {
+        Self::Elapsed
     }
 }
-
-impl std::error::Error for RequestedSizeOutOfRange {}
-
-/// The correlation rule filter must have at least one non-empty entry
-#[derive(Debug, Clone, thiserror::Error)]
-pub enum CorrelationFilterError {
-    /// The correlation filter must have at least one non-empty entry
-    #[error("Correlation filter must include at least one entry")]
-    EmptyFilter,
-}
-
-/// The CBS event loop has stopped
-#[derive(Debug)]
-pub(crate) struct AmqpCbsEventLoopStopped {}
-
-impl std::fmt::Display for AmqpCbsEventLoopStopped {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The CBS event loop has stopped")
-    }
-}
-
-impl std::error::Error for AmqpCbsEventLoopStopped {}
