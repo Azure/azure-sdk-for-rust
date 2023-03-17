@@ -23,7 +23,7 @@ time = { version = "0.3.10", features = ["local-offset"] }
 serde_json = "1.0"
 log = "0.4"
 async-trait = "0.1"
-openssl = { version = "0.10",  optional=true }
+openssl = { version = "0.10.46",  optional=true }
 uuid = { version = "1.0",  features = ["v4"] }
 # work around https://github.com/rust-lang/rust/issues/63033
 fix-hidden-lifetime-bug = "0.2"
