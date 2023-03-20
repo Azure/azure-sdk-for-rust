@@ -17,7 +17,6 @@ pub struct MsEnum {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde()]
 pub struct MsEnumValue {
     pub value: serde_json::Value,
     #[serde(skip_serializing_if = "Option::is_none")]
