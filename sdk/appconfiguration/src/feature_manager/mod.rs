@@ -24,6 +24,14 @@ pub struct FeatureExplorer {
     client: azure_svc_appconfiguration::Client,
 }
 
+#[derive(Clone)]
+pub struct FeatureExplorerBuider {
+    endpoint: Option<String>,
+    credential: Arc<dyn TokenCredential>,
+    context: Option<Arc<dyn ContextHolder>>,
+    on_off: HashMap<String, Vec<Feature>>,
+}
+
 impl std::fmt::Debug for FeatureExplorer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("FeatureExplorer")
@@ -36,26 +44,62 @@ impl std::fmt::Debug for FeatureExplorer {
     }
 }
 
+impl FeatureExplorerBuider {
+    #[doc = "Create a new instance of `FeatureExplorerBuider`."]
+    fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
+        Self {
+            credential,
+            endpoint: None,
+            on_off: HashMap::new(),
+            context: None,
+        }
+    }
+
+    #[doc = "Set the endpoint."]
+    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+        self.endpoint = Some(endpoint.into());
+        self
+    }
+
+    #[doc = "Set the context."]
+    pub fn context(mut self, context: Arc<dyn ContextHolder>) -> Self {
+        self.context = Some(context);
+        self
+    }
+
+    #[doc = "Use for reading features form file, for dev perspective, to override the feature value from the remote."]
+    pub fn on_off(mut self, env_path: impl Into<String>) -> Self {
+        let file = File::open(env_path.into()).expect("Cant open the file. Check the path");
+        match serde_json::from_reader::<File, HashMap<String, Vec<Feature>>>(file) {
+            Ok(it) => self.on_off.extend(it),
+            Err(err) => {
+                log::debug!("*ERROR :  {:?}", err);
+            }
+        }
+        self
+    }
+
+    pub fn build(self) -> FeatureExplorer {
+        let endpoint = self
+            .endpoint
+            .unwrap_or_else(|| azure_svc_appconfiguration::DEFAULT_ENDPOINT.to_owned());
+        FeatureExplorer::new(endpoint, self.credential, self.context, self.on_off)
+    }
+}
+
 impl FeatureExplorer {
-    pub fn new(
-        endpoint: &str,
+    pub fn builder(
+        credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
+    ) -> FeatureExplorerBuider {
+        FeatureExplorerBuider::new(credential)
+    }
+
+    fn new(
+        endpoint: impl Into<String>,
         token_credential: Arc<dyn TokenCredential>,
         context: Option<Arc<dyn ContextHolder>>,
+        on_off: HashMap<String, Vec<Feature>>,
     ) -> Self {
-        let on_off: HashMap<String, Vec<Feature>> =
-            if let Ok(env_path) = std::env::var("FEATURE_ON_OFF") {
-                let file = File::open(env_path).expect("Cant open the file. Check the path");
-                match serde_json::from_reader(file) {
-                    Ok(it) => it,
-                    Err(err) => {
-                        log::debug!("*ERROR :  {:?}", err);
-                        HashMap::new()
-                    }
-                }
-            } else {
-                HashMap::new()
-            };
-
         let scopes = &["https://azconfig.io"];
         let client = azure_svc_appconfiguration::Client::builder(token_credential)
             .endpoint(endpoint)

@@ -33,7 +33,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build(),
     );
 
-    let features = FeatureExplorer::new(&endpoint, creds, Some(Arc::new(ExampleContext::new())));
+    let features = FeatureExplorer::builder(creds)
+        .endpoint(endpoint)
+        .context(Arc::new(ExampleContext::new()))
+        .build();
     println!("Features {features:?}");
 
     println!("***targeting***");

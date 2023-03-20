@@ -8,7 +8,7 @@ pub struct ConfigurationExplorer {
 }
 
 impl ConfigurationExplorer {
-    pub fn new(endpoint: &str, token_credential: Arc<dyn TokenCredential>) -> Self {
+    pub fn new(endpoint: impl Into<String>, token_credential: Arc<dyn TokenCredential>) -> Self {
         let scopes = &["https://azconfig.io"];
         let client = azure_svc_appconfiguration::Client::builder(token_credential)
             .endpoint(endpoint)
@@ -42,11 +42,10 @@ impl ConfigurationExplorer {
                     let items = rs
                         .items
                         .iter()
-                        .map(|it| match (&it.key, &it.value) {
+                        .flat_map(|it| match (&it.key, &it.value) {
                             (Some(key), Some(value)) => Some((key.to_string(), value.to_string())),
                             _ => None,
                         })
-                        .filter_map(|e| e)
                         .collect::<HashMap<String, String>>();
 
                     map.extend(items);

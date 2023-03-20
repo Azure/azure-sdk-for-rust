@@ -7,16 +7,17 @@ use crate::auto_refresh::{AutoRefreshing, ExpiresValue};
 use super::{feature_type::Feature, models::FeaturesFilter, FEATURE_PREFIX};
 
 const CONTENT_TYPE: &str = "application/vnd.microsoft.appconfig.ff+json;charset=utf-8";
+type ArcFeature = Arc<RwLock<Option<ExpiresValue<HashMap<String, Vec<Feature>>>>>>;
 
 #[derive(Clone)]
 pub struct FeatureHolder {
     client: azure_svc_appconfiguration::Client,
-    features: Arc<RwLock<Option<ExpiresValue<HashMap<String, Vec<Feature>>>>>>,
+    features: ArcFeature,
 }
 
 #[async_trait::async_trait]
 impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
-    fn get_current(&self) -> Arc<RwLock<Option<ExpiresValue<HashMap<String, Vec<Feature>>>>>> {
+    fn get_current(&self) -> ArcFeature {
         Arc::clone(&self.features)
     }
     async fn get_latest(&self) -> HashMap<String, Vec<Feature>> {
@@ -32,7 +33,7 @@ impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
                             Some(content_type) => content_type.eq(CONTENT_TYPE),
                             None => false,
                         })
-                        .map(|it| match (it.key.clone(), it.value.clone()) {
+                        .flat_map(|it| match (it.key.clone(), it.value.clone()) {
                             (Some(key), Some(value)) => {
                                 match serde_json::from_str::<FeaturesFilter>(&value) {
                                     Ok(value) => Some((key, value)),
@@ -41,7 +42,6 @@ impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
                             }
                             _ => None,
                         })
-                        .filter_map(|e| e)
                         .map(|t| {
                             let key = t.0.strip_prefix(FEATURE_PREFIX).unwrap_or(&t.0).to_string();
                             (key, Feature::new(t.1))
