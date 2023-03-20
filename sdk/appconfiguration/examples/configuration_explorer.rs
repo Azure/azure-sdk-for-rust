@@ -17,19 +17,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let configuration_manager = ConfigurationExplorer::new(&endpoint, creds);
 
-    let mut value = configuration_manager.get_value(String::from("t"));
+    let mut value = configuration_manager.get_value(String::from("t")).await;
     println!("Value {value:?}");
     println!("****");
 
-    value = configuration_manager.get_value(String::from("first_key"));
+    value = configuration_manager
+        .get_value(String::from("first_key"))
+        .await;
     println!("Value {value:?}");
     println!("****");
 
-    let mut values = configuration_manager.get_values(String::from("first_key"));
+    let mut values = configuration_manager
+        .get_values(String::from("first_key"))
+        .await;
     println!("Values {values:?}");
     println!("****");
 
-    values = configuration_manager.get_values(String::from("first_label"));
+    values = configuration_manager
+        .get_values(String::from("first_label"))
+        .await;
     println!("Values {values:?}");
     println!("****");
 

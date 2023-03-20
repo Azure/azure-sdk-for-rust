@@ -1,5 +1,5 @@
 use azure_core::auth::TokenCredential;
-use futures::{executor::block_on, stream::StreamExt};
+use futures::stream::StreamExt;
 use std::{collections::HashMap, sync::Arc};
 
 #[derive(Clone)]
@@ -18,26 +18,17 @@ impl ConfigurationExplorer {
         Self { client }
     }
 
-    pub async fn get_value_async(&self, key: String) -> String {
-        let value = match self.client.clone().get_key_value(key).await {
+    pub async fn get_value(&self, key: impl Into<String>) -> Option<String> {
+        match self.client.clone().get_key_value(key).await {
             Ok(rs) => rs.value,
             Err(err) => {
                 log::debug!("*ERROR :  {:?}", err);
                 None
             }
-        };
-
-        match value {
-            Some(value) => value,
-            None => String::from(""),
         }
     }
 
-    pub fn get_value(&self, key: String) -> String {
-        block_on(self.get_value_async(key))
-    }
-
-    pub async fn get_values_async(&self, label: String) -> HashMap<String, String> {
+    pub async fn get_values(&self, label: impl Into<String>) -> HashMap<String, String> {
         let mut map = HashMap::new();
         let mut stream = self
             .client
@@ -65,9 +56,5 @@ impl ConfigurationExplorer {
             }
         }
         map
-    }
-
-    pub fn get_values(&self, label: String) -> HashMap<String, String> {
-        block_on(self.get_values_async(label))
     }
 }
