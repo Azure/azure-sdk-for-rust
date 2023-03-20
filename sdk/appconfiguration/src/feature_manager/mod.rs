@@ -42,20 +42,19 @@ impl FeatureExplorer {
         token_credential: Arc<dyn TokenCredential>,
         context: Option<Arc<dyn ContextHolder>>,
     ) -> Self {
-        let on_off: HashMap<String, Vec<Feature>> = if std::env::var("FEATURE_ON_OFF").is_ok() {
-            let env_path = std::env::var("FEATURE_ON_OFF").unwrap();
-            let path = Path::new(&env_path);
-            let file = File::open(path).expect("Cant open the file. Check the path");
-            match serde_json::from_reader(file) {
-                Ok(it) => it,
-                Err(err) => {
-                    println!("MAP, {:?}", err);
-                    HashMap::new()
+        let on_off: HashMap<String, Vec<Feature>> =
+            if let Ok(env_path) = std::env::var("FEATURE_ON_OFF") {
+                let file = File::open(env_path).expect("Cant open the file. Check the path");
+                match serde_json::from_reader(file) {
+                    Ok(it) => it,
+                    Err(err) => {
+                        log::debug!("*ERROR :  {:?}", err);
+                        HashMap::new()
+                    }
                 }
-            }
-        } else {
-            HashMap::new()
-        };
+            } else {
+                HashMap::new()
+            };
 
         let scopes = &["https://azconfig.io"];
         let client = azure_svc_appconfiguration::Client::builder(token_credential)
