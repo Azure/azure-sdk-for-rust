@@ -1,8 +1,9 @@
-use chrono::DateTime;
+use azure_core::date;
 use futures::executor::block_on;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use time::OffsetDateTime;
 
 use super::{
     app_context::{AppContext, ContextHolder},
@@ -60,7 +61,7 @@ impl FeatureFilter for Feature {
                         || (is_percentage(ctx.default_rollout_percentage)))
             }
             Feature::TimeWindow(ctx) => {
-                let now = chrono::Utc::now().timestamp_nanos();
+                let now = OffsetDateTime::now_utc().unix_timestamp_nanos();
                 let start = match &ctx.start {
                     Some(start) => parce_to_nanos(start),
                     None => None,
@@ -83,16 +84,12 @@ fn is_percentage(value: i64) -> bool {
     rand::thread_rng().gen_range(0..1) * 100 <= value
 }
 
-fn parce_to_nanos(s: &str) -> Option<i64> {
-    let mut date = DateTime::parse_from_rfc3339(s);
-    match date {
-        Ok(date) => Some(date.timestamp_nanos()),
-        Err(_) => {
-            date = DateTime::parse_from_rfc2822(s);
-            match date {
-                Ok(date) => Some(date.timestamp_nanos()),
-                Err(_) => None,
-            }
-        }
+fn parce_to_nanos(s: &str) -> Option<i128> {
+    match date::parse_rfc3339(s) {
+        Ok(date) => Some(date.unix_timestamp_nanos()),
+        Err(_) => match date::parse_rfc1123(s) {
+            Ok(date) => Some(date.unix_timestamp_nanos()),
+            Err(_) => None,
+        },
     }
 }
