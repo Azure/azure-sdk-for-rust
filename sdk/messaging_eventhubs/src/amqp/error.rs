@@ -102,3 +102,9 @@ impl From<timer_kit::error::Elapsed> for AmqpConnectionScopeError {
         Self::Elapsed
     }
 }
+
+/// Error opening a producer
+#[derive(Debug, thiserror::Error)]
+pub enum OpenProducerError {
+
+}

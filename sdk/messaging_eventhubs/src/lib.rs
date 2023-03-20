@@ -10,7 +10,6 @@ pub(crate) mod authorization;
 pub(crate) mod core;
 pub(crate) mod diagnostics;
 pub(crate) mod primitives;
-pub(crate) mod producer;
 pub(crate) mod event;
 pub(crate) mod event_hubs_connection_option;
 pub(crate) mod event_hubs_connection_string_properties;
@@ -24,6 +23,7 @@ pub(crate) mod partition_properties;
 pub(crate) mod constants;
 pub(crate) mod util;
 
+pub mod producer;
 pub mod consumer;
 
 pub mod prelude {

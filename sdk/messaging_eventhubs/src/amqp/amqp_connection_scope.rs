@@ -1,12 +1,12 @@
 use std::{time::Duration as StdDuration, sync::Arc};
 
-use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle};
+use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle, session::SessionHandle, Sender};
 use fe2o3_amqp_ws::WebSocketStream;
 use url::Url;
 
-use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::amqp_constants, authorization::event_hub_token_credential::EventHubTokenCredential};
+use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::amqp_constants, authorization::event_hub_token_credential::EventHubTokenCredential, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions};
 
-use super::{amqp_connection::AmqpConnection, error::AmqpConnectionScopeError};
+use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError}};
 
 pub(crate) struct AmqpConnectionScope {
         /// The recommended timeout to associate with an AMQP session.  It is recommended that this
@@ -149,5 +149,15 @@ impl AmqpConnectionScope {
                 result
             },
         }
+    }
+
+    async fn create_sender_session_and_link(
+        &mut self,
+        endpoint: Url,
+        features: TransportProducerFeatures,
+        options: PartitionPublishingOptions,
+        link_identifier: String,
+    ) -> Result<(SessionHandle<()>, Sender), OpenProducerError> {
+        todo!()
     }
 }
