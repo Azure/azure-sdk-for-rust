@@ -43,9 +43,10 @@ impl ConfigurationExplorer {
                         .items
                         .iter()
                         .map(|it| match (&it.key, &it.value) {
-                            (Some(key), Some(value)) => (key.to_string(), value.to_string()),
-                            _ => (String::from(""), String::from("")),
+                            (Some(key), Some(value)) => Some((key.to_string(), value.to_string())),
+                            _ => None,
                         })
+                        .filter_map(|e| e)
                         .collect::<HashMap<String, String>>();
 
                     map.extend(items);

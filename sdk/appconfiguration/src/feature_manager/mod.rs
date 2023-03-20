@@ -1,6 +1,6 @@
 use azure_core::auth::TokenCredential;
 use futures::executor::block_on;
-use std::{collections::HashMap, fs::File, path::Path, sync::Arc};
+use std::{collections::HashMap, fs::File, sync::Arc};
 
 use self::{
     app_context::ContextHolder, feature_filter::FeatureFilter, feature_holder::FeatureHolder,
