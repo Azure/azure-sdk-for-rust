@@ -38,6 +38,7 @@ impl std::fmt::Debug for FeatureExplorer {
 
 impl FeatureExplorer {
     pub fn new(
+        endpoint: &str,
         token_credential: Arc<dyn TokenCredential>,
         context: Option<Arc<dyn ContextHolder>>,
     ) -> Self {
@@ -56,11 +57,7 @@ impl FeatureExplorer {
             HashMap::new()
         };
 
-        let name =
-            std::env::var("AZCONFIG_NAME").expect("Missing AZCONFIG_NAME environment variable.");
-        let endpoint = format!("https://{name}.azconfig.io");
         let scopes = &["https://azconfig.io"];
-
         let client = azure_svc_appconfiguration::Client::builder(token_credential)
             .endpoint(endpoint)
             .scopes(scopes)

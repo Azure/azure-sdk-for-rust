@@ -8,12 +8,8 @@ pub struct ConfigurationExplorer {
 }
 
 impl ConfigurationExplorer {
-    pub fn new(token_credential: Arc<dyn TokenCredential>) -> Self {
-        let name =
-            std::env::var("AZCONFIG_NAME").expect("Missing AZCONFIG_NAME environment variable.");
-        let endpoint = format!("https://{name}.azconfig.io");
+    pub fn new(endpoint: &str, token_credential: Arc<dyn TokenCredential>) -> Self {
         let scopes = &["https://azconfig.io"];
-
         let client = azure_svc_appconfiguration::Client::builder(token_credential)
             .endpoint(endpoint)
             .scopes(scopes)

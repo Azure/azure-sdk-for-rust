@@ -9,6 +9,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "FEATURE_ON_OFF",
         "sdk/appconfiguration/examples/on_off.json",
     );
+    let name = std::env::var("AZCONFIG_NAME").expect("Missing AZCONFIG_NAME environment variable.");
+    let endpoint = format!("https://{name}.azconfig.io");
 
     let creds = Arc::new(
         DefaultAzureCredentialBuilder::new()
@@ -16,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .build(),
     );
 
-    let features = FeatureExplorer::new(creds, None);
+    let features = FeatureExplorer::new(&endpoint, creds, None);
     println!("Features {features:?}");
 
     println!("***dev_on_off***");
