@@ -11,8 +11,11 @@ url = "2"
 uuid = { version = "1", features = ["v4"] }
 const_format = "0.2"
 tokio = { version = "1", features = ["sync"] }
+tokio-util = "0.7"
 thiserror = "1"
 timer-kit = { version = "0.1", features = ["tokio"] }
+futures-util = "0.3"
+log = "0.4"
 
 # Azure dependencies
 azure_core = { path = "../core" }
@@ -20,5 +23,7 @@ azure_core = { path = "../core" }
 # AMQP dependencies
 fe2o3-amqp = "0.8"
 fe2o3-amqp-types = "0.7.1"
+fe2o3-amqp-management = "0.2.1"
+fe2o3-amqp-cbs = "0.2"
 serde_amqp = { version = "0.5.8", features = ["derive", "time"] }
 fe2o3-amqp-ws = "0.3.1"

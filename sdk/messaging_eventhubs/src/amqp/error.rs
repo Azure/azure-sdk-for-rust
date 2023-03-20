@@ -6,6 +6,7 @@ use fe2o3_amqp::{
     connection::{self, OpenError},
     session::{self, BeginError}, link::{SenderAttachError, ReceiverAttachError},
 };
+use fe2o3_amqp_management::error::Error as ManagementError;
 
 /// The value exceeds the maximum length allowed
 #[derive(Debug)]
@@ -103,8 +104,33 @@ impl From<timer_kit::error::Elapsed> for AmqpConnectionScopeError {
     }
 }
 
+/// The CBS event loop has stopped
+#[derive(Debug)]
+pub(crate) struct AmqpCbsEventLoopStopped {}
+
+impl std::fmt::Display for AmqpCbsEventLoopStopped {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "The CBS event loop has stopped")
+    }
+}
+
+impl std::error::Error for AmqpCbsEventLoopStopped {}
+
+/// Error with CBS auth
+#[derive(Debug, thiserror::Error)]
+pub enum CbsAuthError {
+    /// Error with the token provider
+    #[error(transparent)]
+    TokenCredential(#[from] azure_core::Error),
+
+    /// Error with the CBS link
+    #[error(transparent)]
+    Cbs(#[from] ManagementError),
+}
+
 /// Error opening a producer
 #[derive(Debug, thiserror::Error)]
 pub enum OpenProducerError {
 
 }
+

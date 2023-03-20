@@ -10,6 +10,8 @@ pub(crate) mod amqp_message_converter;
 pub(crate) mod error;
 pub(crate) mod amqp_system_properties;
 pub(crate) mod amqp_event_batch;
+pub(crate) mod amqp_cbs_link;
+pub(crate) mod cbs_token_provider;
 
 use std::sync::atomic::AtomicU32;
 
