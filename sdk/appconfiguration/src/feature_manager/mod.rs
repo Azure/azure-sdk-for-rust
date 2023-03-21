@@ -172,12 +172,12 @@ impl FeatureExplorer {
                     }
                 }
                 Err(err) => {
-                    log::debug!("*ERROR :  {:?}", err);
+                    log::error!("*ERROR :  {:?}", err);
                     vec![Feature::OnOff(false)]
                 }
             },
             Err(err) => {
-                log::debug!("*ERROR :  {:?}", err);
+                log::error!("*ERROR :  {:?}", err);
                 vec![Feature::OnOff(false)]
             }
         }

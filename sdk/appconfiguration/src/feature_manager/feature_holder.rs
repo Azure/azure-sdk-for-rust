@@ -51,7 +51,7 @@ impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
                     features_tmp.extend(items);
                 }
                 Err(err) => {
-                    log::debug!("*ERROR :  {:?}", err)
+                    log::error!("*ERROR :  {:?}", err)
                 }
             }
         }
