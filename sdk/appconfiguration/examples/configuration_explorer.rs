@@ -7,7 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env::set_var("AZCONFIG_NAME", "azure-rust-sdk");
     // env::set_var("FEATURE_FETCH_ALL_OFF", "off");
     let name = std::env::var("AZCONFIG_NAME").expect("Missing AZCONFIG_NAME environment variable.");
-    let endpoint = format!("https://{name}-1.azconfig.io");
+    let endpoint = format!("https://{name}.azconfig.io");
 
     let creds = Arc::new(
         DefaultAzureCredentialBuilder::new()

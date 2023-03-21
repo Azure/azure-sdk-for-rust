@@ -15,7 +15,7 @@ pub struct ConfigurationExplorerBuilder {
 }
 
 impl ConfigurationExplorerBuilder {
-    #[doc = "Create a new instance of `FeatureExplorerBuider`."]
+    #[doc = "Create a new instance of `ConfigurationExplorerBuilder`."]
     fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
             credential,
@@ -36,7 +36,7 @@ impl ConfigurationExplorerBuilder {
         self
     }
 
-    #[doc = "Convert the builder into a `FeatureExplorer` instance."]
+    #[doc = "Convert the builder into a `ConfigurationExplorer` instance."]
     pub fn build(self) -> ConfigurationExplorer {
         let endpoint = self
             .endpoint
