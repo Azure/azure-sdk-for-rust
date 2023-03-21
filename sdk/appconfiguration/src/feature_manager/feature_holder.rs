@@ -22,7 +22,7 @@ impl AutoRefreshing<HashMap<String, Vec<Feature>>> for FeatureHolder {
     }
     async fn get_latest(&self) -> HashMap<String, Vec<Feature>> {
         let mut features_tmp = HashMap::new();
-        let mut stream = self.client.clone().get_key_values().into_stream();
+        let mut stream = self.client.get_key_values().into_stream();
         while let Some(rs) = stream.next().await {
             match rs {
                 Ok(rs) => {

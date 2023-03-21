@@ -69,7 +69,7 @@ impl Pipeline {
 
         pipeline.extend_from_slice(&per_retry_policies);
         pipeline.extend_from_slice(&options.per_retry_policies);
-
+        println!("pipeline--- {pipeline:?}");
         let transport: Arc<dyn Policy> = Arc::new(TransportPolicy::new(options.transport.clone()));
 
         pipeline.push(transport);

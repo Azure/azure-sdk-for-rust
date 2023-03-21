@@ -1,4 +1,4 @@
-use azure_core::auth::TokenCredential;
+use azure_core::{auth::TokenCredential, FixedRetryOptions, RetryOptions};
 use futures::executor::block_on;
 use std::{collections::HashMap, fs::File, sync::Arc};
 
@@ -30,6 +30,7 @@ pub struct FeatureExplorerBuider {
     credential: Arc<dyn TokenCredential>,
     context: Option<Arc<dyn ContextHolder>>,
     on_off: HashMap<String, Vec<Feature>>,
+    retry: Option<RetryOptions>,
 }
 
 impl std::fmt::Debug for FeatureExplorer {
@@ -52,6 +53,7 @@ impl FeatureExplorerBuider {
             endpoint: None,
             on_off: HashMap::new(),
             context: None,
+            retry: None,
         }
     }
 
@@ -67,6 +69,12 @@ impl FeatureExplorerBuider {
         self
     }
 
+    #[doc = "Set the retry options."]
+    pub fn retry(mut self, retry: impl Into<RetryOptions>) -> Self {
+        self.retry = Some(retry.into());
+        self
+    }
+
     #[doc = "Use for reading features form file, for dev perspective, to override the feature value from the remote."]
     pub fn on_off(mut self, env_path: impl Into<String>) -> Self {
         let file = File::open(env_path.into()).expect("Cant open the file. Check the path");
@@ -79,15 +87,21 @@ impl FeatureExplorerBuider {
         self
     }
 
+    #[doc = "Convert the builder into a `FeatureExplorer` instance."]
     pub fn build(self) -> FeatureExplorer {
         let endpoint = self
             .endpoint
             .unwrap_or_else(|| azure_svc_appconfiguration::DEFAULT_ENDPOINT.to_owned());
-        FeatureExplorer::new(endpoint, self.credential, self.context, self.on_off)
+        let retry = self
+            .retry
+            .unwrap_or_else(|| RetryOptions::fixed(FixedRetryOptions::default().max_retries(3u32)));
+
+        FeatureExplorer::new(endpoint, self.credential, self.context, self.on_off, retry)
     }
 }
 
 impl FeatureExplorer {
+    #[doc = "Create a new `FeatureExplorerBuider`."]
     pub fn builder(
         credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
     ) -> FeatureExplorerBuider {
@@ -99,11 +113,13 @@ impl FeatureExplorer {
         token_credential: Arc<dyn TokenCredential>,
         context: Option<Arc<dyn ContextHolder>>,
         on_off: HashMap<String, Vec<Feature>>,
+        retry: impl Into<azure_core::RetryOptions>,
     ) -> Self {
         let scopes = &["https://azconfig.io"];
         let client = azure_svc_appconfiguration::Client::builder(token_credential)
             .endpoint(endpoint)
             .scopes(scopes)
+            .retry(retry)
             .build();
 
         Self {
@@ -114,37 +130,35 @@ impl FeatureExplorer {
         }
     }
 
+    #[doc = "Checks to see if the feature is enabled. If enabled it check each filter, once a single filter returns true it returns true. If no filter returns true, it returns false. If there are no filters, it returns true. If feature isn't found it returns false"]
     pub fn is_enabled(&self, name: String) -> bool {
         let feature = self.get_features(name);
 
         !feature.is_empty()
             && feature
                 .iter()
-                .all(|feature| feature.evaluate(self.context.clone()))
+                .any(|feature| feature.evaluate(self.context.clone()))
     }
 
     fn get_features(&self, name: String) -> Vec<Feature> {
-        if std::env::var("FEATURE_FETCH_ALL_OFF").is_ok() {
-            self.on_off
-                .get(&name)
-                .map_or_else(|| block_on(self.fetch_by_key(name)), |it| it.clone())
-        } else {
-            self.on_off.get(&name).map_or_else(
-                || {
+        self.on_off.get(&name).map_or_else(
+            || {
+                if std::env::var("FEATURE_FETCH_ALL_OFF").is_ok() {
+                    block_on(self.fetch_by_key(name))
+                } else {
                     self.holder
                         .get_features()
                         .get(&name)
                         .map_or(vec![], |it| it.clone())
-                },
-                |it| it.clone(),
-            )
-        }
+                }
+            },
+            |it| it.clone(),
+        )
     }
 
     async fn fetch_by_key(&self, key: String) -> Vec<Feature> {
         let result = self
             .client
-            .clone()
             .get_key_value(format!("{}{}", FEATURE_PREFIX, key))
             .send()
             .await;
