@@ -24,7 +24,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .endpoint(endpoint)
         .on_off(env_path)
         .build();
-    println!("Features {features:?}");
 
     println!("***dev_on_off***");
     let user = String::from("test");
@@ -33,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
-        if features.is_enabled(feature_name.clone()) {
+        if features.is_enabled(feature_name.clone()).await {
             "enabled"
         } else {
             "not enabled"

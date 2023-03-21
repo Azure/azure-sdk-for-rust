@@ -37,7 +37,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .endpoint(endpoint)
         .context(Arc::new(ExampleContext::new()))
         .build();
-    println!("Features {features:?}");
 
     println!("***targeting***");
     let feature_name = String::from("targeting");
@@ -45,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
-        if features.is_enabled(feature_name.clone()) {
+        if features.is_enabled(feature_name.clone()).await {
             "enabled"
         } else {
             "not enabled"

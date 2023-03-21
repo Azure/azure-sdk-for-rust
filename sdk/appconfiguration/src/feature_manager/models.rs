@@ -48,15 +48,15 @@ impl ClientFilter {
         }
     }
 
-    pub fn get_default_rollout_percentage(&self) -> i64 {
+    pub fn get_default_rollout_percentage(&self) -> f32 {
         let aud = self.parameters.audience.as_ref();
         match aud {
             Some(audience) => audience.default_rollout_percentage,
-            None => 0,
+            None => 0f32,
         }
     }
 
-    pub fn get_value(&self) -> Option<i64> {
+    pub fn get_value(&self) -> Option<f32> {
         self.parameters.value
     }
 
@@ -74,7 +74,7 @@ struct Parameter {
     #[serde(default, skip_serializing_if = "Option::is_none", rename = "Audience")]
     audience: Option<Audience>,
     #[serde(default, skip_serializing_if = "Option::is_none", rename = "Value")]
-    value: Option<i64>,
+    value: Option<f32>,
     #[serde(default, skip_serializing_if = "Option::is_none", rename = "End")]
     end: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none", rename = "Start")]
@@ -88,7 +88,7 @@ pub struct Audience {
     #[serde(rename = "Groups")]
     groups: Vec<Group>,
     #[serde(rename = "DefaultRolloutPercentage")]
-    default_rollout_percentage: i64,
+    default_rollout_percentage: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -96,5 +96,5 @@ pub struct Group {
     #[serde(rename = "Name")]
     pub name: String,
     #[serde(rename = "RolloutPercentage")]
-    pub rollout_percentage: i64,
+    pub rollout_percentage: f32,
 }

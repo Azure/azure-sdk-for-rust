@@ -1,5 +1,5 @@
 use async_lock::RwLock;
-use futures::{executor::block_on, stream::StreamExt};
+use futures::stream::StreamExt;
 use std::{collections::HashMap, sync::Arc};
 
 use crate::auto_refresh::{AutoRefreshing, ExpiresValue};
@@ -70,7 +70,7 @@ impl FeatureHolder {
         }
     }
 
-    pub fn get_features(&self) -> HashMap<String, Vec<Feature>> {
-        block_on(self.get_value())
+    pub async fn get_features(&self) -> HashMap<String, Vec<Feature>> {
+        self.get_value().await
     }
 }

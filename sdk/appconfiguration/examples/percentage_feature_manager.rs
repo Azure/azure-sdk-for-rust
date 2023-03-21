@@ -16,7 +16,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let features = FeatureExplorer::builder(creds).endpoint(endpoint).build();
-    println!("Features {features:?}");
 
     println!("***percentage***");
     let user = String::from("test");
@@ -24,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "Feature - {:?} is {:?} for User - {:?}",
         feature_name,
-        if features.is_enabled(feature_name.clone()) {
+        if features.is_enabled(feature_name.clone()).await {
             "enabled"
         } else {
             "not enabled"

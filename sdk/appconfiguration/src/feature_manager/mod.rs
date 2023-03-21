@@ -1,5 +1,4 @@
 use azure_core::{auth::TokenCredential, FixedRetryOptions, RetryOptions};
-use futures::executor::block_on;
 use std::{collections::HashMap, fs::File, sync::Arc};
 
 use self::{
@@ -31,18 +30,6 @@ pub struct FeatureExplorerBuider {
     context: Option<Arc<dyn ContextHolder>>,
     on_off: HashMap<String, Vec<Feature>>,
     retry: Option<RetryOptions>,
-}
-
-impl std::fmt::Debug for FeatureExplorer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FeatureExplorer")
-            .field(
-                "features",
-                &serde_json::to_string(&self.holder.get_features()).unwrap(),
-            )
-            .field("on_off", &self.on_off)
-            .finish()
-    }
 }
 
 impl FeatureExplorerBuider {
@@ -131,29 +118,29 @@ impl FeatureExplorer {
     }
 
     #[doc = "Checks to see if the feature is enabled. If enabled it check each filter, once a single filter returns true it returns true. If no filter returns true, it returns false. If there are no filters, it returns true. If feature isn't found it returns false"]
-    pub fn is_enabled(&self, name: String) -> bool {
-        let feature = self.get_features(name);
-
+    pub async fn is_enabled(&self, name: String) -> bool {
+        let feature = self.get_features(name).await;
         !feature.is_empty()
             && feature
                 .iter()
                 .any(|feature| feature.evaluate(self.context.clone()))
     }
 
-    fn get_features(&self, name: String) -> Vec<Feature> {
-        self.on_off.get(&name).map_or_else(
-            || {
+    async fn get_features(&self, name: String) -> Vec<Feature> {
+        match self.on_off.get(&name) {
+            Some(e) => e.clone(),
+            None => {
                 if std::env::var("FEATURE_FETCH_ALL_OFF").is_ok() {
-                    block_on(self.fetch_by_key(name))
+                    self.fetch_by_key(name).await
                 } else {
                     self.holder
                         .get_features()
+                        .await
                         .get(&name)
                         .map_or(vec![], |it| it.clone())
                 }
-            },
-            |it| it.clone(),
-        )
+            }
+        }
     }
 
     async fn fetch_by_key(&self, key: String) -> Vec<Feature> {

@@ -20,10 +20,10 @@ pub struct FeatureContext {
     enabled: bool,
     users: Vec<String>,
     groups: Vec<Group>,
-    default_rollout_percentage: i64,
+    default_rollout_percentage: f32,
     start: Option<String>,
     end: Option<String>,
-    value: Option<i64>,
+    value: Option<f32>,
 }
 
 impl FeatureContext {
@@ -80,8 +80,8 @@ impl FeatureFilter for Feature {
     }
 }
 
-fn is_percentage(value: i64) -> bool {
-    rand::thread_rng().gen_range(0..1) * 100 <= value
+fn is_percentage(value: f32) -> bool {
+    rand::thread_rng().gen_range(0.0..1.0) * 100.0 < value
 }
 
 fn parce_to_nanos(s: &str) -> Option<i128> {
