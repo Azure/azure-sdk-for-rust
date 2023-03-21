@@ -16,6 +16,13 @@ thiserror = "1"
 timer-kit = { version = "0.1", features = ["tokio"] }
 futures-util = "0.3"
 log = "0.4"
+urlencoding = "2"
+base64 = "0.21"
+digest = "0.10"
+hmac = "0.12"
+sha2 = "0.10"
+mockall = "0.11"
+async-trait = "0.1"
 
 # Azure dependencies
 azure_core = { path = "../core" }
