@@ -24,7 +24,7 @@ pub struct FeatureExplorer {
 }
 
 #[derive(Clone)]
-pub struct FeatureExplorerBuider {
+pub struct FeatureExplorerBuilder {
     endpoint: Option<String>,
     credential: Arc<dyn TokenCredential>,
     context: Option<Arc<dyn ContextHolder>>,
@@ -32,8 +32,8 @@ pub struct FeatureExplorerBuider {
     retry: Option<RetryOptions>,
 }
 
-impl FeatureExplorerBuider {
-    #[doc = "Create a new instance of `FeatureExplorerBuider`."]
+impl FeatureExplorerBuilder {
+    #[doc = "Create a new instance of `FeatureExplorerBuilder`."]
     fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
             credential,
@@ -91,8 +91,8 @@ impl FeatureExplorer {
     #[doc = "Create a new `FeatureExplorerBuider`."]
     pub fn builder(
         credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
-    ) -> FeatureExplorerBuider {
-        FeatureExplorerBuider::new(credential)
+    ) -> FeatureExplorerBuilder {
+        FeatureExplorerBuilder::new(credential)
     }
 
     fn new(
