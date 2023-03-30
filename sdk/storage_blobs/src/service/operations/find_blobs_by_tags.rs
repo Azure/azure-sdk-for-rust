@@ -22,8 +22,7 @@ impl FindBlobsByTagsBuilder {
 
                 url.query_pairs_mut().append_pair("comp", "blobs");
                 if let Some(next_marker) = next_marker {
-                    url.query_pairs_mut()
-                        .append_pair("next", next_marker.as_str());
+                    next_marker.append_to_url_query(&mut url);
                 }
                 url.query_pairs_mut().append_pair("where", &this.expression);
                 let mut request = this.client.finalize_request(
