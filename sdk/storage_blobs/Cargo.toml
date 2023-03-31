@@ -39,7 +39,7 @@ mock_transport = { path = "../../eng/test/mock_transport" }
 default = ["enable_reqwest"]
 test_e2e = []
 test_integration = []
-azurite_workaround = []
+azurite_workaround = ["azure_core/azurite_workaround"]
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = [
   "azure_core/enable_reqwest_rustls",
