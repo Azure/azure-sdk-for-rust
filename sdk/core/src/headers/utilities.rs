@@ -75,8 +75,14 @@ pub fn delete_type_permanent_from_headers(headers: &Headers) -> crate::Result<bo
 }
 
 #[cfg(feature = "azurite_workaround")]
-pub fn delete_type_permanent_from_headers(headers: &Headers) -> crate::Result<Option<bool>> {
-    headers.get_optional_as(&DELETE_TYPE_PERMANENT)
+pub fn delete_type_permanent_from_headers(headers: &Headers) -> crate::Result<bool> {
+    let result = headers.get_as(&DELETE_TYPE_PERMANENT);
+    if result.is_ok() {
+        result
+    } else {
+       log::warn!("Error receiving delete type permanent.  returning false");
+       Ok(false)
+    }
 }
 
 pub fn sequence_number_from_headers(headers: &Headers) -> crate::Result<u64> {
