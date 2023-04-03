@@ -1,17 +1,51 @@
-use std::{time::Duration as StdDuration, sync::{Arc, atomic::Ordering}};
+use std::{
+    sync::{atomic::Ordering, Arc},
+    time::Duration as StdDuration,
+};
 
-use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle, session::SessionHandle, Sender, Session, Receiver, link::receiver::CreditMode};
+use fe2o3_amqp::{
+    connection::{ConnectionHandle}, link::receiver::CreditMode, sasl_profile::SaslProfile,
+    session::SessionHandle, Connection, Receiver, Sender, Session,
+};
 use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_management::MgmtClient;
-use fe2o3_amqp_types::{definitions::{Milliseconds, ReceiverSettleMode}, primitives::{Symbol, OrderedMap}, messaging::Source};
+use fe2o3_amqp_types::{
+    definitions::{Milliseconds, ReceiverSettleMode},
+    messaging::Source,
+    primitives::{OrderedMap, Symbol},
+};
 use fe2o3_amqp_ws::WebSocketStream;
 use serde_amqp::Value;
-use url::Url;
 use time::Duration as TimeSpan;
+use url::Url;
 
-use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::{amqp_constants, amqp_cbs_link::AmqpCbsLink, LINK_IDENTIFIER, SESSION_IDENTIFIER, amqp_filter::{self, ConsumerFilter}}, authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim}, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions, consumer::EventPosition};
+use crate::{
+    amqp::{
+        amqp_cbs_link::AmqpCbsLink,
+        amqp_constants,
+        amqp_filter::{self, ConsumerFilter},
+        LINK_IDENTIFIER, SESSION_IDENTIFIER,
+    },
+    authorization::{event_hub_claim, event_hub_token_credential::EventHubTokenCredential},
+    consumer::EventPosition,
+    core::transport_producer_features::TransportProducerFeatures,
+    event_hubs_transport_type::EventHubsTransportType,
+    producer::PartitionPublishingOptions,
+};
 
-use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError, CbsAuthError, OpenConsumerError, OpenMgmtLinkError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider, amqp_property, amqp_producer::AmqpProducer, amqp_consumer::AmqpConsumer};
+use super::{
+    amqp_cbs_link::AmqpCbsLinkHandle,
+    amqp_connection::AmqpConnection,
+    amqp_consumer::AmqpConsumer,
+    amqp_management_link::AmqpManagementLink,
+    amqp_producer::AmqpProducer,
+    amqp_property,
+    cbs_token_provider::CbsTokenProvider,
+    error::{
+        AmqpConnectionScopeError, CbsAuthError, OpenConsumerError, OpenMgmtLinkError,
+        OpenProducerError, DisposeError,
+    },
+};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
@@ -22,7 +56,6 @@ pub(crate) struct AmqpConnectionScope {
 
     // /// The amount of time to allow a connection to have no observed traffic before considering it idle.
     // pub(crate) connection_idle_timeout_millis: Milliseconds,
-
     /// Indicates whether this <see cref="AmqpConnectionScope"/> has been disposed.
     pub(crate) is_disposed: bool,
 
@@ -40,7 +73,6 @@ pub(crate) struct AmqpConnectionScope {
 
     // ///   The provider to use for obtaining a token for authorization with the Event Hubs service.
     // private CbsTokenProvider TokenProvider { get; }
-
     /// The type of transport to use for communication.
     pub(crate) transport: EventHubsTransportType,
 
@@ -49,7 +81,6 @@ pub(crate) struct AmqpConnectionScope {
 
     // /// The size of the buffer used for receiving information via the active transport.
     // pub(crate) receive_buffer_size_in_bytes: usize,
-
     pub(crate) connection: AmqpConnection,
 
     /// The session dedicated for cbs auth
@@ -75,7 +106,7 @@ impl AmqpConnectionScope {
         credential: EventHubTokenCredential,
         transport_type: EventHubsTransportType,
         idle_timeout: StdDuration,
-        identifier: Option<String>
+        identifier: Option<String>,
     ) -> Result<Self, AmqpConnectionScopeError> {
         // sendBufferSizeInBytes and receiveBufferSizeInBytes are not used for now. They probably
         // translate to `tokio::net::TcpSocket::set_send_buffer_size` and
@@ -90,7 +121,13 @@ impl AmqpConnectionScope {
         });
         let credential = Arc::new(credential);
 
-        let fut = Self::open_connection(&service_endpoint, &connection_endpoint, transport_type, &id, idle_timeout.as_millis() as u32);
+        let fut = Self::open_connection(
+            &service_endpoint,
+            &connection_endpoint,
+            transport_type,
+            &id,
+            idle_timeout.as_millis() as u32,
+        );
         let connection_handle = crate::util::time::timeout(idle_timeout, fut).await??;
         let mut connection = AmqpConnection::new(connection_handle);
 
@@ -155,7 +192,7 @@ impl AmqpConnectionScope {
                     .map_err(Into::into);
 
                 result
-            },
+            }
         }
     }
 
@@ -175,6 +212,17 @@ impl AmqpConnectionScope {
             // TODO: The CBS event loop should never spontaneously stop
             .map_err(|_| ManagementError::Send(LinkStateError::IllegalSessionState.into()))??;
         Ok(())
+    }
+
+    pub(crate) async fn open_management_link(
+        &mut self,
+    ) -> Result<AmqpManagementLink, OpenMgmtLinkError> {
+        self.create_management_link()
+            .await
+            .map(|(session_handle, client)| AmqpManagementLink {
+                session_handle,
+                client,
+            })
     }
 
     async fn create_management_link(
@@ -241,7 +289,13 @@ impl AmqpConnectionScope {
         // Perform the initial authorization for the link.
         let auth_claims = vec![event_hub_claim::SEND.to_string()];
         let resource = endpoint.to_string();
-        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.to_string(), resource, auth_claims).await?;
+        self.request_refreshable_authorization_using_cbs(
+            link_identifier,
+            endpoint.to_string(),
+            resource,
+            auth_claims,
+        )
+        .await?;
 
         // Create and open the AMQP session associated with the link.
         let mut session_handle = Session::begin(&mut self.connection.handle).await?;
@@ -249,7 +303,10 @@ impl AmqpConnectionScope {
         // Create and open the link.
 
         // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
-        let link_name = format!("{};{}:{}:{}", self.id, self.connection.identifier, session_identifier, link_identifier);
+        let link_name = format!(
+            "{};{}:{}:{}",
+            self.id, self.connection.identifier, session_identifier, link_identifier
+        );
         let mut builder = Sender::builder()
             .name(link_name)
             .source(identifier)
@@ -262,28 +319,32 @@ impl AmqpConnectionScope {
         // If any of the options have a value, the entire set must be specified for the link
         // settings.  For any options that did not have a value, specifying null will signal the
         // service to generate the value.
-        if options.producer_group_id.is_some() ||
-            options.owner_level.is_some() ||
-            options.starting_sequence_number.is_some()
+        if options.producer_group_id.is_some()
+            || options.owner_level.is_some()
+            || options.starting_sequence_number.is_some()
         {
             let properties = builder.properties.get_or_insert(Default::default());
             properties.insert(
                 Symbol::from(amqp_property::PRODUCER_GROUP_ID),
-                options.producer_group_id.map(Value::from).unwrap_or(Value::Null)
+                options
+                    .producer_group_id
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
             );
             properties.insert(
                 Symbol::from(amqp_property::PRODUCER_OWNER_LEVEL),
-                options.owner_level.map(Value::from).unwrap_or(Value::Null)
+                options.owner_level.map(Value::from).unwrap_or(Value::Null),
             );
             properties.insert(
                 Symbol::from(amqp_property::PRODUCER_SEQUENCE_NUMBER),
-                options.starting_sequence_number.map(Value::from).unwrap_or(Value::Null)
+                options
+                    .starting_sequence_number
+                    .map(Value::from)
+                    .unwrap_or(Value::Null),
             );
         }
 
-        let sender = builder
-            .attach(&mut session_handle)
-            .await?;
+        let sender = builder.attach(&mut session_handle).await?;
         Ok((session_handle, sender))
     }
 
@@ -298,7 +359,10 @@ impl AmqpConnectionScope {
         track_last_enqueued_event_properties: bool,
         link_identifier: Option<String>,
     ) -> Result<AmqpConsumer, OpenConsumerError> {
-        let path = format!("{}/ConsumerGroups/{}/Partitions/{}", self.event_hub_name, consumer_group, partition_id);
+        let path = format!(
+            "{}/ConsumerGroups/{}/Partitions/{}",
+            self.event_hub_name, consumer_group, partition_id
+        );
         let consumer_endpoint = self.service_endpoint.join(&path)?;
         let identifier = link_identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
         let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
@@ -344,7 +408,13 @@ impl AmqpConnectionScope {
         // Perform the initial authorization for the link.
         let auth_claims = vec![event_hub_claim::LISTEN.to_string()];
         let resource = endpoint.to_string();
-        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.to_string(), resource, auth_claims).await?;
+        self.request_refreshable_authorization_using_cbs(
+            link_identifier,
+            endpoint.to_string(),
+            resource,
+            auth_claims,
+        )
+        .await?;
 
         // Create and open the AMQP session associated with the link.
         let mut session_handle = Session::begin(&mut self.connection.handle).await?;
@@ -352,7 +422,10 @@ impl AmqpConnectionScope {
         // Create and open the link.
 
         // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
-        let link_name = format!("{};{}:{}:{}", self.id, self.connection.identifier, session_identifier, link_identifier);
+        let link_name = format!(
+            "{};{}:{}:{}",
+            self.id, self.connection.identifier, session_identifier, link_identifier
+        );
         let consumer_filter = ConsumerFilter(amqp_filter::build_filter_expression(event_position)?);
         let source = Source::builder()
             .address(endpoint)
@@ -379,18 +452,28 @@ impl AmqpConnectionScope {
         builder = builder.receiver_settle_mode(ReceiverSettleMode::default());
 
         let mut properties = OrderedMap::new();
-        properties.insert(Symbol::from(amqp_property::ENTITY_TYPE), Value::from(amqp_property::Entity::ConsumerGroup as i32));
+        properties.insert(
+            Symbol::from(amqp_property::ENTITY_TYPE),
+            Value::from(amqp_property::Entity::ConsumerGroup as i32),
+        );
 
         if let Some(owner_level) = owner_level {
-            properties.insert(Symbol::from(amqp_property::CONSUMER_OWNER_LEVEL), Value::from(owner_level));
+            properties.insert(
+                Symbol::from(amqp_property::CONSUMER_OWNER_LEVEL),
+                Value::from(owner_level),
+            );
         }
 
         if !identifier.is_empty() {
-            properties.insert(Symbol::from(amqp_property::CONSUMER_IDENTIFIER), Value::from(identifier));
+            properties.insert(
+                Symbol::from(amqp_property::CONSUMER_IDENTIFIER),
+                Value::from(identifier),
+            );
         }
 
         if track_last_enqueued_event_properties {
-            builder = builder.add_desired_capabilities(amqp_property::TRACK_LAST_ENQUEUED_EVENT_PROPERTIES);
+            builder = builder
+                .add_desired_capabilities(amqp_property::TRACK_LAST_ENQUEUED_EVENT_PROPERTIES);
         }
 
         let receiver = builder
@@ -399,6 +482,26 @@ impl AmqpConnectionScope {
             .await?;
 
         Ok((session_handle, receiver))
+    }
+
+    pub(crate) async fn dispose(&mut self) -> Result<(), DisposeError> {
+        if self.is_disposed {
+            return Ok(())
+        }
+
+        self.is_disposed = true;
+
+        let _ = self.cbs_link_handle.stop();
+        let _cbs_close_result = self.cbs_link_handle.join_handle_mut().await;
+
+        let session_close_result = self.cbs_session_handle.close().await;
+        let connection_close_result = self.connection.handle.close().await;
+        match (session_close_result, connection_close_result) {
+            (Ok(_), Ok(_)) => Ok(()),
+            // Connection error has priority
+            (_, Err(e)) => Err(DisposeError::ConnectionCloseError(e)),
+            (Err(e), _) => Err(DisposeError::SessionCloseError(e)),
+        }
     }
 }
 

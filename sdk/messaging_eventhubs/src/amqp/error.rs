@@ -182,3 +182,15 @@ pub enum OpenConsumerError {
     #[error(transparent)]
     ConsumerFilter(#[from] OffsetIsEmpty),
 }
+
+/// Error closing the AMQP connection and AMQP session
+#[derive(Debug, thiserror::Error)]
+pub enum DisposeError {
+    /// Error closing the AMQP session
+    #[error(transparent)]
+    SessionCloseError(#[from] session::Error),
+
+    /// Error closing the AMQP connection
+    #[error(transparent)]
+    ConnectionCloseError(#[from] connection::Error),
+}
