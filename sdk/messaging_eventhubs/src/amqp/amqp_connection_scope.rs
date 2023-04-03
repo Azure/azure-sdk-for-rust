@@ -76,6 +76,9 @@ pub(crate) struct AmqpConnectionScope {
     /// The type of transport to use for communication.
     pub(crate) transport: EventHubsTransportType,
 
+    // Keep a copy of credential for recovery
+    pub(crate) credential: Arc<EventHubTokenCredential>,
+
     // /// The size of the buffer used for sending information via the active transport.
     // pub(crate) send_buffer_size_in_bytes: usize,
 
@@ -147,6 +150,7 @@ impl AmqpConnectionScope {
             connection_endpoint,
             event_hub_name,
             transport: transport_type,
+            credential,
             connection,
             cbs_session_handle,
             cbs_link_handle,
@@ -243,7 +247,7 @@ impl AmqpConnectionScope {
         partition_id: Option<String>,
         features: TransportProducerFeatures,
         options: PartitionPublishingOptions,
-        link_identifier: Option<String>,
+        identifier: Option<String>,
     ) -> Result<AmqpProducer, OpenProducerError> {
         let path = match partition_id {
             None => self.event_hub_name.clone(),
@@ -252,7 +256,7 @@ impl AmqpConnectionScope {
         };
         let producer_endpoint = self.service_endpoint.join(&path)?;
 
-        let identifier = link_identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
+        let identifier = identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
         let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let (session_handle, sender) = self
@@ -357,14 +361,14 @@ impl AmqpConnectionScope {
         // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
         owner_level: Option<i64>,
         track_last_enqueued_event_properties: bool,
-        link_identifier: Option<String>,
+        identifier: Option<String>,
     ) -> Result<AmqpConsumer, OpenConsumerError> {
         let path = format!(
             "{}/ConsumerGroups/{}/Partitions/{}",
             self.event_hub_name, consumer_group, partition_id
         );
         let consumer_endpoint = self.service_endpoint.join(&path)?;
-        let identifier = link_identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
+        let identifier = identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
         let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
 

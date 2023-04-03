@@ -16,6 +16,7 @@ pub(crate) mod token_type;
 pub(crate) mod amqp_producer;
 pub(crate) mod amqp_consumer;
 pub(crate) mod amqp_management_link;
+pub(crate) mod amqp_client;
 
 use std::sync::atomic::AtomicU32;
 
