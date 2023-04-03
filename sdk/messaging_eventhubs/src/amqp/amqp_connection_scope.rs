@@ -1,16 +1,16 @@
 use std::{time::Duration as StdDuration, sync::{Arc, atomic::Ordering}};
 
-use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle, session::SessionHandle, Sender, Session};
+use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle, session::SessionHandle, Sender, Session, Receiver, link::receiver::CreditMode};
 use fe2o3_amqp_cbs::client::CbsClient;
-use fe2o3_amqp_types::{definitions::Milliseconds, primitives::Symbol};
+use fe2o3_amqp_types::{definitions::{Milliseconds, ReceiverSettleMode}, primitives::{Symbol, OrderedMap}, messaging::Source};
 use fe2o3_amqp_ws::WebSocketStream;
 use serde_amqp::Value;
 use url::Url;
 use time::Duration as TimeSpan;
 
-use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::{amqp_constants, amqp_cbs_link::AmqpCbsLink, LINK_IDENTIFIER, SESSION_IDENTIFIER}, authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim}, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions};
+use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::{amqp_constants, amqp_cbs_link::AmqpCbsLink, LINK_IDENTIFIER, SESSION_IDENTIFIER, amqp_filter::{self, ConsumerFilter}}, authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim}, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions, consumer::EventPosition};
 
-use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError, CbsAuthError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider, amqp_property};
+use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError, CbsAuthError, OpenConsumerError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider, amqp_property};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
@@ -185,15 +185,18 @@ impl AmqpConnectionScope {
         link_identifier: u32,
         identifier: String, // Used as the source address for the link
     ) -> Result<(SessionHandle<()>, Sender), OpenProducerError> {
-
+        // Perform the initial authorization for the link.
         let auth_claims = vec![event_hub_claim::SEND.to_string()];
         let resource = endpoint.clone();
         self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.clone(), resource, auth_claims).await?;
 
+        // Create and open the AMQP session associated with the link.
         let mut session_handle = Session::begin(&mut self.connection.handle).await?;
 
+        // Create and open the link.
+
         // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
-        let link_name = format!("{};{}:{}:{}", self.id, self.id, session_identifier, link_identifier);
+        let link_name = format!("{};{}:{}:{}", self.id, self.connection.identifier, session_identifier, link_identifier);
         let mut builder = Sender::builder()
             .name(link_name)
             .source(identifier)
@@ -229,6 +232,78 @@ impl AmqpConnectionScope {
             .attach(&mut session_handle)
             .await?;
         Ok((session_handle, sender))
+    }
+
+    async fn create_receiving_session_and_link(
+        &mut self,
+        endpoint: String,
+        event_position: EventPosition,
+        prefetch_count: u32,
+        // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
+        owner_level: Option<i64>,
+        track_last_enqueued_event_properties: bool,
+        session_identifier: u32,
+        link_identifier: u32,
+        identifier: String,
+    ) -> Result<(SessionHandle<()>, Receiver), OpenConsumerError> {
+        // Perform the initial authorization for the link.
+        let auth_claims = vec![event_hub_claim::LISTEN.to_string()];
+        let resource = endpoint.clone();
+        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.clone(), resource, auth_claims).await?;
+
+        // Create and open the AMQP session associated with the link.
+        let mut session_handle = Session::begin(&mut self.connection.handle).await?;
+
+        // Create and open the link.
+
+        // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
+        let link_name = format!("{};{}:{}:{}", self.id, self.connection.identifier, session_identifier, link_identifier);
+        let consumer_filter = ConsumerFilter(amqp_filter::build_filter_expression(event_position)?);
+        let source = Source::builder()
+            .address(endpoint)
+            .add_to_filter(amqp_filter::CONSUMER_FILTER_NAME, consumer_filter)
+            .build();
+
+        let mut builder = Receiver::builder()
+            .name(link_name)
+            .source(source)
+            .target(identifier.clone())
+            // TODO: Allow user to specify when to automatically re-fill the credit. This needs
+            //       upstream support, see
+            //       [minghuaw@fe2o3-amqp#199](https://github.com/minghuaw/fe2o3-amqp/issues/199)
+            .credit_mode(CreditMode::Auto(prefetch_count));
+
+        // `SettleMode.SettleOnSend` doesn't affect the receiver settle mode. So set it to default.
+        //
+        // ```csharp
+        // case SettleMode.SettleOnSend:
+        //     this.SndSettleMode = (byte)SenderSettleMode.Settled;
+        //     break;
+        // ```
+        // https://github.com/Azure/azure-amqp/blob/d32534d2350a3672812928a1886e533c63aae0e3/src/AmqpLinkSettings.cs#L88
+        builder = builder.receiver_settle_mode(ReceiverSettleMode::default());
+
+        let mut properties = OrderedMap::new();
+        properties.insert(Symbol::from(amqp_property::ENTITY_TYPE), Value::from(amqp_property::Entity::ConsumerGroup as i32));
+
+        if let Some(owner_level) = owner_level {
+            properties.insert(Symbol::from(amqp_property::CONSUMER_OWNER_LEVEL), Value::from(owner_level));
+        }
+
+        if !identifier.is_empty() {
+            properties.insert(Symbol::from(amqp_property::CONSUMER_IDENTIFIER), Value::from(identifier));
+        }
+
+        if track_last_enqueued_event_properties {
+            builder = builder.add_desired_capabilities(amqp_property::TRACK_LAST_ENQUEUED_EVENT_PROPERTIES);
+        }
+
+        let receiver = builder
+            .properties(properties)
+            .attach(&mut session_handle)
+            .await?;
+
+        Ok((session_handle, receiver))
     }
 }
 

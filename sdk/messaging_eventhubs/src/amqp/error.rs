@@ -8,6 +8,8 @@ use fe2o3_amqp::{
 };
 use fe2o3_amqp_management::error::Error as ManagementError;
 
+use crate::consumer::error::OffsetIsEmpty;
+
 /// The value exceeds the maximum length allowed
 #[derive(Debug)]
 pub struct MaxLengthExceededError {
@@ -141,3 +143,18 @@ pub enum OpenProducerError {
     SenderLink(#[from] SenderAttachError),
 }
 
+/// Error opening a consumer
+#[derive(Debug, thiserror::Error)]
+pub enum OpenConsumerError {
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+
+    #[error(transparent)]
+    Session(#[from] BeginError),
+
+    #[error(transparent)]
+    ReceiverLink(#[from] ReceiverAttachError),
+
+    #[error(transparent)]
+    ConsumerFilter(#[from] OffsetIsEmpty),
+}

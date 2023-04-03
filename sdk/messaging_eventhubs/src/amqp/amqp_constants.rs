@@ -1,6 +1,6 @@
 //! Some constants taken from Microsoft.Azure.Amqp
 
-// pub(crate) const APACHE: &str = "apache.org";
+pub(crate) const APACHE: &str = "apache.org";
 pub(crate) const VENDOR: &str = "com.microsoft";
 // pub(crate) const SCHEME_AMQP: &str = "amqp";
 // pub(crate) const SCHEME_AMQPS: &str = "amqps";
