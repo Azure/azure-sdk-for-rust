@@ -13,6 +13,8 @@ pub(crate) mod amqp_event_batch;
 pub(crate) mod amqp_cbs_link;
 pub(crate) mod cbs_token_provider;
 pub(crate) mod token_type;
+pub(crate) mod producer_link;
+pub(crate) mod consumer_link;
 
 use std::sync::atomic::AtomicU32;
 

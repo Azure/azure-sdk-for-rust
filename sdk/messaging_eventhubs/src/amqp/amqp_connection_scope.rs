@@ -1,15 +1,16 @@
-use std::{time::Duration as StdDuration, sync::Arc};
+use std::{time::Duration as StdDuration, sync::{Arc, atomic::Ordering}};
 
 use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle, session::SessionHandle, Sender, Session};
 use fe2o3_amqp_cbs::client::CbsClient;
-use fe2o3_amqp_types::definitions::Milliseconds;
+use fe2o3_amqp_types::{definitions::Milliseconds, primitives::Symbol};
 use fe2o3_amqp_ws::WebSocketStream;
+use serde_amqp::Value;
 use url::Url;
 use time::Duration as TimeSpan;
 
-use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::{amqp_constants, amqp_cbs_link::AmqpCbsLink}, authorization::event_hub_token_credential::EventHubTokenCredential, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions};
+use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::{amqp_constants, amqp_cbs_link::AmqpCbsLink, LINK_IDENTIFIER, SESSION_IDENTIFIER}, authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim}, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions};
 
-use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider};
+use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError, CbsAuthError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider, amqp_property};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
@@ -47,6 +48,8 @@ pub(crate) struct AmqpConnectionScope {
 
     // /// The size of the buffer used for receiving information via the active transport.
     // pub(crate) receive_buffer_size_in_bytes: usize,
+
+    pub(crate) connection: AmqpConnection,
 
     /// The session dedicated for cbs auth
     pub(crate) cbs_session_handle: SessionHandle<()>,
@@ -106,6 +109,7 @@ impl AmqpConnectionScope {
             connection_endpoint,
             event_hub_name,
             transport: transport_type,
+            connection,
             cbs_session_handle,
             cbs_link_handle,
         })
@@ -154,14 +158,77 @@ impl AmqpConnectionScope {
         }
     }
 
-    async fn create_sender_session_and_link(
+    pub(crate) async fn request_refreshable_authorization_using_cbs(
         &mut self,
-        endpoint: Url,
+        link_identifier: u32,
+        endpoint: String,
+        resource: String,
+        required_claims: Vec<String>,
+    ) -> Result<(), CbsAuthError> {
+        use fe2o3_amqp::link::LinkStateError;
+        use fe2o3_amqp_management::error::Error as ManagementError;
+
+        self.cbs_link_handle
+            .request_refreshable_authorization(link_identifier, endpoint, resource, required_claims)
+            .await
+            // TODO: The CBS event loop should never spontaneously stop
+            .map_err(|_| ManagementError::Send(LinkStateError::IllegalSessionState.into()))??;
+        Ok(())
+    }
+
+    async fn create_sending_session_and_link(
+        &mut self,
+        endpoint: String,
         features: TransportProducerFeatures,
         options: PartitionPublishingOptions,
-        link_identifier: String,
+        session_identifier: u32,
+        link_identifier: u32,
+        identifier: String, // Used as the source address for the link
     ) -> Result<(SessionHandle<()>, Sender), OpenProducerError> {
-        todo!()
+
+        let auth_claims = vec![event_hub_claim::SEND.to_string()];
+        let resource = endpoint.clone();
+        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.clone(), resource, auth_claims).await?;
+
+        let mut session_handle = Session::begin(&mut self.connection.handle).await?;
+
+        // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
+        let link_name = format!("{};{}:{}:{}", self.id, self.id, session_identifier, link_identifier);
+        let mut builder = Sender::builder()
+            .name(link_name)
+            .source(identifier)
+            .target(endpoint);
+
+        if let TransportProducerFeatures::IdempotentPublishing = features {
+            builder = builder.add_desired_capabilities(amqp_property::ENABLE_IDEMPOTENT_PUBLISHING);
+        }
+
+        // If any of the options have a value, the entire set must be specified for the link
+        // settings.  For any options that did not have a value, specifying null will signal the
+        // service to generate the value.
+        if options.producer_group_id.is_some() ||
+            options.owner_level.is_some() ||
+            options.starting_sequence_number.is_some()
+        {
+            let properties = builder.properties.get_or_insert(Default::default());
+            properties.insert(
+                Symbol::from(amqp_property::PRODUCER_GROUP_ID),
+                options.producer_group_id.map(Value::from).unwrap_or(Value::Null)
+            );
+            properties.insert(
+                Symbol::from(amqp_property::PRODUCER_OWNER_LEVEL),
+                options.owner_level.map(Value::from).unwrap_or(Value::Null)
+            );
+            properties.insert(
+                Symbol::from(amqp_property::PRODUCER_SEQUENCE_NUMBER),
+                options.starting_sequence_number.map(Value::from).unwrap_or(Value::Null)
+            );
+        }
+
+        let sender = builder
+            .attach(&mut session_handle)
+            .await?;
+        Ok((session_handle, sender))
     }
 }
 

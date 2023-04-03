@@ -181,6 +181,8 @@ impl AmqpCbsLink {
             now_instant + timespan.unsigned_abs()
         });
 
+        // TODO: There are some custom application properties in the dotnet sdk.
+        // Maybe we should have a custom type that supports this?
         self.cbs_client.put_token(resource, token).await?;
 
         Ok(expires_at_instant)

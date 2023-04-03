@@ -131,6 +131,13 @@ pub enum CbsAuthError {
 /// Error opening a producer
 #[derive(Debug, thiserror::Error)]
 pub enum OpenProducerError {
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
 
+    #[error(transparent)]
+    Session(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderLink(#[from] SenderAttachError),
 }
 
