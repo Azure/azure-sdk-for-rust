@@ -130,9 +130,27 @@ pub enum CbsAuthError {
     Cbs(#[from] ManagementError),
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum OpenMgmtLinkError {
+    #[error("The connection scope is disposed")]
+    ConnectionScopeDisposed,
+
+    #[error(transparent)]
+    Session(#[from] BeginError),
+
+    #[error(transparent)]
+    Link(#[from] fe2o3_amqp_management::error::AttachError),
+}
+
 /// Error opening a producer
 #[derive(Debug, thiserror::Error)]
 pub enum OpenProducerError {
+    #[error(transparent)]
+    ParseEndpoint(#[from] url::ParseError),
+
+    #[error("The connection scope is disposed")]
+    ConnectionScopeDisposed,
+
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 
@@ -146,6 +164,12 @@ pub enum OpenProducerError {
 /// Error opening a consumer
 #[derive(Debug, thiserror::Error)]
 pub enum OpenConsumerError {
+    #[error(transparent)]
+    ParseEndpoint(#[from] url::ParseError),
+
+    #[error("The connection scope is disposed")]
+    ConnectionScopeDisposed,
+
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
 

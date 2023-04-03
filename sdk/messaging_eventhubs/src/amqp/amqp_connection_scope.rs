@@ -2,6 +2,7 @@ use std::{time::Duration as StdDuration, sync::{Arc, atomic::Ordering}};
 
 use fe2o3_amqp::{Connection, sasl_profile::SaslProfile, connection::ConnectionHandle, session::SessionHandle, Sender, Session, Receiver, link::receiver::CreditMode};
 use fe2o3_amqp_cbs::client::CbsClient;
+use fe2o3_amqp_management::MgmtClient;
 use fe2o3_amqp_types::{definitions::{Milliseconds, ReceiverSettleMode}, primitives::{Symbol, OrderedMap}, messaging::Source};
 use fe2o3_amqp_ws::WebSocketStream;
 use serde_amqp::Value;
@@ -10,7 +11,7 @@ use time::Duration as TimeSpan;
 
 use crate::{event_hubs_transport_type::EventHubsTransportType, amqp::{amqp_constants, amqp_cbs_link::AmqpCbsLink, LINK_IDENTIFIER, SESSION_IDENTIFIER, amqp_filter::{self, ConsumerFilter}}, authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim}, core::transport_producer_features::TransportProducerFeatures, producer::PartitionPublishingOptions, consumer::EventPosition};
 
-use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError, CbsAuthError, OpenConsumerError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider, amqp_property};
+use super::{amqp_connection::AmqpConnection, error::{AmqpConnectionScopeError, OpenProducerError, CbsAuthError, OpenConsumerError, OpenMgmtLinkError}, amqp_cbs_link::AmqpCbsLinkHandle, cbs_token_provider::CbsTokenProvider, amqp_property, amqp_producer::AmqpProducer, amqp_consumer::AmqpConsumer};
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 
@@ -176,19 +177,71 @@ impl AmqpConnectionScope {
         Ok(())
     }
 
+    async fn create_management_link(
+        &mut self,
+    ) -> Result<(SessionHandle<()>, MgmtClient), OpenMgmtLinkError> {
+        if self.is_disposed {
+            return Err(OpenMgmtLinkError::ConnectionScopeDisposed);
+        }
+
+        let mut session_handle = Session::begin(&mut self.connection.handle).await?;
+        let mgmt_link = MgmtClient::attach(&mut session_handle, "").await?;
+
+        Ok((session_handle, mgmt_link))
+    }
+
+    pub(crate) async fn open_producer_link(
+        &mut self,
+        partition_id: Option<String>,
+        features: TransportProducerFeatures,
+        options: PartitionPublishingOptions,
+        link_identifier: Option<String>,
+    ) -> Result<AmqpProducer, OpenProducerError> {
+        let path = match partition_id {
+            None => self.event_hub_name.clone(),
+            Some(partition_id) if partition_id.is_empty() => self.event_hub_name.clone(),
+            Some(partition_id) => format!("{}/Partitions/{}", self.event_hub_name, partition_id),
+        };
+        let producer_endpoint = self.service_endpoint.join(&path)?;
+
+        let identifier = link_identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
+        let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+        let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+        let (session_handle, sender) = self
+            .create_sending_session_and_link(
+                producer_endpoint,
+                features,
+                options,
+                session_identifier,
+                link_identifier,
+                identifier,
+            )
+            .await?;
+        Ok(AmqpProducer {
+            session_handle,
+            session_identifier,
+            sender,
+            link_identifier,
+        })
+    }
+
     async fn create_sending_session_and_link(
         &mut self,
-        endpoint: String,
+        endpoint: Url,
         features: TransportProducerFeatures,
         options: PartitionPublishingOptions,
         session_identifier: u32,
         link_identifier: u32,
         identifier: String, // Used as the source address for the link
     ) -> Result<(SessionHandle<()>, Sender), OpenProducerError> {
+        if self.is_disposed {
+            return Err(OpenProducerError::ConnectionScopeDisposed);
+        }
+
         // Perform the initial authorization for the link.
         let auth_claims = vec![event_hub_claim::SEND.to_string()];
-        let resource = endpoint.clone();
-        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.clone(), resource, auth_claims).await?;
+        let resource = endpoint.to_string();
+        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.to_string(), resource, auth_claims).await?;
 
         // Create and open the AMQP session associated with the link.
         let mut session_handle = Session::begin(&mut self.connection.handle).await?;
@@ -234,9 +287,47 @@ impl AmqpConnectionScope {
         Ok((session_handle, sender))
     }
 
+    pub(crate) async fn open_consumer_link(
+        &mut self,
+        consumer_group: String,
+        partition_id: String,
+        event_position: EventPosition,
+        prefetch_count: u32,
+        // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
+        owner_level: Option<i64>,
+        track_last_enqueued_event_properties: bool,
+        link_identifier: Option<String>,
+    ) -> Result<AmqpConsumer, OpenConsumerError> {
+        let path = format!("{}/ConsumerGroups/{}/Partitions/{}", self.event_hub_name, consumer_group, partition_id);
+        let consumer_endpoint = self.service_endpoint.join(&path)?;
+        let identifier = link_identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
+        let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+        let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
+
+        let (session_handle, receiver) = self
+            .create_receiving_session_and_link(
+                consumer_endpoint,
+                event_position,
+                prefetch_count,
+                // prefetch_size_in_bytes,
+                owner_level,
+                track_last_enqueued_event_properties,
+                session_identifier,
+                link_identifier,
+                identifier,
+            )
+            .await?;
+        Ok(AmqpConsumer {
+            session_handle,
+            session_identifier,
+            receiver,
+            link_identifier,
+        })
+    }
+
     async fn create_receiving_session_and_link(
         &mut self,
-        endpoint: String,
+        endpoint: Url,
         event_position: EventPosition,
         prefetch_count: u32,
         // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
@@ -246,10 +337,14 @@ impl AmqpConnectionScope {
         link_identifier: u32,
         identifier: String,
     ) -> Result<(SessionHandle<()>, Receiver), OpenConsumerError> {
+        if self.is_disposed {
+            return Err(OpenConsumerError::ConnectionScopeDisposed);
+        }
+
         // Perform the initial authorization for the link.
         let auth_claims = vec![event_hub_claim::LISTEN.to_string()];
-        let resource = endpoint.clone();
-        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.clone(), resource, auth_claims).await?;
+        let resource = endpoint.to_string();
+        self.request_refreshable_authorization_using_cbs(link_identifier, endpoint.to_string(), resource, auth_claims).await?;
 
         // Create and open the AMQP session associated with the link.
         let mut session_handle = Session::begin(&mut self.connection.handle).await?;
