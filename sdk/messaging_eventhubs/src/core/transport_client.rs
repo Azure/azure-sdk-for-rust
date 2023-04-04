@@ -29,7 +29,7 @@ pub trait TransportClient {
         retry_policy: RP
     ) -> Result<Self::Producer, Self::OpenProducerError>
     where
-        RP: EventHubsRetryPolicy;
+        RP: EventHubsRetryPolicy + Send;
 
     async fn create_consumer<RP>(
         &mut self,
@@ -44,5 +44,5 @@ pub trait TransportClient {
         prefetch_count: Option<u32>,
     ) -> Result<Self::Consumer, Self::OpenConsumerError>
     where
-        RP: EventHubsRetryPolicy;
+        RP: EventHubsRetryPolicy + Send;
 }
