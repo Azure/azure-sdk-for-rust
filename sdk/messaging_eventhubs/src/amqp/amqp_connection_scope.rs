@@ -4,7 +4,7 @@ use std::{
 };
 
 use fe2o3_amqp::{
-    connection::{ConnectionHandle}, link::receiver::CreditMode, sasl_profile::SaslProfile,
+    connection::ConnectionHandle, link::receiver::CreditMode, sasl_profile::SaslProfile,
     session::SessionHandle, Connection, Receiver, Sender, Session,
 };
 use fe2o3_amqp_cbs::client::CbsClient;
@@ -42,8 +42,8 @@ use super::{
     amqp_property,
     cbs_token_provider::CbsTokenProvider,
     error::{
-        AmqpConnectionScopeError, CbsAuthError, OpenConsumerError, OpenMgmtLinkError,
-        OpenProducerError, DisposeError,
+        AmqpConnectionScopeError, CbsAuthError, DisposeError, OpenConsumerError, OpenMgmtLinkError,
+        OpenProducerError,
     },
 };
 
@@ -269,11 +269,42 @@ impl AmqpConnectionScope {
                 identifier,
             )
             .await?;
+
+        let initialized_partition_properties = sender.properties(|properties| {
+            let producer_group_id = properties
+                .as_ref()
+                .and_then(|p| p.get(amqp_property::PRODUCER_GROUP_ID.as_str()))
+                .and_then(|value| match value {
+                    Value::Long(v) => Some(*v),
+                    _ => None,
+                });
+            let owner_level = properties
+                .as_ref()
+                .and_then(|p| p.get(amqp_property::PRODUCER_OWNER_LEVEL.as_str()))
+                .and_then(|value| match value {
+                    Value::Short(v) => Some(*v),
+                    _ => None,
+                });
+            let starting_sequence_number = properties
+                .as_ref()
+                .and_then(|p| p.get(amqp_property::PRODUCER_SEQUENCE_NUMBER.as_str()))
+                .and_then(|value| match value {
+                    Value::Int(v) => Some(*v),
+                    _ => None,
+                });
+            PartitionPublishingOptions {
+                producer_group_id,
+                owner_level,
+                starting_sequence_number,
+            }
+        });
+
         Ok(AmqpProducer {
             session_handle,
             session_identifier,
             sender,
             link_identifier,
+            initialized_partition_properties,
         })
     }
 
@@ -490,7 +521,7 @@ impl AmqpConnectionScope {
 
     pub(crate) async fn dispose(&mut self) -> Result<(), DisposeError> {
         if self.is_disposed {
-            return Ok(())
+            return Ok(());
         }
 
         self.is_disposed = true;

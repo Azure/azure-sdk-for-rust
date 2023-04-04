@@ -159,6 +159,9 @@ pub enum OpenProducerError {
 
     #[error(transparent)]
     SenderLink(#[from] SenderAttachError),
+
+    #[error(transparent)]
+    Elapsed(#[from] timer_kit::error::Elapsed),
 }
 
 /// Error opening a consumer
@@ -181,6 +184,9 @@ pub enum OpenConsumerError {
 
     #[error(transparent)]
     ConsumerFilter(#[from] OffsetIsEmpty),
+
+    #[error(transparent)]
+    Elapsed(#[from] timer_kit::error::Elapsed),
 }
 
 /// Error closing the AMQP connection and AMQP session

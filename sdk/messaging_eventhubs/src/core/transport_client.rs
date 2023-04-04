@@ -1,9 +1,16 @@
 use async_trait::async_trait;
 use url::Url;
 
-use crate::{event_hubs_properties::EventHubProperties, PartitionProperties, producer::PartitionPublishingOptions, event_hubs_retry_policy::EventHubsRetryPolicy, consumer::EventPosition};
+use crate::{
+    consumer::EventPosition, event_hubs_properties::EventHubProperties,
+    event_hubs_retry_policy::EventHubsRetryPolicy, producer::PartitionPublishingOptions,
+    PartitionProperties,
+};
 
-use super::{transport_consumer::TransportConsumer, transport_producer::TransportProducer, transport_producer_features::TransportProducerFeatures};
+use super::{
+    transport_consumer::TransportConsumer, transport_producer::TransportProducer,
+    transport_producer_features::TransportProducerFeatures,
+};
 
 #[async_trait]
 pub trait TransportClient {
@@ -11,14 +18,18 @@ pub trait TransportClient {
     type Consumer: TransportConsumer;
     type OpenProducerError: std::error::Error;
     type OpenConsumerError: std::error::Error;
+    type ManagementError: std::error::Error;
 
     fn is_closed(&self) -> bool;
 
     fn service_endpoint(&self) -> &Url;
 
-    async fn properties(&self) -> EventHubProperties;
+    async fn get_properties(&self) -> Result<EventHubProperties, Self::ManagementError>;
 
-    async fn partition_properties(&self, partition_id: &str) -> PartitionProperties;
+    async fn get_partition_properties(
+        &self,
+        partition_id: &str,
+    ) -> Result<PartitionProperties, Self::ManagementError>;
 
     async fn create_producer<RP>(
         &mut self,
@@ -26,7 +37,7 @@ pub trait TransportClient {
         producer_identifier: Option<String>,
         requested_features: TransportProducerFeatures,
         partition_options: PartitionPublishingOptions,
-        retry_policy: RP
+        retry_policy: RP,
     ) -> Result<Self::Producer, Self::OpenProducerError>
     where
         RP: EventHubsRetryPolicy + Send;
