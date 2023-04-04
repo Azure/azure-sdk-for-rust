@@ -23,14 +23,13 @@ pub(crate) struct EventHubPropertiesRequest<'a> {
 fn encode_application_properties<'a>(
     event_hub_name: String,
     management_authorization_token: String,
-) -> Option<ApplicationProperties> {
+) -> ApplicationProperties {
     // Encoding the operation entry will be taken care of by the Request trait
-    let application_properties = ApplicationProperties::builder()
+    ApplicationProperties::builder()
         .insert(RESOURCE_NAME_KEY, event_hub_name.as_ref())
         .insert(RESOURCE_TYPE_KEY, EVENT_HUB_RESOURCE_TYPE_VALUE)
         .insert(SECURITY_TOKEN_KEY, management_authorization_token.as_ref())
-        .build();
-    Some(application_properties)
+        .build()
 }
 
 impl<'a> Request for EventHubPropertiesRequest<'a> {
@@ -41,10 +40,10 @@ impl<'a> Request for EventHubPropertiesRequest<'a> {
     type Body = ();
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        encode_application_properties(
+        Some(encode_application_properties(
             self.event_hub_name.to_string(),
             self.management_authorization_token.to_string(),
-        )
+        ))
     }
 
     fn encode_body(self) -> Self::Body {
@@ -60,10 +59,10 @@ impl<'a> Request for &'a EventHubPropertiesRequest<'a> {
     type Body = ();
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        encode_application_properties(
+        Some(encode_application_properties(
             self.event_hub_name.to_string(),
             self.management_authorization_token.to_string(),
-        )
+        ))
     }
 
     fn encode_body(self) -> Self::Body {
@@ -79,10 +78,10 @@ impl<'a> Request for &'a mut EventHubPropertiesRequest<'a> {
     type Body = ();
 
     fn encode_application_properties(&mut self) -> Option<ApplicationProperties> {
-        encode_application_properties(
+        Some(encode_application_properties(
             self.event_hub_name.to_string(),
             self.management_authorization_token.to_string(),
-        )
+        ))
     }
 
     fn encode_body(self) -> Self::Body {

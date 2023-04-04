@@ -5,6 +5,7 @@ use const_format::concatcp;
 use super::amqp_constants::VENDOR;
 
 pub(crate) mod event_hub_properties;
+pub(crate) mod partition_properties;
 
 // /// <summary>The location to specify for management operations.</summary>
 // public const string Address = "$management";
@@ -41,6 +42,7 @@ const EVENT_HUB_RESOURCE_TYPE_VALUE: &str = concatcp!(VENDOR, ":eventhub");
 
 // /// <summary>The value to specify when identifying a partition resource.</summary>
 // public const string PartitionResourceTypeValue = AmqpConstants.Vendor + ":partition";
+const PARTITION_RESOURCE_TYPE_VALUE: &str = concatcp!(VENDOR, ":partition");
 
 // /// <summary>
 // ///   The set of property mappings to use for reading management-related
