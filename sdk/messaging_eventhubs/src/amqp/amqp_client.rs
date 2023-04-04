@@ -10,7 +10,7 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
-    PartitionProperties, util,
+    util, PartitionProperties,
 };
 
 use super::{
@@ -20,6 +20,8 @@ use super::{
     amqp_producer::AmqpProducer,
     error::{OpenConsumerError, OpenProducerError},
 };
+
+const DEFAULT_PREFETCH_COUNT: u32 = 300;
 
 pub(crate) struct AmqpClient {
     connection_scope: AmqpConnectionScope,
@@ -65,7 +67,12 @@ impl TransportClient for AmqpClient {
         RP: EventHubsRetryPolicy + Send,
     {
         let operation_timeout = retry_policy.calculate_try_timeout(0);
-        let fut = self.connection_scope.open_producer_link(partition_id, requested_features, partition_options, producer_identifier);
+        let fut = self.connection_scope.open_producer_link(
+            partition_id,
+            requested_features,
+            partition_options,
+            producer_identifier,
+        );
         let producer = util::time::timeout(operation_timeout, fut).await??;
 
         Ok(producer)
@@ -73,8 +80,8 @@ impl TransportClient for AmqpClient {
 
     async fn create_consumer<RP>(
         &mut self,
-        consumer_group: Option<String>,
-        partition_id: Option<String>,
+        consumer_group: String,
+        partition_id: String,
         consumer_identifier: Option<String>,
         event_position: EventPosition,
         retry_policy: RP,
@@ -86,6 +93,19 @@ impl TransportClient for AmqpClient {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        todo!()
+        let try_timeout = retry_policy.calculate_try_timeout(0);
+        let fut = self.connection_scope.open_consumer_link(
+            consumer_group,
+            partition_id,
+            event_position,
+            prefetch_count.unwrap_or(DEFAULT_PREFETCH_COUNT),
+            owner_level,
+            track_last_enqueued_event_properties,
+            invalidate_consumer_when_partition_stolen,
+            consumer_identifier,
+        );
+        let consumer = util::time::timeout(try_timeout, fut).await??;
+
+        Ok(consumer)
     }
 }

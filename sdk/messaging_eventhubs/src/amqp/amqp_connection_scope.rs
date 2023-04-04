@@ -392,6 +392,7 @@ impl AmqpConnectionScope {
         // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
         owner_level: Option<i64>,
         track_last_enqueued_event_properties: bool,
+        invalidate_consumer_when_partition_stolen: bool,
         identifier: Option<String>,
     ) -> Result<AmqpConsumer, OpenConsumerError> {
         let path = format!(
@@ -421,6 +422,7 @@ impl AmqpConnectionScope {
             session_identifier,
             receiver,
             link_identifier,
+            invalidate_consumer_when_partition_stolen,
         })
     }
 

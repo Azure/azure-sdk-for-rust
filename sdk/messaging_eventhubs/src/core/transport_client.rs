@@ -44,8 +44,8 @@ pub trait TransportClient {
 
     async fn create_consumer<RP>(
         &mut self,
-        consumer_group: Option<String>,
-        partition_id: Option<String>,
+        consumer_group: String,
+        partition_id: String,
         consumer_identifier: Option<String>,
         event_position: EventPosition,
         retry_policy: RP,
