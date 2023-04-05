@@ -8,7 +8,19 @@ use fe2o3_amqp::{
 };
 use fe2o3_amqp_management::error::Error as ManagementError;
 
-use crate::consumer::error::OffsetIsEmpty;
+use crate::{consumer::error::OffsetIsEmpty, util::IntoAzureCoreError};
+
+impl IntoAzureCoreError for ManagementError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            ManagementError::Send(_)
+            | ManagementError::Recv(_) => azure_core::Error::new(ErrorKind::Io, self),
+            _ => azure_core::Error::new(ErrorKind::Other, self),
+        }
+    }
+}
 
 /// The value exceeds the maximum length allowed
 #[derive(Debug)]

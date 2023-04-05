@@ -9,10 +9,30 @@ use crate::{PartitionProperties, amqp::amqp_management::response_map};
 
 use super::{READ_OPERATION_VALUE, RESOURCE_NAME_KEY, PARTITION_NAME_KEY, RESOURCE_TYPE_KEY, PARTITION_RESOURCE_TYPE_VALUE, SECURITY_TOKEN_KEY};
 
+#[derive(Debug, Clone)]
 pub(crate) struct PartitionPropertiesRequest<'a> {
     event_hub_name: Cow<'a, str>,
     partition_identifier: Cow<'a, str>,
     management_authorization_token: Cow<'a, str>,
+}
+
+impl<'a> PartitionPropertiesRequest<'a> {
+    pub(crate) fn new<T, U, V>(
+        event_hub_name: T,
+        partition_identifier: U,
+        management_authorization_token: V,
+    ) -> Self
+    where
+        T: Into<Cow<'a, str>>,
+        U: Into<Cow<'a, str>>,
+        V: Into<Cow<'a, str>>,
+    {
+        Self {
+            event_hub_name: event_hub_name.into(),
+            partition_identifier: partition_identifier.into(),
+            management_authorization_token: management_authorization_token.into(),
+        }
+    }
 }
 
 fn encode_application_properties(

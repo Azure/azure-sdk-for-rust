@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use fe2o3_amqp_management::error::Error as ManagementError;
 use url::Url;
 
 use crate::{
@@ -10,7 +9,7 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
-    util, PartitionProperties,
+    util::{self, IntoAzureCoreError}, PartitionProperties, authorization::event_hub_token_credential::EventHubTokenCredential, amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
 };
 
 use super::{
@@ -18,7 +17,7 @@ use super::{
     amqp_consumer::AmqpConsumer,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{OpenConsumerError, OpenProducerError},
+    error::{OpenConsumerError, OpenProducerError}, amqp_management::partition_properties::PartitionPropertiesRequest,
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
@@ -34,7 +33,6 @@ impl TransportClient for AmqpClient {
     type Consumer = AmqpConsumer;
     type OpenProducerError = OpenProducerError;
     type OpenConsumerError = OpenConsumerError;
-    type ManagementError = ManagementError;
 
     fn is_closed(&self) -> bool {
         self.connection_scope.is_disposed
@@ -44,15 +42,89 @@ impl TransportClient for AmqpClient {
         &self.connection_scope.service_endpoint
     }
 
-    async fn get_properties(&self) -> Result<EventHubProperties, Self::ManagementError> {
-        todo!()
+    async fn get_properties<RP>(&mut self, retry_policy: RP) -> Result<EventHubProperties, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        // TODO: use cancellation token?
+        let mut try_timeout = retry_policy.calculate_try_timeout(0);
+        let mut failed_attempt = 0;
+        let access_token = self.connection_scope.credential.get_token(EventHubTokenCredential::DEFAULT_SCOPE).await?;
+        let token_value = access_token.token.secret();
+        let request = EventHubPropertiesRequest::new(&self.connection_scope.event_hub_name, token_value);
+        loop {
+            // The request internally uses Cow, so cloning is cheap.
+            let fut = self.management_link.client.call(request.clone());
+            let (delay, error) = match util::time::timeout(try_timeout, fut).await {
+                Ok(Ok(response)) => return Ok(response),
+                Ok(Err(mgmt_err)) => {
+                    failed_attempt += 1;
+                    let delay = retry_policy.calculate_retry_delay(&mgmt_err, failed_attempt);
+                    let error = mgmt_err.into_azure_core_error();
+                    (delay, error)
+                }
+                Err(elapsed) => {
+                    failed_attempt += 1;
+                    let delay = retry_policy.calculate_retry_delay(&elapsed, failed_attempt);
+                    let error = elapsed.into_azure_core_error();
+                    (delay, error)
+                }
+            };
+
+            match delay {
+                Some(delay) => {
+                    util::time::sleep(delay).await;
+                    try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
+                },
+                None => return Err(error),
+            }
+        }
     }
 
-    async fn get_partition_properties(
-        &self,
+    async fn get_partition_properties<RP>(
+        &mut self,
         partition_id: &str,
-    ) -> Result<PartitionProperties, Self::ManagementError> {
-        todo!()
+        retry_policy: RP
+    ) -> Result<PartitionProperties, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let mut try_timeout = retry_policy.calculate_try_timeout(0);
+        let mut failed_attempt = 0;
+        let access_token = self.connection_scope.credential.get_token(EventHubTokenCredential::DEFAULT_SCOPE).await?;
+        let token_value = access_token.token.secret();
+        let request = PartitionPropertiesRequest::new(
+            &self.connection_scope.event_hub_name,
+            partition_id,
+            token_value,
+        );
+        loop {
+            // The request internally uses Cow, so cloning is cheap.
+            let fut = self.management_link.client.call(request.clone());
+            let (delay, error) = match util::time::timeout(try_timeout, fut).await {
+                Ok(Ok(response)) => return Ok(response),
+                Ok(Err(mgmt_err)) => {
+                    failed_attempt += 1;
+                    let delay = retry_policy.calculate_retry_delay(&mgmt_err, failed_attempt);
+                    let error = mgmt_err.into_azure_core_error();
+                    (delay, error)
+                }
+                Err(elapsed) => {
+                    failed_attempt += 1;
+                    let delay = retry_policy.calculate_retry_delay(&elapsed, failed_attempt);
+                    let error = elapsed.into_azure_core_error();
+                    (delay, error)
+                }
+            };
+
+            match delay {
+                Some(delay) => {
+                    util::time::sleep(delay).await;
+                    try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
+                },
+                None => return Err(error),
+            }
+        }
     }
 
     async fn create_producer<RP>(

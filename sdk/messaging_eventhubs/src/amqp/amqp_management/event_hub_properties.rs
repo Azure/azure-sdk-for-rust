@@ -15,9 +15,23 @@ use super::{
     SECURITY_TOKEN_KEY,
 };
 
+#[derive(Debug, Clone)]
 pub(crate) struct EventHubPropertiesRequest<'a> {
     event_hub_name: Cow<'a, str>,
     management_authorization_token: Cow<'a, str>,
+}
+
+impl<'a> EventHubPropertiesRequest<'a> {
+    pub(crate) fn new<T, U>(event_hub_name: T, management_authorization_token: U) -> Self
+    where
+        T: Into<Cow<'a, str>>,
+        U: Into<Cow<'a, str>>,
+    {
+        Self {
+            event_hub_name: event_hub_name.into(),
+            management_authorization_token: management_authorization_token.into(),
+        }
+    }
 }
 
 fn encode_application_properties<'a>(

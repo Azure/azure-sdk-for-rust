@@ -18,18 +18,22 @@ pub trait TransportClient {
     type Consumer: TransportConsumer;
     type OpenProducerError: std::error::Error;
     type OpenConsumerError: std::error::Error;
-    type ManagementError: std::error::Error;
 
     fn is_closed(&self) -> bool;
 
     fn service_endpoint(&self) -> &Url;
 
-    async fn get_properties(&self) -> Result<EventHubProperties, Self::ManagementError>;
+    async fn get_properties<RP>(&mut self, retry_policy: RP) -> Result<EventHubProperties, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send;
 
-    async fn get_partition_properties(
-        &self,
+    async fn get_partition_properties<RP>(
+        &mut self,
         partition_id: &str,
-    ) -> Result<PartitionProperties, Self::ManagementError>;
+        retry_policy: RP,
+    ) -> Result<PartitionProperties, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send;
 
     async fn create_producer<RP>(
         &mut self,
