@@ -1,4 +1,4 @@
-use std::sync::atomic::Ordering;
+use std::{sync::{atomic::Ordering, Arc}, time::Duration};
 
 use async_trait::async_trait;
 use url::Url;
@@ -14,7 +14,7 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
     util::{self, IntoAzureCoreError},
-    PartitionProperties,
+    PartitionProperties, event_hubs_transport_type::EventHubsTransportType, event_hubs_connection_option::EventHubConnectionOptions,
 };
 
 use super::{
@@ -23,7 +23,7 @@ use super::{
     amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{OpenConsumerError, OpenProducerError},
+    error::{OpenConsumerError, OpenProducerError, AmqpConnectionScopeError},
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
@@ -31,6 +31,49 @@ const DEFAULT_PREFETCH_COUNT: u32 = 300;
 pub struct AmqpClient {
     connection_scope: AmqpConnectionScope,
     management_link: AmqpManagementLink,
+}
+
+impl AmqpClient {
+    pub(crate) async fn new(
+        host: &str,
+        event_hub_name: Arc<String>,
+        credential: EventHubTokenCredential,
+        options: EventHubConnectionOptions,
+        // TimeSpan operationTimeout,
+    ) -> Result<Self, azure_core::Error> {
+        // Scheme of service endpoint must always be either "amqp" or "amqps"
+        let service_endpoint = format!("{}://{}", options.transport_type.url_scheme(), host);
+        let service_endpoint = Url::parse(&service_endpoint)?;
+
+        let connection_endpoint = match options.custom_endpoint_address {
+            Some(url) => {
+                let url = format!("{}://{}", options.transport_type.url_scheme(), url.host_str().unwrap_or(""));
+                Url::parse(&url)?
+            },
+            None => service_endpoint.clone()
+        };
+
+        // Create AmqpConnectionScope
+        let mut connection_scope = AmqpConnectionScope::new(
+            service_endpoint,
+            connection_endpoint,
+            event_hub_name,
+            credential,
+            options.transport_type,
+            options.connection_idle_timeout,
+            None
+        ).await
+        .map_err(IntoAzureCoreError::into_azure_core_error)?;
+
+        // Create AmqpManagementLink
+        let management_link = connection_scope.open_management_link().await
+            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+
+        Ok(Self {
+            connection_scope,
+            management_link,
+        })
+    }
 }
 
 #[async_trait]

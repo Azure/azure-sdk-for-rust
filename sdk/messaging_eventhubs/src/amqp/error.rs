@@ -118,6 +118,22 @@ impl From<timer_kit::error::Elapsed> for AmqpConnectionScopeError {
     }
 }
 
+impl IntoAzureCoreError for AmqpConnectionScopeError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            AmqpConnectionScopeError::Open(_) => todo!(),
+            AmqpConnectionScopeError::WebSocket(_) => todo!(),
+            AmqpConnectionScopeError::Elapsed => azure_core::Error::new(ErrorKind::Other, self),
+            AmqpConnectionScopeError::Begin(_) => todo!(),
+            AmqpConnectionScopeError::SenderAttach(_) => todo!(),
+            AmqpConnectionScopeError::ReceiverAttach(_) => todo!(),
+            AmqpConnectionScopeError::ScopeDisposed => todo!(),
+        }
+    }
+}
+
 /// The CBS event loop has stopped
 #[derive(Debug)]
 pub(crate) struct AmqpCbsEventLoopStopped {}
@@ -152,6 +168,12 @@ pub enum OpenMgmtLinkError {
 
     #[error(transparent)]
     Link(#[from] fe2o3_amqp_management::error::AttachError),
+}
+
+impl IntoAzureCoreError for OpenMgmtLinkError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        todo!()
+    }
 }
 
 /// Error opening a producer

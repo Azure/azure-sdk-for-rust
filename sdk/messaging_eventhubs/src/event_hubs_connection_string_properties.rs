@@ -48,6 +48,11 @@ impl IntoAzureCoreError for ToConnectionStringError {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ValidationError {
+
+}
+
 /// The set of properties that comprise a Service Bus connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct EventHubsConnectionStringProperties<'a> {
@@ -708,6 +713,7 @@ mod tests {
         let endpoint = "test.endpoint.com";
         let connection_string = format!("Endpoint={}", endpoint);
         let result = EventHubsConnectionStringProperties::parse(&connection_string);
+        println!("{:?}", result);
         assert!(result.is_err());
     }
 

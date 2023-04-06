@@ -5,11 +5,11 @@ use crate::event_hubs_transport_type::EventHubsTransportType;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EventHubConnectionOptions {
-    connection_idle_timeout: Duration,
-    transport_type: EventHubsTransportType,
+    pub(crate) connection_idle_timeout: Duration,
+    pub(crate) transport_type: EventHubsTransportType,
     // send_buffer_size_in_bytes: usize, // TODO: need upstream to support changing buffer size
     // receive_buffer_size_in_bytes: usize, // TODO: need upstream to support changing buffer size
-    custom_endpoint_address: Option<Url>,
+    pub(crate) custom_endpoint_address: Option<Url>,
 }
 
 impl Default for EventHubConnectionOptions {
