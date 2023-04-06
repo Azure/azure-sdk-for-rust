@@ -2,6 +2,8 @@
 
 use azure_core::Url;
 
+use crate::util::IntoAzureCoreError;
+
 /// Error with parsing the connection string.
 #[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum FormatError {
@@ -12,6 +14,14 @@ pub enum FormatError {
     /// Connection string is malformed
     #[error("Connection string is malformed")]
     InvalidConnectionString,
+}
+
+impl IntoAzureCoreError for FormatError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        azure_core::Error::new(ErrorKind::Other, self)
+    }
 }
 
 /// Error with outputting the connection string.
@@ -30,11 +40,19 @@ pub enum ToConnectionStringError {
     OnlyOneSharedAccessAuthorizationMayBeUsed,
 }
 
+impl IntoAzureCoreError for ToConnectionStringError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        azure_core::Error::new(ErrorKind::Other, self)
+    }
+}
+
 /// The set of properties that comprise a Service Bus connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct EventHubsConnectionStringProperties<'a> {
     pub(crate) endpoint: Option<url::Url>,
-    pub(crate) entity_path: Option<&'a str>,
+    pub(crate) event_hub_name: Option<&'a str>,
     pub(crate) shared_access_key_name: Option<&'a str>,
     pub(crate) shared_access_key: Option<&'a str>,
     pub(crate) shared_access_signature: Option<&'a str>,
@@ -54,7 +72,7 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
     const ENDPOINT_TOKEN: &'static str = "Endpoint";
 
     /// The token that identifies the name of a specific Service Bus entity under the namespace.
-    const ENTITY_PATH_TOKEN: &'static str = "EntityPath";
+    const EVENT_HUB_NAME_TOKEN: &'static str = "EntityPath";
 
     /// The token that identifies the name of a shared access key.
     const SHARED_ACCESS_KEY_NAME_TOKEN: &'static str = "SharedAccessKeyName";
@@ -78,8 +96,8 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
 
     /// The name of the specific Service Bus entity instance under the associated Service Bus
     /// namespace.
-    pub fn entity_path(&self) -> Option<&str> {
-        self.entity_path
+    pub fn event_hub_name(&self) -> Option<&str> {
+        self.event_hub_name
     }
 
     /// The name of the shared access key, either for the Service Bus namespace or the Service Bus
@@ -119,13 +137,13 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
             return Err(ToConnectionStringError::MissingConnectionInformation);
         }
 
-        if let Some(entity_path) = self.entity_path.and_then(|s| match !s.is_empty() {
+        if let Some(event_hub_name) = self.event_hub_name.and_then(|s| match !s.is_empty() {
             true => Some(s),
             false => None,
         }) {
-            s.push_str(Self::ENTITY_PATH_TOKEN);
+            s.push_str(Self::EVENT_HUB_NAME_TOKEN);
             s.push(Self::TOKEN_VALUE_SEPARATOR);
-            s.push_str(entity_path);
+            s.push_str(event_hub_name);
             s.push(Self::TOKEN_VALUE_PAIR_DELIMITER);
         }
 
@@ -172,7 +190,7 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
         }
 
         let mut endpoint: Option<Url> = None;
-        let mut entity_path: Option<&'a str> = None;
+        let mut event_hub_name: Option<&'a str> = None;
         let mut shared_access_key_name: Option<&'a str> = None;
         let mut shared_access_key: Option<&'a str> = None;
         let mut shared_access_signature: Option<&'a str> = None;
@@ -214,7 +232,7 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
                         .map_err(|_| FormatError::InvalidConnectionString)?;
                     endpoint = Some(url);
                 }
-                Self::ENTITY_PATH_TOKEN => entity_path = Some(value),
+                Self::EVENT_HUB_NAME_TOKEN => event_hub_name = Some(value),
                 Self::SHARED_ACCESS_KEY_NAME_TOKEN => shared_access_key_name = Some(value),
                 Self::SHARED_ACCESS_KEY_VALUE_TOKEN => shared_access_key = Some(value),
                 Self::SHARED_ACCESS_SIGNATURE_TOKEN => shared_access_signature = Some(value),
@@ -224,7 +242,7 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
 
         Ok(Self {
             endpoint,
-            entity_path,
+            event_hub_name,
             shared_access_key_name,
             shared_access_key,
             shared_access_signature,
@@ -262,7 +280,7 @@ mod tests {
             assert_eq!(parsed.shared_access_key_name(), $expected.sas_key_name);
             assert_eq!(parsed.shared_access_key(), $expected.sas_key);
             assert_eq!(parsed.shared_access_signature(), $expected.sas);
-            assert_eq!(parsed.entity_path(), $expected.event_hub);
+            assert_eq!(parsed.event_hub_name(), $expected.event_hub);
         };
     }
 
@@ -468,7 +486,7 @@ mod tests {
         // "missing endpoint"
         let case = EventHubsConnectionStringProperties {
             endpoint: None,
-            entity_path: Some("fake"),
+            event_hub_name: Some("fake"),
             shared_access_signature: Some("fake"),
             shared_access_key_name: None,
             shared_access_key: None,
@@ -478,7 +496,7 @@ mod tests {
         // "missing authorization"
         let case = EventHubsConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
-            entity_path: Some("fake"),
+            event_hub_name: Some("fake"),
             shared_access_signature: None,
             shared_access_key_name: None,
             shared_access_key: None,
@@ -488,7 +506,7 @@ mod tests {
         // "SAS and key specified"
         let case = EventHubsConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
-            entity_path: Some("fake"),
+            event_hub_name: Some("fake"),
             shared_access_signature: Some("fake"),
             shared_access_key: Some("fake"),
             shared_access_key_name: None,
@@ -498,7 +516,7 @@ mod tests {
         // "SAS and shared key name specified"
         let case = EventHubsConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
-            entity_path: Some("fake"),
+            event_hub_name: Some("fake"),
             shared_access_signature: Some("fake"),
             shared_access_key_name: Some("fake"),
             shared_access_key: None,
@@ -508,7 +526,7 @@ mod tests {
         // "only shared key name specified"
         let case = EventHubsConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
-            entity_path: Some("fake"),
+            event_hub_name: Some("fake"),
             shared_access_signature: None,
             shared_access_key_name: Some("fake"),
             shared_access_key: None,
@@ -518,7 +536,7 @@ mod tests {
         // "only shared key specified"
         let case = EventHubsConnectionStringProperties {
             endpoint: Some(url::Url::parse("sb://someplace.hosname.ext").unwrap()),
-            entity_path: Some("fake"),
+            event_hub_name: Some("fake"),
             shared_access_signature: None,
             shared_access_key_name: None,
             shared_access_key: Some("fake"),
@@ -547,7 +565,7 @@ mod tests {
             parsed.shared_access_signature(),
             Some(shared_access_signature)
         );
-        assert_eq!(parsed.entity_path(), None);
+        assert_eq!(parsed.event_hub_name(), None);
     }
 
     #[test]
@@ -570,7 +588,7 @@ mod tests {
             parsed.shared_access_signature(),
             Some(shared_access_signature)
         );
-        assert_eq!(parsed.entity_path(), Some(event_hub));
+        assert_eq!(parsed.event_hub_name(), Some(event_hub));
     }
 
     #[test]
@@ -597,7 +615,7 @@ mod tests {
         );
         assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
         assert_eq!(parsed.shared_access_key(), Some(sas_key));
-        assert_eq!(parsed.entity_path(), Some(event_hub));
+        assert_eq!(parsed.event_hub_name(), Some(event_hub));
     }
 
     #[test]
@@ -615,7 +633,7 @@ mod tests {
         );
         assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
         assert_eq!(parsed.shared_access_key(), Some(sas_key));
-        assert_eq!(parsed.entity_path(), Some(event_hub));
+        assert_eq!(parsed.event_hub_name(), Some(event_hub));
     }
 
     #[test]
@@ -633,7 +651,7 @@ mod tests {
         );
         assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
         assert_eq!(parsed.shared_access_key(), Some(sas_key));
-        assert_eq!(parsed.entity_path(), Some(event_hub));
+        assert_eq!(parsed.event_hub_name(), Some(event_hub));
     }
 
     #[test]
@@ -660,7 +678,7 @@ mod tests {
         );
         assert_eq!(parsed.shared_access_key_name(), Some(sas_key_name));
         assert_eq!(parsed.shared_access_key(), Some(sas_key));
-        assert_eq!(parsed.entity_path(), Some(event_hub));
+        assert_eq!(parsed.event_hub_name(), Some(event_hub));
     }
 
     #[test]
@@ -724,7 +742,7 @@ mod tests {
     fn to_connection_string_produces_the_connection_string_for_shared_access_signatures() {
         let properties = EventHubsConnectionStringProperties {
             endpoint: Some("sb://place.endpoint.ext".parse().unwrap()),
-            entity_path: Some("HubName"),
+            event_hub_name: Some("HubName"),
             shared_access_signature: Some("FaKe#$1324@@"),
             shared_access_key_name: None,
             shared_access_key: None,
@@ -744,7 +762,7 @@ mod tests {
     fn to_connection_string_produces_the_connection_string_for_shared_keys() {
         let properties = EventHubsConnectionStringProperties {
             endpoint: Some("sb://place.endpoint.ext".parse().unwrap()),
-            entity_path: Some("HubName"),
+            event_hub_name: Some("HubName"),
             shared_access_signature: None,
             shared_access_key_name: Some("RootSharedAccessManagementKey"),
             shared_access_key: Some("FaKe#$1324@@"),
@@ -772,7 +790,7 @@ mod tests {
             let endpoint = format!("{}myhub.servicebus.windows.net", scheme);
             let properties = EventHubsConnectionStringProperties {
                 endpoint: Some(url::Url::parse(&endpoint).unwrap()),
-                entity_path: Some("HubName"),
+                event_hub_name: Some("HubName"),
                 shared_access_signature: None,
                 shared_access_key_name: Some("RootSharedAccessManagementKey"),
                 shared_access_key: Some("FaKe#$1324@@"),
@@ -788,7 +806,7 @@ mod tests {
         let endpoint = "sb://myhub.servicebus.windows.net";
         let properties = EventHubsConnectionStringProperties {
             endpoint: Some(url::Url::parse(&endpoint).unwrap()),
-            entity_path: Some("HubName"),
+            event_hub_name: Some("HubName"),
             shared_access_signature: None,
             shared_access_key_name: Some("RootSharedAccessManagementKey"),
             shared_access_key: Some("FaKe#$1324@@"),
