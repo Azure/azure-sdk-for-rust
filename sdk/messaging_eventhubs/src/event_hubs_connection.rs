@@ -11,7 +11,21 @@ pub struct EventHubConnection {
     inner: EventHubConnectionInner,
 }
 
-pub enum EventHubConnectionInner {
+pub(crate) enum EventHubConnectionInner {
     Owned(AmqpClient),
     Shared(Arc<Mutex<AmqpClient>>),
+}
+
+impl EventHubConnection {
+    pub fn fully_qualified_namespace(&self) -> &str {
+        &self.fully_qualified_namespace
+    }
+
+    pub fn event_hub_name(&self) -> &str {
+        &self.event_hub_name
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
+    }
 }
