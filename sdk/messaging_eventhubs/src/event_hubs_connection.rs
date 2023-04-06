@@ -2,7 +2,7 @@ use std::sync::{Arc, atomic::AtomicBool};
 
 use tokio::sync::Mutex;
 
-use crate::{amqp::amqp_client::AmqpClient, authorization::event_hub_token_credential::EventHubTokenCredential, event_hubs_connection_option::EventHubConnectionOptions};
+use crate::{amqp::amqp_client::AmqpClient, authorization::event_hub_token_credential::EventHubTokenCredential, event_hubs_connection_option::EventHubConnectionOptions, event_hubs_connection_string_properties::EventHubsConnectionStringProperties, util::IntoAzureCoreError};
 
 pub struct EventHubConnection {
     fully_qualified_namespace: String,
@@ -34,6 +34,8 @@ impl EventHubConnection {
         event_hub_name: String,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
+        let connection_string_properties = EventHubsConnectionStringProperties::parse(&fully_qualified_namespace)
+            .map_err(IntoAzureCoreError::into_azure_core_error)?;
         todo!()
     }
 
