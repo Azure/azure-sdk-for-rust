@@ -11,3 +11,11 @@ pub enum EventHubsTransportType
     /// The connection uses the AMQP protocol over web sockets
     AmqpWebSockets
 }
+
+impl Default for EventHubsTransportType
+{
+    fn default() -> Self
+    {
+        Self::AmqpTcp
+    }
+}
