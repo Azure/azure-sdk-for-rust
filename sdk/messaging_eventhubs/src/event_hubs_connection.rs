@@ -71,6 +71,7 @@ impl EventHubConnection {
                 .ok_or(EventHubConnectionError::EventHubNameIsNotSpecified)
                 .map_err(IntoAzureCoreError::into_azure_core_error)?;
         }
+        let event_hub_name = Arc::new(event_hub_name);
 
         macro_rules! ok_if_not_none_or_empty {
             ($id:expr, $type_name:literal) => {
@@ -122,7 +123,21 @@ impl EventHubConnection {
         let token_credential =
             EventHubTokenCredential::SharedAccessCredential(shared_access_credential);
 
-        todo!()
+        let inner_client = AmqpClient::new(
+            &fully_qualified_namespace,
+            event_hub_name.clone(),
+            token_credential,
+            options,
+        ).await?;
+        let is_closed = inner_client.connection_scope.is_disposed.clone();
+        let inner = EventHubConnectionInner::Owned(inner_client);
+
+        Ok(Self {
+            fully_qualified_namespace,
+            event_hub_name,
+            is_closed,
+            inner,
+        })
     }
 
     pub async fn new_with_credential(

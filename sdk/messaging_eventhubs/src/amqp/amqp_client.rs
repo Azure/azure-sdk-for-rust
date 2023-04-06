@@ -29,8 +29,8 @@ use super::{
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
 
 pub struct AmqpClient {
-    connection_scope: AmqpConnectionScope,
-    management_link: AmqpManagementLink,
+    pub(crate) connection_scope: AmqpConnectionScope,
+    pub(crate) management_link: AmqpManagementLink,
 }
 
 impl AmqpClient {
