@@ -1,5 +1,5 @@
 use std::{
-    sync::{atomic::Ordering, Arc},
+    sync::{atomic::{Ordering, AtomicBool}, Arc},
     time::Duration as StdDuration,
 };
 
@@ -57,7 +57,7 @@ pub(crate) struct AmqpConnectionScope {
     // /// The amount of time to allow a connection to have no observed traffic before considering it idle.
     // pub(crate) connection_idle_timeout_millis: Milliseconds,
     /// Indicates whether this <see cref="AmqpConnectionScope"/> has been disposed.
-    pub(crate) is_disposed: bool,
+    pub(crate) is_disposed: Arc<AtomicBool>,
 
     /// The unique identifier of the scope.
     pub(crate) id: String,
@@ -69,7 +69,7 @@ pub(crate) struct AmqpConnectionScope {
     pub(crate) connection_endpoint: Url,
 
     /// The name of the Event Hub to which the scope is associated.
-    pub(crate) event_hub_name: String,
+    pub(crate) event_hub_name: Arc<String>,
 
     // ///   The provider to use for obtaining a token for authorization with the Event Hubs service.
     // private CbsTokenProvider TokenProvider { get; }
@@ -105,7 +105,7 @@ impl AmqpConnectionScope {
     pub(crate) async fn new(
         service_endpoint: Url,
         connection_endpoint: Url,
-        event_hub_name: String,
+        event_hub_name: Arc<String>,
         credential: EventHubTokenCredential,
         transport_type: EventHubsTransportType,
         idle_timeout: StdDuration,
@@ -144,7 +144,7 @@ impl AmqpConnectionScope {
         let cbs_link_handle = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
 
         Ok(Self {
-            is_disposed: false,
+            is_disposed: Arc::new(AtomicBool::new(false)),
             id,
             service_endpoint,
             connection_endpoint,
@@ -232,7 +232,7 @@ impl AmqpConnectionScope {
     async fn create_management_link(
         &mut self,
     ) -> Result<(SessionHandle<()>, MgmtClient), OpenMgmtLinkError> {
-        if self.is_disposed {
+        if self.is_disposed.load(Ordering::Relaxed) {
             return Err(OpenMgmtLinkError::ConnectionScopeDisposed);
         }
 
@@ -249,10 +249,12 @@ impl AmqpConnectionScope {
         options: PartitionPublishingOptions,
         identifier: Option<String>,
     ) -> Result<AmqpProducer, OpenProducerError> {
-        let path = match partition_id {
-            None => self.event_hub_name.clone(),
-            Some(partition_id) if partition_id.is_empty() => self.event_hub_name.clone(),
-            Some(partition_id) => format!("{}/Partitions/{}", self.event_hub_name, partition_id),
+        use std::borrow::Cow;
+
+        let path: Cow<str> = match partition_id {
+            None => Cow::Borrowed(&self.event_hub_name),
+            Some(partition_id) if partition_id.is_empty() => Cow::Borrowed(&self.event_hub_name),
+            Some(partition_id) => Cow::Owned(format!("{}/Partitions/{}", self.event_hub_name, partition_id)),
         };
         let producer_endpoint = self.service_endpoint.join(&path)?;
 
@@ -317,7 +319,7 @@ impl AmqpConnectionScope {
         link_identifier: u32,
         identifier: String, // Used as the source address for the link
     ) -> Result<(SessionHandle<()>, Sender), OpenProducerError> {
-        if self.is_disposed {
+        if self.is_disposed.load(Ordering::Relaxed) {
             return Err(OpenProducerError::ConnectionScopeDisposed);
         }
 
@@ -438,7 +440,7 @@ impl AmqpConnectionScope {
         link_identifier: u32,
         identifier: String,
     ) -> Result<(SessionHandle<()>, Receiver), OpenConsumerError> {
-        if self.is_disposed {
+        if self.is_disposed.load(Ordering::Relaxed) {
             return Err(OpenConsumerError::ConnectionScopeDisposed);
         }
 
@@ -522,11 +524,12 @@ impl AmqpConnectionScope {
     }
 
     pub(crate) async fn dispose(&mut self) -> Result<(), DisposeError> {
-        if self.is_disposed {
+        let is_disposed = self.is_disposed.load(Ordering::Relaxed);
+        if is_disposed {
             return Ok(());
         }
 
-        self.is_disposed = true;
+        self.is_disposed.compare_exchange_weak(is_disposed, true, Ordering::Acquire, Ordering::Relaxed);
 
         let _ = self.cbs_link_handle.stop();
         let _cbs_close_result = self.cbs_link_handle.join_handle_mut().await;

@@ -1,7 +1,11 @@
+use std::sync::atomic::Ordering;
+
 use async_trait::async_trait;
 use url::Url;
 
 use crate::{
+    amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
+    authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
     core::{
         transport_client::TransportClient, transport_producer_features::TransportProducerFeatures,
@@ -9,20 +13,22 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
-    util::{self, IntoAzureCoreError}, PartitionProperties, authorization::event_hub_token_credential::EventHubTokenCredential, amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
+    util::{self, IntoAzureCoreError},
+    PartitionProperties,
 };
 
 use super::{
     amqp_connection_scope::AmqpConnectionScope,
     amqp_consumer::AmqpConsumer,
+    amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{OpenConsumerError, OpenProducerError}, amqp_management::partition_properties::PartitionPropertiesRequest,
+    error::{OpenConsumerError, OpenProducerError},
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
 
-pub(crate) struct AmqpClient {
+pub struct AmqpClient {
     connection_scope: AmqpConnectionScope,
     management_link: AmqpManagementLink,
 }
@@ -35,23 +41,31 @@ impl TransportClient for AmqpClient {
     type OpenConsumerError = OpenConsumerError;
 
     fn is_closed(&self) -> bool {
-        self.connection_scope.is_disposed
+        self.connection_scope.is_disposed.load(Ordering::Relaxed)
     }
 
     fn service_endpoint(&self) -> &Url {
         &self.connection_scope.service_endpoint
     }
 
-    async fn get_properties<RP>(&mut self, retry_policy: RP) -> Result<EventHubProperties, azure_core::Error>
+    async fn get_properties<RP>(
+        &mut self,
+        retry_policy: RP,
+    ) -> Result<EventHubProperties, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
     {
         // TODO: use cancellation token?
         let mut try_timeout = retry_policy.calculate_try_timeout(0);
         let mut failed_attempt = 0;
-        let access_token = self.connection_scope.credential.get_token(EventHubTokenCredential::DEFAULT_SCOPE).await?;
+        let access_token = self
+            .connection_scope
+            .credential
+            .get_token(EventHubTokenCredential::DEFAULT_SCOPE)
+            .await?;
         let token_value = access_token.token.secret();
-        let request = EventHubPropertiesRequest::new(&self.connection_scope.event_hub_name, token_value);
+        let request =
+            EventHubPropertiesRequest::new(&*self.connection_scope.event_hub_name, token_value);
         loop {
             // The request internally uses Cow, so cloning is cheap.
             let fut = self.management_link.client.call(request.clone());
@@ -75,7 +89,7 @@ impl TransportClient for AmqpClient {
                 Some(delay) => {
                     util::time::sleep(delay).await;
                     try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
-                },
+                }
                 None => return Err(error),
             }
         }
@@ -84,17 +98,21 @@ impl TransportClient for AmqpClient {
     async fn get_partition_properties<RP>(
         &mut self,
         partition_id: &str,
-        retry_policy: RP
+        retry_policy: RP,
     ) -> Result<PartitionProperties, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
     {
         let mut try_timeout = retry_policy.calculate_try_timeout(0);
         let mut failed_attempt = 0;
-        let access_token = self.connection_scope.credential.get_token(EventHubTokenCredential::DEFAULT_SCOPE).await?;
+        let access_token = self
+            .connection_scope
+            .credential
+            .get_token(EventHubTokenCredential::DEFAULT_SCOPE)
+            .await?;
         let token_value = access_token.token.secret();
         let request = PartitionPropertiesRequest::new(
-            &self.connection_scope.event_hub_name,
+            &*self.connection_scope.event_hub_name,
             partition_id,
             token_value,
         );
@@ -121,7 +139,7 @@ impl TransportClient for AmqpClient {
                 Some(delay) => {
                     util::time::sleep(delay).await;
                     try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
-                },
+                }
                 None => return Err(error),
             }
         }

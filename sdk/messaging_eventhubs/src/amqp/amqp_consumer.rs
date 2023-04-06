@@ -2,7 +2,7 @@ use fe2o3_amqp::{session::SessionHandle, Receiver};
 
 use crate::core::transport_consumer::TransportConsumer;
 
-pub(crate) struct AmqpConsumer {
+pub struct AmqpConsumer {
     pub(crate) session_handle: SessionHandle<()>,
     pub(crate) session_identifier: u32,
     pub(crate) receiver: Receiver,

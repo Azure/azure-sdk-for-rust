@@ -4,7 +4,7 @@ use crate::{core::{transport_producer::TransportProducer, transport_producer_fea
 
 use super::{amqp_connection_scope::AmqpConnectionScope, error::OpenProducerError};
 
-pub(crate) struct AmqpProducer {
+pub struct AmqpProducer {
     pub(crate) session_handle: SessionHandle<()>,
     pub(crate) session_identifier: u32,
     pub(crate) sender: Sender,
