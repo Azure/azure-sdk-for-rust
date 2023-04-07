@@ -91,6 +91,9 @@ impl std::error::Error for RawAmqpMessageError {}
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum AmqpConnectionScopeError {
     #[error(transparent)]
+    Parse(#[from] url::ParseError),
+
+    #[error(transparent)]
     Open(#[from] OpenError),
 
     #[error(transparent)]
@@ -120,6 +123,7 @@ impl IntoAzureCoreError for AmqpConnectionScopeError {
             AmqpConnectionScopeError::SenderAttach(err) => err.into_azure_core_error(),
             AmqpConnectionScopeError::ReceiverAttach(err) => err.into_azure_core_error(),
             AmqpConnectionScopeError::ScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
+            AmqpConnectionScopeError::Parse(err) => err.into(),
         }
     }
 }

@@ -51,6 +51,7 @@ use super::{
 };
 
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
+const WEBSOCKETS_PATH_SUFFIX: &str = "/$servicebus/websocket/";
 
 pub(crate) struct AmqpConnectionScope {
     // /// The recommended timeout to associate with an AMQP session.  It is recommended that this
@@ -185,7 +186,8 @@ impl AmqpConnectionScope {
                 .await
                 .map_err(Into::into),
             EventHubsTransportType::AmqpWebSockets => {
-                let ws_stream = WebSocketStream::connect(connection_endpoint).await?;
+                let addr = connection_endpoint.join(WEBSOCKETS_PATH_SUFFIX)?;
+                let ws_stream = WebSocketStream::connect(addr).await?;
 
                 #[cfg(not(target_arch = "wasm32"))]
                 let result = connection_builder
