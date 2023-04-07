@@ -31,31 +31,19 @@ impl IntoAzureCoreError for EventHubConnectionError {
     }
 }
 
-pub struct EventHubConnection {
+pub struct EventHubConnection<C> {
     fully_qualified_namespace: String,
     event_hub_name: Arc<String>,
     is_closed: Arc<AtomicBool>,
-    inner: EventHubConnectionInner,
+    inner: InnerClient<C>,
 }
 
-pub(crate) enum EventHubConnectionInner {
-    Owned(AmqpClient),
-    Shared(Arc<Mutex<AmqpClient>>),
+pub(crate) enum InnerClient<C> {
+    Owned(C),
+    Shared(Arc<Mutex<C>>),
 }
 
-impl EventHubConnection {
-    pub fn fully_qualified_namespace(&self) -> &str {
-        &self.fully_qualified_namespace
-    }
-
-    pub fn event_hub_name(&self) -> &str {
-        &self.event_hub_name
-    }
-
-    pub fn is_closed(&self) -> bool {
-        self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
+impl EventHubConnection<AmqpClient> {
     pub async fn new(
         fully_qualified_namespace: String,
         mut event_hub_name: String,
@@ -71,7 +59,6 @@ impl EventHubConnection {
                 .ok_or(EventHubConnectionError::EventHubNameIsNotSpecified)
                 .map_err(IntoAzureCoreError::into_azure_core_error)?;
         }
-        let event_hub_name = Arc::new(event_hub_name);
 
         macro_rules! ok_if_not_none_or_empty {
             ($id:expr, $type_name:literal) => {
@@ -123,14 +110,33 @@ impl EventHubConnection {
         let token_credential =
             EventHubTokenCredential::SharedAccessCredential(shared_access_credential);
 
+        Self::new_with_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            token_credential,
+            options,
+        )
+        .await
+    }
+
+    pub async fn new_with_credential(
+        fully_qualified_namespace: String,
+        event_hub_name: String,
+        credential: impl Into<EventHubTokenCredential>,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        let token_credential = credential.into();
+        let event_hub_name = Arc::new(event_hub_name);
+
         let inner_client = AmqpClient::new(
             &fully_qualified_namespace,
             event_hub_name.clone(),
             token_credential,
             options,
-        ).await?;
+        )
+        .await?;
         let is_closed = inner_client.connection_scope.is_disposed.clone();
-        let inner = EventHubConnectionInner::Owned(inner_client);
+        let inner = InnerClient::Owned(inner_client);
 
         Ok(Self {
             fully_qualified_namespace,
@@ -139,14 +145,19 @@ impl EventHubConnection {
             inner,
         })
     }
+}
 
-    pub async fn new_with_credential(
-        fully_qualifed_namespace: String,
-        event_hub_name: String,
-        credential: impl Into<EventHubTokenCredential>,
-        options: EventHubConnectionOptions,
-    ) -> Result<Self, azure_core::Error> {
-        todo!()
+impl<C> EventHubConnection<C> {
+    pub fn fully_qualified_namespace(&self) -> &str {
+        &self.fully_qualified_namespace
+    }
+
+    pub fn event_hub_name(&self) -> &str {
+        &self.event_hub_name
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
