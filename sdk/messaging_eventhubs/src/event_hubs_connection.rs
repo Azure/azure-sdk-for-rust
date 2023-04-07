@@ -238,7 +238,16 @@ impl<C> EventHubConnection<C> {
     }
 
     pub fn is_closed(&self) -> bool {
-        self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
+        matches!(self.inner, InnerClient::None)
+        | self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    pub fn is_owned(&self) -> bool {
+        matches!(self.inner, InnerClient::Owned(_))
+    }
+
+    pub fn is_shared(&self) -> bool {
+        matches!(self.inner, InnerClient::Shared(_))
     }
 }
 
