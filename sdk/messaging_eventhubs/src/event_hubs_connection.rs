@@ -1,5 +1,5 @@
 use const_format::concatcp;
-use std::sync::{atomic::AtomicBool, Arc};
+use std::{sync::{atomic::AtomicBool, Arc}};
 use url::Url;
 
 use tokio::sync::Mutex;
@@ -42,6 +42,27 @@ pub struct EventHubConnection<C> {
 pub(crate) enum InnerClient<C> {
     Owned(C),
     Shared(Arc<Mutex<C>>),
+    None,
+}
+
+impl<C> InnerClient<C> {
+    fn clone_as_shared(&mut self) -> Option<Arc<Mutex<C>>> {
+        match self {
+            InnerClient::Owned(_) => {
+                let owned = std::mem::replace(self, InnerClient::None);
+                if let InnerClient::Owned(owned) = owned {
+                    let shared = Arc::new(Mutex::new(owned));
+                    *self = InnerClient::Shared(shared.clone());
+                    Some(shared)
+                } else {
+                    // This should never happen
+                    unreachable!()
+                }
+            },
+            InnerClient::Shared(shared) => Some(shared.clone()),
+            InnerClient::None => None,
+        }
+    }
 }
 
 impl EventHubConnection<AmqpClient> {
@@ -168,10 +189,11 @@ where
 {
     pub async fn close(self) -> Result<(), azure_core::Error> {
         match self.inner {
-            InnerClient::Owned(mut client) => client
+            InnerClient::Owned(mut client) => {client
                 .close()
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(IntoAzureCoreError::into_azure_core_error)
+            },
             InnerClient::Shared(client) => match Arc::try_unwrap(client) {
                 Ok(mut client) => {
                     // This is the last reference to the client, so we can dispose it.
@@ -186,11 +208,27 @@ where
                     Ok(())
                 }
             },
+            InnerClient::None => Ok(())
         }
     }
 }
 
 impl<C> EventHubConnection<C> {
+    pub(crate) fn clone_as_shared(&mut self) -> Self {
+        let shared = self.inner.clone_as_shared();
+        let inner = match shared {
+            Some(shared) => InnerClient::Shared(shared),
+            None => InnerClient::None,
+        };
+
+        Self {
+            fully_qualified_namespace: self.fully_qualified_namespace.clone(),
+            event_hub_name: self.event_hub_name.clone(),
+            is_closed: self.is_closed.clone(),
+            inner,
+        }
+    }
+
     pub fn fully_qualified_namespace(&self) -> &str {
         &self.fully_qualified_namespace
     }
