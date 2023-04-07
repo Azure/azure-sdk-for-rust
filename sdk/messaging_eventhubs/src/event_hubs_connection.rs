@@ -39,7 +39,7 @@ pub struct EventHubConnection<C> {
     inner: InnerClient<C>,
 }
 
-pub(crate) enum InnerClient<C> {
+enum InnerClient<C> {
     Owned(C),
     Shared(Arc<Mutex<C>>),
     None,
