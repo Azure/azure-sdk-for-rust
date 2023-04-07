@@ -34,3 +34,13 @@ fe2o3-amqp-management = "0.2.1"
 fe2o3-amqp-cbs = "0.2"
 serde_amqp = { version = "0.5.8", features = ["derive", "time"] }
 fe2o3-amqp-ws = "0.3.1"
+
+[dev-dependencies]
+dotenv = "0.15"
+tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
+
+[features]
+default = ["native-tls"]
+
+rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
+native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]

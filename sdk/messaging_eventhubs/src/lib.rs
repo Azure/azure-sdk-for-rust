@@ -1,6 +1,6 @@
 //! # Azure Event Hubs
 
-#![deny(missing_docs, missing_debug_implementations)]
+// #![deny(missing_docs, missing_debug_implementations)]
 
 #[macro_use]
 mod cfg;
@@ -32,6 +32,8 @@ pub mod prelude {
     pub use crate::partition_properties::*;
     pub use crate::event::*;
     pub use crate::amqp::amqp_system_properties::AmqpSystemProperties;
+    pub use crate::event_hubs_connection::EventHubConnection;
+    pub use crate::event_hubs_connection_option::EventHubConnectionOptions;
 }
 
 pub use prelude::*;

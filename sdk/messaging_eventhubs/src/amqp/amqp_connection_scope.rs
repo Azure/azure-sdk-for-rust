@@ -1,5 +1,8 @@
 use std::{
-    sync::{atomic::{Ordering, AtomicBool}, Arc},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::Duration as StdDuration,
 };
 
@@ -130,7 +133,8 @@ impl AmqpConnectionScope {
             transport_type,
             &id,
             connection_idle_timeout,
-        ).await?;
+        )
+        .await?;
         let mut connection = AmqpConnection::new(connection_handle);
 
         let mut cbs_session_handle = Session::begin(&mut connection.handle).await?;
@@ -253,7 +257,10 @@ impl AmqpConnectionScope {
         let path: Cow<str> = match partition_id {
             None => Cow::Borrowed(&self.event_hub_name),
             Some(partition_id) if partition_id.is_empty() => Cow::Borrowed(&self.event_hub_name),
-            Some(partition_id) => Cow::Owned(format!("{}/Partitions/{}", self.event_hub_name, partition_id)),
+            Some(partition_id) => Cow::Owned(format!(
+                "{}/Partitions/{}",
+                self.event_hub_name, partition_id
+            )),
         };
         let producer_endpoint = self.service_endpoint.join(&path)?;
 
@@ -523,12 +530,22 @@ impl AmqpConnectionScope {
     }
 
     pub(crate) async fn dispose(&mut self) -> Result<(), DisposeError> {
-        let is_disposed = self.is_disposed.load(Ordering::Relaxed);
+        let mut is_disposed = self.is_disposed.load(Ordering::Relaxed);
         if is_disposed {
             return Ok(());
         }
 
-        self.is_disposed.compare_exchange_weak(is_disposed, true, Ordering::Acquire, Ordering::Relaxed);
+        loop {
+            match self.is_disposed.compare_exchange_weak(
+                is_disposed,
+                true,
+                Ordering::Acquire,
+                Ordering::Relaxed,
+            ) {
+                Ok(_) => break,
+                Err(x) => is_disposed = x,
+            }
+        }
 
         let _ = self.cbs_link_handle.stop();
         let _cbs_close_result = self.cbs_link_handle.join_handle_mut().await;

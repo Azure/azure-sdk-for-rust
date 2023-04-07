@@ -13,11 +13,12 @@ use super::{
 };
 
 #[async_trait]
-pub trait TransportClient {
+pub trait TransportClient: Sized {
     type Producer: TransportProducer;
     type Consumer: TransportConsumer;
     type OpenProducerError: std::error::Error;
     type OpenConsumerError: std::error::Error;
+    type DisposeError: std::error::Error;
 
     fn is_closed(&self) -> bool;
 
@@ -60,4 +61,17 @@ pub trait TransportClient {
     ) -> Result<Self::Consumer, Self::OpenConsumerError>
     where
         RP: EventHubsRetryPolicy + Send;
+
+    /// Closes the connection to the transport client instance.
+    async fn close(
+        &mut self,
+        // cancellation_token: Option<CancellationToken>,
+    ) -> Result<(), Self::DisposeError>;
+
+    /// Performs the task needed to clean up resources used by the client,
+    /// including ensuring that the client itself has been closed.
+    async fn dispose(mut self) -> Result<(), Self::DisposeError> {
+        self.close().await?;
+        Ok(())
+    }
 }

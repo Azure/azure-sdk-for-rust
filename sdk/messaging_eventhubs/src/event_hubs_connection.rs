@@ -14,7 +14,7 @@ use crate::{
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
     event_hubs_transport_type::EventHubsTransportType,
-    util::IntoAzureCoreError,
+    util::IntoAzureCoreError, core::transport_client::TransportClient,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -45,12 +45,12 @@ pub(crate) enum InnerClient<C> {
 
 impl EventHubConnection<AmqpClient> {
     pub async fn new(
-        fully_qualified_namespace: String,
+        connection_string: String,
         mut event_hub_name: String,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
         let connection_string_properties =
-            EventHubsConnectionStringProperties::parse(&fully_qualified_namespace)
+            EventHubsConnectionStringProperties::parse(&connection_string)
                 .map_err(IntoAzureCoreError::into_azure_core_error)?;
         if event_hub_name.is_empty() {
             event_hub_name = connection_string_properties
@@ -76,6 +76,13 @@ impl EventHubConnection<AmqpClient> {
             };
         }
 
+        let fully_qualified_namespace = connection_string_properties
+            .fully_qualified_namespace()
+            .ok_or(azure_core::Error::new(
+                azure_core::error::ErrorKind::Credential,
+                "fully_qualified_namespace cannot be None",
+            ))?;
+
         let shared_access_signature = if let Some(shared_access_signature) =
             connection_string_properties.shared_access_signature
         {
@@ -84,7 +91,7 @@ impl EventHubConnection<AmqpClient> {
         } else {
             let resource = build_connection_signature_authorization_resource(
                 options.transport_type(),
-                &fully_qualified_namespace,
+                fully_qualified_namespace,
                 &event_hub_name,
             )?;
             let shared_access_key_name = ok_if_not_none_or_empty!(
@@ -111,7 +118,7 @@ impl EventHubConnection<AmqpClient> {
             EventHubTokenCredential::SharedAccessCredential(shared_access_credential);
 
         Self::new_with_credential(
-            fully_qualified_namespace,
+            fully_qualified_namespace.to_string(),
             event_hub_name,
             token_credential,
             options,
@@ -144,6 +151,28 @@ impl EventHubConnection<AmqpClient> {
             is_closed,
             inner,
         })
+    }
+}
+
+impl<C> EventHubConnection<C>
+where
+    C: TransportClient,
+    C::DisposeError: IntoAzureCoreError,
+{
+    pub async fn close(self) -> Result<(), azure_core::Error> {
+        match self.inner {
+            InnerClient::Owned(mut client) => client.close().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Shared(client) => match Arc::try_unwrap(client) {
+                Ok(mut client) => {
+                    // This is the last reference to the client, so we can dispose it.
+                    client.get_mut().close().await.map_err(IntoAzureCoreError::into_azure_core_error)
+                },
+                Err(_) => {
+                    // This is not the last reference to the client, so we cannot dispose it.
+                    Ok(())
+                },
+            },
+        }
     }
 }
 

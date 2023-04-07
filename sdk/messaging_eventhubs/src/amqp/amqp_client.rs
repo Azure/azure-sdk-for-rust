@@ -1,4 +1,4 @@
-use std::{sync::{atomic::Ordering, Arc}, time::Duration};
+use std::{sync::{atomic::Ordering, Arc}};
 
 use async_trait::async_trait;
 use url::Url;
@@ -14,7 +14,7 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
     util::{self, IntoAzureCoreError},
-    PartitionProperties, event_hubs_transport_type::EventHubsTransportType, event_hubs_connection_option::EventHubConnectionOptions,
+    PartitionProperties, event_hubs_connection_option::EventHubConnectionOptions,
 };
 
 use super::{
@@ -23,7 +23,7 @@ use super::{
     amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{OpenConsumerError, OpenProducerError, AmqpConnectionScopeError},
+    error::{OpenConsumerError, OpenProducerError, DisposeError},
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
@@ -81,6 +81,7 @@ impl TransportClient for AmqpClient {
     type Consumer = AmqpConsumer;
     type OpenProducerError = OpenProducerError;
     type OpenConsumerError = OpenConsumerError;
+    type DisposeError = DisposeError;
 
     fn is_closed(&self) -> bool {
         self.connection_scope.is_disposed.load(Ordering::Relaxed)
@@ -239,5 +240,9 @@ impl TransportClient for AmqpClient {
         let consumer = util::time::timeout(try_timeout, fut).await??;
 
         Ok(consumer)
+    }
+
+    async fn close(&mut self) -> Result<(), Self::DisposeError> {
+        self.connection_scope.dispose().await
     }
 }

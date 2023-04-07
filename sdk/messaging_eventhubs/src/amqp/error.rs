@@ -230,3 +230,11 @@ pub enum DisposeError {
     #[error(transparent)]
     ConnectionCloseError(#[from] connection::Error),
 }
+
+impl IntoAzureCoreError for DisposeError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        todo!()
+    }
+}

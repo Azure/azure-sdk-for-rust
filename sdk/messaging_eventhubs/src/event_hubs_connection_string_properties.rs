@@ -713,7 +713,6 @@ mod tests {
         let endpoint = "test.endpoint.com";
         let connection_string = format!("Endpoint={}", endpoint);
         let result = EventHubsConnectionStringProperties::parse(&connection_string);
-        println!("{:?}", result);
         assert!(result.is_err());
     }
 
