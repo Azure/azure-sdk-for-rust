@@ -5,17 +5,17 @@ use url::Url;
 use tokio::sync::Mutex;
 
 use crate::{
-    amqp::amqp_client::AmqpClient,
+    amqp::{amqp_client::AmqpClient, error::AmqpConnectionScopeError},
     authorization::{
         event_hub_token_credential::EventHubTokenCredential,
         shared_access_credential::SharedAccessCredential,
         shared_access_signature::SharedAccessSignature,
     },
-    core::transport_client::TransportClient,
+    core::{transport_client::TransportClient, transport_producer_features::TransportProducerFeatures},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
     event_hubs_transport_type::EventHubsTransportType,
-    util::IntoAzureCoreError,
+    util::IntoAzureCoreError, event_hubs_properties::EventHubProperties, event_hubs_retry_policy::EventHubsRetryPolicy, PartitionProperties, producer::PartitionPublishingOptions, consumer::EventPosition,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -187,6 +187,130 @@ where
     C: TransportClient,
     C::DisposeError: IntoAzureCoreError,
 {
+    pub async fn get_properties<RP>(&mut self, retry_policy: RP) -> Result<EventHubProperties, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        match &mut self.inner {
+            InnerClient::Owned(c) => c.get_properties(retry_policy).await,
+            InnerClient::Shared(c) => c.lock().await.get_properties(retry_policy).await,
+            InnerClient::None => return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
+        }
+    }
+
+    pub async fn get_partition_properties<RP>(&mut self, partition_id: &str, retry_policy: RP) -> Result<PartitionProperties, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        match &mut self.inner {
+            InnerClient::Owned(c) => c.get_partition_properties(partition_id, retry_policy).await,
+            InnerClient::Shared(c) => c.lock().await.get_partition_properties(partition_id, retry_policy).await,
+            InnerClient::None => return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
+        }
+    }
+
+    pub async fn create_transport_producer<RP>(
+        &mut self,
+        partition_id: Option<String>,
+        producer_identifier: Option<String>,
+        requested_features: TransportProducerFeatures,
+        partition_options: PartitionPublishingOptions,
+        retry_policy: RP,
+    ) -> Result<C::Producer, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+        C::OpenProducerError: IntoAzureCoreError,
+    {
+        match &mut self.inner {
+            InnerClient::Owned(c) => c
+                .create_producer(
+                    partition_id,
+                    producer_identifier,
+                    requested_features,
+                    partition_options,
+                    retry_policy,
+                )
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Shared(c) => c
+                .lock()
+                .await
+                .create_producer(
+                    partition_id,
+                    producer_identifier,
+                    requested_features,
+                    partition_options,
+                    retry_policy,
+                )
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::None => return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
+        }
+    }
+
+    pub async fn create_transport_consumer<RP>(
+        &mut self,
+        consumer_group: String,
+        partition_id: String,
+        consumer_identifier: Option<String>,
+        event_position: EventPosition,
+        retry_policy: RP,
+        track_last_enqueued_event_properties: bool,
+        invalidate_consumer_when_partition_stolen: bool,
+        owner_level: Option<i64>,
+        prefetch_count: Option<u32>,
+    ) -> Result<C::Consumer, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+        C::OpenConsumerError: IntoAzureCoreError,
+    {
+        match &mut self.inner {
+            InnerClient::Owned(c) => c
+                .create_consumer(
+                    consumer_group,
+                    partition_id,
+                    consumer_identifier,
+                    event_position,
+                    retry_policy,
+                    track_last_enqueued_event_properties,
+                    invalidate_consumer_when_partition_stolen,
+                    owner_level,
+                    prefetch_count,
+                )
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Shared(c) => c
+                .lock()
+                .await
+                .create_consumer(
+                    consumer_group,
+                    partition_id,
+                    consumer_identifier,
+                    event_position,
+                    retry_policy,
+                    track_last_enqueued_event_properties,
+                    invalidate_consumer_when_partition_stolen,
+                    owner_level,
+                    prefetch_count,
+                )
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::None => return Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
+        }
+    }
+
     pub async fn close(self) -> Result<(), azure_core::Error> {
         match self.inner {
             InnerClient::Owned(mut client) => {client
