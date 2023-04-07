@@ -96,9 +96,6 @@ pub(crate) enum AmqpConnectionScopeError {
     #[error(transparent)]
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 
-    #[error("Timeout elapsed")]
-    Elapsed,
-
     #[error(transparent)]
     Begin(#[from] BeginError),
 
@@ -112,24 +109,17 @@ pub(crate) enum AmqpConnectionScopeError {
     ScopeDisposed,
 }
 
-impl From<timer_kit::error::Elapsed> for AmqpConnectionScopeError {
-    fn from(_: timer_kit::error::Elapsed) -> Self {
-        Self::Elapsed
-    }
-}
-
 impl IntoAzureCoreError for AmqpConnectionScopeError {
     fn into_azure_core_error(self) -> azure_core::Error {
         use azure_core::error::ErrorKind;
 
         match self {
-            AmqpConnectionScopeError::Open(_) => todo!(),
-            AmqpConnectionScopeError::WebSocket(_) => todo!(),
-            AmqpConnectionScopeError::Elapsed => azure_core::Error::new(ErrorKind::Other, self),
-            AmqpConnectionScopeError::Begin(_) => todo!(),
-            AmqpConnectionScopeError::SenderAttach(_) => todo!(),
-            AmqpConnectionScopeError::ReceiverAttach(_) => todo!(),
-            AmqpConnectionScopeError::ScopeDisposed => todo!(),
+            AmqpConnectionScopeError::Open(err) => err.into_azure_core_error(),
+            AmqpConnectionScopeError::WebSocket(err) => err.into_azure_core_error(),
+            AmqpConnectionScopeError::Begin(err) => err.into_azure_core_error(),
+            AmqpConnectionScopeError::SenderAttach(err) => err.into_azure_core_error(),
+            AmqpConnectionScopeError::ReceiverAttach(err) => err.into_azure_core_error(),
+            AmqpConnectionScopeError::ScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
         }
     }
 }
@@ -172,7 +162,13 @@ pub enum OpenMgmtLinkError {
 
 impl IntoAzureCoreError for OpenMgmtLinkError {
     fn into_azure_core_error(self) -> azure_core::Error {
-        todo!()
+        use azure_core::error::ErrorKind;
+
+        match self {
+            OpenMgmtLinkError::ConnectionScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
+            OpenMgmtLinkError::Session(_) => azure_core::Error::new(ErrorKind::Other, self),
+            OpenMgmtLinkError::Link(_) => azure_core::Error::new(ErrorKind::Other, self),
+        }
     }
 }
 

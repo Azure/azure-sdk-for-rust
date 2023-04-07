@@ -226,31 +226,4 @@ mod tests {
         let token = credential.get_token("").await.unwrap();
         assert!(token.expires_on - expected_expiration < TimeSpan::seconds(1));
     }
-
-    // // TODO: This test won't work in rust because source_credential is moved into the credential
-    // #[test]
-    // fn named_key_credential_updates_are_respected() {
-    //     let updated_key_name = "updated-name";
-    //     let updated_key = "updated-key";
-    //     let signature =
-    //         SharedAccessSignature::try_from_parts("hub-name", "keyName", "key", None).unwrap();
-    //     let source_credential = AzureNamedKeyCredential::new(
-    //         signature.shared_access_key_name(),
-    //         signature.shared_access_key(),
-    //     );
-    //     let mut credential = SharedAccessCredential::try_from_named_key_credential(
-    //         source_credential,
-    //         signature.resource(),
-    //     ).unwrap();
-
-    //     source_credential.update(updated_key_name, updated_key);
-    //     todo!("")
-    // }
-
-    // // TODO: Similar to the one above, this wouldn't work in rust because the source_credential
-    // // is moved into the SharedAccessCredential
-    // #[test]
-    // fn sas_credential_updates_are_respected() {
-    //     todo!()
-    // }
 }

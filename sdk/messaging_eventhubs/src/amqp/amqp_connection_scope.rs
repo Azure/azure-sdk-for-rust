@@ -108,7 +108,7 @@ impl AmqpConnectionScope {
         event_hub_name: Arc<String>,
         credential: EventHubTokenCredential,
         transport_type: EventHubsTransportType,
-        idle_timeout: StdDuration,
+        connection_idle_timeout: StdDuration,
         identifier: Option<String>,
     ) -> Result<Self, AmqpConnectionScopeError> {
         // sendBufferSizeInBytes and receiveBufferSizeInBytes are not used for now. They probably
@@ -124,14 +124,13 @@ impl AmqpConnectionScope {
         });
         let credential = Arc::new(credential);
 
-        let fut = Self::open_connection(
+        let connection_handle = Self::open_connection(
             &service_endpoint,
             &connection_endpoint,
             transport_type,
             &id,
-            idle_timeout.as_millis() as u32,
-        );
-        let connection_handle = crate::util::time::timeout(idle_timeout, fut).await??;
+            connection_idle_timeout,
+        ).await?;
         let mut connection = AmqpConnection::new(connection_handle);
 
         let mut cbs_session_handle = Session::begin(&mut connection.handle).await?;
@@ -162,7 +161,7 @@ impl AmqpConnectionScope {
         connection_endpoint: &Url,
         transport_type: EventHubsTransportType,
         id: &str,
-        idle_timeout_millis: Milliseconds,
+        idle_timeout: StdDuration,
     ) -> Result<ConnectionHandle<()>, AmqpConnectionScopeError> {
         let max_frame_size = amqp_constants::DEFAULT_MAX_FRAME_SIZE;
         let container_id = id;
@@ -173,7 +172,7 @@ impl AmqpConnectionScope {
             .alt_tls_establishment(true)
             .sasl_profile(SaslProfile::Anonymous)
             .max_frame_size(max_frame_size)
-            .idle_time_out(idle_timeout_millis);
+            .idle_time_out(idle_timeout.as_millis() as u32);
 
         match transport_type {
             #[cfg(not(target_arch = "wasm32"))]

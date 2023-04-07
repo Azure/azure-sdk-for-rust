@@ -39,7 +39,6 @@ impl AmqpClient {
         event_hub_name: Arc<String>,
         credential: EventHubTokenCredential,
         options: EventHubConnectionOptions,
-        // TimeSpan operationTimeout,
     ) -> Result<Self, azure_core::Error> {
         // Scheme of service endpoint must always be either "amqp" or "amqps"
         let service_endpoint = format!("{}://{}", options.transport_type.url_scheme(), host);
