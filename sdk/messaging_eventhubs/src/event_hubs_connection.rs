@@ -11,10 +11,11 @@ use crate::{
         shared_access_credential::SharedAccessCredential,
         shared_access_signature::SharedAccessSignature,
     },
+    core::transport_client::TransportClient,
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
     event_hubs_transport_type::EventHubsTransportType,
-    util::IntoAzureCoreError, core::transport_client::TransportClient,
+    util::IntoAzureCoreError,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -46,19 +47,25 @@ pub(crate) enum InnerClient<C> {
 impl EventHubConnection<AmqpClient> {
     pub async fn new(
         connection_string: String,
-        mut event_hub_name: String,
+        event_hub_name: impl Into<Option<String>>,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
         let connection_string_properties =
             EventHubsConnectionStringProperties::parse(&connection_string)
                 .map_err(IntoAzureCoreError::into_azure_core_error)?;
-        if event_hub_name.is_empty() {
-            event_hub_name = connection_string_properties
-                .event_hub_name
-                .map(|s| s.to_string())
-                .ok_or(EventHubConnectionError::EventHubNameIsNotSpecified)
-                .map_err(IntoAzureCoreError::into_azure_core_error)?;
-        }
+
+        let event_hub_name =
+            match event_hub_name
+                .into()
+                .and_then(|s| if s.is_empty() { None } else { Some(s) })
+            {
+                None => connection_string_properties
+                    .event_hub_name
+                    .map(|s| s.to_string())
+                    .ok_or(EventHubConnectionError::EventHubNameIsNotSpecified)
+                    .map_err(IntoAzureCoreError::into_azure_core_error)?,
+                Some(s) => s,
+            };
 
         macro_rules! ok_if_not_none_or_empty {
             ($id:expr, $type_name:literal) => {
@@ -161,16 +168,23 @@ where
 {
     pub async fn close(self) -> Result<(), azure_core::Error> {
         match self.inner {
-            InnerClient::Owned(mut client) => client.close().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Owned(mut client) => client
+                .close()
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
             InnerClient::Shared(client) => match Arc::try_unwrap(client) {
                 Ok(mut client) => {
                     // This is the last reference to the client, so we can dispose it.
-                    client.get_mut().close().await.map_err(IntoAzureCoreError::into_azure_core_error)
-                },
+                    client
+                        .get_mut()
+                        .close()
+                        .await
+                        .map_err(IntoAzureCoreError::into_azure_core_error)
+                }
                 Err(_) => {
                     // This is not the last reference to the client, so we cannot dispose it.
                     Ok(())
-                },
+                }
             },
         }
     }
