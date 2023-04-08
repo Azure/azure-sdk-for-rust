@@ -7,8 +7,10 @@ use fe2o3_amqp::{
     session::{self, BeginError}, link::{SenderAttachError, ReceiverAttachError, DetachError},
 };
 use fe2o3_amqp_management::error::Error as ManagementError;
+use fe2o3_amqp_types::messaging::{Rejected, Released, Modified};
+use timer_kit::error::Elapsed;
 
-use crate::{consumer::error::OffsetIsEmpty, util::IntoAzureCoreError};
+use crate::{consumer::error::OffsetIsEmpty, util::IntoAzureCoreError, Event};
 
 impl IntoAzureCoreError for ManagementError {
     fn into_azure_core_error(self) -> azure_core::Error {
@@ -284,4 +286,69 @@ impl IntoAzureCoreError for DisposeProducerError {
             DisposeProducerError::Session(err) => err.into_azure_core_error(),
         }
     }
+}
+
+/// Error with adding an event to a batch
+#[derive(Debug, thiserror::Error)]
+pub enum TryAddError {
+    /// The message is too large to fit in a batch
+    #[error("Message is too large to fit in a batch")]
+    BatchFull(Event),
+
+    /// The message cannot be serialized
+    #[error("Cannot serialize message")]
+    Codec {
+        /// The error from the codec
+        source: serde_amqp::Error,
+        /// The message that could not be serialized
+        event: Event,
+    },
+}
+
+/// The requested message batch size is out of range
+#[derive(Debug)]
+pub struct RequestedSizeOutOfRange {}
+
+impl std::fmt::Display for RequestedSizeOutOfRange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Requested size is out of range")
+    }
+}
+
+impl std::error::Error for RequestedSizeOutOfRange {}
+
+/// The sent message is not accepted by the service
+#[derive(Debug, thiserror::Error)]
+pub enum NotAcceptedError {
+    /// 3.4.2 Rejected
+    #[error("Rejceted: {:?}", .0)]
+    Rejected(Rejected),
+
+    /// 3.4.4 Released
+    #[error("Released: {:?}", .0)]
+    Released(Released),
+
+    /// 3.4.5 Modified
+    #[error("Modified: {:?}", .0)]
+    Modified(Modified),
+}
+
+/// Error sending message to the service
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpSendError {
+    /// Error with sending the message
+    #[error(transparent)]
+    Send(#[from] fe2o3_amqp::link::SendError),
+
+    /// The sent message is not accepted by the service
+    #[error(transparent)]
+    NotAccepted(#[from] NotAcceptedError),
+
+    /// The operation timed out
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+
+    /// Connection scope is disposed
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
 }

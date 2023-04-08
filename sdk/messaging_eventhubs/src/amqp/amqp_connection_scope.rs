@@ -247,13 +247,14 @@ impl AmqpConnectionScope {
         Ok((session_handle, mgmt_link))
     }
 
-    pub(crate) async fn open_producer_link(
+    pub(crate) async fn open_producer_link<RP>(
         &mut self,
         partition_id: Option<String>,
         features: TransportProducerFeatures,
         options: PartitionPublishingOptions,
         identifier: Option<String>,
-    ) -> Result<AmqpProducer, OpenProducerError> {
+        retry_policy: RP,
+    ) -> Result<AmqpProducer<RP>, OpenProducerError> {
         use std::borrow::Cow;
 
         let path: Cow<str> = match partition_id {
@@ -315,6 +316,7 @@ impl AmqpConnectionScope {
             sender,
             link_identifier,
             initialized_partition_properties,
+            retry_policy,
         })
     }
 
@@ -393,7 +395,7 @@ impl AmqpConnectionScope {
         Ok((session_handle, sender))
     }
 
-    pub(crate) async fn open_consumer_link(
+    pub(crate) async fn open_consumer_link<RP>(
         &mut self,
         consumer_group: String,
         partition_id: String,
@@ -404,7 +406,8 @@ impl AmqpConnectionScope {
         track_last_enqueued_event_properties: bool,
         invalidate_consumer_when_partition_stolen: bool,
         identifier: Option<String>,
-    ) -> Result<AmqpConsumer, OpenConsumerError> {
+        retry_policy: RP,
+    ) -> Result<AmqpConsumer<RP>, OpenConsumerError> {
         let path = format!(
             "{}/ConsumerGroups/{}/Partitions/{}",
             self.event_hub_name, consumer_group, partition_id
@@ -433,6 +436,7 @@ impl AmqpConnectionScope {
             receiver,
             link_identifier,
             invalidate_consumer_when_partition_stolen,
+            retry_policy,
         })
     }
 

@@ -14,8 +14,8 @@ use super::{
 
 #[async_trait]
 pub trait TransportClient: Sized {
-    type Producer: TransportProducer;
-    type Consumer: TransportConsumer;
+    type Producer<RP>: TransportProducer where RP: EventHubsRetryPolicy + Send;
+    type Consumer<RP>: TransportConsumer where RP: EventHubsRetryPolicy + Send;
     type OpenProducerError: std::error::Error;
     type OpenConsumerError: std::error::Error;
     type DisposeError: std::error::Error;
@@ -43,7 +43,7 @@ pub trait TransportClient: Sized {
         requested_features: TransportProducerFeatures,
         partition_options: PartitionPublishingOptions,
         retry_policy: RP,
-    ) -> Result<Self::Producer, Self::OpenProducerError>
+    ) -> Result<Self::Producer<RP>, Self::OpenProducerError>
     where
         RP: EventHubsRetryPolicy + Send;
 
@@ -58,7 +58,7 @@ pub trait TransportClient: Sized {
         invalidate_consumer_when_partition_stolen: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
-    ) -> Result<Self::Consumer, Self::OpenConsumerError>
+    ) -> Result<Self::Consumer<RP>, Self::OpenConsumerError>
     where
         RP: EventHubsRetryPolicy + Send;
 

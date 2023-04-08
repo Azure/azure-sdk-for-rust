@@ -84,8 +84,8 @@ impl AmqpClient {
 
 #[async_trait]
 impl TransportClient for AmqpClient {
-    type Producer = AmqpProducer;
-    type Consumer = AmqpConsumer;
+    type Producer<RP> = AmqpProducer<RP> where RP: EventHubsRetryPolicy + Send;
+    type Consumer<RP> = AmqpConsumer<RP> where RP: EventHubsRetryPolicy + Send;
     type OpenProducerError = OpenProducerError;
     type OpenConsumerError = OpenConsumerError;
     type DisposeError = DisposeError;
@@ -202,7 +202,7 @@ impl TransportClient for AmqpClient {
         requested_features: TransportProducerFeatures,
         partition_options: PartitionPublishingOptions,
         retry_policy: RP,
-    ) -> Result<Self::Producer, Self::OpenProducerError>
+    ) -> Result<Self::Producer<RP>, Self::OpenProducerError>
     where
         RP: EventHubsRetryPolicy + Send,
     {
@@ -212,6 +212,7 @@ impl TransportClient for AmqpClient {
             requested_features,
             partition_options,
             producer_identifier,
+            retry_policy,
         );
         let producer = util::time::timeout(operation_timeout, fut).await??;
 
@@ -229,7 +230,7 @@ impl TransportClient for AmqpClient {
         invalidate_consumer_when_partition_stolen: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
-    ) -> Result<Self::Consumer, Self::OpenConsumerError>
+    ) -> Result<Self::Consumer<RP>, Self::OpenConsumerError>
     where
         RP: EventHubsRetryPolicy + Send,
     {
@@ -243,6 +244,7 @@ impl TransportClient for AmqpClient {
             track_last_enqueued_event_properties,
             invalidate_consumer_when_partition_stolen,
             consumer_identifier,
+            retry_policy,
         );
         let consumer = util::time::timeout(try_timeout, fut).await??;
 

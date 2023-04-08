@@ -222,7 +222,7 @@ where
         requested_features: TransportProducerFeatures,
         partition_options: PartitionPublishingOptions,
         retry_policy: RP,
-    ) -> Result<C::Producer, azure_core::Error>
+    ) -> Result<C::Producer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
         C::OpenProducerError: IntoAzureCoreError,
@@ -268,7 +268,7 @@ where
         invalidate_consumer_when_partition_stolen: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
-    ) -> Result<C::Consumer, azure_core::Error>
+    ) -> Result<C::Consumer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
         C::OpenConsumerError: IntoAzureCoreError,

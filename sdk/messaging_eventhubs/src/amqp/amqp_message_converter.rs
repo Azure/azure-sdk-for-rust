@@ -100,7 +100,7 @@ fn build_amqp_batch_from_events(events: impl Iterator<Item = Event> + ExactSizeI
 /// Builds a batch from a set of messages. Returns the batch containing the source messages.
 ///
 /// If `force_batch` is set to true, then a batch will be created even if there is only one message.
-fn build_amqp_batch_from_messages(
+pub(crate) fn build_amqp_batch_from_messages(
     mut source: impl Iterator<Item = Message<Data>> + ExactSizeIterator,
     partition_key: Option<String>
 ) -> Option<BatchEnvelope> {
