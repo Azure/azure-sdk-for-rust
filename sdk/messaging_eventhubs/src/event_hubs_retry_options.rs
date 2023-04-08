@@ -9,7 +9,7 @@ const DEFAULT_MAXIMUM_DELAY: Duration = Duration::from_secs(60);
 const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct MaxRetries(u32);
+pub struct MaxRetries(pub u32);
 
 impl Default for MaxRetries {
     fn default() -> Self {
