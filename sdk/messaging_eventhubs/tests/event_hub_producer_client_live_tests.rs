@@ -51,3 +51,19 @@ async fn producer_client_can_send_an_event_to_a_partition() {
 
     producer_client.close().await.unwrap();
 }
+
+#[tokio::test]
+async fn producer_client_can_send_without_specifying_partition_id() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
+    let options = EventHubProducerClientOptions::default();
+    let mut producer_client = EventHubProducerClient::new(connection_string, None, options)
+        .await
+        .unwrap();
+
+    let event = "Hello, world to a random partition";
+    producer_client.send_event(event, SendEventOptions::default()).await.unwrap();
+
+    producer_client.close().await.unwrap();
+}
