@@ -1,4 +1,4 @@
-use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions, EventHubsTransportType};
+use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions, EventHubsTransportType, EventHubsRetryOptions, BasicRetryPolicy};
 
 mod common;
 
@@ -41,17 +41,37 @@ async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_e
     connection.close().await.unwrap();
 }
 
-// #[tokio::test]
-// async fn connection_can_get_event_hub_properties() {
-//     common::setup_dotenv();
+#[tokio::test]
+async fn connection_can_get_event_hub_properties() {
+    common::setup_dotenv();
 
-//     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
-//     let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
-//     let options = EventHubConnectionOptions::default();
-//     let connection = EventHubConnection::new(connection_string, event_hub_name, options)
-//         .await
-//         .unwrap();
-//     let properties = connection.get_properties().await.unwrap();
-//     println!("{:?}", properties);
-//     connection.close().await.unwrap();
-// }
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+    let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+    let options = EventHubConnectionOptions::default();
+    let mut connection = EventHubConnection::new(connection_string, event_hub_name, options)
+        .await
+        .unwrap();
+    let options = EventHubsRetryOptions::default();
+    let properties = connection.get_properties(BasicRetryPolicy::from(options)).await.unwrap();
+    println!("{:?}", properties);
+    connection.close().await.unwrap();
+}
+
+#[tokio::test]
+async fn connection_can_get_partition_properties() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+    let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+    let options = EventHubConnectionOptions::default();
+    let mut connection = EventHubConnection::new(connection_string, event_hub_name, options)
+        .await
+        .unwrap();
+    let options = EventHubsRetryOptions::default();
+    let properties = connection
+        .get_partition_properties("0", BasicRetryPolicy::from(options))
+        .await
+        .unwrap();
+    println!("{:?}", properties);
+    connection.close().await.unwrap();
+}

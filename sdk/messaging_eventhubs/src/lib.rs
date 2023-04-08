@@ -35,6 +35,8 @@ pub mod prelude {
     pub use crate::event_hubs_connection::EventHubConnection;
     pub use crate::event_hubs_connection_option::EventHubConnectionOptions;
     pub use crate::event_hubs_transport_type::EventHubsTransportType;
+    pub use crate::event_hubs_retry_options::EventHubsRetryOptions;
+    pub use crate::core::basic_retry_policy::BasicRetryPolicy;
 }
 
 pub use prelude::*;
