@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use fe2o3_amqp::{session::SessionHandle, Sender, link::SendError};
+use fe2o3_amqp_types::messaging::Outcome;
 
-use crate::{core::{transport_producer::TransportProducer, transport_producer_features::TransportProducerFeatures}, event_hubs_retry_policy::EventHubsRetryPolicy, producer::{PartitionPublishingOptions, create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions, event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT}, util::IntoAzureCoreError, Event, amqp::amqp_message_converter::create_envelope_from_events};
+use crate::{core::{transport_producer::TransportProducer, transport_producer_features::TransportProducerFeatures}, event_hubs_retry_policy::EventHubsRetryPolicy, producer::{PartitionPublishingOptions, create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions, event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT}, util::{IntoAzureCoreError, self}, Event, amqp::amqp_message_converter::create_envelope_from_events};
 
-use super::{amqp_connection_scope::AmqpConnectionScope, error::{OpenProducerError, DisposeProducerError, RequestedSizeOutOfRange}, amqp_event_batch::AmqpEventBatch};
+use super::{amqp_connection_scope::AmqpConnectionScope, error::{OpenProducerError, DisposeProducerError, RequestedSizeOutOfRange, AmqpSendError, NotAcceptedError}, amqp_event_batch::AmqpEventBatch, amqp_message_converter::{BatchEnvelope, BatchEnvelopeState, SendableEnvelope}};
 
 pub struct AmqpProducer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
@@ -14,6 +15,49 @@ pub struct AmqpProducer<RP> {
     pub(crate) retry_policy: RP,
 }
 
+impl<RP> AmqpProducer<RP> {
+    async fn send_batch_envelope(
+        &mut self,
+        batch: &mut BatchEnvelope,
+    ) -> Result<(), AmqpSendError> {
+        let outcome = loop {
+            match &mut batch.state {
+                BatchEnvelopeState::NotSent => match &mut batch.sendable {
+                    SendableEnvelope::Single(sendable) => {
+                        let fut = self.sender.send_batchable_ref(sendable).await?;
+                        batch.state = BatchEnvelopeState::Sent(fut);
+                    }
+                    SendableEnvelope::Batch(sendable) => {
+                        let fut = self.sender.send_batchable_ref(sendable).await?;
+                        batch.state = BatchEnvelopeState::Sent(fut);
+                    }
+                },
+                BatchEnvelopeState::Sent(fut) => break fut.await?,
+                BatchEnvelopeState::Settled => return Ok(()),
+            }
+        };
+
+        batch.state = BatchEnvelopeState::Settled;
+
+        match outcome {
+            Outcome::Accepted(_) => Ok(()),
+            Outcome::Rejected(rejected) => {
+                Err(AmqpSendError::from(NotAcceptedError::Rejected(rejected)))
+            }
+            Outcome::Released(released) => {
+                Err(AmqpSendError::from(NotAcceptedError::Released(released)))
+            }
+            Outcome::Modified(modified) => {
+                Err(AmqpSendError::from(NotAcceptedError::Modified(modified)))
+            }
+            #[cfg(feature = "transaction")]
+            Outcome::Declared(_) => {
+                unreachable!("Declared is not expected outside txn-control links")
+            }
+        }
+    }
+}
+
 #[async_trait]
 impl<RP> TransportProducer for AmqpProducer<RP>
 where
@@ -21,7 +65,7 @@ where
 {
     type MessageBatch = AmqpEventBatch;
 
-    type SendError = SendError;
+    type SendError = AmqpSendError;
     type CreateBatchError = RequestedSizeOutOfRange;
 
     type DisposeError = DisposeProducerError;
@@ -48,11 +92,33 @@ where
     }
 
     async fn send(&mut self, events: impl Iterator<Item = Event> + ExactSizeIterator + Send, options: SendEventOptions) -> Result<(), Self::SendError> {
-        let envelope = create_envelope_from_events(events, options.partition_key);
-
         // TODO: check size of envelope and make sure it's not too big
+        let envelope = create_envelope_from_events(events, options.partition_key);
+        let mut failed_attempts = 0;
+        let mut try_timeout = self.retry_policy.calculate_try_timeout(failed_attempts);
 
-        todo!()
+        let mut batch = match envelope {
+            Some(batch) => batch,
+            None => return Ok(())
+        };
+
+        loop {
+            match self.send_batch_envelope(&mut batch).await {
+                Ok(_) => return Ok(()),
+                Err(err) => {
+                    failed_attempts += 1;
+                    let retry_delay = self.retry_policy.calculate_retry_delay(&err, failed_attempts);
+
+                    match retry_delay {
+                        Some(retry_delay) => {
+                            util::time::sleep(retry_delay).await;
+                            try_timeout = self.retry_policy.calculate_try_timeout(failed_attempts);
+                        }
+                        None => return Err(err),
+                    }
+                }
+            }
+        }
     }
 
     async fn send_batch(&mut self, batch: Self::MessageBatch, options: SendEventOptions) -> Result<(), Self::SendError> {
