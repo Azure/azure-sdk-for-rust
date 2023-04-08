@@ -16,8 +16,8 @@ use super::{
 pub struct AmqpEventBatch {
     /// The maximum size of the batch, in bytes.
     pub(crate) max_size_in_bytes: u64,
-    /// The list of messages that will be sent as a batch.
-    pub(crate) messages: Vec<Message<Data>>,
+    /// The list of events that will be sent as a batch.
+    pub(crate) events: Vec<Message<Data>>,
     /// The size of the batch, in bytes.
     pub(crate) size_in_bytes: u64,
 
@@ -28,7 +28,7 @@ impl AmqpEventBatch {
     pub(crate) fn new(max_size_in_bytes: u64, options: CreateBatchOptions) -> Self {
         Self {
             max_size_in_bytes,
-            messages: Vec::new(),
+            events: Vec::new(),
             size_in_bytes: 0,
             options,
         }
@@ -49,11 +49,11 @@ impl TransportEventBatch for AmqpEventBatch {
     }
 
     fn len(&self) -> usize {
-        self.messages.len()
+        self.events.len()
     }
 
     fn is_empty(&self) -> bool {
-        self.messages.is_empty()
+        self.events.is_empty()
     }
 
     fn try_add(
@@ -65,7 +65,7 @@ impl TransportEventBatch for AmqpEventBatch {
         // Initialize the size by reserving space for the batch envelope taking into account the
         // properties from the first message which will be used to populate properties on the batch
         // envelope.
-        let new_size = if self.messages.is_empty() {
+        let new_size = if self.events.is_empty() {
             // TODO: avoid clone
             let reservce_overhead_message = std::iter::once(event.clone().amqp_message);
             // Force batching to get the overhead size
@@ -110,17 +110,17 @@ impl TransportEventBatch for AmqpEventBatch {
         }
 
         self.size_in_bytes = new_size;
-        self.messages.push(event.amqp_message);
+        self.events.push(event.amqp_message);
 
         Ok(())
     }
 
     fn iter(&self) -> Self::Iter<'_> {
-        self.messages.iter()
+        self.events.iter()
     }
 
     fn clear(&mut self) {
-        self.messages.clear();
+        self.events.clear();
         self.size_in_bytes = 0;
     }
 }
@@ -149,7 +149,7 @@ mod tests {
 
     // #[test]
     // fn try_add_sets_batch_size_in_bytes() {
-    //     let overhead = OVERHEAD_BYTES_SMALL_MESSAGE; // The messages added are small
+    //     let overhead = OVERHEAD_BYTES_SMALL_MESSAGE; // The events added are small
     //     let mut batch = AmqpEventBatch::new(1024);
     //     let message = Event::new("hello world");
 
@@ -221,15 +221,15 @@ mod tests {
     // fn iter_returns_iterator_over_added_messages() {
     //     let mut batch = AmqpEventBatch::new(1024);
 
-    //     let messages: Vec<_> = (0..5)
+    //     let events: Vec<_> = (0..5)
     //         .map(|i| Event::new(format!("message {}", i)))
     //         .collect();
-    //     for message in messages.iter() {
+    //     for message in events.iter() {
     //         assert!(batch.try_add(message.clone()).is_ok());
     //     }
 
     //     let iter = batch.iter();
-    //     for (original, added) in messages.into_iter().zip(iter) {
+    //     for (original, added) in events.into_iter().zip(iter) {
     //         assert_eq!(original.amqp_message, *added);
     //     }
     // }

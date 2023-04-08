@@ -5,7 +5,7 @@ pub trait TransportEventBatch {
     type TryAddError: std::error::Error + Send;
 
     /// An iterator type over the messages in the batch.
-    type Iter<'a>: Iterator
+    type Iter<'a>: Iterator + ExactSizeIterator + 'a
     where
         Self: 'a;
 
