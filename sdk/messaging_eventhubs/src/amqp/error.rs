@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use fe2o3_amqp::{
     connection::{self, OpenError},
-    session::{self, BeginError}, link::{SenderAttachError, ReceiverAttachError},
+    session::{self, BeginError}, link::{SenderAttachError, ReceiverAttachError, DetachError},
 };
 use fe2o3_amqp_management::error::Error as ManagementError;
 
@@ -261,8 +261,27 @@ pub enum DisposeError {
 
 impl IntoAzureCoreError for DisposeError {
     fn into_azure_core_error(self) -> azure_core::Error {
-        use azure_core::error::ErrorKind;
+        match self {
+            DisposeError::SessionCloseError(err) => err.into_azure_core_error(),
+            DisposeError::ConnectionCloseError(err) => err.into_azure_core_error(),
+        }
+    }
+}
 
-        todo!()
+#[derive(Debug, thiserror::Error)]
+pub enum DisposeProducerError {
+    #[error(transparent)]
+    Sender(#[from] DetachError),
+
+    #[error(transparent)]
+    Session(#[from] fe2o3_amqp::session::Error),
+}
+
+impl IntoAzureCoreError for DisposeProducerError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            DisposeProducerError::Sender(err) => err.into_azure_core_error(),
+            DisposeProducerError::Session(err) => err.into_azure_core_error(),
+        }
     }
 }

@@ -4,7 +4,7 @@ use crate::{EventHubConnectionOptions, event_hubs_retry_options::EventHubsRetryO
 
 use super::PartitionPublishingOptions;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct EventHubProducerClientOptions {
     pub connection_options: EventHubConnectionOptions,
     pub retry_options: EventHubsRetryOptions,

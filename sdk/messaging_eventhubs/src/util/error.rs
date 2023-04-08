@@ -2,7 +2,7 @@
 //!
 //! TODO: should all AMQP related errors be categorized as `ErrorKind::Io`?
 
-use fe2o3_amqp::{session::BeginError, connection::OpenError, link::{SenderAttachError, ReceiverAttachError}};
+use fe2o3_amqp::{session::BeginError, connection::OpenError, link::{SenderAttachError, ReceiverAttachError, DetachError}};
 
 use super::IntoAzureCoreError;
 
@@ -89,5 +89,38 @@ impl IntoAzureCoreError for ReceiverAttachError {
             | ReceiverAttachError::RemoteClosedWithError(_) => azure_core::Error::new(azure_core::error::ErrorKind::Io, self),
             _ => azure_core::Error::new(azure_core::error::ErrorKind::Other, self),
         }
+    }
+}
+
+impl IntoAzureCoreError for fe2o3_amqp::connection::Error {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            fe2o3_amqp::connection::Error::TransportError(err) => err.into_azure_core_error(),
+            fe2o3_amqp::connection::Error::IllegalState
+            | fe2o3_amqp::connection::Error::RemoteClosed
+            | fe2o3_amqp::connection::Error::RemoteClosedWithError(_) => azure_core::Error::new(azure_core::error::ErrorKind::Io, self),
+            fe2o3_amqp::connection::Error::NotImplemented(_)
+            | fe2o3_amqp::connection::Error::NotFound(_)
+            | fe2o3_amqp::connection::Error::NotAllowed(_)
+            | fe2o3_amqp::connection::Error::JoinError(_) => azure_core::Error::new(azure_core::error::ErrorKind::Other, self),
+        }
+    }
+}
+
+impl IntoAzureCoreError for fe2o3_amqp::session::Error {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            fe2o3_amqp::session::Error::IllegalState
+            | fe2o3_amqp::session::Error::IllegalConnectionState
+            | fe2o3_amqp::session::Error::RemoteEndedWithError(_)
+            | fe2o3_amqp::session::Error::RemoteEnded => azure_core::Error::new(azure_core::error::ErrorKind::Io, self),
+            _ => azure_core::Error::new(azure_core::error::ErrorKind::Other, self),
+        }
+    }
+}
+
+impl IntoAzureCoreError for DetachError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
     }
 }
