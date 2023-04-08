@@ -1,5 +1,6 @@
 /// The type of approach to apply when calculating the delay
 /// between retry attempts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EventHubsRetryMode {
     /// Retry attempts happen at fixed intervals; each delay is a consistent duration
     Fixed,

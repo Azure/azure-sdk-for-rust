@@ -8,6 +8,7 @@ const DEFAULT_DELAY: Duration = Duration::from_millis(800);
 const DEFAULT_MAXIMUM_DELAY: Duration = Duration::from_secs(60);
 const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(60);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MaxRetries(u32);
 
 impl Default for MaxRetries {
@@ -30,6 +31,7 @@ impl TryFrom<u32> for MaxRetries {
 
 /// The set of options that can be specified to influence how
 /// retry attempts are made, and a failure is eligible to be retried.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EventHubsRetryOptions {
     /// The maximum number of retry attempts before considering the associated operation to have failed
     pub max_retries: MaxRetries,

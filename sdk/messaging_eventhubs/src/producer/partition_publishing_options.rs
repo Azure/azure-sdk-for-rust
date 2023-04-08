@@ -1,6 +1,6 @@
 /// The set of options that can be specified for an <see cref="EventHubProducerClient" />
 /// to influence its behavior when publishing directly to an Event Hub partition.
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
 pub struct PartitionPublishingOptions {
     /// The identifier of the producer group that this producer is associated with when publishing
     /// to the associated partition. Events will be published in the context of this group.

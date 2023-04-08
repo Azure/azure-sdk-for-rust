@@ -152,6 +152,15 @@ pub enum CbsAuthError {
     Cbs(#[from] ManagementError),
 }
 
+impl IntoAzureCoreError for CbsAuthError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            CbsAuthError::TokenCredential(err) => err,
+            CbsAuthError::Cbs(err) => err.into_azure_core_error(),
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum OpenMgmtLinkError {
     #[error("The connection scope is disposed")]
@@ -196,6 +205,21 @@ pub enum OpenProducerError {
 
     #[error(transparent)]
     Elapsed(#[from] timer_kit::error::Elapsed),
+}
+
+impl IntoAzureCoreError for OpenProducerError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            OpenProducerError::ParseEndpoint(err) => err.into(),
+            OpenProducerError::ConnectionScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
+            OpenProducerError::CbsAuth(err) => err.into_azure_core_error(),
+            OpenProducerError::Session(err) => err.into_azure_core_error(),
+            OpenProducerError::SenderLink(err) => err.into_azure_core_error(),
+            OpenProducerError::Elapsed(err) => err.into_azure_core_error(),
+        }
+    }
 }
 
 /// Error opening a consumer
