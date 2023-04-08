@@ -311,7 +311,18 @@ where
         }
     }
 
-    pub async fn close(self) -> Result<(), azure_core::Error> {
+    /// Closes the inner client regardless of whether it is owned or shared.
+    pub async fn dispose(self) -> Result<(), azure_core::Error> {
+        match self.inner {
+            InnerClient::Owned(mut c) => c.close().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Shared(c) => c.lock().await.close().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::None => Ok(()),
+        }
+    }
+
+    /// Closes the inner client if it is owned or if it is shared and this is the last reference to
+    /// it.
+    pub(crate) async fn close_inner(self) -> Result<(), azure_core::Error> {
         match self.inner {
             InnerClient::Owned(mut client) => {client
                 .close()
