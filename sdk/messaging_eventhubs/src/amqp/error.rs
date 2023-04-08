@@ -333,6 +333,14 @@ pub enum NotAcceptedError {
     Modified(Modified),
 }
 
+impl IntoAzureCoreError for NotAcceptedError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        azure_core::Error::new(ErrorKind::Other, self)
+    }
+}
+
 /// Error sending message to the service
 #[derive(Debug, thiserror::Error)]
 pub enum AmqpSendError {
@@ -351,4 +359,18 @@ pub enum AmqpSendError {
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
     ConnectionScopeDisposed,
+}
+
+impl IntoAzureCoreError for AmqpSendError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            AmqpSendError::Send(err) => err.into_azure_core_error(),
+            AmqpSendError::NotAccepted(err) => err.into_azure_core_error(),
+            AmqpSendError::Elapsed(err) => err.into_azure_core_error(),
+            AmqpSendError::ConnectionScopeDisposed => azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                self
+            ),
+        }
+    }
 }

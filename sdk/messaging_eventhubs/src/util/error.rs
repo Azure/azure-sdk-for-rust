@@ -2,7 +2,7 @@
 //!
 //! TODO: should all AMQP related errors be categorized as `ErrorKind::Io`?
 
-use fe2o3_amqp::{session::BeginError, connection::OpenError, link::{SenderAttachError, ReceiverAttachError, DetachError}};
+use fe2o3_amqp::{session::BeginError, connection::OpenError, link::{SenderAttachError, ReceiverAttachError, DetachError, SendError}};
 
 use super::IntoAzureCoreError;
 
@@ -122,5 +122,19 @@ impl IntoAzureCoreError for fe2o3_amqp::session::Error {
 impl IntoAzureCoreError for DetachError {
     fn into_azure_core_error(self) -> azure_core::Error {
         azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
+    }
+}
+
+impl IntoAzureCoreError for SendError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            SendError::LinkStateError(_)
+            | SendError::Detached(_)
+            | SendError::NonTerminalDeliveryState
+            | SendError::IllegalDeliveryState => azure_core::Error::new(ErrorKind::Io, self),
+            SendError::MessageEncodeError => azure_core::Error::new(ErrorKind::DataConversion, self),
+        }
     }
 }

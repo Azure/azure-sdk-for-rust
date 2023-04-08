@@ -1,4 +1,4 @@
-use messaging_eventhubs::{producer::{event_hub_producer_client_options::EventHubProducerClientOptions, event_hub_producer_client::EventHubProducerClient}, EventHubConnection, EventHubConnectionOptions};
+use messaging_eventhubs::{producer::{event_hub_producer_client_options::EventHubProducerClientOptions, event_hub_producer_client::EventHubProducerClient, send_event_options::SendEventOptions}, EventHubConnection, EventHubConnectionOptions};
 
 mod common;
 
@@ -32,4 +32,22 @@ async fn close_producer_client_does_not_close_shared_connection() {
 
     assert_eq!(connection.is_closed(), false);
     connection.close().await.unwrap();
+}
+
+#[tokio::test]
+async fn producer_client_can_send_an_event_to_a_partition() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
+    let options = EventHubProducerClientOptions::default();
+    let mut producer_client = EventHubProducerClient::new(connection_string, None, options)
+        .await
+        .unwrap();
+
+    let event = "Hello, world!";
+    let options = SendEventOptions::new()
+        .with_partition_id("0");
+    producer_client.send_event(event, options).await.unwrap();
+
+    producer_client.close().await.unwrap();
 }

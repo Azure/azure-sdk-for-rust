@@ -1,14 +1,14 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use crate::{
     amqp::{amqp_client::AmqpClient, amqp_producer::AmqpProducer},
     core::{transport_producer::TransportProducer, basic_retry_policy::BasicRetryPolicy},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    EventHubConnection, EventHubsRetryOptions,
+    EventHubConnection, EventHubsRetryOptions, Event,
 };
 
-use super::event_hub_producer_client_options::EventHubProducerClientOptions;
+use super::{event_hub_producer_client_options::EventHubProducerClientOptions, send_event_options::SendEventOptions};
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
 
@@ -111,19 +111,49 @@ where
                 .options
                 .get_publishing_options_or_default_for_partition(Some(partition_id));
 
-            // let producer = self.connection
-            //     .create_transport_producer::<RP>(
-            //         Some(partition_id.to_string()),
-            //         producer_identifier,
-            //         requested_features,
-            //         partition_options,
-            //         retry_policy,
-            //     )
-            //     .await?;
+            let producer = self.connection
+                .create_transport_producer::<RP>(
+                    Some(partition_id.to_string()),
+                    producer_identifier,
+                    requested_features,
+                    partition_options,
+                    retry_policy,
+                )
+                .await?;
+            self.producer_pool.insert(partition_id.to_string(), producer);
         }
 
         // This is safe because we just checked that the key exists.
         Ok(self.producer_pool.get_mut(partition_id).unwrap())
+    }
+
+    async fn send_idempotent(&mut self, events: impl Iterator<Item = Event> + ExactSizeIterator, options: SendEventOptions) -> Result<(), azure_core::Error> {
+        todo!()
+    }
+
+    async fn send_inner(&mut self, events: impl Iterator<Item = Event> + ExactSizeIterator + Send, options: SendEventOptions) -> Result<(), azure_core::Error> {
+        match &options.partition_id {
+            Some(partition_id) => {
+                let producer = self.get_pooled_producer_mut(&partition_id).await?;
+                producer.send(events, options).await.map_err(IntoAzureCoreError::into_azure_core_error)
+            }
+            None => todo!(),
+        }
+    }
+
+    pub async fn send_event(&mut self, event: impl Into<Event>, options: SendEventOptions) -> Result<(), azure_core::Error> {
+        self.send_events(std::iter::once(event.into()), options).await
+    }
+
+    pub async fn send_events<E>(&mut self, events: E, options: SendEventOptions) -> Result<(), azure_core::Error>
+    where
+        E: IntoIterator<Item = Event>,
+        E::IntoIter: ExactSizeIterator + Send,
+    {
+        match self.options.enable_idempotent_partitions {
+            true => self.send_idempotent(events.into_iter(), options).await,
+            false => self.send_inner(events.into_iter(), options).await,
+        }
     }
 
     pub async fn close(self) -> Result<(), azure_core::Error> {
