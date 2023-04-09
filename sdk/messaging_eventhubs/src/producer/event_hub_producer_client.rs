@@ -10,13 +10,15 @@ use crate::{
 
 use super::{
     event_hub_producer_client_options::EventHubProducerClientOptions,
-    send_event_options::SendEventOptions,
+    send_event_options::SendEventOptions, event_batch::EventBatch, create_batch_options::CreateBatchOptions,
 };
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
 
 pub struct EventHubProducerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
+    /// An abstracted Event Hub transport-specific producer that is associated with the
+    /// Event Hub gateway rather than a specific partition; intended to perform delegated operations.
     gateway_producer: Option<AmqpProducer<RP>>,
     producer_pool: HashMap<String, AmqpProducer<RP>>,
     options: EventHubProducerClientOptions,
@@ -101,6 +103,37 @@ impl<RP> EventHubProducerClient<RP>
 where
     RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send,
 {
+    async fn get_or_create_gateway_producer_mut(&mut self) -> Result<&mut AmqpProducer<RP>, azure_core::Error> {
+        let producer_identifier = Some(
+            self.options
+                .identifier
+                .clone()
+                .unwrap_or(uuid::Uuid::new_v4().to_string()),
+        );
+        let requested_features = self.options.create_features();
+        let retry_policy = RP::from(self.options.retry_options.clone());
+
+        if self.gateway_producer.is_none() {
+            let partition_options = self
+                .options
+                .get_publishing_options_or_default_for_partition(None);
+
+            let producer = self
+                .connection
+                .create_transport_producer::<RP>(
+                    None,
+                    producer_identifier,
+                    requested_features,
+                    partition_options,
+                    retry_policy,
+                )
+                .await?;
+            self.gateway_producer = Some(producer);
+        }
+
+        Ok(self.gateway_producer.as_mut().unwrap())
+    }
+
     async fn get_pooled_producer_mut(
         &mut self,
         partition_id: Option<&str>,
@@ -140,49 +173,16 @@ where
                 // This is safe because we just checked that the key exists.
                 Ok(self.producer_pool.get_mut(partition_id).unwrap())
             }
-            None => {
-                if self.gateway_producer.is_none() {
-                    let partition_options = self
-                        .options
-                        .get_publishing_options_or_default_for_partition(None);
-
-                    let producer = self
-                        .connection
-                        .create_transport_producer::<RP>(
-                            None,
-                            producer_identifier,
-                            requested_features,
-                            partition_options,
-                            retry_policy,
-                        )
-                        .await?;
-                    self.gateway_producer = Some(producer);
-                }
-
-                Ok(self.gateway_producer.as_mut().unwrap())
-            }
+            None => self.get_or_create_gateway_producer_mut().await,
         }
     }
 
-    async fn send_idempotent(
+    pub async fn create_batch(
         &mut self,
-        events: impl Iterator<Item = Event> + ExactSizeIterator,
-        options: SendEventOptions,
-    ) -> Result<(), azure_core::Error> {
-        todo!()
-    }
-
-    async fn send_inner(
-        &mut self,
-        events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
-        options: SendEventOptions,
-    ) -> Result<(), azure_core::Error> {
-        let partition_id = options.partition_id.as_deref();
-        let producer = self.get_pooled_producer_mut(partition_id).await?;
-        producer
-            .send(events, options)
-            .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)
+        options: CreateBatchOptions,
+    ) -> Result<EventBatch, azure_core::Error> {
+        let inner = self.get_or_create_gateway_producer_mut().await?.create_batch(options)?;
+        Ok(EventBatch { inner })
     }
 
     pub async fn send_event(
@@ -204,8 +204,33 @@ where
         E::IntoIter: ExactSizeIterator + Send,
     {
         match self.options.enable_idempotent_partitions {
-            true => self.send_idempotent(events.into_iter(), options).await,
-            false => self.send_inner(events.into_iter(), options).await,
+            true => todo!(),
+            false => {
+                let partition_id = options.partition_id.as_deref();
+                let producer = self.get_pooled_producer_mut(partition_id).await?;
+                producer
+                    .send(events.into_iter(), options)
+                    .await
+                    .map_err(IntoAzureCoreError::into_azure_core_error)
+            },
+        }
+    }
+
+    pub async fn send_batch(
+        &mut self,
+        batch: EventBatch,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
+        match self.options.enable_idempotent_partitions {
+            true => todo!(),
+            false => {
+                let partition_id = options.partition_id.as_deref();
+                let producer = self.get_pooled_producer_mut(partition_id).await?;
+                producer
+                    .send_batch(batch.inner, options)
+                    .await
+                    .map_err(IntoAzureCoreError::into_azure_core_error)
+            },
         }
     }
 

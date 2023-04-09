@@ -36,7 +36,7 @@ impl EventBatch {
     /// Returns an error if the message is too large to fit in the batch or
     /// if the message fails to serialize. The original message can be recovered
     /// from the error.
-    pub fn try_add_message(&mut self, message: impl Into<Event>) -> Result<(), TryAddError> {
+    pub fn try_add(&mut self, message: impl Into<Event>) -> Result<(), TryAddError> {
         self.inner.try_add(message.into())
     }
 

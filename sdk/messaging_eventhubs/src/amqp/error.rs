@@ -323,6 +323,20 @@ impl std::fmt::Display for RequestedSizeOutOfRange {
 
 impl std::error::Error for RequestedSizeOutOfRange {}
 
+impl IntoAzureCoreError for RequestedSizeOutOfRange {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        azure_core::Error::new(ErrorKind::Other, self)
+    }
+}
+
+impl From<RequestedSizeOutOfRange> for azure_core::Error {
+    fn from(err: RequestedSizeOutOfRange) -> Self {
+        err.into_azure_core_error()
+    }
+}
+
 /// The sent message is not accepted by the service
 #[derive(Debug, thiserror::Error)]
 pub enum NotAcceptedError {

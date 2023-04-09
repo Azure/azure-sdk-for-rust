@@ -2,7 +2,7 @@ use messaging_eventhubs::{
     producer::{
         event_hub_producer_client::EventHubProducerClient,
         event_hub_producer_client_options::EventHubProducerClientOptions,
-        send_event_options::SendEventOptions,
+        send_event_options::SendEventOptions, create_batch_options::CreateBatchOptions,
     },
     EventHubConnection, EventHubConnectionOptions,
 };
@@ -75,6 +75,25 @@ async fn producer_client_can_send_without_specifying_partition_id() {
         .send_event(event, SendEventOptions::default())
         .await
         .unwrap();
+
+    producer_client.close().await.unwrap();
+}
+
+#[tokio::test]
+async fn producer_client_can_create_and_send_event_batch() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
+    let options = EventHubProducerClientOptions::default();
+    let mut producer_client = EventHubProducerClient::new(connection_string, None, options)
+        .await
+        .unwrap();
+
+    let event = "Hello, world!";
+    let options = CreateBatchOptions::new();
+    let mut event_batch = producer_client.create_batch(options).await.unwrap();
+    event_batch.try_add(event).unwrap();
+    producer_client.send_batch(event_batch, SendEventOptions::default()).await.unwrap();
 
     producer_client.close().await.unwrap();
 }
