@@ -4,10 +4,11 @@ use std::marker::PhantomData;
 
 use fe2o3_amqp::{
     connection::{self, OpenError},
-    session::{self, BeginError}, link::{SenderAttachError, ReceiverAttachError, DetachError},
+    link::{DetachError, ReceiverAttachError, SenderAttachError},
+    session::{self, BeginError},
 };
 use fe2o3_amqp_management::error::Error as ManagementError;
-use fe2o3_amqp_types::messaging::{Rejected, Released, Modified};
+use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use timer_kit::error::Elapsed;
 
 use crate::{consumer::error::OffsetIsEmpty, util::IntoAzureCoreError, Event};
@@ -17,8 +18,9 @@ impl IntoAzureCoreError for ManagementError {
         use azure_core::error::ErrorKind;
 
         match self {
-            ManagementError::Send(_)
-            | ManagementError::Recv(_) => azure_core::Error::new(ErrorKind::Io, self),
+            ManagementError::Send(_) | ManagementError::Recv(_) => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
             _ => azure_core::Error::new(ErrorKind::Other, self),
         }
     }
@@ -180,7 +182,9 @@ impl IntoAzureCoreError for OpenMgmtLinkError {
         use azure_core::error::ErrorKind;
 
         match self {
-            OpenMgmtLinkError::ConnectionScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
+            OpenMgmtLinkError::ConnectionScopeDisposed => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
             OpenMgmtLinkError::Session(_) => azure_core::Error::new(ErrorKind::Other, self),
             OpenMgmtLinkError::Link(_) => azure_core::Error::new(ErrorKind::Other, self),
         }
@@ -215,7 +219,9 @@ impl IntoAzureCoreError for OpenProducerError {
 
         match self {
             OpenProducerError::ParseEndpoint(err) => err.into(),
-            OpenProducerError::ConnectionScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
+            OpenProducerError::ConnectionScopeDisposed => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
             OpenProducerError::CbsAuth(err) => err.into_azure_core_error(),
             OpenProducerError::Session(err) => err.into_azure_core_error(),
             OpenProducerError::SenderLink(err) => err.into_azure_core_error(),
@@ -367,10 +373,9 @@ impl IntoAzureCoreError for AmqpSendError {
             AmqpSendError::Send(err) => err.into_azure_core_error(),
             AmqpSendError::NotAccepted(err) => err.into_azure_core_error(),
             AmqpSendError::Elapsed(err) => err.into_azure_core_error(),
-            AmqpSendError::ConnectionScopeDisposed => azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                self
-            ),
+            AmqpSendError::ConnectionScopeDisposed => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
         }
     }
 }

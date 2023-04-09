@@ -1,4 +1,7 @@
-use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions, EventHubsTransportType, EventHubsRetryOptions, BasicRetryPolicy};
+use messaging_eventhubs::{
+    BasicRetryPolicy, EventHubConnection, EventHubConnectionOptions, EventHubsRetryOptions,
+    EventHubsTransportType,
+};
 
 mod common;
 
@@ -15,7 +18,8 @@ async fn connection_can_connect_to_event_hubs_using_full_connection_string_over_
 }
 
 #[tokio::test]
-async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_event_hub_over_websockets() {
+async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_event_hub_over_websockets(
+) {
     common::setup_dotenv();
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
@@ -29,7 +33,8 @@ async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_e
 }
 
 #[tokio::test]
-async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_event_hub_over_tcp() {
+async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_event_hub_over_tcp()
+{
     common::setup_dotenv();
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
@@ -52,7 +57,10 @@ async fn connection_can_get_event_hub_properties() {
         .await
         .unwrap();
     let options = EventHubsRetryOptions::default();
-    let properties = connection.get_properties(BasicRetryPolicy::from(options)).await.unwrap();
+    let properties = connection
+        .get_properties(BasicRetryPolicy::from(options))
+        .await
+        .unwrap();
     println!("{:?}", properties);
     connection.close().await.unwrap();
 }

@@ -4,11 +4,9 @@ use fe2o3_amqp_types::messaging::{Data, Message};
 use fe2o3_amqp_types::primitives::{OrderedMap, SimpleValue};
 use serde_amqp::primitives::Binary;
 
-use crate::{
-    amqp::{
-        amqp_message_extension::{AmqpMessageExt, AmqpMessageMutExt},
-        error::SetMessageIdError,
-    },
+use crate::amqp::{
+    amqp_message_extension::{AmqpMessageExt, AmqpMessageMutExt},
+    error::SetMessageIdError,
 };
 
 /// An Event Hubs event, encapsulating a set of data and its associated metadata.

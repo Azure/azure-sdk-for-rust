@@ -10,14 +10,11 @@ use fe2o3_amqp_types::{
 };
 use time::OffsetDateTime;
 
-use crate::constants::{
-    MAX_MESSAGE_ID_LENGTH
-};
+use crate::constants::MAX_MESSAGE_ID_LENGTH;
 
 use super::{
-    error::{
-        MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError,
-    }, amqp_property,
+    amqp_property,
+    error::{MaxAllowedTtlExceededError, MaxLengthExceededError, SetMessageIdError},
 };
 
 pub(crate) trait AmqpMessageExt {
@@ -241,7 +238,9 @@ impl<B> AmqpMessageExt for Message<B> {
     fn last_partition_sequence_number(&self) -> Option<i64> {
         self.message_annotations
             .as_ref()
-            .and_then(|m| m.get(&amqp_property::PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER as &dyn AnnotationKey))
+            .and_then(|m| {
+                m.get(&amqp_property::PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER as &dyn AnnotationKey)
+            })
             .map(|value| match value {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
@@ -251,7 +250,9 @@ impl<B> AmqpMessageExt for Message<B> {
     fn last_partition_offset(&self) -> Option<i64> {
         self.message_annotations
             .as_ref()
-            .and_then(|m| m.get(&amqp_property::PARTITION_LAST_ENQUEUED_OFFSET as &dyn AnnotationKey))
+            .and_then(|m| {
+                m.get(&amqp_property::PARTITION_LAST_ENQUEUED_OFFSET as &dyn AnnotationKey)
+            })
             .map(|value| match value {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
@@ -262,7 +263,9 @@ impl<B> AmqpMessageExt for Message<B> {
     fn last_partition_enqueued_time(&self) -> Option<OffsetDateTime> {
         self.message_annotations
             .as_ref()
-            .and_then(|m| m.get(&amqp_property::PARTITION_LAST_ENQUEUED_TIME_UTC as &dyn AnnotationKey))
+            .and_then(|m| {
+                m.get(&amqp_property::PARTITION_LAST_ENQUEUED_TIME_UTC as &dyn AnnotationKey)
+            })
             .map(|value| match value {
                 Value::Timestamp(timestamp) => {
                     let timespan = TimeSpan::from(timestamp.clone());
@@ -276,7 +279,12 @@ impl<B> AmqpMessageExt for Message<B> {
     fn last_partition_properties_retrieval_time(&self) -> Option<OffsetDateTime> {
         self.message_annotations
             .as_ref()
-            .and_then(|m| m.get(&amqp_property::LAST_PARTITION_PROPERTIES_RETRIEVAL_TIME_UTC as &dyn AnnotationKey))
+            .and_then(|m| {
+                m.get(
+                    &amqp_property::LAST_PARTITION_PROPERTIES_RETRIEVAL_TIME_UTC
+                        as &dyn AnnotationKey,
+                )
+            })
             .map(|value| match value {
                 Value::Timestamp(timestamp) => {
                     let timespan = TimeSpan::from(timestamp.clone());
@@ -480,12 +488,16 @@ impl<B> AmqpMessageMutExt for Message<B> {
             Some(sequence_number) => {
                 self.message_annotations
                     .get_or_insert(MessageAnnotations::default())
-                    .insert(amqp_property::PRODUCER_SEQUENCE_NUMBER.into(), sequence_number.into());
+                    .insert(
+                        amqp_property::PRODUCER_SEQUENCE_NUMBER.into(),
+                        sequence_number.into(),
+                    );
             }
             None => {
-                self.message_annotations.as_mut()
-                    .map(|m| m.remove(&amqp_property::PRODUCER_SEQUENCE_NUMBER as &dyn AnnotationKey));
-            },
+                self.message_annotations.as_mut().map(|m| {
+                    m.remove(&amqp_property::PRODUCER_SEQUENCE_NUMBER as &dyn AnnotationKey)
+                });
+            }
         }
     }
 
@@ -498,9 +510,10 @@ impl<B> AmqpMessageMutExt for Message<B> {
                     .insert(amqp_property::PRODUCER_GROUP_ID.into(), group_id.into());
             }
             None => {
-                self.message_annotations.as_mut()
+                self.message_annotations
+                    .as_mut()
                     .map(|m| m.remove(&amqp_property::PRODUCER_GROUP_ID as &dyn AnnotationKey));
-            },
+            }
         }
     }
 
@@ -510,12 +523,16 @@ impl<B> AmqpMessageMutExt for Message<B> {
             Some(owner_level) => {
                 self.message_annotations
                     .get_or_insert(MessageAnnotations::default())
-                    .insert(amqp_property::PRODUCER_OWNER_LEVEL.into(), owner_level.into());
+                    .insert(
+                        amqp_property::PRODUCER_OWNER_LEVEL.into(),
+                        owner_level.into(),
+                    );
             }
             None => {
-                self.message_annotations.as_mut()
+                self.message_annotations
+                    .as_mut()
                     .map(|m| m.remove(&amqp_property::PRODUCER_OWNER_LEVEL as &dyn AnnotationKey));
-            },
+            }
         }
     }
 }

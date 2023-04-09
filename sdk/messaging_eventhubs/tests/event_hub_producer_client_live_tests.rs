@@ -1,4 +1,11 @@
-use messaging_eventhubs::{producer::{event_hub_producer_client_options::EventHubProducerClientOptions, event_hub_producer_client::EventHubProducerClient, send_event_options::SendEventOptions}, EventHubConnection, EventHubConnectionOptions};
+use messaging_eventhubs::{
+    producer::{
+        event_hub_producer_client::EventHubProducerClient,
+        event_hub_producer_client_options::EventHubProducerClientOptions,
+        send_event_options::SendEventOptions,
+    },
+    EventHubConnection, EventHubConnectionOptions,
+};
 
 mod common;
 
@@ -25,8 +32,10 @@ async fn close_producer_client_does_not_close_shared_connection() {
         .unwrap();
 
     let client_options = EventHubProducerClientOptions::default();
-    let producer_client_1 = EventHubProducerClient::with_connection(&mut connection, client_options.clone());
-    let producer_client_2 = EventHubProducerClient::with_connection(&mut connection, client_options);
+    let producer_client_1 =
+        EventHubProducerClient::with_connection(&mut connection, client_options.clone());
+    let producer_client_2 =
+        EventHubProducerClient::with_connection(&mut connection, client_options);
     producer_client_1.close().await.unwrap();
     producer_client_2.close().await.unwrap();
 
@@ -45,8 +54,7 @@ async fn producer_client_can_send_an_event_to_a_partition() {
         .unwrap();
 
     let event = "Hello, world!";
-    let options = SendEventOptions::new()
-        .with_partition_id("0");
+    let options = SendEventOptions::new().with_partition_id("0");
     producer_client.send_event(event, options).await.unwrap();
 
     producer_client.close().await.unwrap();
@@ -63,7 +71,10 @@ async fn producer_client_can_send_without_specifying_partition_id() {
         .unwrap();
 
     let event = "Hello, world to a random partition";
-    producer_client.send_event(event, SendEventOptions::default()).await.unwrap();
+    producer_client
+        .send_event(event, SendEventOptions::default())
+        .await
+        .unwrap();
 
     producer_client.close().await.unwrap();
 }

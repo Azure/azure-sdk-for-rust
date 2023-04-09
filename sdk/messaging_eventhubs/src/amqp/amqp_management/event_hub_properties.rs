@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use fe2o3_amqp_management::{error::Error as ManagementError, Request, Response};
 use fe2o3_amqp_types::{
-    messaging::{ApplicationProperties},
+    messaging::ApplicationProperties,
     primitives::{Array, OrderedMap},
 };
 use serde_amqp::Value;

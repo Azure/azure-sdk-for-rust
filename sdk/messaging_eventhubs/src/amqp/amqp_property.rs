@@ -4,28 +4,40 @@ use serde_amqp::primitives::SymbolRef;
 use crate::amqp::amqp_constants;
 
 /// The owner level (a.k.a. epoch) to associate with a receiver link.
-pub(crate) const CONSUMER_OWNER_LEVEL: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":epoch"));
+pub(crate) const CONSUMER_OWNER_LEVEL: SymbolRef =
+    SymbolRef(concatcp!(amqp_constants::VENDOR, ":epoch"));
 
 /// The consumer identifier to associate with a receiver link.
-pub(crate) const CONSUMER_IDENTIFIER: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":receiver-name"));
+pub(crate) const CONSUMER_IDENTIFIER: SymbolRef =
+    SymbolRef(concatcp!(amqp_constants::VENDOR, ":receiver-name"));
 
 /// The owner level (a.k.a. epoch) to associate with a sending link.
-pub(crate) const PRODUCER_OWNER_LEVEL: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":producer-epoch"));
+pub(crate) const PRODUCER_OWNER_LEVEL: SymbolRef =
+    SymbolRef(concatcp!(amqp_constants::VENDOR, ":producer-epoch"));
 
 /// The type of Event Hubs entity to associate with a link.
-pub(crate) const ENTITY_TYPE: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":entity-type"));
+pub(crate) const ENTITY_TYPE: SymbolRef =
+    SymbolRef(concatcp!(amqp_constants::VENDOR, ":entity-type"));
 
 /// The capability for tracking the last event enqueued in a partition, to associate with a link.
-pub(crate) const TRACK_LAST_ENQUEUED_EVENT_PROPERTIES: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":enable-receiver-runtime-metric"));
+pub(crate) const TRACK_LAST_ENQUEUED_EVENT_PROPERTIES: SymbolRef = SymbolRef(concatcp!(
+    amqp_constants::VENDOR,
+    ":enable-receiver-runtime-metric"
+));
 
 /// The capability for opting-into idempotent publishing.
-pub(crate) const ENABLE_IDEMPOTENT_PUBLISHING: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":idempotent-producer"));
+pub(crate) const ENABLE_IDEMPOTENT_PUBLISHING: SymbolRef =
+    SymbolRef(concatcp!(amqp_constants::VENDOR, ":idempotent-producer"));
 
 /// The identifier of the producer group to associate with a producer.
-pub(crate) const PRODUCER_GROUP_ID: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":producer-id"));
+pub(crate) const PRODUCER_GROUP_ID: SymbolRef =
+    SymbolRef(concatcp!(amqp_constants::VENDOR, ":producer-id"));
 
 /// The sequence number assigned by a producer to an event when it was published.
-pub(crate) const PRODUCER_SEQUENCE_NUMBER: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":producer-sequence-number"));
+pub(crate) const PRODUCER_SEQUENCE_NUMBER: SymbolRef = SymbolRef(concatcp!(
+    amqp_constants::VENDOR,
+    ":producer-sequence-number"
+));
 
 /// The timeout to associate with a link.
 pub(crate) const TIMEOUT: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":timeout"));
@@ -43,7 +55,8 @@ pub(crate) const OFFSET: SymbolRef = SymbolRef("x-opt-offset");
 pub(crate) const PARTITION_KEY: SymbolRef = SymbolRef("x-opt-partition-key");
 
 /// The message property that identifies the last sequence number enqueued for a partition.
-pub(crate) const PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER: SymbolRef = SymbolRef("last_enqueued_sequence_number");
+pub(crate) const PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER: SymbolRef =
+    SymbolRef("last_enqueued_sequence_number");
 
 /// The message property that identifies the last offset enqueued for a partition.
 pub(crate) const PARTITION_LAST_ENQUEUED_OFFSET: SymbolRef = SymbolRef("last_enqueued_offset");
@@ -53,7 +66,8 @@ pub(crate) const PARTITION_LAST_ENQUEUED_TIME_UTC: SymbolRef = SymbolRef("last_e
 
 /// The message property that identifies the time that the last enqueued event information was
 /// received from the service.
-pub(crate) const LAST_PARTITION_PROPERTIES_RETRIEVAL_TIME_UTC: SymbolRef = SymbolRef("runtime_info_retrieval_time_utc");
+pub(crate) const LAST_PARTITION_PROPERTIES_RETRIEVAL_TIME_UTC: SymbolRef =
+    SymbolRef("runtime_info_retrieval_time_utc");
 
 /// The set of descriptors for well-known <see cref="DescribedType" />
 /// property types.
@@ -64,13 +78,15 @@ pub(crate) mod descriptor {
     use crate::amqp::amqp_constants;
 
     /// The type annotation for representing a `TimeSpan` in a message.
-    pub(crate) const TIME_SPAN: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":timespan"));
+    pub(crate) const TIME_SPAN: SymbolRef =
+        SymbolRef(concatcp!(amqp_constants::VENDOR, ":timespan"));
 
     /// The type annotation for representing a `Url` in a message.
     pub(crate) const URI: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":uri"));
 
     /// The type annotation for representing a `OffsetDateTime` in a message.
-    pub(crate) const DATE_TIME_OFFSET: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":datetime-offset"));
+    pub(crate) const DATE_TIME_OFFSET: SymbolRef =
+        SymbolRef(concatcp!(amqp_constants::VENDOR, ":datetime-offset"));
 }
 
 /// Represents the entity mapping for AMQP properties between the client library and
@@ -90,7 +106,7 @@ pub(crate) enum Entity {
     ConsumerGroup = 8,
     Partition = 9,
     Checkpoint = 10,
-    Unknown = 0x7FFFFFFE
+    Unknown = 0x7FFFFFFE,
 }
 
 /// Represents the type mapping for AMQP properties between the client library and
@@ -104,8 +120,7 @@ pub(crate) enum Entity {
 ///
 /// When adding a new member, remember to always do so before the Unknown
 /// member.
-pub(crate) enum Type
-{
+pub(crate) enum Type {
     Null,
     Byte,
     SByte,
@@ -127,5 +142,5 @@ pub(crate) enum Type
     DateTimeOffset,
     TimeSpan,
     Stream,
-    Unknown
+    Unknown,
 }

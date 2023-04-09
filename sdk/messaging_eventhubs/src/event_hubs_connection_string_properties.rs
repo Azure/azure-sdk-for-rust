@@ -49,9 +49,7 @@ impl IntoAzureCoreError for ToConnectionStringError {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum ValidationError {
-
-}
+pub enum ValidationError {}
 
 /// The set of properties that comprise a Service Bus connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
@@ -257,7 +255,7 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{FormatError, EventHubsConnectionStringProperties};
+    use super::{EventHubsConnectionStringProperties, FormatError};
 
     const ENDPOINT: &str = "test.endpoint.com";
     const EVENT_HUB: &str = "some-path";

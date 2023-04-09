@@ -1,4 +1,4 @@
-use messaging_eventhubs::{EventHubConnectionOptions, EventHubConnection};
+use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -7,8 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH")?;
     let event_hub_name = std::env::var("EVENT_HUB_NAME")?;
     let options = EventHubConnectionOptions::default();
-    let connection = EventHubConnection::new(connection_string, None, options)
-        .await?;
+    let connection = EventHubConnection::new(connection_string, None, options).await?;
     connection.close().await?;
 
     Ok(())

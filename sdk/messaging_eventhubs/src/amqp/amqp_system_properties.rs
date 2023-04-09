@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use fe2o3_amqp_types::messaging::{Properties, MessageAnnotations, Message};
+use fe2o3_amqp_types::messaging::{Message, MessageAnnotations, Properties};
 
 /// The system properties of an AMQP message
 #[derive(Debug)]
@@ -18,5 +18,4 @@ impl<'a, B> From<&'a Message<B>> for AmqpSystemProperties<'a> {
     }
 }
 
-impl<'a> AmqpSystemProperties<'a> {
-}
+impl<'a> AmqpSystemProperties<'a> {}

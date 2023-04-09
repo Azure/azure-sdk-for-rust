@@ -56,7 +56,10 @@ impl EventPosition {
     ///
     /// - `offset` - The offset of an event with respect to its relative position in the partition.
     /// - `is_inclusive` - >If true, the event at the `offset` is included; otherwise the next event in sequence will be received.
-    pub fn try_from_offset(offset: impl Into<String>, is_inclusive: bool) -> Result<Self, OffsetIsEmpty> {
+    pub fn try_from_offset(
+        offset: impl Into<String>,
+        is_inclusive: bool,
+    ) -> Result<Self, OffsetIsEmpty> {
         let offset = offset.into();
         if offset.is_empty() {
             return Err(OffsetIsEmpty);
@@ -92,4 +95,3 @@ impl EventPosition {
         Self::EnqueuedTime(enqueued_time)
     }
 }
-

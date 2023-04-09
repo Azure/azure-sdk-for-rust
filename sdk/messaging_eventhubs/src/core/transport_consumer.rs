@@ -1,3 +1,1 @@
-pub trait TransportConsumer {
-
-}
+pub trait TransportConsumer {}

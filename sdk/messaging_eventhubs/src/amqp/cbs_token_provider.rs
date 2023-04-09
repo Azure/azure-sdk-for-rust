@@ -3,7 +3,7 @@ use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
 use futures_util::{pin_mut, ready};
 use std::{future::Future, sync::Arc, task::Poll};
-use time::{Duration as TimeSpan};
+use time::Duration as TimeSpan;
 use tokio::sync::Semaphore;
 
 use crate::authorization::event_hub_token_credential::EventHubTokenCredential;

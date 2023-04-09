@@ -27,9 +27,15 @@ impl PartitionContext {
         let sequence_number = last_enqueued_event
             .as_ref()
             .and_then(|event| event.last_partition_sequence_number());
-        let offset = last_enqueued_event.as_ref().and_then(|event| event.last_partition_offset());
-        let enqueued_time = last_enqueued_event.as_ref().and_then(|event| event.last_partition_enqueued_time());
-        let last_received_time = last_enqueued_event.as_ref().and_then(|event| event.last_partition_properties_retrieval_time());
+        let offset = last_enqueued_event
+            .as_ref()
+            .and_then(|event| event.last_partition_offset());
+        let enqueued_time = last_enqueued_event
+            .as_ref()
+            .and_then(|event| event.last_partition_enqueued_time());
+        let last_received_time = last_enqueued_event
+            .as_ref()
+            .and_then(|event| event.last_partition_properties_retrieval_time());
         LastEnqueuedEventProperties {
             sequence_number,
             offset,

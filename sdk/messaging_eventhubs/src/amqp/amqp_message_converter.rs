@@ -1,4 +1,4 @@
-use fe2o3_amqp_types::messaging::{Message, Data};
+use fe2o3_amqp_types::messaging::{Data, Message};
 
 use crate::Event;
 
@@ -8,9 +8,7 @@ use fe2o3_amqp::{
     link::{delivery::DeliveryFut, SendError},
     Sendable,
 };
-use fe2o3_amqp_types::messaging::{
-    message::__private::Serializable, Batch, Outcome,
-};
+use fe2o3_amqp_types::messaging::{message::__private::Serializable, Batch, Outcome};
 use serde_amqp::to_vec;
 
 use super::amqp_constants;
@@ -55,7 +53,10 @@ pub(crate) struct BatchEnvelope {
     pub sendable: SendableEnvelope,
 }
 
-pub(crate) fn create_envelope_from_event(event: Event, partition_key: Option<String>) -> BatchEnvelope {
+pub(crate) fn create_envelope_from_event(
+    event: Event,
+    partition_key: Option<String>,
+) -> BatchEnvelope {
     let message = build_amqp_message_from_event(event, partition_key);
     let sendable = Sendable {
         message,
@@ -69,7 +70,10 @@ pub(crate) fn create_envelope_from_event(event: Event, partition_key: Option<Str
     }
 }
 
-pub(crate) fn create_envelope_from_events(events: impl Iterator<Item = Event> + ExactSizeIterator, partition_key: Option<String>) -> Option<BatchEnvelope> {
+pub(crate) fn create_envelope_from_events(
+    events: impl Iterator<Item = Event> + ExactSizeIterator,
+    partition_key: Option<String>,
+) -> Option<BatchEnvelope> {
     build_amqp_batch_from_events(events, partition_key)
 }
 
@@ -80,7 +84,8 @@ fn build_amqp_message_from_event(event: Event, partition_key: Option<String>) ->
     // add partition key to message annotation
     if let Some(partition_key) = partition_key {
         if !partition_key.is_empty() {
-            message.message_annotations
+            message
+                .message_annotations
                 .get_or_insert(Default::default())
                 .insert(amqp_property::PARTITION_KEY.into(), partition_key.into());
         }
@@ -90,19 +95,21 @@ fn build_amqp_message_from_event(event: Event, partition_key: Option<String>) ->
 }
 
 #[inline]
-fn build_amqp_batch_from_events(events: impl Iterator<Item = Event> + ExactSizeIterator, partition_key: Option<String>) -> Option<BatchEnvelope> {
+fn build_amqp_batch_from_events(
+    events: impl Iterator<Item = Event> + ExactSizeIterator,
+    partition_key: Option<String>,
+) -> Option<BatchEnvelope> {
     let partition_key_clone = partition_key.clone();
     let messages = events.map(|event| build_amqp_message_from_event(event, partition_key.clone()));
     build_amqp_batch_from_messages(messages, partition_key_clone)
 }
-
 
 /// Builds a batch from a set of messages. Returns the batch containing the source messages.
 ///
 /// If `force_batch` is set to true, then a batch will be created even if there is only one message.
 pub(crate) fn build_amqp_batch_from_messages(
     mut source: impl Iterator<Item = Message<Data>> + ExactSizeIterator,
-    partition_key: Option<String>
+    partition_key: Option<String>,
 ) -> Option<BatchEnvelope> {
     let total = source.len();
 
@@ -130,13 +137,12 @@ pub(crate) fn build_amqp_batch_from_messages(
                 batch_data.push(data);
             }
 
-            let mut envelope = Message::builder()
-                .body(batch_data)
-                .build();
+            let mut envelope = Message::builder().body(batch_data).build();
 
             if let Some(partition_key) = partition_key {
                 if !partition_key.is_empty() {
-                    envelope.message_annotations
+                    envelope
+                        .message_annotations
                         .get_or_insert(Default::default())
                         .insert(amqp_property::PARTITION_KEY.into(), partition_key.into());
                 }

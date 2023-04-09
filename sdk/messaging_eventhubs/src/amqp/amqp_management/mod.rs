@@ -92,7 +92,8 @@ pub(self) mod response_map {
     //     /// </summary>
     //     ///
     //     public static MapKey PartitionLastEnqueuedSequenceNumber { get; } = new MapKey("last_enqueued_sequence_number");
-    pub(super) const PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER: &str = "last_enqueued_sequence_number";
+    pub(super) const PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER: &str =
+        "last_enqueued_sequence_number";
 
     //     /// <summary>
     //     ///   The message property that identifies the last offset enqueued for a partition.
@@ -113,7 +114,8 @@ pub(self) mod response_map {
     //     /// </summary>
     //     ///
     //     public static MapKey PartitionRuntimeInfoRetrievalTimeUtc { get; } = new MapKey("runtime_info_retrieval_time_utc");
-    pub(super) const PARTITION_RUNTIME_INFO_RETRIEVAL_TIME_UTC: &str = "runtime_info_retrieval_time_utc";
+    pub(super) const PARTITION_RUNTIME_INFO_RETRIEVAL_TIME_UTC: &str =
+        "runtime_info_retrieval_time_utc";
 
     /// The message property that identifies whether or not a partition is considered empty.
     pub(super) const PARTITION_RUNTIME_INFO_PARTITION_IS_EMPTY: &str = "is_partition_empty";

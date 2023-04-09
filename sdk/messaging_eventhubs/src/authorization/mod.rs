@@ -8,8 +8,8 @@ pub use azure_sas_credential::AzureSasCredential;
 
 mod azure_named_key_credential;
 mod azure_sas_credential;
-pub(crate) mod event_hub_token_credential;
 pub(crate) mod event_hub_claim;
+pub(crate) mod event_hub_token_credential;
 pub(crate) mod shared_access_credential;
 pub(crate) mod shared_access_signature;
 

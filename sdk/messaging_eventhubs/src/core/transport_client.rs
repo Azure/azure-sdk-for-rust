@@ -14,8 +14,12 @@ use super::{
 
 #[async_trait]
 pub trait TransportClient: Sized {
-    type Producer<RP>: TransportProducer where RP: EventHubsRetryPolicy + Send;
-    type Consumer<RP>: TransportConsumer where RP: EventHubsRetryPolicy + Send;
+    type Producer<RP>: TransportProducer
+    where
+        RP: EventHubsRetryPolicy + Send;
+    type Consumer<RP>: TransportConsumer
+    where
+        RP: EventHubsRetryPolicy + Send;
     type OpenProducerError: std::error::Error;
     type OpenConsumerError: std::error::Error;
     type DisposeError: std::error::Error;
@@ -24,7 +28,10 @@ pub trait TransportClient: Sized {
 
     fn service_endpoint(&self) -> &Url;
 
-    async fn get_properties<RP>(&mut self, retry_policy: RP) -> Result<EventHubProperties, azure_core::Error>
+    async fn get_properties<RP>(
+        &mut self,
+        retry_policy: RP,
+    ) -> Result<EventHubProperties, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send;
 

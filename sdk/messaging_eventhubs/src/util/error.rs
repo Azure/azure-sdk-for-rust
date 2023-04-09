@@ -2,7 +2,11 @@
 //!
 //! TODO: should all AMQP related errors be categorized as `ErrorKind::Io`?
 
-use fe2o3_amqp::{session::BeginError, connection::OpenError, link::{SenderAttachError, ReceiverAttachError, DetachError, SendError}};
+use fe2o3_amqp::{
+    connection::OpenError,
+    link::{DetachError, ReceiverAttachError, SendError, SenderAttachError},
+    session::BeginError,
+};
 
 use super::IntoAzureCoreError;
 
@@ -48,18 +52,24 @@ impl IntoAzureCoreError for fe2o3_amqp::transport::Error {
 
         match self {
             fe2o3_amqp::transport::Error::Io(err) => azure_core::Error::new(ErrorKind::Io, err),
-            fe2o3_amqp::transport::Error::DecodeError(_) => azure_core::Error::new(ErrorKind::DataConversion, self),
-            fe2o3_amqp::transport::Error::NotImplemented(_) => azure_core::Error::new(ErrorKind::Other, self),
+            fe2o3_amqp::transport::Error::DecodeError(_) => {
+                azure_core::Error::new(ErrorKind::DataConversion, self)
+            }
+            fe2o3_amqp::transport::Error::NotImplemented(_) => {
+                azure_core::Error::new(ErrorKind::Other, self)
+            }
             fe2o3_amqp::transport::Error::IdleTimeoutElapsed
-            | fe2o3_amqp::transport::Error::FramingError => azure_core::Error::new(ErrorKind::Io, self),
+            | fe2o3_amqp::transport::Error::FramingError => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
         }
     }
 }
 
 impl IntoAzureCoreError for fe2o3_amqp_ws::Error {
     fn into_azure_core_error(self) -> azure_core::Error {
-        use fe2o3_amqp_ws::Error;
         use azure_core::error::ErrorKind;
+        use fe2o3_amqp_ws::Error;
 
         match self {
             Error::Io(err) => azure_core::Error::new(ErrorKind::Io, err),
@@ -75,7 +85,9 @@ impl IntoAzureCoreError for SenderAttachError {
         match self {
             SenderAttachError::IllegalSessionState
             | SenderAttachError::IllegalState
-            | SenderAttachError::RemoteClosedWithError(_) => azure_core::Error::new(ErrorKind::Io, self),
+            | SenderAttachError::RemoteClosedWithError(_) => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
             _ => azure_core::Error::new(ErrorKind::Other, self),
         }
     }
@@ -86,7 +98,9 @@ impl IntoAzureCoreError for ReceiverAttachError {
         match self {
             ReceiverAttachError::IllegalSessionState
             | ReceiverAttachError::IllegalState
-            | ReceiverAttachError::RemoteClosedWithError(_) => azure_core::Error::new(azure_core::error::ErrorKind::Io, self),
+            | ReceiverAttachError::RemoteClosedWithError(_) => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
+            }
             _ => azure_core::Error::new(azure_core::error::ErrorKind::Other, self),
         }
     }
@@ -98,11 +112,15 @@ impl IntoAzureCoreError for fe2o3_amqp::connection::Error {
             fe2o3_amqp::connection::Error::TransportError(err) => err.into_azure_core_error(),
             fe2o3_amqp::connection::Error::IllegalState
             | fe2o3_amqp::connection::Error::RemoteClosed
-            | fe2o3_amqp::connection::Error::RemoteClosedWithError(_) => azure_core::Error::new(azure_core::error::ErrorKind::Io, self),
+            | fe2o3_amqp::connection::Error::RemoteClosedWithError(_) => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
+            }
             fe2o3_amqp::connection::Error::NotImplemented(_)
             | fe2o3_amqp::connection::Error::NotFound(_)
             | fe2o3_amqp::connection::Error::NotAllowed(_)
-            | fe2o3_amqp::connection::Error::JoinError(_) => azure_core::Error::new(azure_core::error::ErrorKind::Other, self),
+            | fe2o3_amqp::connection::Error::JoinError(_) => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
         }
     }
 }
@@ -113,7 +131,9 @@ impl IntoAzureCoreError for fe2o3_amqp::session::Error {
             fe2o3_amqp::session::Error::IllegalState
             | fe2o3_amqp::session::Error::IllegalConnectionState
             | fe2o3_amqp::session::Error::RemoteEndedWithError(_)
-            | fe2o3_amqp::session::Error::RemoteEnded => azure_core::Error::new(azure_core::error::ErrorKind::Io, self),
+            | fe2o3_amqp::session::Error::RemoteEnded => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
+            }
             _ => azure_core::Error::new(azure_core::error::ErrorKind::Other, self),
         }
     }
@@ -134,7 +154,9 @@ impl IntoAzureCoreError for SendError {
             | SendError::Detached(_)
             | SendError::NonTerminalDeliveryState
             | SendError::IllegalDeliveryState => azure_core::Error::new(ErrorKind::Io, self),
-            SendError::MessageEncodeError => azure_core::Error::new(ErrorKind::DataConversion, self),
+            SendError::MessageEncodeError => {
+                azure_core::Error::new(ErrorKind::DataConversion, self)
+            }
         }
     }
 }

@@ -135,7 +135,7 @@ impl SharedAccessCredential {
 
 #[cfg(test)]
 mod tests {
-    use time::{Duration as TimeSpan};
+    use time::Duration as TimeSpan;
 
     use crate::authorization::shared_access_signature::SharedAccessSignature;
 

@@ -3,19 +3,16 @@
 ///
 /// This is a simple enum, so copying it is cheap.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum EventHubsTransportType
-{
+pub enum EventHubsTransportType {
     /// The connection uses the AMQP protocol over TCP
     AmqpTcp,
 
     /// The connection uses the AMQP protocol over web sockets
-    AmqpWebSockets
+    AmqpWebSockets,
 }
 
-impl Default for EventHubsTransportType
-{
-    fn default() -> Self
-    {
+impl Default for EventHubsTransportType {
+    fn default() -> Self {
         Self::AmqpTcp
     }
 }

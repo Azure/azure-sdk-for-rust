@@ -1,10 +1,17 @@
 use std::borrow::Cow;
 
-use fe2o3_amqp_types::{messaging::{Message, Body}, primitives::{OrderedMap, SimpleValue}};
+use fe2o3_amqp_types::{
+    messaging::{Body, Message},
+    primitives::{OrderedMap, SimpleValue},
+};
 use serde_amqp::Value;
 use time::OffsetDateTime;
 
-use crate::{amqp::{error::RawAmqpMessageError, amqp_message_extension::AmqpMessageExt}, AmqpSystemProperties, constants::DEFAULT_OFFSET_DATE_TIME};
+use crate::{
+    amqp::{amqp_message_extension::AmqpMessageExt, error::RawAmqpMessageError},
+    constants::DEFAULT_OFFSET_DATE_TIME,
+    AmqpSystemProperties,
+};
 
 use super::PartitionContext;
 
@@ -21,7 +28,10 @@ pub struct PartitionEvent {
 
 impl PartitionEvent {
     /// Initializes a new instance of the <see cref="PartitionEvent"/> structure.
-    pub(crate) fn new(partition_context: PartitionContext, raw_amqp_message: Message<Body<Value>>) -> Self {
+    pub(crate) fn new(
+        partition_context: PartitionContext,
+        raw_amqp_message: Message<Body<Value>>,
+    ) -> Self {
         Self {
             partition_context,
             raw_amqp_message,
@@ -32,7 +42,6 @@ impl PartitionEvent {
     pub fn partition_context(&self) -> &PartitionContext {
         &self.partition_context
     }
-
 
     /// The data associated with the event
     pub fn body(&self) -> Result<&[u8], RawAmqpMessageError> {
@@ -138,6 +147,7 @@ impl PartitionEvent {
     }
 
     pub(crate) fn last_partition_properties_retrieval_time(&self) -> Option<OffsetDateTime> {
-        self.raw_amqp_message.last_partition_properties_retrieval_time()
+        self.raw_amqp_message
+            .last_partition_properties_retrieval_time()
     }
 }

@@ -2,13 +2,16 @@ use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use crate::{
     amqp::{amqp_client::AmqpClient, amqp_producer::AmqpProducer},
-    core::{transport_producer::TransportProducer, basic_retry_policy::BasicRetryPolicy},
+    core::{basic_retry_policy::BasicRetryPolicy, transport_producer::TransportProducer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    EventHubConnection, EventHubsRetryOptions, Event,
+    Event, EventHubConnection, EventHubsRetryOptions,
 };
 
-use super::{event_hub_producer_client_options::EventHubProducerClientOptions, send_event_options::SendEventOptions};
+use super::{
+    event_hub_producer_client_options::EventHubProducerClientOptions,
+    send_event_options::SendEventOptions,
+};
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
 
@@ -36,15 +39,15 @@ impl EventHubProducerClient<BasicRetryPolicy> {
         client_options: EventHubProducerClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .new(connection_string, event_hub_name, client_options).await
+            .new(connection_string, event_hub_name, client_options)
+            .await
     }
 
     pub fn with_connection(
         connection: &mut EventHubConnection<AmqpClient>,
-        client_options: EventHubProducerClientOptions
+        client_options: EventHubProducerClientOptions,
     ) -> Self {
-        Self::with_policy()
-            .with_connection(connection, client_options)
+        Self::with_policy().with_connection(connection, client_options)
     }
 }
 
@@ -65,8 +68,9 @@ impl<RP> WithCustomRetryPolicy<RP> {
         let connection = EventHubConnection::new(
             connection_string.into(),
             event_hub_name.into(),
-            client_options.connection_options.clone()
-        ).await?;
+            client_options.connection_options.clone(),
+        )
+        .await?;
         Ok(EventHubProducerClient {
             connection,
             gateway_producer: None,
@@ -79,7 +83,7 @@ impl<RP> WithCustomRetryPolicy<RP> {
     pub fn with_connection(
         self,
         connection: &mut EventHubConnection<AmqpClient>,
-        client_options: EventHubProducerClientOptions
+        client_options: EventHubProducerClientOptions,
     ) -> EventHubProducerClient<RP> {
         let connection = connection.clone_as_shared();
 
@@ -110,13 +114,7 @@ where
         let requested_features = self.options.create_features();
         let retry_policy = RP::from(self.options.retry_options.clone());
 
-        let partition_id = partition_id.and_then(|id| {
-            if id.is_empty() {
-                None
-            } else {
-                Some(id)
-            }
-        });
+        let partition_id = partition_id.and_then(|id| if id.is_empty() { None } else { Some(id) });
 
         match partition_id {
             Some(partition_id) => {
@@ -125,7 +123,8 @@ where
                         .options
                         .get_publishing_options_or_default_for_partition(Some(partition_id));
 
-                    let producer = self.connection
+                    let producer = self
+                        .connection
                         .create_transport_producer::<RP>(
                             Some(partition_id.to_string()),
                             producer_identifier,
@@ -134,19 +133,21 @@ where
                             retry_policy,
                         )
                         .await?;
-                    self.producer_pool.insert(partition_id.to_string(), producer);
+                    self.producer_pool
+                        .insert(partition_id.to_string(), producer);
                 }
 
                 // This is safe because we just checked that the key exists.
                 Ok(self.producer_pool.get_mut(partition_id).unwrap())
-            },
+            }
             None => {
                 if self.gateway_producer.is_none() {
                     let partition_options = self
                         .options
                         .get_publishing_options_or_default_for_partition(None);
 
-                    let producer = self.connection
+                    let producer = self
+                        .connection
                         .create_transport_producer::<RP>(
                             None,
                             producer_identifier,
@@ -163,21 +164,41 @@ where
         }
     }
 
-    async fn send_idempotent(&mut self, events: impl Iterator<Item = Event> + ExactSizeIterator, options: SendEventOptions) -> Result<(), azure_core::Error> {
+    async fn send_idempotent(
+        &mut self,
+        events: impl Iterator<Item = Event> + ExactSizeIterator,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
         todo!()
     }
 
-    async fn send_inner(&mut self, events: impl Iterator<Item = Event> + ExactSizeIterator + Send, options: SendEventOptions) -> Result<(), azure_core::Error> {
+    async fn send_inner(
+        &mut self,
+        events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
         let partition_id = options.partition_id.as_deref();
         let producer = self.get_pooled_producer_mut(partition_id).await?;
-        producer.send(events, options).await.map_err(IntoAzureCoreError::into_azure_core_error)
+        producer
+            .send(events, options)
+            .await
+            .map_err(IntoAzureCoreError::into_azure_core_error)
     }
 
-    pub async fn send_event(&mut self, event: impl Into<Event>, options: SendEventOptions) -> Result<(), azure_core::Error> {
-        self.send_events(std::iter::once(event.into()), options).await
+    pub async fn send_event(
+        &mut self,
+        event: impl Into<Event>,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
+        self.send_events(std::iter::once(event.into()), options)
+            .await
     }
 
-    pub async fn send_events<E>(&mut self, events: E, options: SendEventOptions) -> Result<(), azure_core::Error>
+    pub async fn send_events<E>(
+        &mut self,
+        events: E,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error>
     where
         E: IntoIterator<Item = Event>,
         E::IntoIter: ExactSizeIterator + Send,

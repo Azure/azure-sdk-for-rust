@@ -1,13 +1,16 @@
 use std::borrow::Cow;
 
-use fe2o3_amqp_management::{Request, Response, error::Error as ManagementError};
-use fe2o3_amqp_types::{primitives::OrderedMap, messaging::ApplicationProperties};
+use fe2o3_amqp_management::{error::Error as ManagementError, Request, Response};
+use fe2o3_amqp_types::{messaging::ApplicationProperties, primitives::OrderedMap};
 use serde_amqp::Value;
 use time::OffsetDateTime;
 
-use crate::{PartitionProperties, amqp::amqp_management::response_map};
+use crate::{amqp::amqp_management::response_map, PartitionProperties};
 
-use super::{READ_OPERATION_VALUE, RESOURCE_NAME_KEY, PARTITION_NAME_KEY, RESOURCE_TYPE_KEY, PARTITION_RESOURCE_TYPE_VALUE, SECURITY_TOKEN_KEY};
+use super::{
+    PARTITION_NAME_KEY, PARTITION_RESOURCE_TYPE_VALUE, READ_OPERATION_VALUE, RESOURCE_NAME_KEY,
+    RESOURCE_TYPE_KEY, SECURITY_TOKEN_KEY,
+};
 
 #[derive(Debug, Clone)]
 pub(crate) struct PartitionPropertiesRequest<'a> {
@@ -47,7 +50,6 @@ fn encode_application_properties(
         .insert(RESOURCE_TYPE_KEY, PARTITION_RESOURCE_TYPE_VALUE)
         .insert(SECURITY_TOKEN_KEY, management_authorization_token)
         .build()
-
 }
 
 impl<'a> Request for PartitionPropertiesRequest<'a> {
@@ -119,7 +121,9 @@ impl Response for PartitionProperties {
 
     type Error = ManagementError;
 
-    fn decode_message(message: fe2o3_amqp_types::messaging::Message<Self::Body>) -> Result<Self, Self::Error> {
+    fn decode_message(
+        message: fe2o3_amqp_types::messaging::Message<Self::Body>,
+    ) -> Result<Self, Self::Error> {
         let mut body = message.body;
         let event_hub_name = match body.remove(response_map::NAME) {
             Some(Value::String(name)) => name,
@@ -133,16 +137,20 @@ impl Response for PartitionProperties {
             Some(Value::Bool(is_empty)) => is_empty,
             _ => return Err(ManagementError::DecodeError(None)),
         };
-        let beginning_sequence_number = match body.remove(response_map::PARTITION_BEGIN_SEQUENCE_NUMBER) {
-            Some(Value::Long(seq)) => seq,
-            _ => return Err(ManagementError::DecodeError(None)),
-        };
-        let last_sequence_number = match body.remove(response_map::PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER) {
-            Some(Value::Long(seq)) => seq,
-            _ => return Err(ManagementError::DecodeError(None)),
-        };
+        let beginning_sequence_number =
+            match body.remove(response_map::PARTITION_BEGIN_SEQUENCE_NUMBER) {
+                Some(Value::Long(seq)) => seq,
+                _ => return Err(ManagementError::DecodeError(None)),
+            };
+        let last_sequence_number =
+            match body.remove(response_map::PARTITION_LAST_ENQUEUED_SEQUENCE_NUMBER) {
+                Some(Value::Long(seq)) => seq,
+                _ => return Err(ManagementError::DecodeError(None)),
+            };
         let last_offset = match body.remove(response_map::PARTITION_LAST_ENQUEUED_OFFSET) {
-            Some(Value::String(offset)) => str::parse::<i64>(&offset).map_err(|_| ManagementError::DecodeError(None))?,
+            Some(Value::String(offset)) => {
+                str::parse::<i64>(&offset).map_err(|_| ManagementError::DecodeError(None))?
+            }
             Some(Value::Long(offset)) => offset,
             _ => return Err(ManagementError::DecodeError(None)),
         };

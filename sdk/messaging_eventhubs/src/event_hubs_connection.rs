@@ -1,5 +1,5 @@
 use const_format::concatcp;
-use std::{sync::{atomic::AtomicBool, Arc}};
+use std::sync::{atomic::AtomicBool, Arc};
 use url::Url;
 
 use tokio::sync::Mutex;
@@ -11,11 +11,18 @@ use crate::{
         shared_access_credential::SharedAccessCredential,
         shared_access_signature::SharedAccessSignature,
     },
-    core::{transport_client::TransportClient, transport_producer_features::TransportProducerFeatures},
+    consumer::EventPosition,
+    core::{
+        transport_client::TransportClient, transport_producer_features::TransportProducerFeatures,
+    },
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
+    event_hubs_properties::EventHubProperties,
+    event_hubs_retry_policy::EventHubsRetryPolicy,
     event_hubs_transport_type::EventHubsTransportType,
-    util::IntoAzureCoreError, event_hubs_properties::EventHubProperties, event_hubs_retry_policy::EventHubsRetryPolicy, PartitionProperties, producer::PartitionPublishingOptions, consumer::EventPosition,
+    producer::PartitionPublishingOptions,
+    util::IntoAzureCoreError,
+    PartitionProperties,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -58,7 +65,7 @@ impl<C> InnerClient<C> {
                     // This should never happen
                     unreachable!()
                 }
-            },
+            }
             InnerClient::Shared(shared) => Some(shared.clone()),
             InnerClient::None => None,
         }
@@ -187,31 +194,47 @@ where
     C: TransportClient,
     C::DisposeError: IntoAzureCoreError,
 {
-    pub async fn get_properties<RP>(&mut self, retry_policy: RP) -> Result<EventHubProperties, azure_core::Error>
+    pub async fn get_properties<RP>(
+        &mut self,
+        retry_policy: RP,
+    ) -> Result<EventHubProperties, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
     {
         match &mut self.inner {
             InnerClient::Owned(c) => c.get_properties(retry_policy).await,
             InnerClient::Shared(c) => c.lock().await.get_properties(retry_policy).await,
-            InnerClient::None => return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
+            InnerClient::None => {
+                return Err(azure_core::Error::new(
+                    azure_core::error::ErrorKind::Io,
+                    AmqpConnectionScopeError::ScopeDisposed,
+                ))
+            }
         }
     }
 
-    pub async fn get_partition_properties<RP>(&mut self, partition_id: &str, retry_policy: RP) -> Result<PartitionProperties, azure_core::Error>
+    pub async fn get_partition_properties<RP>(
+        &mut self,
+        partition_id: &str,
+        retry_policy: RP,
+    ) -> Result<PartitionProperties, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
     {
         match &mut self.inner {
             InnerClient::Owned(c) => c.get_partition_properties(partition_id, retry_policy).await,
-            InnerClient::Shared(c) => c.lock().await.get_partition_properties(partition_id, retry_policy).await,
-            InnerClient::None => return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
+            InnerClient::Shared(c) => {
+                c.lock()
+                    .await
+                    .get_partition_properties(partition_id, retry_policy)
+                    .await
+            }
+            InnerClient::None => {
+                return Err(azure_core::Error::new(
+                    azure_core::error::ErrorKind::Io,
+                    AmqpConnectionScopeError::ScopeDisposed,
+                ))
+            }
         }
     }
 
@@ -250,10 +273,12 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::None => return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
+            InnerClient::None => {
+                return Err(azure_core::Error::new(
+                    azure_core::error::ErrorKind::Io,
+                    AmqpConnectionScopeError::ScopeDisposed,
+                ))
+            }
         }
     }
 
@@ -304,18 +329,28 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::None => return Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
+            InnerClient::None => {
+                return Err(azure_core::Error::new(
+                    azure_core::error::ErrorKind::Io,
+                    AmqpConnectionScopeError::ScopeDisposed,
+                ))
+            }
         }
     }
 
     /// Closes the inner client regardless of whether it is owned or shared.
     pub async fn close(self) -> Result<(), azure_core::Error> {
         match self.inner {
-            InnerClient::Owned(mut c) => c.close().await.map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::Shared(c) => c.lock().await.close().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Owned(mut c) => c
+                .close()
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Shared(c) => c
+                .lock()
+                .await
+                .close()
+                .await
+                .map_err(IntoAzureCoreError::into_azure_core_error),
             InnerClient::None => Ok(()),
         }
     }
@@ -324,11 +359,10 @@ where
     /// it.
     pub(crate) async fn close_if_owned(self) -> Result<(), azure_core::Error> {
         match self.inner {
-            InnerClient::Owned(mut client) => {client
+            InnerClient::Owned(mut client) => client
                 .close()
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error)
-            },
+                .map_err(IntoAzureCoreError::into_azure_core_error),
             InnerClient::Shared(client) => match Arc::try_unwrap(client) {
                 Ok(mut client) => {
                     // This is the last reference to the client, so we can dispose it.
@@ -343,7 +377,7 @@ where
                     Ok(())
                 }
             },
-            InnerClient::None => Ok(())
+            InnerClient::None => Ok(()),
         }
     }
 }
@@ -374,7 +408,7 @@ impl<C> EventHubConnection<C> {
 
     pub fn is_closed(&self) -> bool {
         matches!(self.inner, InnerClient::None)
-        | self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
+            | self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     pub fn is_owned(&self) -> bool {

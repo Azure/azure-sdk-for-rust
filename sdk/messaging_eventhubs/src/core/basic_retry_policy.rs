@@ -1,4 +1,4 @@
-use std::{time::Duration};
+use std::time::Duration;
 
 use rand::Rng;
 
@@ -55,8 +55,14 @@ impl EventHubsRetryPolicy for BasicRetryPolicy {
 
         let base_jitter_seconds = self.options.delay.as_secs_f64() * self.jitter_factor;
         let retry_delay = match &self.options.mode {
-            EventHubsRetryMode::Fixed => calculate_fixed_delay(self.options.delay.as_secs_f64(), base_jitter_seconds),
-            EventHubsRetryMode::Exponential => calculate_exponential_delay(self.options.delay.as_secs_f64(), base_jitter_seconds, attempt_count),
+            EventHubsRetryMode::Fixed => {
+                calculate_fixed_delay(self.options.delay.as_secs_f64(), base_jitter_seconds)
+            }
+            EventHubsRetryMode::Exponential => calculate_exponential_delay(
+                self.options.delay.as_secs_f64(),
+                base_jitter_seconds,
+                attempt_count,
+            ),
         };
 
         // TODO: determine if the error represents a request to throttle
