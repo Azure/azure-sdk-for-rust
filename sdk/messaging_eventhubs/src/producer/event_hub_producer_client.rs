@@ -5,7 +5,7 @@ use crate::{
     core::{basic_retry_policy::BasicRetryPolicy, transport_producer::TransportProducer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    Event, EventHubConnection, EventHubsRetryOptions,
+    Event, EventHubConnection, EventHubsRetryOptions, event_hubs_properties::EventHubProperties, PartitionProperties,
 };
 
 use super::{
@@ -232,6 +232,24 @@ where
                     .map_err(IntoAzureCoreError::into_azure_core_error)
             },
         }
+    }
+
+    pub async fn get_event_hub_properties(&mut self) -> Result<EventHubProperties, azure_core::Error> {
+        self.connection
+            .get_properties(RP::from(self.options.retry_options.clone()))
+            .await
+    }
+
+    pub async fn get_partition_properties(
+        &mut self,
+        partition_id: &str,
+    ) -> Result<PartitionProperties, azure_core::Error> {
+        self.connection
+            .get_partition_properties(
+                partition_id,
+                RP::from(self.options.retry_options.clone()),
+            )
+            .await
     }
 
     pub async fn close(self) -> Result<(), azure_core::Error> {

@@ -97,3 +97,35 @@ async fn producer_client_can_create_and_send_event_batch() {
 
     producer_client.close().await.unwrap();
 }
+
+#[tokio::test]
+async fn producer_client_can_get_event_hub_properties() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+    let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+    let options = EventHubProducerClientOptions::default();
+    let mut producer_client = EventHubProducerClient::new(connection_string, event_hub_name, options)
+        .await
+        .unwrap();
+
+    let _properties = producer_client.get_event_hub_properties().await.unwrap();
+
+    producer_client.close().await.unwrap();
+}
+
+#[tokio::test]
+async fn producer_client_can_get_partition_properties() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+    let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+    let options = EventHubProducerClientOptions::default();
+    let mut producer_client = EventHubProducerClient::new(connection_string, event_hub_name, options)
+        .await
+        .unwrap();
+
+    let _properties = producer_client.get_partition_properties("0").await.unwrap();
+
+    producer_client.close().await.unwrap();
+}
