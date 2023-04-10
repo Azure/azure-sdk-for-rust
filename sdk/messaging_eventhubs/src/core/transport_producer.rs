@@ -16,7 +16,6 @@ pub trait TransportProducer {
     type MessageBatch: TransportEventBatch;
 
     type SendError: std::error::Error;
-    type DisposeError: std::error::Error;
     type CreateBatchError: std::error::Error;
 
     fn create_batch(
@@ -37,6 +36,4 @@ pub trait TransportProducer {
     ) -> Result<(), Self::SendError>;
 
     // async fn read_initialization_publishing_properties(&mut self) -> Result<PartitionPublishingOptions, ()>;
-
-    async fn close(self) -> Result<(), Self::DisposeError>;
 }

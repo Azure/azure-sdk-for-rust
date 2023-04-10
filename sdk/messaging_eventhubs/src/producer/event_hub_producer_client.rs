@@ -2,7 +2,7 @@ use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use crate::{
     amqp::{amqp_client::AmqpClient, amqp_producer::AmqpProducer},
-    core::{BasicRetryPolicy, TransportProducer},
+    core::{BasicRetryPolicy, TransportProducer, Dispose},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
@@ -262,7 +262,7 @@ where
         let mut result = Ok(());
         for (_, producer) in self.producer_pool {
             let res = producer
-                .close()
+                .dispose()
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error);
             result = result.and(res);
