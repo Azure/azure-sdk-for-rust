@@ -2,15 +2,17 @@ use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use crate::{
     amqp::{amqp_client::AmqpClient, amqp_producer::AmqpProducer},
-    core::{basic_retry_policy::BasicRetryPolicy, transport_producer::TransportProducer},
+    core::{BasicRetryPolicy, TransportProducer},
+    event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    Event, EventHubConnection, EventHubsRetryOptions, event_hubs_properties::EventHubProperties, PartitionProperties,
+    Event, EventHubConnection, EventHubsRetryOptions, PartitionProperties,
 };
 
 use super::{
+    create_batch_options::CreateBatchOptions, event_batch::EventBatch,
     event_hub_producer_client_options::EventHubProducerClientOptions,
-    send_event_options::SendEventOptions, event_batch::EventBatch, create_batch_options::CreateBatchOptions,
+    send_event_options::SendEventOptions,
 };
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
@@ -103,7 +105,9 @@ impl<RP> EventHubProducerClient<RP>
 where
     RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send,
 {
-    async fn get_or_create_gateway_producer_mut(&mut self) -> Result<&mut AmqpProducer<RP>, azure_core::Error> {
+    async fn get_or_create_gateway_producer_mut(
+        &mut self,
+    ) -> Result<&mut AmqpProducer<RP>, azure_core::Error> {
         let producer_identifier = Some(
             self.options
                 .identifier
@@ -181,7 +185,10 @@ where
         &mut self,
         options: CreateBatchOptions,
     ) -> Result<EventBatch, azure_core::Error> {
-        let inner = self.get_or_create_gateway_producer_mut().await?.create_batch(options)?;
+        let inner = self
+            .get_or_create_gateway_producer_mut()
+            .await?
+            .create_batch(options)?;
         Ok(EventBatch { inner })
     }
 
@@ -212,7 +219,7 @@ where
                     .send(events.into_iter(), options)
                     .await
                     .map_err(IntoAzureCoreError::into_azure_core_error)
-            },
+            }
         }
     }
 
@@ -230,11 +237,13 @@ where
                     .send_batch(batch.inner, options)
                     .await
                     .map_err(IntoAzureCoreError::into_azure_core_error)
-            },
+            }
         }
     }
 
-    pub async fn get_event_hub_properties(&mut self) -> Result<EventHubProperties, azure_core::Error> {
+    pub async fn get_event_hub_properties(
+        &mut self,
+    ) -> Result<EventHubProperties, azure_core::Error> {
         self.connection
             .get_properties(RP::from(self.options.retry_options.clone()))
             .await
@@ -245,10 +254,7 @@ where
         partition_id: &str,
     ) -> Result<PartitionProperties, azure_core::Error> {
         self.connection
-            .get_partition_properties(
-                partition_id,
-                RP::from(self.options.retry_options.clone()),
-            )
+            .get_partition_properties(partition_id, RP::from(self.options.retry_options.clone()))
             .await
     }
 

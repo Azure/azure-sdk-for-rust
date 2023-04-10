@@ -1,8 +1,6 @@
 use fe2o3_amqp::{session::SessionHandle, Receiver};
 
-use crate::{
-    core::transport_consumer::TransportConsumer, event_hubs_retry_policy::EventHubsRetryPolicy,
-};
+use crate::{core::TransportConsumer, event_hubs_retry_policy::EventHubsRetryPolicy};
 
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,

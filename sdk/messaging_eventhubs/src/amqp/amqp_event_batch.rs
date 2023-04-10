@@ -1,10 +1,7 @@
 use fe2o3_amqp_types::messaging::{message::__private::Serializable, Data, Message};
 use serde_amqp::serialized_size;
 
-use crate::{
-    core::transport_event_batch::TransportEventBatch,
-    producer::create_batch_options::CreateBatchOptions, Event,
-};
+use crate::{core::TransportEventBatch, producer::create_batch_options::CreateBatchOptions, Event};
 
 use super::{
     amqp_message_converter::{build_amqp_batch_from_messages, SendableEnvelope},

@@ -7,9 +7,7 @@ use crate::{
     amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
     authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
-    core::{
-        transport_client::TransportClient, transport_producer_features::TransportProducerFeatures,
-    },
+    core::{TransportClient, TransportProducerFeatures},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,

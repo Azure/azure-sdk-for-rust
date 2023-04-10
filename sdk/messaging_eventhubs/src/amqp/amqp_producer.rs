@@ -4,10 +4,7 @@ use fe2o3_amqp_types::messaging::Outcome;
 
 use crate::{
     amqp::amqp_message_converter::create_envelope_from_events,
-    core::{
-        transport_event_batch::TransportEventBatch, transport_producer::TransportProducer,
-        transport_producer_features::TransportProducerFeatures,
-    },
+    core::{TransportEventBatch, TransportProducer, TransportProducerFeatures},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
         create_batch_options::CreateBatchOptions,

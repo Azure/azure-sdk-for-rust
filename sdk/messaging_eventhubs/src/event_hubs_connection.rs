@@ -12,9 +12,7 @@ use crate::{
         shared_access_signature::SharedAccessSignature,
     },
     consumer::EventPosition,
-    core::{
-        transport_client::TransportClient, transport_producer_features::TransportProducerFeatures,
-    },
+    core::{TransportClient, TransportProducerFeatures},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
     event_hubs_properties::EventHubProperties,

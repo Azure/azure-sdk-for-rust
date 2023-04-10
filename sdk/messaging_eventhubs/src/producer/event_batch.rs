@@ -2,7 +2,7 @@ use fe2o3_amqp_types::messaging::{Data, Message};
 
 use crate::{
     amqp::{amqp_event_batch::AmqpEventBatch, error::TryAddError},
-    core::transport_event_batch::TransportEventBatch,
+    core::TransportEventBatch,
     Event,
 };
 

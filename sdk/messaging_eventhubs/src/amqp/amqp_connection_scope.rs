@@ -31,7 +31,7 @@ use crate::{
     },
     authorization::{event_hub_claim, event_hub_token_credential::EventHubTokenCredential},
     consumer::EventPosition,
-    core::transport_producer_features::TransportProducerFeatures,
+    core::TransportProducerFeatures,
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
 };

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    core::transport_producer_features::TransportProducerFeatures,
-    event_hubs_retry_options::EventHubsRetryOptions, EventHubConnectionOptions,
+    core::TransportProducerFeatures, event_hubs_retry_options::EventHubsRetryOptions,
+    EventHubConnectionOptions,
 };
 
 use super::PartitionPublishingOptions;

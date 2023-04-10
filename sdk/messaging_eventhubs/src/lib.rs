@@ -30,7 +30,7 @@ pub mod prelude {
     //! Prelude for the Azure Event Hubs crate.
 
     pub use crate::amqp::amqp_system_properties::AmqpSystemProperties;
-    pub use crate::core::basic_retry_policy::BasicRetryPolicy;
+    pub use crate::core::BasicRetryPolicy;
     pub use crate::event::*;
     pub use crate::event_hubs_connection::EventHubConnection;
     pub use crate::event_hubs_connection_option::EventHubConnectionOptions;

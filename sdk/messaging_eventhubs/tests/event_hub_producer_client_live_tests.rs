@@ -1,8 +1,9 @@
 use messaging_eventhubs::{
     producer::{
+        create_batch_options::CreateBatchOptions,
         event_hub_producer_client::EventHubProducerClient,
         event_hub_producer_client_options::EventHubProducerClientOptions,
-        send_event_options::SendEventOptions, create_batch_options::CreateBatchOptions,
+        send_event_options::SendEventOptions,
     },
     EventHubConnection, EventHubConnectionOptions,
 };
@@ -93,7 +94,10 @@ async fn producer_client_can_create_and_send_event_batch() {
     let options = CreateBatchOptions::new();
     let mut event_batch = producer_client.create_batch(options).await.unwrap();
     event_batch.try_add(event).unwrap();
-    producer_client.send_batch(event_batch, SendEventOptions::default()).await.unwrap();
+    producer_client
+        .send_batch(event_batch, SendEventOptions::default())
+        .await
+        .unwrap();
 
     producer_client.close().await.unwrap();
 }
@@ -105,9 +109,10 @@ async fn producer_client_can_get_event_hub_properties() {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
     let options = EventHubProducerClientOptions::default();
-    let mut producer_client = EventHubProducerClient::new(connection_string, event_hub_name, options)
-        .await
-        .unwrap();
+    let mut producer_client =
+        EventHubProducerClient::new(connection_string, event_hub_name, options)
+            .await
+            .unwrap();
 
     let _properties = producer_client.get_event_hub_properties().await.unwrap();
 
@@ -121,9 +126,10 @@ async fn producer_client_can_get_partition_properties() {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
     let options = EventHubProducerClientOptions::default();
-    let mut producer_client = EventHubProducerClient::new(connection_string, event_hub_name, options)
-        .await
-        .unwrap();
+    let mut producer_client =
+        EventHubProducerClient::new(connection_string, event_hub_name, options)
+            .await
+            .unwrap();
 
     let _properties = producer_client.get_partition_properties("0").await.unwrap();
 
