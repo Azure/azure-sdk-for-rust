@@ -7,7 +7,7 @@ use crate::{
     amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
     authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
-    core::{TransportClient, TransportProducerFeatures},
+    core::{TransportClient, TransportProducerFeatures, RecoverableTransport},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -22,7 +22,7 @@ use super::{
     amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{DisposeError, OpenConsumerError, OpenProducerError},
+    error::{DisposeError, OpenConsumerError, OpenProducerError, AmqpClientError},
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
@@ -38,17 +38,14 @@ impl AmqpClient {
         event_hub_name: Arc<String>,
         credential: EventHubTokenCredential,
         options: EventHubConnectionOptions,
-    ) -> Result<Self, azure_core::Error> {
-        use azure_core::error::ErrorKind;
-
+    ) -> Result<Self, AmqpClientError> {
         // Scheme of service endpoint must always be either "amqp" or "amqps"
         let service_endpoint = format!("{}://{}", options.transport_type.url_scheme(), host);
         let service_endpoint = Url::parse(&service_endpoint)?;
 
         let connection_endpoint = match options.custom_endpoint_address {
             Some(mut url) => {
-                url.set_scheme(options.transport_type.url_scheme())
-                    .map_err(|_| azure_core::Error::new(ErrorKind::Other, "Cannot set scheme"))?;
+                url.set_scheme(options.transport_type.url_scheme()).map_err(|_| AmqpClientError::SetUrlScheme)?;
                 url
             }
             None => service_endpoint.clone(),
@@ -64,14 +61,12 @@ impl AmqpClient {
             options.connection_idle_timeout,
             None,
         )
-        .await
-        .map_err(IntoAzureCoreError::into_azure_core_error)?;
+        .await?;
 
         // Create AmqpManagementLink
         let management_link = connection_scope
             .open_management_link()
-            .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+            .await?;
 
         Ok(Self {
             connection_scope,
@@ -251,5 +246,16 @@ impl TransportClient for AmqpClient {
 
     async fn close(&mut self) -> Result<(), Self::DisposeError> {
         self.connection_scope.dispose().await
+    }
+}
+
+#[async_trait]
+impl RecoverableTransport for AmqpClient {
+    type RecoverError = AmqpClientError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        self.connection_scope.recover().await?;
+        self.management_link = self.connection_scope.open_management_link().await?;
+        Ok(())
     }
 }

@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use const_format::concatcp;
 use std::sync::{atomic::AtomicBool, Arc};
 use url::Url;
@@ -12,7 +13,7 @@ use crate::{
         shared_access_signature::SharedAccessSignature,
     },
     consumer::EventPosition,
-    core::{TransportClient, TransportProducerFeatures},
+    core::{TransportClient, TransportProducerFeatures, RecoverableTransport},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
     event_hubs_properties::EventHubProperties,
@@ -174,7 +175,8 @@ impl EventHubConnection<AmqpClient> {
             token_credential,
             options,
         )
-        .await?;
+        .await
+        .map_err(IntoAzureCoreError::into_azure_core_error)?;
         let is_closed = inner_client.connection_scope.is_disposed.clone();
         let inner = InnerClient::Owned(inner_client);
 
@@ -469,4 +471,26 @@ fn build_connection_signature_authorization_resource(
         .pop_if_empty();
 
     Ok(builder.to_string().to_lowercase())
+}
+
+#[async_trait]
+impl<C> RecoverableTransport for EventHubConnection<C>
+where
+    C: RecoverableTransport + Send,
+    C::RecoverError: IntoAzureCoreError,
+{
+    type RecoverError = azure_core::Error;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        match &mut self.inner {
+            InnerClient::Owned(c) => c.recover().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            InnerClient::Shared(c) => {
+                c.lock().await.recover().await.map_err(IntoAzureCoreError::into_azure_core_error)
+            }
+            InnerClient::None => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
+        }
+    }
 }

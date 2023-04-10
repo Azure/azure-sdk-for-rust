@@ -93,7 +93,7 @@ impl std::fmt::Display for RawAmqpMessageError {
 impl std::error::Error for RawAmqpMessageError {}
 
 #[derive(Debug, thiserror::Error)]
-pub(crate) enum AmqpConnectionScopeError {
+pub enum AmqpConnectionScopeError {
     #[error(transparent)]
     Parse(#[from] url::ParseError),
 
@@ -187,6 +187,34 @@ impl IntoAzureCoreError for OpenMgmtLinkError {
             }
             OpenMgmtLinkError::Session(_) => azure_core::Error::new(ErrorKind::Other, self),
             OpenMgmtLinkError::Link(_) => azure_core::Error::new(ErrorKind::Other, self),
+        }
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum AmqpClientError {
+    #[error(transparent)]
+    ParseUrl(#[from] url::ParseError),
+
+    #[error("Cannot set url scheme")]
+    SetUrlScheme,
+
+    #[error(transparent)]
+    ConnectionScope(#[from] AmqpConnectionScopeError),
+
+    #[error(transparent)]
+    ManagementLink(#[from] OpenMgmtLinkError),
+}
+
+impl IntoAzureCoreError for AmqpClientError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            AmqpClientError::ParseUrl(err) => err.into(),
+            AmqpClientError::ConnectionScope(err) => err.into_azure_core_error(),
+            AmqpClientError::ManagementLink(err) => err.into_azure_core_error(),
+            AmqpClientError::SetUrlScheme => azure_core::Error::new(ErrorKind::Other, self),
         }
     }
 }
