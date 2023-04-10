@@ -1,4 +1,5 @@
 pub(crate) mod error;
+pub(crate) mod sharable;
 pub(crate) mod time;
 
 pub trait IntoAzureCoreError {

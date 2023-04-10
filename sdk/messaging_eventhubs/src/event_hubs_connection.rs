@@ -20,7 +20,7 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
-    util::IntoAzureCoreError,
+    util::{IntoAzureCoreError, sharable::Sharable},
     PartitionProperties,
 };
 
@@ -42,33 +42,7 @@ pub struct EventHubConnection<C> {
     fully_qualified_namespace: String,
     event_hub_name: Arc<String>,
     is_closed: Arc<AtomicBool>,
-    inner: InnerClient<C>,
-}
-
-enum InnerClient<C> {
-    Owned(C),
-    Shared(Arc<Mutex<C>>),
-    None,
-}
-
-impl<C> InnerClient<C> {
-    fn clone_as_shared(&mut self) -> Option<Arc<Mutex<C>>> {
-        match self {
-            InnerClient::Owned(_) => {
-                let owned = std::mem::replace(self, InnerClient::None);
-                if let InnerClient::Owned(owned) = owned {
-                    let shared = Arc::new(Mutex::new(owned));
-                    *self = InnerClient::Shared(shared.clone());
-                    Some(shared)
-                } else {
-                    // This should never happen
-                    unreachable!()
-                }
-            }
-            InnerClient::Shared(shared) => Some(shared.clone()),
-            InnerClient::None => None,
-        }
-    }
+    inner: Sharable<C>,
 }
 
 impl EventHubConnection<AmqpClient> {
@@ -178,7 +152,7 @@ impl EventHubConnection<AmqpClient> {
         .await
         .map_err(IntoAzureCoreError::into_azure_core_error)?;
         let is_closed = inner_client.connection_scope.is_disposed.clone();
-        let inner = InnerClient::Owned(inner_client);
+        let inner = Sharable::Owned(inner_client);
 
         Ok(Self {
             fully_qualified_namespace,
@@ -202,9 +176,9 @@ where
         RP: EventHubsRetryPolicy + Send,
     {
         match &mut self.inner {
-            InnerClient::Owned(c) => c.get_properties(retry_policy).await,
-            InnerClient::Shared(c) => c.lock().await.get_properties(retry_policy).await,
-            InnerClient::None => {
+            Sharable::Owned(c) => c.get_properties(retry_policy).await,
+            Sharable::Shared(c) => c.lock().await.get_properties(retry_policy).await,
+            Sharable::None => {
                 return Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
@@ -222,14 +196,14 @@ where
         RP: EventHubsRetryPolicy + Send,
     {
         match &mut self.inner {
-            InnerClient::Owned(c) => c.get_partition_properties(partition_id, retry_policy).await,
-            InnerClient::Shared(c) => {
+            Sharable::Owned(c) => c.get_partition_properties(partition_id, retry_policy).await,
+            Sharable::Shared(c) => {
                 c.lock()
                     .await
                     .get_partition_properties(partition_id, retry_policy)
                     .await
             }
-            InnerClient::None => {
+            Sharable::None => {
                 return Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
@@ -251,7 +225,7 @@ where
         C::OpenProducerError: IntoAzureCoreError,
     {
         match &mut self.inner {
-            InnerClient::Owned(c) => c
+            Sharable::Owned(c) => c
                 .create_producer(
                     partition_id,
                     producer_identifier,
@@ -261,7 +235,7 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::Shared(c) => c
+            Sharable::Shared(c) => c
                 .lock()
                 .await
                 .create_producer(
@@ -273,7 +247,7 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::None => {
+            Sharable::None => {
                 return Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
@@ -299,7 +273,7 @@ where
         C::OpenConsumerError: IntoAzureCoreError,
     {
         match &mut self.inner {
-            InnerClient::Owned(c) => c
+            Sharable::Owned(c) => c
                 .create_consumer(
                     consumer_group,
                     partition_id,
@@ -313,7 +287,7 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::Shared(c) => c
+            Sharable::Shared(c) => c
                 .lock()
                 .await
                 .create_consumer(
@@ -329,7 +303,7 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::None => {
+            Sharable::None => {
                 return Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
@@ -341,17 +315,17 @@ where
     /// Closes the inner client regardless of whether it is owned or shared.
     pub async fn close(self) -> Result<(), azure_core::Error> {
         match self.inner {
-            InnerClient::Owned(mut c) => c
+            Sharable::Owned(mut c) => c
                 .close()
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::Shared(c) => c
+            Sharable::Shared(c) => c
                 .lock()
                 .await
                 .close()
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::None => Ok(()),
+            Sharable::None => Ok(()),
         }
     }
 
@@ -359,11 +333,11 @@ where
     /// it.
     pub(crate) async fn close_if_owned(self) -> Result<(), azure_core::Error> {
         match self.inner {
-            InnerClient::Owned(mut client) => client
+            Sharable::Owned(mut client) => client
                 .close()
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::Shared(client) => match Arc::try_unwrap(client) {
+            Sharable::Shared(client) => match Arc::try_unwrap(client) {
                 Ok(mut client) => {
                     // This is the last reference to the client, so we can dispose it.
                     client
@@ -377,7 +351,7 @@ where
                     Ok(())
                 }
             },
-            InnerClient::None => Ok(()),
+            Sharable::None => Ok(()),
         }
     }
 }
@@ -386,8 +360,8 @@ impl<C> EventHubConnection<C> {
     pub(crate) fn clone_as_shared(&mut self) -> Self {
         let shared = self.inner.clone_as_shared();
         let inner = match shared {
-            Some(shared) => InnerClient::Shared(shared),
-            None => InnerClient::None,
+            Some(shared) => Sharable::Shared(shared),
+            None => Sharable::None,
         };
 
         Self {
@@ -407,16 +381,16 @@ impl<C> EventHubConnection<C> {
     }
 
     pub fn is_closed(&self) -> bool {
-        matches!(self.inner, InnerClient::None)
+        matches!(self.inner, Sharable::None)
             | self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
     }
 
     pub fn is_owned(&self) -> bool {
-        matches!(self.inner, InnerClient::Owned(_))
+        matches!(self.inner, Sharable::Owned(_))
     }
 
     pub fn is_shared(&self) -> bool {
-        matches!(self.inner, InnerClient::Shared(_))
+        matches!(self.inner, Sharable::Shared(_))
     }
 }
 
@@ -483,11 +457,11 @@ where
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
         match &mut self.inner {
-            InnerClient::Owned(c) => c.recover().await.map_err(IntoAzureCoreError::into_azure_core_error),
-            InnerClient::Shared(c) => {
+            Sharable::Owned(c) => c.recover().await.map_err(IntoAzureCoreError::into_azure_core_error),
+            Sharable::Shared(c) => {
                 c.lock().await.recover().await.map_err(IntoAzureCoreError::into_azure_core_error)
             }
-            InnerClient::None => Err(azure_core::Error::new(
+            Sharable::None => Err(azure_core::Error::new(
                 azure_core::error::ErrorKind::Io,
                 AmqpConnectionScopeError::ScopeDisposed,
             )),
