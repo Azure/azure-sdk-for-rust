@@ -6,6 +6,7 @@ use std::{
     time::Duration as StdDuration,
 };
 
+use async_trait::async_trait;
 use fe2o3_amqp::{
     connection::ConnectionHandle, link::receiver::CreditMode, sasl_profile::SaslProfile,
     session::SessionHandle, Connection, Receiver, Sender, Session,
@@ -13,11 +14,12 @@ use fe2o3_amqp::{
 use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_management::MgmtClient;
 use fe2o3_amqp_types::{
-    definitions::{Milliseconds, ReceiverSettleMode},
+    definitions::ReceiverSettleMode,
     messaging::Source,
     primitives::{OrderedMap, Symbol},
 };
 use fe2o3_amqp_ws::WebSocketStream;
+use futures_util::task::AtomicWaker;
 use serde_amqp::Value;
 use time::Duration as TimeSpan;
 use url::Url;
@@ -31,7 +33,7 @@ use crate::{
     },
     authorization::{event_hub_claim, event_hub_token_credential::EventHubTokenCredential},
     consumer::EventPosition,
-    core::TransportProducerFeatures,
+    core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
 };
@@ -82,6 +84,9 @@ pub(crate) struct AmqpConnectionScope {
 
     // Keep a copy of credential for recovery
     pub(crate) credential: Arc<EventHubTokenCredential>,
+
+    // Keep a copy of connection_idle_timeout for recovery
+    pub(crate) connection_idle_timeout: StdDuration,
 
     // /// The size of the buffer used for sending information via the active transport.
     // pub(crate) send_buffer_size_in_bytes: usize,
@@ -155,6 +160,7 @@ impl AmqpConnectionScope {
             event_hub_name,
             transport: transport_type,
             credential,
+            connection_idle_timeout,
             connection,
             cbs_session_handle,
             cbs_link_handle,
@@ -578,4 +584,53 @@ async fn attach_cbs_client(
             AmqpConnectionScopeError::ReceiverAttach(err)
         }
     })
+}
+
+#[async_trait]
+impl RecoverableTransport for AmqpConnectionScope {
+    type RecoverError = AmqpConnectionScopeError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        let is_disposed = self.is_disposed.load(Ordering::Relaxed);
+
+        // A connection can only be disposed by the user, so a disposed
+        // connection should not be auto-recovered.
+        if is_disposed {
+            return Err(AmqpConnectionScopeError::ScopeDisposed);
+        }
+
+        // Recover connection if it is closed
+        if self.connection.handle.is_closed() {
+            if let Err(err) = self.connection.handle.close().await {
+                log::error!("Error closing connection during recovering: {:?}", err);
+            }
+
+            let connection_handle = Self::open_connection(
+                &self.service_endpoint,
+                &self.connection_endpoint,
+                self.transport,
+                &self.id,
+                self.connection_idle_timeout,
+            )
+            .await?;
+            self.connection = AmqpConnection::new(connection_handle);
+        }
+
+        // Recover CBS session and link if it is closed
+        if self.cbs_session_handle.is_ended() {
+            if let Err(err) = self.cbs_session_handle.end().await {
+                log::error!("Error ending session during recovering: {:?}", err);
+            }
+            self.cbs_session_handle = Session::begin(&mut self.connection.handle).await?;
+
+            let cbs_client = attach_cbs_client(&mut self.cbs_session_handle).await?;
+            let cbs_token_provider = CbsTokenProvider::new(
+                self.credential.clone(),
+                Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+            );
+            self.cbs_link_handle = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+        }
+
+        Ok(())
+    }
 }

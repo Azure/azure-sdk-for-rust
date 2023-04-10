@@ -9,7 +9,7 @@ mod transport_producer_features;
 pub(crate) use self::{
     transport_client::TransportClient, transport_consumer::TransportConsumer,
     transport_event_batch::TransportEventBatch, transport_producer::TransportProducer,
-    transport_producer_features::TransportProducerFeatures,
+    transport_producer_features::TransportProducerFeatures, recoverable_transport::RecoverableTransport,
 };
 
 pub use basic_retry_policy::BasicRetryPolicy;
