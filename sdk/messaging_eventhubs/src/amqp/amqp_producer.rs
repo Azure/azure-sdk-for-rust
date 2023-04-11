@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use azure_core::Url;
 use fe2o3_amqp::{link::SendError, session::SessionHandle, Sender};
 use fe2o3_amqp_types::messaging::Outcome;
 
@@ -23,7 +24,7 @@ use super::{
     },
     error::{
         AmqpSendError, DisposeProducerError, NotAcceptedError, OpenProducerError,
-        RequestedSizeOutOfRange, RecoverProducerError, RecoverAndSendError,
+        RequestedSizeOutOfRange, RecoverAndSendError,
     }, amqp_client::AmqpClient,
 };
 
@@ -34,6 +35,10 @@ pub struct AmqpProducer<RP> {
     pub(crate) link_identifier: u32,
     pub(crate) initialized_partition_properties: PartitionPublishingOptions,
     pub(crate) retry_policy: RP,
+    pub(crate) partition_id: Option<String>,
+    pub(crate) features: TransportProducerFeatures,
+    pub(crate) options: PartitionPublishingOptions,
+    pub(crate) endpoint: Url,
 }
 
 impl<RP> AmqpProducer<RP> {
@@ -150,8 +155,6 @@ where
         should_try_recover: bool,
         batch: &mut BatchEnvelope,
     ) -> Result<(), RecoverAndSendError> {
-        println!("should_try_recover: {}", should_try_recover);
-
         if should_try_recover {
             if let Err(recovery_err) = self.client.recover().await {
                 log::error!("Failed to recover client: {:?}", recovery_err);
@@ -171,7 +174,6 @@ where
             }
         }
 
-        println!("sending batch envelope: {:?}", batch);
         self.producer.send_batch_envelope(batch).await?;
         Ok(())
     }

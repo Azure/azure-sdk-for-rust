@@ -12,7 +12,7 @@ use fe2o3_amqp::{
     session::SessionHandle, Connection, Receiver, Sender, Session,
 };
 use fe2o3_amqp_cbs::client::CbsClient;
-use fe2o3_amqp_management::MgmtClient;
+use fe2o3_amqp_management::{MgmtClient, error::DetachThenResumeError};
 use fe2o3_amqp_types::{
     definitions::ReceiverSettleMode,
     messaging::Source,
@@ -48,7 +48,7 @@ use super::{
     cbs_token_provider::CbsTokenProvider,
     error::{
         AmqpConnectionScopeError, CbsAuthError, DisposeError, OpenConsumerError, OpenMgmtLinkError,
-        OpenProducerError,
+        OpenProducerError, RecoverManagementLinkError,
     },
 };
 
@@ -253,6 +253,19 @@ impl AmqpConnectionScope {
         Ok((session_handle, mgmt_link))
     }
 
+    pub(crate) async fn recover_management_link(
+        &mut self,
+        management_link: &mut AmqpManagementLink
+    ) -> Result<(), RecoverManagementLinkError> {
+        if management_link.session_handle.is_ended() {
+            let new_management_session = Session::begin(&mut self.connection.handle).await?;
+            management_link.client.detach_then_resume_on_session(&new_management_session).await?;
+            let mut old_session = std::mem::replace(&mut management_link.session_handle, new_management_session);
+            let _  = old_session.try_end();
+        }
+        Ok(())
+    }
+
     pub(crate) async fn open_producer_link<RP>(
         &mut self,
         partition_id: Option<String>,
@@ -263,7 +276,7 @@ impl AmqpConnectionScope {
     ) -> Result<AmqpProducer<RP>, OpenProducerError> {
         use std::borrow::Cow;
 
-        let path: Cow<str> = match partition_id {
+        let path: Cow<str> = match &partition_id {
             None => Cow::Borrowed(&self.event_hub_name),
             Some(partition_id) if partition_id.is_empty() => Cow::Borrowed(&self.event_hub_name),
             Some(partition_id) => Cow::Owned(format!(
@@ -278,12 +291,12 @@ impl AmqpConnectionScope {
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let (session_handle, sender) = self
             .create_sending_session_and_link(
-                producer_endpoint,
+                &producer_endpoint,
                 features,
-                options,
+                options.clone(),
                 session_identifier,
                 link_identifier,
-                identifier,
+                identifier.clone(),
             )
             .await?;
 
@@ -323,12 +336,16 @@ impl AmqpConnectionScope {
             link_identifier,
             initialized_partition_properties,
             retry_policy,
+            partition_id,
+            features,
+            options,
+            endpoint: producer_endpoint
         })
     }
 
     async fn create_sending_session_and_link(
         &mut self,
-        endpoint: Url,
+        endpoint: &Url,
         features: TransportProducerFeatures,
         options: PartitionPublishingOptions,
         session_identifier: u32,
@@ -363,7 +380,7 @@ impl AmqpConnectionScope {
         let mut builder = Sender::builder()
             .name(link_name)
             .source(identifier)
-            .target(endpoint);
+            .target(endpoint.to_string());
 
         if let TransportProducerFeatures::IdempotentPublishing = features {
             builder = builder.add_desired_capabilities(amqp_property::ENABLE_IDEMPOTENT_PUBLISHING);
@@ -619,7 +636,7 @@ impl RecoverableTransport for AmqpConnectionScope {
         // Recover CBS session and link if it is closed
         if self.cbs_session_handle.is_ended() {
             if let Err(err) = self.cbs_session_handle.end().await {
-                log::error!("Error ending session during recovering: {:?}", err);
+                log::error!("Error ending CBS session during recovering: {:?}", err);
             }
             self.cbs_session_handle = Session::begin(&mut self.connection.handle).await?;
 

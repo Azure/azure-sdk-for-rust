@@ -31,14 +31,21 @@ azure_core = { path = "../core" }
 # AMQP dependencies
 fe2o3-amqp = "0.8"
 fe2o3-amqp-types = "0.7.1"
-fe2o3-amqp-management = "0.2.1"
+fe2o3-amqp-management = "0.2.2"
 fe2o3-amqp-cbs = "0.2"
 serde_amqp = { version = "0.5.8", features = ["derive", "time"] }
 fe2o3-amqp-ws = "0.3.1"
+# fe2o3-amqp = { path = "../../../fe2o3-amqp/fe2o3-amqp" }
+# fe2o3-amqp-types = { path = "../../../fe2o3-amqp/fe2o3-amqp-types" }
+# fe2o3-amqp-management = { path = "../../../fe2o3-amqp/fe2o3-amqp-management" }
+# fe2o3-amqp-cbs = { path = "../../../fe2o3-amqp/fe2o3-amqp-cbs" }
+# serde_amqp = { path = "../../../fe2o3-amqp/serde_amqp", features = ["derive", "time"] }
+# fe2o3-amqp-ws = { path = "../../../fe2o3-amqp/fe2o3-amqp-ws" }
 
 [dev-dependencies]
 dotenv = "0.15"
 tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
+env_logger = "0.10.0"
 
 [features]
 default = ["native-tls"]

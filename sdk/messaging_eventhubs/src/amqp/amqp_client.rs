@@ -6,14 +6,14 @@ use url::Url;
 
 use crate::{
     amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
-    authorization::event_hub_token_credential::EventHubTokenCredential,
+    authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim},
     consumer::EventPosition,
-    core::{TransportClient, TransportProducerFeatures, RecoverableTransport},
+    core::{RecoverableTransport, TransportClient, TransportProducerFeatures},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
-    util::{self, IntoAzureCoreError, sharable::Sharable},
+    util::{self, sharable::Sharable, IntoAzureCoreError},
     PartitionProperties,
 };
 
@@ -23,7 +23,10 @@ use super::{
     amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{DisposeError, OpenConsumerError, OpenProducerError, AmqpClientError, AmqpConnectionScopeError, RecoverProducerError, RecoverConsumeError},
+    error::{
+        AmqpClientError, AmqpConnectionScopeError, DisposeError, OpenConsumerError,
+        OpenProducerError, RecoverConsumeError, RecoverProducerError, RecoverTransportClientError,
+    },
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
@@ -46,7 +49,8 @@ impl AmqpClient {
 
         let connection_endpoint = match options.custom_endpoint_address {
             Some(mut url) => {
-                url.set_scheme(options.transport_type.url_scheme()).map_err(|_| AmqpClientError::SetUrlScheme)?;
+                url.set_scheme(options.transport_type.url_scheme())
+                    .map_err(|_| AmqpClientError::SetUrlScheme)?;
                 url
             }
             None => service_endpoint.clone(),
@@ -65,9 +69,7 @@ impl AmqpClient {
         .await?;
 
         // Create AmqpManagementLink
-        let management_link = connection_scope
-            .open_management_link()
-            .await?;
+        let management_link = connection_scope.open_management_link().await?;
 
         Ok(Self {
             connection_scope,
@@ -223,14 +225,26 @@ impl TransportClient for AmqpClient {
     where
         RP: EventHubsRetryPolicy + Send,
     {
+        // Seems like event hubs doesn't support resuming a sender
+
+        let endpoint = producer.endpoint.to_string();
+        let resource = endpoint.clone();
+        let required_claims = vec![event_hub_claim::SEND.to_string()];
+        self.connection_scope.request_refreshable_authorization_using_cbs(producer.link_identifier, endpoint, resource, required_claims).await?;
+
         if producer.session_handle.is_ended() {
             let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
-            producer.sender.detach_then_resume_on_session(&new_session).await?;
-            let mut old_session = std::mem::replace(&mut producer.session_handle, new_session);
-            let _ = old_session.end().await;
+            producer
+                .sender
+                .detach_then_resume_on_session(&new_session)
+                .await?;
+            producer.session_handle = new_session;
         } else {
-            producer.sender.detach_then_resume_on_session(&producer.session_handle).await?;
-        }
+            producer
+                .sender
+                .detach_then_resume_on_session(&producer.session_handle)
+                .await?
+        };
 
         Ok(())
     }
@@ -267,17 +281,26 @@ impl TransportClient for AmqpClient {
         Ok(consumer)
     }
 
-    async fn recover_consumer<RP>(&mut self, consumer: &mut Self::Consumer<RP>) -> Result<(), Self::RecoverConsumerError>
+    async fn recover_consumer<RP>(
+        &mut self,
+        consumer: &mut Self::Consumer<RP>,
+    ) -> Result<(), Self::RecoverConsumerError>
     where
         RP: EventHubsRetryPolicy + Send,
     {
         if consumer.session_handle.is_ended() {
             let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
-            consumer.receiver.detach_then_resume_on_session(&new_session).await?;
+            consumer
+                .receiver
+                .detach_then_resume_on_session(&new_session)
+                .await?;
             let mut old_session = std::mem::replace(&mut consumer.session_handle, new_session);
             let _ = old_session.end().await;
         } else {
-            consumer.receiver.detach_then_resume_on_session(&consumer.session_handle).await?;
+            consumer
+                .receiver
+                .detach_then_resume_on_session(&consumer.session_handle)
+                .await?;
         }
 
         Ok(())
@@ -290,25 +313,25 @@ impl TransportClient for AmqpClient {
 
 #[async_trait]
 impl RecoverableTransport for AmqpClient {
-    type RecoverError = AmqpClientError;
+    type RecoverError = RecoverTransportClientError;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
         self.connection_scope.recover().await?;
-        self.management_link = self.connection_scope.open_management_link().await?;
+        self.connection_scope
+            .recover_management_link(&mut self.management_link)
+            .await?;
         Ok(())
     }
 }
 
 #[async_trait]
 impl RecoverableTransport for Sharable<AmqpClient> {
-    type RecoverError = AmqpClientError;
+    type RecoverError = RecoverTransportClientError;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
         match self {
             Sharable::Owned(c) => c.recover().await,
-            Sharable::Shared(c) => {
-                c.lock().await.recover().await
-            }
+            Sharable::Shared(c) => c.lock().await.recover().await,
             Sharable::None => Err(AmqpConnectionScopeError::ScopeDisposed.into()),
         }
     }
