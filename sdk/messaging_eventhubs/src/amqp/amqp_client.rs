@@ -254,8 +254,6 @@ impl TransportClient for AmqpClient {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        // Seems like event hubs doesn't support resuming a sender
-
         let endpoint = producer.endpoint.to_string();
         let resource = endpoint.clone();
         let required_claims = vec![event_hub_claim::SEND.to_string()];

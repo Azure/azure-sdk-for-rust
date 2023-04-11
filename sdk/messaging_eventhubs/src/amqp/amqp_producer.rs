@@ -35,9 +35,6 @@ pub struct AmqpProducer<RP> {
     pub(crate) link_identifier: u32,
     pub(crate) initialized_partition_properties: PartitionPublishingOptions,
     pub(crate) retry_policy: RP,
-    pub(crate) partition_id: Option<String>,
-    pub(crate) features: TransportProducerFeatures,
-    pub(crate) options: PartitionPublishingOptions,
     pub(crate) endpoint: Url,
 }
 

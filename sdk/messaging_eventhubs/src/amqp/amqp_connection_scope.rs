@@ -293,10 +293,10 @@ impl AmqpConnectionScope {
             .create_sending_session_and_link(
                 &producer_endpoint,
                 features,
-                options.clone(),
+                options,
                 session_identifier,
                 link_identifier,
-                identifier.clone(),
+                identifier,
             )
             .await?;
 
@@ -336,10 +336,7 @@ impl AmqpConnectionScope {
             link_identifier,
             initialized_partition_properties,
             retry_policy,
-            partition_id,
-            features,
-            options,
-            endpoint: producer_endpoint
+            endpoint: producer_endpoint,
         })
     }
 
