@@ -26,12 +26,9 @@ async fn fetch_azure_records() -> Result<Value, CustomError> {
 
     // fetch first 10 records
     let query_options = QueryRequestOptions {
-        skip_token: None,
         top: Option::from(10),
         skip: Option::from(0),
-        result_format: None,
-        allow_partial_scopes: None,
-        authorization_scope_filter: None,
+        ..Default::default()
     };
 
     // in the below request, we are fetching resources of type (virtual machines)
