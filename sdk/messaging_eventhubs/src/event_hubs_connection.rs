@@ -98,7 +98,7 @@ impl EventHubConnection<AmqpClient> {
                 .map_err(IntoAzureCoreError::into_azure_core_error)?
         } else {
             let resource = build_connection_signature_authorization_resource(
-                options.transport_type(),
+                options.transport_type,
                 fully_qualified_namespace,
                 &event_hub_name,
             )?;

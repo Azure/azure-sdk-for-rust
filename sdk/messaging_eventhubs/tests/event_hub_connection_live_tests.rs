@@ -25,7 +25,7 @@ async fn connection_can_connect_to_event_hubs_using_full_connection_string_and_e
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
     let mut options = EventHubConnectionOptions::default();
-    options.set_transport_type(EventHubsTransportType::AmqpWebSockets);
+    options.transport_type = EventHubsTransportType::AmqpWebSockets;
     let connection = EventHubConnection::new(connection_string, event_hub_name, options)
         .await
         .unwrap();
