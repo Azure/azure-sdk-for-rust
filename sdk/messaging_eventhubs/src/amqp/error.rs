@@ -821,3 +821,79 @@ impl RecoverableError for RecoverTransportClientError {
         matches!(self, RecoverTransportClientError::ConnectionScopeDisposed)
     }
 }
+
+impl IntoAzureCoreError for RecoverTransportClientError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            RecoverTransportClientError::Parse(err) => err.into(),
+            RecoverTransportClientError::Open(err) => err.into_azure_core_error(),
+            RecoverTransportClientError::WebSocket(err) => err.into_azure_core_error(),
+            RecoverTransportClientError::SessionBegin(err) => err.into_azure_core_error(),
+            RecoverTransportClientError::LinkDetach(err) => err.into_azure_core_error(),
+            RecoverTransportClientError::SenderResume(err) => err.into_azure_core_error(),
+            RecoverTransportClientError::ReceiverResume(err) => err.into_azure_core_error(),
+            RecoverTransportClientError::ConnectionScopeDisposed => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
+        }
+    }
+}
+
+impl RecoverableError for ManagementError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            ManagementError::Send(_) => true,
+            ManagementError::Recv(_) => true,
+            ManagementError::Disposition(_) => true,
+            ManagementError::CorrelationIdAndMessageIdAreNone => false,
+            ManagementError::StatusCodeNotFound => false,
+            ManagementError::DecodeError(_) => false,
+            ManagementError::Status(_) => false,
+            ManagementError::NotAccepted(_) => false,
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoverAndCallError {
+    #[error(transparent)]
+    RecoverClient(#[from] RecoverTransportClientError),
+
+    #[error(transparent)]
+    Management(#[from] ManagementError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl IntoAzureCoreError for RecoverAndCallError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            RecoverAndCallError::RecoverClient(err) => err.into_azure_core_error(),
+            RecoverAndCallError::Management(err) => err.into_azure_core_error(),
+            RecoverAndCallError::Elapsed(err) => err.into_azure_core_error(),
+        }
+    }
+}
+
+impl RecoverableError for RecoverAndCallError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            RecoverAndCallError::RecoverClient(err) => err.should_try_recover(),
+            RecoverAndCallError::Management(err) => err.should_try_recover(),
+            RecoverAndCallError::Elapsed(_) => true,
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        match self {
+            RecoverAndCallError::RecoverClient(err) => err.is_scope_disposed(),
+            RecoverAndCallError::Management(_) => false,
+            RecoverAndCallError::Elapsed(_) => false,
+        }
+    }
+}

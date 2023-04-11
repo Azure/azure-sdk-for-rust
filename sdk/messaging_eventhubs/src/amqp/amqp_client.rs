@@ -1,4 +1,4 @@
-use std::sync::{atomic::Ordering, Arc};
+use std::{sync::{atomic::Ordering, Arc}};
 
 use async_trait::async_trait;
 use fe2o3_amqp::Session;
@@ -8,7 +8,7 @@ use crate::{
     amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
     authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim},
     consumer::EventPosition,
-    core::{RecoverableTransport, TransportClient, TransportProducerFeatures},
+    core::{RecoverableTransport, TransportClient, TransportProducerFeatures, RecoverableError},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -25,7 +25,7 @@ use super::{
     amqp_producer::AmqpProducer,
     error::{
         AmqpClientError, AmqpConnectionScopeError, DisposeError, OpenConsumerError,
-        OpenProducerError, RecoverConsumeError, RecoverProducerError, RecoverTransportClientError,
+        OpenProducerError, RecoverConsumeError, RecoverProducerError, RecoverTransportClientError, RecoverAndCallError,
     },
 };
 
@@ -34,6 +34,52 @@ const DEFAULT_PREFETCH_COUNT: u32 = 300;
 pub struct AmqpClient {
     pub(crate) connection_scope: AmqpConnectionScope,
     pub(crate) management_link: AmqpManagementLink,
+}
+
+impl AmqpClient {
+    async fn recover_and_get_properties<'a>(
+        &mut self,
+        should_try_recover: bool,
+        token_value: &'a str,
+    ) -> Result<EventHubProperties, RecoverAndCallError>
+    {
+        if should_try_recover {
+            self.recover().await?;
+        }
+
+        let request =
+            EventHubPropertiesRequest::new(&*self.connection_scope.event_hub_name, token_value);
+
+        let res = self.management_link
+            .client
+            .call(request)
+            .await?;
+        Ok(res)
+    }
+
+    async fn recover_and_get_partition_properties<'a>(
+        &mut self,
+        should_try_recover: bool,
+        partition_id: &'a str,
+        token_value: &'a str,
+    ) -> Result<PartitionProperties, RecoverAndCallError>
+    {
+        if should_try_recover {
+            self.recover().await?;
+        }
+
+        let request = PartitionPropertiesRequest::new(
+            &*self.connection_scope.event_hub_name,
+            partition_id,
+            token_value,
+        );
+
+        let res = self.management_link
+            .client
+            .call(request)
+            .await?;
+        Ok(res)
+    }
 }
 
 impl AmqpClient {
@@ -107,39 +153,32 @@ impl TransportClient for AmqpClient {
         // TODO: use cancellation token?
         let mut try_timeout = retry_policy.calculate_try_timeout(0);
         let mut failed_attempt = 0;
+        let mut should_try_recover = false;
+
         let access_token = self
             .connection_scope
             .credential
             .get_token(EventHubTokenCredential::DEFAULT_SCOPE)
             .await?;
         let token_value = access_token.token.secret();
-        let request =
-            EventHubPropertiesRequest::new(&*self.connection_scope.event_hub_name, token_value);
         loop {
             // The request internally uses Cow, so cloning is cheap.
-            let fut = self.management_link.client.call(request.clone());
-            let (delay, error) = match util::time::timeout(try_timeout, fut).await {
+            let fut = self.recover_and_get_properties(should_try_recover, token_value);
+            let error = match util::time::timeout(try_timeout, fut).await {
                 Ok(Ok(response)) => return Ok(response),
-                Ok(Err(mgmt_err)) => {
-                    failed_attempt += 1;
-                    let delay = retry_policy.calculate_retry_delay(&mgmt_err, failed_attempt);
-                    let error = mgmt_err.into_azure_core_error();
-                    (delay, error)
-                }
-                Err(elapsed) => {
-                    failed_attempt += 1;
-                    let delay = retry_policy.calculate_retry_delay(&elapsed, failed_attempt);
-                    let error = elapsed.into_azure_core_error();
-                    (delay, error)
-                }
+                Ok(Err(err)) => err,
+                Err(elapsed) => elapsed.into()
             };
 
+            failed_attempt += 1;
+            let delay = retry_policy.calculate_retry_delay(&error, failed_attempt);
+            should_try_recover = error.should_try_recover();
             match delay {
                 Some(delay) => {
                     util::time::sleep(delay).await;
                     try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
                 }
-                None => return Err(error),
+                None => return Err(error.into_azure_core_error()),
             }
         }
     }
@@ -154,43 +193,33 @@ impl TransportClient for AmqpClient {
     {
         let mut try_timeout = retry_policy.calculate_try_timeout(0);
         let mut failed_attempt = 0;
+        let mut should_try_recover = false;
+
         let access_token = self
             .connection_scope
             .credential
             .get_token(EventHubTokenCredential::DEFAULT_SCOPE)
             .await?;
         let token_value = access_token.token.secret();
-        let request = PartitionPropertiesRequest::new(
-            &*self.connection_scope.event_hub_name,
-            partition_id,
-            token_value,
-        );
         loop {
-            // The request internally uses Cow, so cloning is cheap.
-            let fut = self.management_link.client.call(request.clone());
-            let (delay, error) = match util::time::timeout(try_timeout, fut).await {
+            let fut = self.recover_and_get_partition_properties(should_try_recover, partition_id, token_value);
+            let error = match util::time::timeout(try_timeout, fut).await {
                 Ok(Ok(response)) => return Ok(response),
-                Ok(Err(mgmt_err)) => {
-                    failed_attempt += 1;
-                    let delay = retry_policy.calculate_retry_delay(&mgmt_err, failed_attempt);
-                    let error = mgmt_err.into_azure_core_error();
-                    (delay, error)
-                }
-                Err(elapsed) => {
-                    failed_attempt += 1;
-                    let delay = retry_policy.calculate_retry_delay(&elapsed, failed_attempt);
-                    let error = elapsed.into_azure_core_error();
-                    (delay, error)
-                }
+                Ok(Err(err)) => err,
+                Err(elapsed) => elapsed.into()
             };
 
+            failed_attempt += 1;
+            let delay = retry_policy.calculate_retry_delay(&error, failed_attempt);
+            should_try_recover = error.should_try_recover();
             match delay {
                 Some(delay) => {
                     util::time::sleep(delay).await;
                     try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
                 }
-                None => return Err(error),
+                None => return Err(error.into_azure_core_error()),
             }
+
         }
     }
 

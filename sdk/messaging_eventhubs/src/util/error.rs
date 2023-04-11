@@ -4,10 +4,9 @@
 
 use fe2o3_amqp::{
     connection::OpenError,
-    link::{DetachError, ReceiverAttachError, SendError, SenderAttachError, SenderResumeErrorKind},
+    link::{DetachError, ReceiverAttachError, SendError, SenderAttachError, SenderResumeErrorKind, ReceiverResumeError, ReceiverResumeErrorKind, IllegalLinkStateError},
     session::BeginError,
 };
-
 use super::IntoAzureCoreError;
 
 impl IntoAzureCoreError for BeginError {
@@ -168,6 +167,26 @@ impl IntoAzureCoreError for SenderResumeErrorKind {
             SenderResumeErrorKind::SendError(err) => err.into_azure_core_error(),
             SenderResumeErrorKind::DetachError(err) => err.into_azure_core_error(),
             SenderResumeErrorKind::Timeout => azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                self
+            ),
+        }
+    }
+}
+
+impl IntoAzureCoreError for IllegalLinkStateError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+    azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
+    }
+}
+
+impl IntoAzureCoreError for ReceiverResumeErrorKind {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            ReceiverResumeErrorKind::AttachError(err) => err.into_azure_core_error(),
+            ReceiverResumeErrorKind::FlowError(err) => err.into_azure_core_error(),
+            ReceiverResumeErrorKind::DetachError(err) => err.into_azure_core_error(),
+            ReceiverResumeErrorKind::Timeout => azure_core::Error::new(
                 azure_core::error::ErrorKind::Other,
                 self
             ),
