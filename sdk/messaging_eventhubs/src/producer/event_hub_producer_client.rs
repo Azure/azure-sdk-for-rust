@@ -1,8 +1,8 @@
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_producer::AmqpProducer},
-    core::{BasicRetryPolicy, TransportProducer, Dispose},
+    amqp::{amqp_client::AmqpClient, amqp_producer::{AmqpProducer, RecoverableAmqpProducer}},
+    core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
@@ -107,7 +107,7 @@ where
 {
     async fn get_or_create_gateway_producer_mut(
         &mut self,
-    ) -> Result<&mut AmqpProducer<RP>, azure_core::Error> {
+    ) -> Result<RecoverableAmqpProducer<'_, RP>, azure_core::Error> {
         let producer_identifier = Some(
             self.options
                 .identifier
@@ -135,13 +135,15 @@ where
             self.gateway_producer = Some(producer);
         }
 
-        Ok(self.gateway_producer.as_mut().unwrap())
+        let producer = self.gateway_producer.as_mut().unwrap();
+        let client = &mut self.connection.inner;
+        Ok(RecoverableAmqpProducer::new(producer, client))
     }
 
     async fn get_pooled_producer_mut(
         &mut self,
         partition_id: Option<&str>,
-    ) -> Result<&mut AmqpProducer<RP>, azure_core::Error> {
+    ) -> Result<RecoverableAmqpProducer<'_, RP>, azure_core::Error> {
         let producer_identifier = Some(
             self.options
                 .identifier
@@ -175,7 +177,9 @@ where
                 }
 
                 // This is safe because we just checked that the key exists.
-                Ok(self.producer_pool.get_mut(partition_id).unwrap())
+                let producer = self.producer_pool.get_mut(partition_id).unwrap();
+                let client = &mut self.connection.inner;
+                Ok(RecoverableAmqpProducer::new(producer, client))
             }
             None => self.get_or_create_gateway_producer_mut().await,
         }
@@ -214,7 +218,7 @@ where
             true => todo!(),
             false => {
                 let partition_id = options.partition_id.as_deref();
-                let producer = self.get_pooled_producer_mut(partition_id).await?;
+                let mut producer = self.get_pooled_producer_mut(partition_id).await?;
                 producer
                     .send(events.into_iter(), options)
                     .await
@@ -232,7 +236,7 @@ where
             true => todo!(),
             false => {
                 let partition_id = options.partition_id.as_deref();
-                let producer = self.get_pooled_producer_mut(partition_id).await?;
+                let mut producer = self.get_pooled_producer_mut(partition_id).await?;
                 producer
                     .send_batch(batch.inner, options)
                     .await

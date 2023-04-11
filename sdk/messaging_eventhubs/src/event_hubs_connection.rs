@@ -42,7 +42,7 @@ pub struct EventHubConnection<C> {
     fully_qualified_namespace: String,
     event_hub_name: Arc<String>,
     is_closed: Arc<AtomicBool>,
-    inner: Sharable<C>,
+    pub(crate) inner: Sharable<C>,
 }
 
 impl EventHubConnection<AmqpClient> {
@@ -450,21 +450,13 @@ fn build_connection_signature_authorization_resource(
 #[async_trait]
 impl<C> RecoverableTransport for EventHubConnection<C>
 where
-    C: RecoverableTransport + Send,
-    C::RecoverError: IntoAzureCoreError,
+    C: Send,
+    Sharable<C>: RecoverableTransport,
+    <Sharable<C> as RecoverableTransport>::RecoverError: IntoAzureCoreError,
 {
     type RecoverError = azure_core::Error;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
-        match &mut self.inner {
-            Sharable::Owned(c) => c.recover().await.map_err(IntoAzureCoreError::into_azure_core_error),
-            Sharable::Shared(c) => {
-                c.lock().await.recover().await.map_err(IntoAzureCoreError::into_azure_core_error)
-            }
-            Sharable::None => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
-        }
+        self.inner.recover().await.map_err(IntoAzureCoreError::into_azure_core_error)
     }
 }

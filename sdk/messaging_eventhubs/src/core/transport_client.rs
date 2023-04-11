@@ -14,14 +14,17 @@ use super::{
 
 #[async_trait]
 pub trait TransportClient: Sized {
-    type Producer<RP>: TransportProducer
+    type Producer<RP>
     where
         RP: EventHubsRetryPolicy + Send;
-    type Consumer<RP>: TransportConsumer
+    type Consumer<RP>
     where
         RP: EventHubsRetryPolicy + Send;
+
     type OpenProducerError: std::error::Error;
+    type RecoverProducerError: std::error::Error;
     type OpenConsumerError: std::error::Error;
+    type RecoverConsumerError: std::error::Error;
     type DisposeError: std::error::Error;
 
     fn is_closed(&self) -> bool;
@@ -54,6 +57,10 @@ pub trait TransportClient: Sized {
     where
         RP: EventHubsRetryPolicy + Send;
 
+    async fn recover_producer<RP>(&mut self, producer: &mut Self::Producer<RP>) -> Result<(), Self::RecoverProducerError>
+    where
+        RP: EventHubsRetryPolicy + Send;
+
     async fn create_consumer<RP>(
         &mut self,
         consumer_group: String,
@@ -66,6 +73,10 @@ pub trait TransportClient: Sized {
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
     ) -> Result<Self::Consumer<RP>, Self::OpenConsumerError>
+    where
+        RP: EventHubsRetryPolicy + Send;
+
+    async fn recover_consumer<RP>(&mut self, consumer: &mut Self::Consumer<RP>) -> Result<(), Self::RecoverConsumerError>
     where
         RP: EventHubsRetryPolicy + Send;
 

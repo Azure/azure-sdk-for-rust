@@ -4,14 +4,14 @@ use std::marker::PhantomData;
 
 use fe2o3_amqp::{
     connection::{self, OpenError},
-    link::{DetachError, ReceiverAttachError, SenderAttachError},
+    link::{DetachError, ReceiverAttachError, SenderAttachError, DetachThenResumeSenderError, SenderResumeErrorKind, ReceiverResumeErrorKind, DetachThenResumeReceiverError},
     session::{self, BeginError},
 };
 use fe2o3_amqp_management::error::Error as ManagementError;
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use timer_kit::error::Elapsed;
 
-use crate::{consumer::error::OffsetIsEmpty, util::IntoAzureCoreError, Event};
+use crate::{consumer::error::OffsetIsEmpty, util::IntoAzureCoreError, Event, core::RecoverableError};
 
 impl IntoAzureCoreError for ManagementError {
     fn into_azure_core_error(self) -> azure_core::Error {
@@ -132,6 +132,17 @@ impl IntoAzureCoreError for AmqpConnectionScopeError {
     }
 }
 
+impl RecoverableError for AmqpConnectionScopeError {
+    fn should_try_recover(&self) -> bool {
+        // All variants indicate some sort of rejection from the server or network
+        false
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, AmqpConnectionScopeError::ScopeDisposed)
+    }
+}
+
 /// The CBS event loop has stopped
 #[derive(Debug)]
 pub(crate) struct AmqpCbsEventLoopStopped {}
@@ -177,6 +188,16 @@ pub enum OpenMgmtLinkError {
     Link(#[from] fe2o3_amqp_management::error::AttachError),
 }
 
+impl RecoverableError for OpenMgmtLinkError {
+    fn should_try_recover(&self) -> bool {
+        false
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, OpenMgmtLinkError::ConnectionScopeDisposed)
+    }
+}
+
 impl IntoAzureCoreError for OpenMgmtLinkError {
     fn into_azure_core_error(self) -> azure_core::Error {
         use azure_core::error::ErrorKind;
@@ -216,6 +237,21 @@ impl IntoAzureCoreError for AmqpClientError {
             AmqpClientError::ManagementLink(err) => err.into_azure_core_error(),
             AmqpClientError::SetUrlScheme => azure_core::Error::new(ErrorKind::Other, self),
         }
+    }
+}
+
+impl RecoverableError for AmqpClientError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            AmqpClientError::ConnectionScope(err) => err.should_try_recover(),
+            AmqpClientError::ParseUrl(_) => false,
+            AmqpClientError::SetUrlScheme => false,
+            AmqpClientError::ManagementLink(err) => err.should_try_recover(),
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        todo!()
     }
 }
 
@@ -418,6 +454,81 @@ impl IntoAzureCoreError for AmqpSendError {
             AmqpSendError::ConnectionScopeDisposed => {
                 azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
             }
+        }
+    }
+}
+
+impl RecoverableError for AmqpSendError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            AmqpSendError::Send(_) => true,
+            AmqpSendError::NotAccepted(_) => false,
+            AmqpSendError::Elapsed(_) => false,
+            AmqpSendError::ConnectionScopeDisposed => false,
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, AmqpSendError::ConnectionScopeDisposed)
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoverProducerError {
+    #[error(transparent)]
+    SessionBegin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderDetach(#[from] DetachError),
+
+    /// Error with resuming the sender
+    #[error(transparent)]
+    SenderResume(#[from] SenderResumeErrorKind),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
+}
+
+impl From<DetachThenResumeSenderError> for RecoverProducerError {
+    fn from(err: DetachThenResumeSenderError) -> Self {
+        match err {
+            DetachThenResumeSenderError::Detach(err) => err.into(),
+            DetachThenResumeSenderError::Resume(err) => err.into(),
+        }
+    }
+}
+
+impl RecoverableError for RecoverProducerError {
+    fn should_try_recover(&self) -> bool {
+        false
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, RecoverProducerError::ConnectionScopeDisposed)
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoverConsumeError {
+    #[error(transparent)]
+    SessionBegin(#[from] BeginError),
+
+    #[error(transparent)]
+    ReceiverDetach(#[from] DetachError),
+
+    /// Error with resuming the sender
+    #[error(transparent)]
+    ReceiverResume(#[from] ReceiverResumeErrorKind),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
+}
+
+impl From<DetachThenResumeReceiverError> for RecoverConsumeError {
+    fn from(err: DetachThenResumeReceiverError) -> Self {
+        match err {
+            DetachThenResumeReceiverError::Detach(err) => err.into(),
+            DetachThenResumeReceiverError::Resume(err) => err.into(),
         }
     }
 }

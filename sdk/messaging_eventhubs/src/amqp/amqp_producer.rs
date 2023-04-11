@@ -4,7 +4,7 @@ use fe2o3_amqp_types::messaging::Outcome;
 
 use crate::{
     amqp::amqp_message_converter::create_envelope_from_events,
-    core::{TransportEventBatch, TransportProducer, TransportProducerFeatures, Dispose},
+    core::{TransportEventBatch, TransportProducer, TransportProducerFeatures, RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
         create_batch_options::CreateBatchOptions,
@@ -23,7 +23,7 @@ use super::{
     },
     error::{
         AmqpSendError, DisposeProducerError, NotAcceptedError, OpenProducerError,
-        RequestedSizeOutOfRange,
+        RequestedSizeOutOfRange, RecoverProducerError,
     }, amqp_client::AmqpClient,
 };
 
@@ -37,7 +37,6 @@ pub struct AmqpProducer<RP> {
 }
 
 impl<RP> AmqpProducer<RP> {
-
     async fn send_batch_envelope(
         &mut self,
         batch: &mut BatchEnvelope,
@@ -78,22 +77,11 @@ impl<RP> AmqpProducer<RP> {
             }
         }
     }
-}
 
-#[async_trait]
-impl<RP> TransportProducer for AmqpProducer<RP>
-where
-    RP: Send,
-{
-    type MessageBatch = AmqpEventBatch;
-
-    type SendError = AmqpSendError;
-    type CreateBatchError = RequestedSizeOutOfRange;
-
-    fn create_batch(
+    pub(crate) fn create_batch(
         &self,
         options: CreateBatchOptions,
-    ) -> Result<Self::MessageBatch, Self::CreateBatchError> {
+    ) -> Result<AmqpEventBatch, RequestedSizeOutOfRange> {
         let link_max_message_size = self.sender.max_message_size().unwrap_or(u64::MAX);
         let max_size_in_bytes = match options.max_size_in_bytes {
             Some(max_size_in_bytes) => {
@@ -115,7 +103,7 @@ where
         &mut self,
         events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
         options: SendEventOptions,
-    ) -> Result<(), Self::SendError> {
+    ) -> Result<(), AmqpSendError> {
         // TODO: check size of envelope and make sure it's not too big
         match create_envelope_from_events(events, options.partition_key) {
             Some(mut batch) => self.send_batch_envelope(&mut batch).await,
@@ -125,29 +113,33 @@ where
 
     async fn send_batch(
         &mut self,
-        batch: Self::MessageBatch,
+        batch: AmqpEventBatch,
         options: SendEventOptions,
-    ) -> Result<(), Self::SendError> {
+    ) -> Result<(), AmqpSendError> {
         match build_amqp_batch_from_messages(batch.events.into_iter(), options.partition_key) {
             Some(mut batch) => self.send_batch_envelope(&mut batch).await,
             None => Ok(()),
         }
     }
-}
 
-#[async_trait]
-impl<RP> Dispose for AmqpProducer<RP>
-where
-    RP: Send,
-{
-    type DisposeError = DisposeProducerError;
-
-    async fn dispose(mut self) -> Result<(), Self::DisposeError> {
+    pub(crate) async fn dispose(mut self) -> Result<(), DisposeProducerError> {
         self.sender.close().await?;
         self.session_handle.close().await?;
         Ok(())
     }
 }
+
+// #[async_trait]
+// impl<RP> TransportProducer for AmqpProducer<RP>
+// where
+//     RP: Send,
+// {
+//     type MessageBatch = AmqpEventBatch;
+
+//     type SendError = AmqpSendError;
+//     type CreateBatchError = RequestedSizeOutOfRange;
+
+// }
 
 pub struct RecoverableAmqpProducer<'a, RP> {
     producer: &'a mut AmqpProducer<RP>,
@@ -158,26 +150,64 @@ impl<'a, RP> RecoverableAmqpProducer<'a, RP>
 where
     RP: EventHubsRetryPolicy + Send,
 {
+    pub(crate) fn new(
+        producer: &'a mut AmqpProducer<RP>,
+        client: &'a mut Sharable<AmqpClient>,
+    ) -> RecoverableAmqpProducer<'a, RP> {
+        RecoverableAmqpProducer { producer, client }
+    }
+
     async fn send_batch_envelope(&mut self, mut batch: BatchEnvelope) -> Result<(), AmqpSendError> {
         let mut failed_attempts = 0;
         let mut try_timeout = self.producer.retry_policy.calculate_try_timeout(failed_attempts);
 
         loop {
-            match self.producer.send_batch_envelope(&mut batch).await {
-                Ok(_) => return Ok(()),
-                Err(err) => {
-                    failed_attempts += 1;
-                    let retry_delay = self
-                        .producer
-                        .retry_policy
-                        .calculate_retry_delay(&err, failed_attempts);
+            let fut = self.producer.send_batch_envelope(&mut batch);
+            let err = match util::time::timeout(try_timeout, fut).await {
+                Ok(Ok(_)) => return Ok(()),
+                Ok(Err(err)) => err,
+                Err(elapsed) => AmqpSendError::Elapsed(elapsed)
+            };
 
-                    match retry_delay {
-                        Some(retry_delay) => {
-                            util::time::sleep(retry_delay).await;
-                            try_timeout = self.producer.retry_policy.calculate_try_timeout(failed_attempts);
-                        }
-                        None => return Err(err),
+            // Scope is disposed, so we can't recover or retry
+            if err.is_scope_disposed() {
+                return Err(err);
+            }
+
+            failed_attempts += 1;
+            let retry_delay = self
+                .producer
+                .retry_policy
+                .calculate_retry_delay(&err, failed_attempts);
+
+            match retry_delay {
+                Some(retry_delay) => {
+                    util::time::sleep(retry_delay).await;
+                    try_timeout = self.producer.retry_policy.calculate_try_timeout(failed_attempts);
+                }
+                None => return Err(err),
+            }
+
+            if err.should_try_recover() {
+                if let Err(recovery_err) = self.client.recover().await {
+                    log::error!("Failed to recover client: {:?}", recovery_err);
+                    if recovery_err.is_scope_disposed() {
+                        return Err(err);
+                    }
+                }
+
+                // reattach the link
+                if let Err(recovery_err) = match self.client {
+                    Sharable::Owned(client) => client.recover_producer(&mut self.producer).await,
+                    Sharable::Shared(client) => {
+                        client.lock().await
+                            .recover_producer(&mut self.producer).await
+                    },
+                    Sharable::None => Err(RecoverProducerError::ConnectionScopeDisposed),
+                } {
+                    log::error!("Failed to recover producer: {:?}", recovery_err);
+                    if recovery_err.is_scope_disposed() {
+                        return Err(err);
                     }
                 }
             }
@@ -200,21 +230,7 @@ where
         &self,
         options: CreateBatchOptions,
     ) -> Result<Self::MessageBatch, Self::CreateBatchError> {
-        let link_max_message_size = self.producer.sender.max_message_size().unwrap_or(u64::MAX);
-        let max_size_in_bytes = match options.max_size_in_bytes {
-            Some(max_size_in_bytes) => {
-                if max_size_in_bytes < MINIMUM_BATCH_SIZE_LIMIT as u64
-                    || max_size_in_bytes > link_max_message_size
-                {
-                    return Err(RequestedSizeOutOfRange {});
-                }
-
-                max_size_in_bytes
-            }
-            // If this field is zero or unset, there is no maximum size imposed by the link endpoint.
-            None => link_max_message_size,
-        };
-        Ok(AmqpEventBatch::new(max_size_in_bytes, options))
+        self.producer.create_batch(options)
     }
 
     async fn send(

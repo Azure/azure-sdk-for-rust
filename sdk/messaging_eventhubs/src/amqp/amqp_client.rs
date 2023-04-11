@@ -1,6 +1,7 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use async_trait::async_trait;
+use fe2o3_amqp::Session;
 use url::Url;
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
-    util::{self, IntoAzureCoreError},
+    util::{self, IntoAzureCoreError, sharable::Sharable},
     PartitionProperties,
 };
 
@@ -22,7 +23,7 @@ use super::{
     amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
-    error::{DisposeError, OpenConsumerError, OpenProducerError, AmqpClientError},
+    error::{DisposeError, OpenConsumerError, OpenProducerError, AmqpClientError, AmqpConnectionScopeError, RecoverProducerError, RecoverConsumeError},
 };
 
 const DEFAULT_PREFETCH_COUNT: u32 = 300;
@@ -79,8 +80,11 @@ impl AmqpClient {
 impl TransportClient for AmqpClient {
     type Producer<RP> = AmqpProducer<RP> where RP: EventHubsRetryPolicy + Send;
     type Consumer<RP> = AmqpConsumer<RP> where RP: EventHubsRetryPolicy + Send;
+
     type OpenProducerError = OpenProducerError;
+    type RecoverProducerError = RecoverProducerError;
     type OpenConsumerError = OpenConsumerError;
+    type RecoverConsumerError = RecoverConsumeError;
     type DisposeError = DisposeError;
 
     fn is_closed(&self) -> bool {
@@ -212,6 +216,25 @@ impl TransportClient for AmqpClient {
         Ok(producer)
     }
 
+    async fn recover_producer<RP>(
+        &mut self,
+        producer: &mut Self::Producer<RP>,
+    ) -> Result<(), Self::RecoverProducerError>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        if producer.session_handle.is_ended() {
+            let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
+            producer.sender.detach_then_resume_on_session(&new_session).await?;
+            let mut old_session = std::mem::replace(&mut producer.session_handle, new_session);
+            let _ = old_session.end().await;
+        } else {
+            producer.sender.detach_then_resume_on_session(&producer.session_handle).await?;
+        }
+
+        Ok(())
+    }
+
     async fn create_consumer<RP>(
         &mut self,
         consumer_group: String,
@@ -244,6 +267,22 @@ impl TransportClient for AmqpClient {
         Ok(consumer)
     }
 
+    async fn recover_consumer<RP>(&mut self, consumer: &mut Self::Consumer<RP>) -> Result<(), Self::RecoverConsumerError>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        if consumer.session_handle.is_ended() {
+            let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
+            consumer.receiver.detach_then_resume_on_session(&new_session).await?;
+            let mut old_session = std::mem::replace(&mut consumer.session_handle, new_session);
+            let _ = old_session.end().await;
+        } else {
+            consumer.receiver.detach_then_resume_on_session(&consumer.session_handle).await?;
+        }
+
+        Ok(())
+    }
+
     async fn close(&mut self) -> Result<(), Self::DisposeError> {
         self.connection_scope.dispose().await
     }
@@ -257,5 +296,20 @@ impl RecoverableTransport for AmqpClient {
         self.connection_scope.recover().await?;
         self.management_link = self.connection_scope.open_management_link().await?;
         Ok(())
+    }
+}
+
+#[async_trait]
+impl RecoverableTransport for Sharable<AmqpClient> {
+    type RecoverError = AmqpClientError;
+
+    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
+        match self {
+            Sharable::Owned(c) => c.recover().await,
+            Sharable::Shared(c) => {
+                c.lock().await.recover().await
+            }
+            Sharable::None => Err(AmqpConnectionScopeError::ScopeDisposed.into()),
+        }
     }
 }

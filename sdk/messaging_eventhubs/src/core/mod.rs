@@ -5,13 +5,11 @@ mod transport_consumer;
 mod transport_event_batch;
 mod transport_producer;
 mod transport_producer_features;
-mod dispose;
 
 pub(crate) use self::{
-    transport_client::TransportClient, transport_consumer::TransportConsumer,
-    transport_event_batch::TransportEventBatch, transport_producer::TransportProducer,
-    transport_producer_features::TransportProducerFeatures, recoverable_transport::RecoverableTransport,
-    dispose::Dispose,
+    recoverable_transport::*, transport_client::*,
+    transport_consumer::*, transport_event_batch::*,
+    transport_producer::*, transport_producer_features::*,
 };
 
 pub use basic_retry_policy::BasicRetryPolicy;
