@@ -4,7 +4,7 @@
 
 use fe2o3_amqp::{
     connection::OpenError,
-    link::{DetachError, ReceiverAttachError, SendError, SenderAttachError},
+    link::{DetachError, ReceiverAttachError, SendError, SenderAttachError, SenderResumeErrorKind},
     session::BeginError,
 };
 
@@ -157,6 +157,20 @@ impl IntoAzureCoreError for SendError {
             SendError::MessageEncodeError => {
                 azure_core::Error::new(ErrorKind::DataConversion, self)
             }
+        }
+    }
+}
+
+impl IntoAzureCoreError for SenderResumeErrorKind {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            SenderResumeErrorKind::AttachError(err) => err.into_azure_core_error(),
+            SenderResumeErrorKind::SendError(err) => err.into_azure_core_error(),
+            SenderResumeErrorKind::DetachError(err) => err.into_azure_core_error(),
+            SenderResumeErrorKind::Timeout => azure_core::Error::new(
+                azure_core::error::ErrorKind::Other,
+                self
+            ),
         }
     }
 }

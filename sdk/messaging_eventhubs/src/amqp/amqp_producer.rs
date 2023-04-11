@@ -23,7 +23,7 @@ use super::{
     },
     error::{
         AmqpSendError, DisposeProducerError, NotAcceptedError, OpenProducerError,
-        RequestedSizeOutOfRange, RecoverProducerError,
+        RequestedSizeOutOfRange, RecoverProducerError, RecoverAndSendError,
     }, amqp_client::AmqpClient,
 };
 
@@ -129,18 +129,6 @@ impl<RP> AmqpProducer<RP> {
     }
 }
 
-// #[async_trait]
-// impl<RP> TransportProducer for AmqpProducer<RP>
-// where
-//     RP: Send,
-// {
-//     type MessageBatch = AmqpEventBatch;
-
-//     type SendError = AmqpSendError;
-//     type CreateBatchError = RequestedSizeOutOfRange;
-
-// }
-
 pub struct RecoverableAmqpProducer<'a, RP> {
     producer: &'a mut AmqpProducer<RP>,
     client: &'a mut Sharable<AmqpClient>,
@@ -157,22 +145,55 @@ where
         RecoverableAmqpProducer { producer, client }
     }
 
-    async fn send_batch_envelope(&mut self, mut batch: BatchEnvelope) -> Result<(), AmqpSendError> {
+    async fn recover_and_send_batch_envelope(
+        &mut self,
+        should_try_recover: bool,
+        batch: &mut BatchEnvelope,
+    ) -> Result<(), RecoverAndSendError> {
+        println!("should_try_recover: {}", should_try_recover);
+
+        if should_try_recover {
+            if let Err(recovery_err) = self.client.recover().await {
+                log::error!("Failed to recover client: {:?}", recovery_err);
+                if recovery_err.is_scope_disposed() {
+                    return Err(RecoverAndSendError::ConnectionScopeDisposed);
+                }
+            }
+
+            // reattach the link
+            match self.client {
+                Sharable::Owned(client) => client.recover_producer(&mut self.producer).await?,
+                Sharable::Shared(client) => {
+                    client.lock().await
+                        .recover_producer(&mut self.producer).await?
+                },
+                Sharable::None => return Err(RecoverAndSendError::ConnectionScopeDisposed),
+            }
+        }
+
+        println!("sending batch envelope: {:?}", batch);
+        self.producer.send_batch_envelope(batch).await?;
+        Ok(())
+    }
+
+    async fn send_batch_envelope(&mut self, mut batch: BatchEnvelope) -> Result<(), RecoverAndSendError> {
         let mut failed_attempts = 0;
         let mut try_timeout = self.producer.retry_policy.calculate_try_timeout(failed_attempts);
+        let mut should_try_recover = false;
 
         loop {
-            let fut = self.producer.send_batch_envelope(&mut batch);
+            let fut = self.recover_and_send_batch_envelope(should_try_recover, &mut batch);
             let err = match util::time::timeout(try_timeout, fut).await {
                 Ok(Ok(_)) => return Ok(()),
                 Ok(Err(err)) => err,
-                Err(elapsed) => AmqpSendError::Elapsed(elapsed)
+                Err(elapsed) => elapsed.into(),
             };
 
             // Scope is disposed, so we can't recover or retry
             if err.is_scope_disposed() {
                 return Err(err);
             }
+            should_try_recover = err.should_try_recover();
 
             failed_attempts += 1;
             let retry_delay = self
@@ -187,30 +208,6 @@ where
                 }
                 None => return Err(err),
             }
-
-            if err.should_try_recover() {
-                if let Err(recovery_err) = self.client.recover().await {
-                    log::error!("Failed to recover client: {:?}", recovery_err);
-                    if recovery_err.is_scope_disposed() {
-                        return Err(err);
-                    }
-                }
-
-                // reattach the link
-                if let Err(recovery_err) = match self.client {
-                    Sharable::Owned(client) => client.recover_producer(&mut self.producer).await,
-                    Sharable::Shared(client) => {
-                        client.lock().await
-                            .recover_producer(&mut self.producer).await
-                    },
-                    Sharable::None => Err(RecoverProducerError::ConnectionScopeDisposed),
-                } {
-                    log::error!("Failed to recover producer: {:?}", recovery_err);
-                    if recovery_err.is_scope_disposed() {
-                        return Err(err);
-                    }
-                }
-            }
         }
     }
 
@@ -223,7 +220,7 @@ where
 {
     type MessageBatch = AmqpEventBatch;
 
-    type SendError = AmqpSendError;
+    type SendError = RecoverAndSendError;
     type CreateBatchError = RequestedSizeOutOfRange;
 
     fn create_batch(

@@ -463,7 +463,7 @@ impl RecoverableError for AmqpSendError {
         match self {
             AmqpSendError::Send(_) => true,
             AmqpSendError::NotAccepted(_) => false,
-            AmqpSendError::Elapsed(_) => false,
+            AmqpSendError::Elapsed(_) => true,
             AmqpSendError::ConnectionScopeDisposed => false,
         }
     }
@@ -505,6 +505,95 @@ impl RecoverableError for RecoverProducerError {
 
     fn is_scope_disposed(&self) -> bool {
         matches!(self, RecoverProducerError::ConnectionScopeDisposed)
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoverAndSendError {
+    #[error(transparent)]
+    SessionBegin(#[from] BeginError),
+
+    #[error(transparent)]
+    SenderDetach(#[from] DetachError),
+
+    /// Error with resuming the sender
+    #[error(transparent)]
+    SenderResume(#[from] SenderResumeErrorKind),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
+
+    /// Error with sending the message
+    #[error(transparent)]
+    Send(#[from] fe2o3_amqp::link::SendError),
+
+    /// The sent message is not accepted by the service
+    #[error(transparent)]
+    NotAccepted(#[from] NotAcceptedError),
+
+    /// The operation timed out
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl From<RecoverProducerError> for RecoverAndSendError {
+    fn from(value: RecoverProducerError) -> Self {
+        match value {
+            RecoverProducerError::SessionBegin(err) => err.into(),
+            RecoverProducerError::SenderDetach(err) => err.into(),
+            RecoverProducerError::SenderResume(err) => err.into(),
+            RecoverProducerError::ConnectionScopeDisposed => {
+                RecoverAndSendError::ConnectionScopeDisposed
+            }
+        }
+    }
+}
+
+impl From<AmqpSendError> for RecoverAndSendError {
+    fn from(value: AmqpSendError) -> Self {
+        match value {
+            AmqpSendError::Send(err) => err.into(),
+            AmqpSendError::NotAccepted(err) => err.into(),
+            AmqpSendError::Elapsed(err) => err.into(),
+            AmqpSendError::ConnectionScopeDisposed => {
+                RecoverAndSendError::ConnectionScopeDisposed
+            }
+        }
+    }
+}
+
+impl RecoverableError for RecoverAndSendError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            RecoverAndSendError::SessionBegin(_) => false,
+            RecoverAndSendError::SenderDetach(_) => false,
+            RecoverAndSendError::SenderResume(_) => false,
+            RecoverAndSendError::ConnectionScopeDisposed => false,
+            RecoverAndSendError::Send(_) => true,
+            RecoverAndSendError::NotAccepted(_) => false,
+            // The first time we try to send after a forced closure may fail with timeout
+            RecoverAndSendError::Elapsed(_) => true,
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, RecoverAndSendError::ConnectionScopeDisposed)
+    }
+}
+
+impl IntoAzureCoreError for RecoverAndSendError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            RecoverAndSendError::SessionBegin(err) => err.into_azure_core_error(),
+            RecoverAndSendError::SenderDetach(err) => err.into_azure_core_error(),
+            RecoverAndSendError::SenderResume(err) => err.into_azure_core_error(),
+            RecoverAndSendError::ConnectionScopeDisposed => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
+            RecoverAndSendError::Send(err) => err.into_azure_core_error(),
+            RecoverAndSendError::NotAccepted(err) => err.into_azure_core_error(),
+            RecoverAndSendError::Elapsed(err) => err.into_azure_core_error(),
+        }
     }
 }
 
