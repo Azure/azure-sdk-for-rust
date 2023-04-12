@@ -78,3 +78,30 @@ async fn producer_client_can_recover_and_send_after_sleeping_for_40_mins() {
 
     producer_client.close().await.unwrap();
 }
+
+#[tokio::test]
+async fn producer_client_can_recover_and_get_properties_after_idling_40_mins() {
+    common::setup_dotenv();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+    let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+    let options = EventHubProducerClientOptions::default();
+    let mut producer_client =
+        EventHubProducerClient::new(connection_string, event_hub_name, options)
+            .await
+            .unwrap();
+    let properties = producer_client.get_event_hub_properties().await.unwrap();
+    println!("properties: {:?}", properties);
+
+    // Sleep for 40 minutes to force the link to close due to inactivity.
+    for i in 0..40 {
+        let duration = Duration::from_secs(60);
+        tokio::time::sleep(duration).await;
+        println!("iteration {}", i);
+    }
+
+    let properties = producer_client.get_event_hub_properties().await.unwrap();
+    println!("properties: {:?}", properties);
+
+    producer_client.close().await.unwrap();
+}

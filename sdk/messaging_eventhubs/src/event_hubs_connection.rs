@@ -168,7 +168,7 @@ where
     C: TransportClient,
     C::DisposeError: IntoAzureCoreError,
 {
-    pub async fn get_properties<RP>(
+    pub(crate) async fn get_properties<RP>(
         &mut self,
         retry_policy: RP,
     ) -> Result<EventHubProperties, azure_core::Error>
@@ -187,7 +187,7 @@ where
         }
     }
 
-    pub async fn get_partition_properties<RP>(
+    pub(crate) async fn get_partition_properties<RP>(
         &mut self,
         partition_id: &str,
         retry_policy: RP,
