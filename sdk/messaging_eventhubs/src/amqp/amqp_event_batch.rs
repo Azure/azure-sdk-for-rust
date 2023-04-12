@@ -116,7 +116,6 @@ impl TransportEventBatch for AmqpEventBatch {
 
 #[cfg(test)]
 mod tests {
-    use crate::Event;
 
     use super::*;
 

@@ -1,31 +1,34 @@
 use async_trait::async_trait;
 use azure_core::Url;
-use fe2o3_amqp::{link::SendError, session::SessionHandle, Sender};
+use fe2o3_amqp::{session::SessionHandle, Sender};
 use fe2o3_amqp_types::messaging::Outcome;
 
 use crate::{
     amqp::amqp_message_converter::create_envelope_from_events,
-    core::{TransportEventBatch, TransportProducer, TransportProducerFeatures, RecoverableError, RecoverableTransport, TransportClient},
+    core::{
+        RecoverableError, RecoverableTransport, TransportClient, TransportEventBatch,
+        TransportProducer,
+    },
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
         create_batch_options::CreateBatchOptions,
         event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT, send_event_options::SendEventOptions,
         PartitionPublishingOptions,
     },
-    util::{self, IntoAzureCoreError, sharable::Sharable},
+    util::{self, sharable::Sharable},
     Event,
 };
 
 use super::{
-    amqp_connection_scope::AmqpConnectionScope,
+    amqp_client::AmqpClient,
     amqp_event_batch::AmqpEventBatch,
     amqp_message_converter::{
         build_amqp_batch_from_messages, BatchEnvelope, BatchEnvelopeState, SendableEnvelope,
     },
     error::{
-        AmqpSendError, DisposeProducerError, NotAcceptedError, OpenProducerError,
-        RequestedSizeOutOfRange, RecoverAndSendError,
-    }, amqp_client::AmqpClient,
+        AmqpSendError, DisposeProducerError, NotAcceptedError, RecoverAndSendError,
+        RequestedSizeOutOfRange,
+    },
 };
 
 pub struct AmqpProducer<RP> {
@@ -164,9 +167,12 @@ where
             match self.client {
                 Sharable::Owned(client) => client.recover_producer(&mut self.producer).await?,
                 Sharable::Shared(client) => {
-                    client.lock().await
-                        .recover_producer(&mut self.producer).await?
-                },
+                    client
+                        .lock()
+                        .await
+                        .recover_producer(&mut self.producer)
+                        .await?
+                }
                 Sharable::None => return Err(RecoverAndSendError::ConnectionScopeDisposed),
             }
         }
@@ -175,9 +181,15 @@ where
         Ok(())
     }
 
-    async fn send_batch_envelope(&mut self, mut batch: BatchEnvelope) -> Result<(), RecoverAndSendError> {
+    async fn send_batch_envelope(
+        &mut self,
+        mut batch: BatchEnvelope,
+    ) -> Result<(), RecoverAndSendError> {
         let mut failed_attempts = 0;
-        let mut try_timeout = self.producer.retry_policy.calculate_try_timeout(failed_attempts);
+        let mut try_timeout = self
+            .producer
+            .retry_policy
+            .calculate_try_timeout(failed_attempts);
         let mut should_try_recover = false;
 
         loop {
@@ -203,13 +215,15 @@ where
             match retry_delay {
                 Some(retry_delay) => {
                     util::time::sleep(retry_delay).await;
-                    try_timeout = self.producer.retry_policy.calculate_try_timeout(failed_attempts);
+                    try_timeout = self
+                        .producer
+                        .retry_policy
+                        .calculate_try_timeout(failed_attempts);
                 }
                 None => return Err(err),
             }
         }
     }
-
 }
 
 #[async_trait]

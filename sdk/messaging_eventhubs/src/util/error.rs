@@ -2,12 +2,15 @@
 //!
 //! TODO: should all AMQP related errors be categorized as `ErrorKind::Io`?
 
+use super::IntoAzureCoreError;
 use fe2o3_amqp::{
     connection::OpenError,
-    link::{DetachError, ReceiverAttachError, SendError, SenderAttachError, SenderResumeErrorKind, ReceiverResumeError, ReceiverResumeErrorKind, IllegalLinkStateError},
+    link::{
+        DetachError, IllegalLinkStateError, ReceiverAttachError, ReceiverResumeErrorKind,
+        SendError, SenderAttachError, SenderResumeErrorKind,
+    },
     session::BeginError,
 };
-use super::IntoAzureCoreError;
 
 impl IntoAzureCoreError for BeginError {
     fn into_azure_core_error(self) -> azure_core::Error {
@@ -166,17 +169,16 @@ impl IntoAzureCoreError for SenderResumeErrorKind {
             SenderResumeErrorKind::AttachError(err) => err.into_azure_core_error(),
             SenderResumeErrorKind::SendError(err) => err.into_azure_core_error(),
             SenderResumeErrorKind::DetachError(err) => err.into_azure_core_error(),
-            SenderResumeErrorKind::Timeout => azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                self
-            ),
+            SenderResumeErrorKind::Timeout => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
         }
     }
 }
 
 impl IntoAzureCoreError for IllegalLinkStateError {
     fn into_azure_core_error(self) -> azure_core::Error {
-    azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
+        azure_core::Error::new(azure_core::error::ErrorKind::Io, self)
     }
 }
 
@@ -186,10 +188,9 @@ impl IntoAzureCoreError for ReceiverResumeErrorKind {
             ReceiverResumeErrorKind::AttachError(err) => err.into_azure_core_error(),
             ReceiverResumeErrorKind::FlowError(err) => err.into_azure_core_error(),
             ReceiverResumeErrorKind::DetachError(err) => err.into_azure_core_error(),
-            ReceiverResumeErrorKind::Timeout => azure_core::Error::new(
-                azure_core::error::ErrorKind::Other,
-                self
-            ),
+            ReceiverResumeErrorKind::Timeout => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
         }
     }
 }

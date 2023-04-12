@@ -43,7 +43,7 @@ impl EventHubsRetryPolicy for BasicRetryPolicy {
 
     fn calculate_retry_delay(
         &self,
-        last_error: &dyn std::error::Error,
+        _last_error: &dyn std::error::Error,
         attempt_count: u32,
     ) -> Option<std::time::Duration> {
         if self.options.delay == std::time::Duration::ZERO

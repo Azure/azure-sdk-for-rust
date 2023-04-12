@@ -7,10 +7,7 @@ use crate::{
     PartitionProperties,
 };
 
-use super::{
-    transport_consumer::TransportConsumer, transport_producer::TransportProducer,
-    transport_producer_features::TransportProducerFeatures,
-};
+use super::transport_producer_features::TransportProducerFeatures;
 
 #[async_trait]
 pub trait TransportClient: Sized {
@@ -57,7 +54,10 @@ pub trait TransportClient: Sized {
     where
         RP: EventHubsRetryPolicy + Send;
 
-    async fn recover_producer<RP>(&mut self, producer: &mut Self::Producer<RP>) -> Result<(), Self::RecoverProducerError>
+    async fn recover_producer<RP>(
+        &mut self,
+        producer: &mut Self::Producer<RP>,
+    ) -> Result<(), Self::RecoverProducerError>
     where
         RP: EventHubsRetryPolicy + Send;
 
@@ -76,7 +76,10 @@ pub trait TransportClient: Sized {
     where
         RP: EventHubsRetryPolicy + Send;
 
-    async fn recover_consumer<RP>(&mut self, consumer: &mut Self::Consumer<RP>) -> Result<(), Self::RecoverConsumerError>
+    async fn recover_consumer<RP>(
+        &mut self,
+        consumer: &mut Self::Consumer<RP>,
+    ) -> Result<(), Self::RecoverConsumerError>
     where
         RP: EventHubsRetryPolicy + Send;
 

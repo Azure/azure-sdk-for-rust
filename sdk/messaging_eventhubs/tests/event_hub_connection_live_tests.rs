@@ -1,7 +1,4 @@
-use messaging_eventhubs::{
-    BasicRetryPolicy, EventHubConnection, EventHubConnectionOptions, EventHubsRetryOptions,
-    EventHubsTransportType,
-};
+use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions, EventHubsTransportType};
 
 mod common;
 

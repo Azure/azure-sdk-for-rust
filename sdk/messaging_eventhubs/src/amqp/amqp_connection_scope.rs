@@ -12,14 +12,14 @@ use fe2o3_amqp::{
     session::SessionHandle, Connection, Receiver, Sender, Session,
 };
 use fe2o3_amqp_cbs::client::CbsClient;
-use fe2o3_amqp_management::{MgmtClient, error::DetachThenResumeError};
+use fe2o3_amqp_management::MgmtClient;
 use fe2o3_amqp_types::{
     definitions::ReceiverSettleMode,
     messaging::Source,
     primitives::{OrderedMap, Symbol},
 };
 use fe2o3_amqp_ws::WebSocketStream;
-use futures_util::task::AtomicWaker;
+
 use serde_amqp::Value;
 use time::Duration as TimeSpan;
 use url::Url;
@@ -255,13 +255,17 @@ impl AmqpConnectionScope {
 
     pub(crate) async fn recover_management_link(
         &mut self,
-        management_link: &mut AmqpManagementLink
+        management_link: &mut AmqpManagementLink,
     ) -> Result<(), RecoverManagementLinkError> {
         if management_link.session_handle.is_ended() {
             let new_management_session = Session::begin(&mut self.connection.handle).await?;
-            management_link.client.detach_then_resume_on_session(&new_management_session).await?;
-            let mut old_session = std::mem::replace(&mut management_link.session_handle, new_management_session);
-            let _  = old_session.try_end();
+            management_link
+                .client
+                .detach_then_resume_on_session(&new_management_session)
+                .await?;
+            let mut old_session =
+                std::mem::replace(&mut management_link.session_handle, new_management_session);
+            let _ = old_session.try_end();
         }
         Ok(())
     }

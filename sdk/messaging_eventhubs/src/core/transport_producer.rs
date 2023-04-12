@@ -1,11 +1,7 @@
 use async_trait::async_trait;
-use fe2o3_amqp_types::messaging::Batch;
 
 use crate::{
-    producer::{
-        create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions,
-        PartitionPublishingOptions,
-    },
+    producer::{create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions},
     Event,
 };
 

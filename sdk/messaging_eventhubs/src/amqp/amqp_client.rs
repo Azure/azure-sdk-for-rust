@@ -1,4 +1,4 @@
-use std::{sync::{atomic::Ordering, Arc}};
+use std::sync::{atomic::Ordering, Arc};
 
 use async_trait::async_trait;
 use fe2o3_amqp::Session;
@@ -6,9 +6,9 @@ use url::Url;
 
 use crate::{
     amqp::amqp_management::event_hub_properties::EventHubPropertiesRequest,
-    authorization::{event_hub_token_credential::EventHubTokenCredential, event_hub_claim},
+    authorization::{event_hub_claim, event_hub_token_credential::EventHubTokenCredential},
     consumer::EventPosition,
-    core::{RecoverableTransport, TransportClient, TransportProducerFeatures, RecoverableError},
+    core::{RecoverableError, RecoverableTransport, TransportClient, TransportProducerFeatures},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -25,7 +25,8 @@ use super::{
     amqp_producer::AmqpProducer,
     error::{
         AmqpClientError, AmqpConnectionScopeError, DisposeError, OpenConsumerError,
-        OpenProducerError, RecoverConsumeError, RecoverProducerError, RecoverTransportClientError, RecoverAndCallError,
+        OpenProducerError, RecoverAndCallError, RecoverConsumeError, RecoverProducerError,
+        RecoverTransportClientError,
     },
 };
 
@@ -41,8 +42,7 @@ impl AmqpClient {
         &mut self,
         should_try_recover: bool,
         token_value: &'a str,
-    ) -> Result<EventHubProperties, RecoverAndCallError>
-    {
+    ) -> Result<EventHubProperties, RecoverAndCallError> {
         if should_try_recover {
             self.recover().await?;
         }
@@ -50,10 +50,7 @@ impl AmqpClient {
         let request =
             EventHubPropertiesRequest::new(&*self.connection_scope.event_hub_name, token_value);
 
-        let res = self.management_link
-            .client
-            .call(request)
-            .await?;
+        let res = self.management_link.client.call(request).await?;
         Ok(res)
     }
 
@@ -62,8 +59,7 @@ impl AmqpClient {
         should_try_recover: bool,
         partition_id: &'a str,
         token_value: &'a str,
-    ) -> Result<PartitionProperties, RecoverAndCallError>
-    {
+    ) -> Result<PartitionProperties, RecoverAndCallError> {
         if should_try_recover {
             self.recover().await?;
         }
@@ -74,10 +70,7 @@ impl AmqpClient {
             token_value,
         );
 
-        let res = self.management_link
-            .client
-            .call(request)
-            .await?;
+        let res = self.management_link.client.call(request).await?;
         Ok(res)
     }
 }
@@ -167,7 +160,7 @@ impl TransportClient for AmqpClient {
             let error = match util::time::timeout(try_timeout, fut).await {
                 Ok(Ok(response)) => return Ok(response),
                 Ok(Err(err)) => err,
-                Err(elapsed) => elapsed.into()
+                Err(elapsed) => elapsed.into(),
             };
 
             failed_attempt += 1;
@@ -202,11 +195,15 @@ impl TransportClient for AmqpClient {
             .await?;
         let token_value = access_token.token.secret();
         loop {
-            let fut = self.recover_and_get_partition_properties(should_try_recover, partition_id, token_value);
+            let fut = self.recover_and_get_partition_properties(
+                should_try_recover,
+                partition_id,
+                token_value,
+            );
             let error = match util::time::timeout(try_timeout, fut).await {
                 Ok(Ok(response)) => return Ok(response),
                 Ok(Err(err)) => err,
-                Err(elapsed) => elapsed.into()
+                Err(elapsed) => elapsed.into(),
             };
 
             failed_attempt += 1;
@@ -219,7 +216,6 @@ impl TransportClient for AmqpClient {
                 }
                 None => return Err(error.into_azure_core_error()),
             }
-
         }
     }
 
@@ -257,7 +253,14 @@ impl TransportClient for AmqpClient {
         let endpoint = producer.endpoint.to_string();
         let resource = endpoint.clone();
         let required_claims = vec![event_hub_claim::SEND.to_string()];
-        self.connection_scope.request_refreshable_authorization_using_cbs(producer.link_identifier, endpoint, resource, required_claims).await?;
+        self.connection_scope
+            .request_refreshable_authorization_using_cbs(
+                producer.link_identifier,
+                endpoint,
+                resource,
+                required_claims,
+            )
+            .await?;
 
         if producer.session_handle.is_ended() {
             let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;

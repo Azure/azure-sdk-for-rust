@@ -1,7 +1,10 @@
-use std::{collections::HashMap, marker::PhantomData, sync::Arc};
+use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_producer::{AmqpProducer, RecoverableAmqpProducer}},
+    amqp::{
+        amqp_client::AmqpClient,
+        amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
+    },
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,

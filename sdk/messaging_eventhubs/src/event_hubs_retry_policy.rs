@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use crate::event_hubs_retry_options::EventHubsRetryOptions;
-
 pub trait EventHubsRetryPolicy: Clone {
     fn calculate_try_timeout(&self, attempt_count: u32) -> Duration;
 

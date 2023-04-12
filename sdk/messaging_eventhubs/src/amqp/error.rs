@@ -1,7 +1,5 @@
 //! Error types for AMQP operations
 
-use std::marker::PhantomData;
-
 use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{
@@ -296,7 +294,7 @@ pub enum OpenProducerError {
     SenderLink(#[from] SenderAttachError),
 
     #[error(transparent)]
-    Elapsed(#[from] Elapsed)
+    Elapsed(#[from] Elapsed),
 }
 
 impl IntoAzureCoreError for OpenProducerError {
@@ -338,7 +336,7 @@ pub enum OpenConsumerError {
     ConsumerFilter(#[from] OffsetIsEmpty),
 
     #[error(transparent)]
-    Elapsed(#[from] Elapsed)
+    Elapsed(#[from] Elapsed),
 }
 
 /// Error closing the AMQP connection and AMQP session
@@ -520,7 +518,7 @@ pub enum RecoverProducerError {
     ConnectionScopeDisposed,
 
     #[error(transparent)]
-    Elapsed(#[from] Elapsed)
+    Elapsed(#[from] Elapsed),
 }
 
 impl From<DetachThenResumeSenderError> for RecoverProducerError {
@@ -810,7 +808,7 @@ impl RecoverableError for RecoverTransportClientError {
             RecoverTransportClientError::Open(_) => false,
             RecoverTransportClientError::WebSocket(_) => false,
             RecoverTransportClientError::SessionBegin(_) => true, // The connection should be recovered
-            RecoverTransportClientError::LinkDetach(_) => true, // The session should be recovered
+            RecoverTransportClientError::LinkDetach(_) => true,   // The session should be recovered
             RecoverTransportClientError::SenderResume(_) => true,
             RecoverTransportClientError::ReceiverResume(_) => true,
             RecoverTransportClientError::ConnectionScopeDisposed => false,

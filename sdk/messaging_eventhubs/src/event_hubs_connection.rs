@@ -3,8 +3,6 @@ use const_format::concatcp;
 use std::sync::{atomic::AtomicBool, Arc};
 use url::Url;
 
-use tokio::sync::Mutex;
-
 use crate::{
     amqp::{amqp_client::AmqpClient, error::AmqpConnectionScopeError},
     authorization::{
@@ -13,14 +11,14 @@ use crate::{
         shared_access_signature::SharedAccessSignature,
     },
     consumer::EventPosition,
-    core::{TransportClient, TransportProducerFeatures, RecoverableTransport},
+    core::{RecoverableTransport, TransportClient, TransportProducerFeatures},
     event_hubs_connection_option::EventHubConnectionOptions,
     event_hubs_connection_string_properties::EventHubsConnectionStringProperties,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
-    util::{IntoAzureCoreError, sharable::Sharable},
+    util::{sharable::Sharable, IntoAzureCoreError},
     PartitionProperties,
 };
 
@@ -457,6 +455,9 @@ where
     type RecoverError = azure_core::Error;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
-        self.inner.recover().await.map_err(IntoAzureCoreError::into_azure_core_error)
+        self.inner
+            .recover()
+            .await
+            .map_err(IntoAzureCoreError::into_azure_core_error)
     }
 }
