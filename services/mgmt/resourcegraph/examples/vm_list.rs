@@ -50,7 +50,7 @@ async fn main() -> azure_core::Result<()> {
         if response.skip_token.is_none() {
             break;
         }
-        query_request.options = Some(QueryRequestOptions { 
+        query_request.options = Some(QueryRequestOptions {
             skip_token: response.skip_token,
             ..Default::default()
         });
