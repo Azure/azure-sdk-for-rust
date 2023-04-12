@@ -1,85 +1,59 @@
-use std::sync::Arc;
-use azure_identity::DefaultAzureCredential;
-use azure_mgmt_resourcegraph::models::{QueryRequest, QueryRequestOptions};
-use serde_json::{json, Value};
-use azure_mgmt_resourcegraph::Client as AzureResourceGraphClient;
-use azure_mgmt_resourcegraph::ClientBuilder as AzureResourceGraphClientBuilder;
-
 /// Fetching Virtual Machines using Azure Resource Graph
+///
+/// The following example is similar to using the [Azure CLI's Resource Graph extension](https://learn.microsoft.com/en-us/azure/governance/resource-graph/first-query-azurecli#add-the-resource-graph-extension).
+///
+/// `az graph query -q "Resources | where type == 'microsoft.compute/virtualmachines'" | jq .data[].id`
+///
+/// Ref: <https://learn.microsoft.com/en-us/rest/api/azureresourcegraph/resourcegraph(2021-03-01)/resources/resources?tabs=HTTP>
+///
+use azure_identity::DefaultAzureCredential;
+use azure_mgmt_resourcegraph::{
+    models::{QueryRequest, QueryRequestOptions},
+    Client,
+};
+use std::sync::Arc;
 
-#[derive(Debug)]
-pub enum GenericError {
-    InvalidRequest,
-}
-
-#[derive(Debug)]
-struct CustomError {
-    err_type: GenericError,
-    err_msg: String
-}
-
-async fn fetch_azure_records() -> Result<Value, CustomError> {
-
+#[tokio::main]
+async fn main() -> azure_core::Result<()> {
     let azure_creds = Arc::new(DefaultAzureCredential::default());
+    let client = Client::builder(azure_creds).build();
 
-    let az_rg_client = AzureResourceGraphClient::builder(azure_creds).build();
-
-    // fetch first 10 records
-    let query_options = QueryRequestOptions {
+    // query 10 records at a time
+    let options = Some(QueryRequestOptions {
         top: Option::from(10),
-        skip: Option::from(0),
         ..Default::default()
-    };
+    });
 
-    // in the below request, we are fetching resources of type (virtual machines)
-    let custom_query_request = QueryRequest {
+    let mut query_request = QueryRequest {
         subscriptions: vec![],
         management_groups: vec![],
         query: "Resources | where type == 'microsoft.compute/virtualmachines'".to_string(),
-        options: Option::from(query_options),
+        options,
         facets: vec![],
     };
 
-    let query_request = QueryRequest::from(custom_query_request);
-
-    let resources = az_rg_client.resources(query_request).await;
-
-    let result = match resources {
-        Ok(d) => {
-            let elements = d.data.as_array().unwrap();
-            let obj = json!(elements);
-            obj
+    loop {
+        let response = client.resources(query_request.clone()).await?;
+        if let Some(as_array) = response.data.as_array() {
+            for entry in as_array {
+                if let Some(resource_id) = entry.get("id").and_then(|x| x.as_str()) {
+                    println!("{resource_id:?}");
+                }
+            }
         }
-        Err(e) => {
-            let actual_error_message = format!("could not fetch data from azure resource graph : {:?}", e.to_string());
-            let custom_err = CustomError {
-                err_msg: actual_error_message,
-                err_type: GenericError::InvalidRequest
-            };
-            return Err(custom_err)
-        }
-    };
-    Ok(result)
-}
 
-/// Make sure you export the following environment variables before running the program
-/// export AZURE_CLIENT_ID="00000000-0000-0000-0000-000000000000"
-/// export AZURE_CLIENT_SECRET="<SOME_SECRET>"
-/// export AZURE_TENANT_ID="00000000-0000-0000-0000-000000000000
-
-/// Building the release binary & executing the program
-///     cargo build --release
-/// You can also pass the environment variables this way & run execute the program
-///     AZURE_CLIENT_ID="<CID>" AZURE_CLIENT_SECRET="<SECRET>" AZURE_TENANT_ID="<TID>" target/release/<BINARY>
-#[tokio::main]
-async fn main() {
-    let _records = match fetch_azure_records().await {
-        Ok(d) => {
-            // actual azure records
-            println!("{}", serde_json::to_string_pretty(&d).unwrap());
+        // The documentation describes skip token as "Continuation token for pagination, capturing
+        // the next page size and offset, as well as the context of the query."
+        //
+        // As such, if the response contains a skip_token, we use that for subsequent queries.
+        // Otherwise, we're done.
+        if response.skip_token.is_none() {
+            break;
         }
-        Err(e) => {
-            println!("{:#?}", e);
-        }
-    };
+        query_request.options = Some(QueryRequestOptions { 
+            skip_token: response.skip_token,
+            ..Default::default()
+        });
+    }
+    Ok(())
 }
