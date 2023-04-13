@@ -81,9 +81,9 @@ impl std::fmt::Display for MaxAllowedTtlExceededError {
 
 impl std::error::Error for MaxAllowedTtlExceededError {}
 
-/// The message carried in `ServiceBusReceivedMessage` or `ServiceBusPeekedMessage` is a raw AMQP
-/// message. Please use [`ServiceBusReceivedMessage::raw_amqp_message`] or
-/// [`ServiceBusPeekedMessage::raw_amqp_message`] to access the raw AMQP message body.
+/// The message carried in `ReceivedEvent` is a raw AMQP
+/// message. Please use [`ReceivedEvent::raw_amqp_message`] or
+/// [`ReceivedEvent::raw_amqp_message`] to access the raw AMQP message body.
 #[derive(Debug, Clone)]
 pub struct RawAmqpMessageError {}
 

@@ -1,6 +1,8 @@
 use fe2o3_amqp::{session::SessionHandle, Receiver};
 
-use crate::{core::TransportConsumer, event_hubs_retry_policy::EventHubsRetryPolicy};
+use crate::{core::TransportConsumer, event_hubs_retry_policy::EventHubsRetryPolicy, util::sharable::Sharable};
+
+use super::amqp_client::AmqpClient;
 
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
@@ -11,4 +13,7 @@ pub struct AmqpConsumer<RP> {
     pub(crate) retry_policy: RP,
 }
 
-impl<RP> TransportConsumer for AmqpConsumer<RP> where RP: EventHubsRetryPolicy + Send {}
+pub struct RecoverableAmqpConsumer<'a, RP> {
+    consumer: &'a mut AmqpConsumer<RP>,
+    client: &'a Sharable<AmqpClient>,
+}

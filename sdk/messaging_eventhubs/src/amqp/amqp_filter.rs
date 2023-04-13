@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// <summary>Indicates filtering based on the sequence number of a message.</summary>
-const SEQUENCE_NUMBER_NAME: &str = "amqp.annotation.x-opt-sequence-number";
+pub(crate) const SEQUENCE_NUMBER_NAME: &str = "amqp.annotation.x-opt-sequence-number";
 
 /// <summary>Indicates filtering based on the offset of a message.</summary>
 const OFFSET_NAME: &str = "amqp.annotation.x-opt-offset";
