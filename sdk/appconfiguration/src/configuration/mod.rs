@@ -1,4 +1,6 @@
-use azure_core::{auth::TokenCredential, error::ErrorKind, FixedRetryOptions, RetryOptions};
+use azure_core::{
+    auth::TokenCredential, error::ErrorKind, FixedRetryOptions, RetryOptions,
+};
 use futures::stream::StreamExt;
 use std::{collections::HashMap, sync::Arc};
 
@@ -24,16 +26,9 @@ impl ConfigurationExplorerBuilder {
         }
     }
 
-    #[doc = "Set the endpoint."]
-    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
-        self.endpoint = Some(endpoint.into());
-        self
-    }
-
-    #[doc = "Set the retry options."]
-    pub fn retry(mut self, retry: impl Into<RetryOptions>) -> Self {
-        self.retry = Some(retry.into());
-        self
+    azure_core::setters! {
+        endpoint: String => Some(endpoint),
+        retry: RetryOptions => Some(retry),
     }
 
     #[doc = "Convert the builder into a `ConfigurationExplorer` instance."]

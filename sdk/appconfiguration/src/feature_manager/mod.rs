@@ -44,21 +44,14 @@ impl FeatureExplorerBuilder {
         }
     }
 
-    #[doc = "Set the endpoint."]
-    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
-        self.endpoint = Some(endpoint.into());
-        self
+    azure_core::setters! {
+        endpoint: String => Some(endpoint),
+        retry: RetryOptions => Some(retry),
     }
 
     #[doc = "Set the context."]
     pub fn context(mut self, context: Arc<dyn ContextHolder>) -> Self {
         self.context = Some(context);
-        self
-    }
-
-    #[doc = "Set the retry options."]
-    pub fn retry(mut self, retry: impl Into<RetryOptions>) -> Self {
-        self.retry = Some(retry.into());
         self
     }
 
