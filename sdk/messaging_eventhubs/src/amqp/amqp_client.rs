@@ -25,7 +25,7 @@ use super::{
     amqp_producer::AmqpProducer,
     error::{
         AmqpClientError, AmqpConnectionScopeError, DisposeError, OpenConsumerError,
-        OpenProducerError, RecoverAndCallError, RecoverConsumeError, RecoverProducerError,
+        OpenProducerError, RecoverAndCallError, RecoverConsumerError, RecoverProducerError,
         RecoverTransportClientError,
     },
 };
@@ -125,7 +125,7 @@ impl TransportClient for AmqpClient {
     type OpenProducerError = OpenProducerError;
     type RecoverProducerError = RecoverProducerError;
     type OpenConsumerError = OpenConsumerError;
-    type RecoverConsumerError = RecoverConsumeError;
+    type RecoverConsumerError = RecoverConsumerError;
     type DisposeError = DisposeError;
 
     fn is_closed(&self) -> bool {

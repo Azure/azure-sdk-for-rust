@@ -669,7 +669,7 @@ impl IntoAzureCoreError for RecoverAndSendError {
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum RecoverConsumeError {
+pub enum RecoverConsumerError {
     #[error(transparent)]
     SessionBegin(#[from] BeginError),
 
@@ -684,7 +684,7 @@ pub enum RecoverConsumeError {
     ConnectionScopeDisposed,
 }
 
-impl From<DetachThenResumeReceiverError> for RecoverConsumeError {
+impl From<DetachThenResumeReceiverError> for RecoverConsumerError {
     fn from(err: DetachThenResumeReceiverError) -> Self {
         match err {
             DetachThenResumeReceiverError::Detach(err) => err.into(),
@@ -894,4 +894,9 @@ impl RecoverableError for RecoverAndCallError {
             RecoverAndCallError::Elapsed(_) => false,
         }
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum RecoverAndReceiveError {
+
 }

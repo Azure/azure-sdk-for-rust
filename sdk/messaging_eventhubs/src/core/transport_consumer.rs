@@ -7,7 +7,7 @@ pub trait TransportConsumer {
     type ReceivedEvent;
     type ReceiveError: std::error::Error;
 
-    fn last_received_event(&self) -> Option<Self::ReceivedEvent>;
+    fn last_received_event(&self) -> Option<&Self::ReceivedEvent>;
 
     async fn receive(
         &mut self,
