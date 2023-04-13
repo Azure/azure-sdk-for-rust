@@ -460,6 +460,8 @@ impl AmqpConnectionScope {
             receiver,
             link_identifier,
             invalidate_consumer_when_partition_stolen,
+            track_last_enqueued_event_properties,
+            current_event_position: None,
             last_received_event: None,
             retry_policy,
         })

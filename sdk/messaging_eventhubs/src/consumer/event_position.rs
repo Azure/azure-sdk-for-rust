@@ -56,18 +56,14 @@ impl EventPosition {
     ///
     /// - `offset` - The offset of an event with respect to its relative position in the partition.
     /// - `is_inclusive` - >If true, the event at the `offset` is included; otherwise the next event in sequence will be received.
-    pub fn try_from_offset(
-        offset: impl Into<String>,
+    pub fn from_offset(
+        offset: i64,
         is_inclusive: bool,
-    ) -> Result<Self, OffsetIsEmpty> {
-        let offset = offset.into();
-        if offset.is_empty() {
-            return Err(OffsetIsEmpty);
-        }
-        Ok(Self::Offset {
-            offset,
+    ) -> Self {
+        Self::Offset {
+            offset: offset.to_string(),
             is_inclusive,
-        })
+        }
     }
 
     /// Corresponds to an event with the specified sequence number in the partition.  By default, the event

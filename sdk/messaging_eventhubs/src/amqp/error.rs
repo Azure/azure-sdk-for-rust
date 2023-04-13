@@ -378,6 +378,15 @@ impl IntoAzureCoreError for DisposeProducerError {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum DisposeConsumerError {
+    #[error(transparent)]
+    Receiver(#[from] DetachError),
+
+    #[error(transparent)]
+    Session(#[from] fe2o3_amqp::session::Error),
+}
+
 /// Error with adding an event to a batch
 #[derive(Debug, thiserror::Error)]
 pub enum TryAddError {

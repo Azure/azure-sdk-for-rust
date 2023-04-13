@@ -107,11 +107,16 @@ impl Event {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ReceivedEvent {
     raw_amqp_message: Message<Body<Value>>,
 }
 
 impl ReceivedEvent {
+    pub(crate) fn from_raw_amqp_message(raw_amqp_message: Message<Body<Value>>) -> Self {
+        Self { raw_amqp_message }
+    }
+
     pub fn raw_amqp_message(&self) -> &Message<Body<Value>> {
         &self.raw_amqp_message
     }
@@ -182,7 +187,7 @@ impl ReceivedEvent {
                 Value::Long(val) => *val,
                 _ => unreachable!("Expecting a Long"),
             })
-            .unwrap_or_default()
+            .unwrap_or(i64::MIN)
     }
 
     pub fn enqueued_time(&self) -> OffsetDateTime {
