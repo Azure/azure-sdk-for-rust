@@ -46,6 +46,71 @@ impl<RP> AmqpConsumer<RP> {
     }
 }
 
+async fn recover_and_set_credit<RP>(
+    client: &mut Sharable<AmqpClient>,
+    consumer: &mut AmqpConsumer<RP>,
+    should_try_recover: bool,
+    credit: u32,
+) -> Result<(), RecoverAndReceiveError>
+where
+    RP: EventHubsRetryPolicy + Send,
+{
+    if should_try_recover {
+        if let Err(recovery_err) = client.recover().await {
+            log::error!("Failed to recover client: {:?}", recovery_err);
+            if recovery_err.is_scope_disposed() {
+                return Err(recovery_err.into());
+            }
+        }
+
+        // reattach the link
+        match client {
+            Sharable::Owned(client) => client.recover_consumer(consumer).await?,
+            Sharable::Shared(client) => {
+                client
+                    .lock()
+                    .await
+                    .recover_consumer(consumer)
+                    .await?
+            }
+            Sharable::None => return Err(RecoverAndReceiveError::ConnectionScopeDisposed),
+        }
+    }
+
+    consumer.receiver.set_credit(credit).await?;
+    Ok(())
+}
+
+async fn set_credit<RP>(
+    client: &mut Sharable<AmqpClient>,
+    consumer: &mut AmqpConsumer<RP>,
+    credit: u32,
+) -> Result<(), RecoverAndReceiveError>
+where
+    RP: EventHubsRetryPolicy + Send,
+{
+    let mut failed_attempts = 0;
+    let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
+    let mut should_try_recover = true;
+
+    loop {
+        let fut = recover_and_set_credit(client, consumer, should_try_recover, credit);
+        let err = match util::time::timeout(try_timeout, fut).await {
+            Ok(Ok(())) => return Ok(()),
+            Ok(Err(err)) => err,
+            Err(elapsed) => elapsed.into(),
+        };
+
+        if err.is_scope_disposed() {
+            return Err(err);
+        }
+
+        failed_attempts += 1;
+        try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
+        should_try_recover = true;
+    }
+}
+
 async fn recover_and_recv<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
@@ -126,13 +191,6 @@ pub struct RecoverableAmqpConsumer<'a, RP> {
     client: &'a mut Sharable<AmqpClient>,
 }
 
-impl<'a, RP> RecoverableAmqpConsumer<'a, RP>
-where
-    RP: EventHubsRetryPolicy + Send,
-{
-
-}
-
 #[async_trait]
 impl<'a, RP> TransportConsumer for RecoverableAmqpConsumer<'a, RP>
 where
@@ -188,6 +246,18 @@ where
         let this = self.project();
         let client = this.client.get_mut();
         let consumer = this.consumer.get_mut();
+
+        if consumer.prefetch_count == 0 {
+            let credit = this.maximum_event_count.unwrap_or(1);
+            let fut = set_credit(client, consumer, credit);
+            futures_util::pin_mut!(fut);
+            let poll = fut.poll_unpin(cx);
+            if let Err(err) = futures_util::ready!(poll) {
+                *this.maximum_event_count = Some(0);
+                return Poll::Ready(Some(Err(err)));
+            }
+        }
+
         let fut = receive_event(client, consumer);
         futures_util::pin_mut!(fut);
         let poll = fut.poll_unpin(cx);
