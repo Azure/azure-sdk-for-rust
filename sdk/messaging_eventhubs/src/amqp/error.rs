@@ -339,6 +339,24 @@ pub enum OpenConsumerError {
     Elapsed(#[from] Elapsed),
 }
 
+impl IntoAzureCoreError for OpenConsumerError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            OpenConsumerError::ParseEndpoint(err) => err.into(),
+            OpenConsumerError::ConnectionScopeDisposed => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
+            OpenConsumerError::CbsAuth(err) => err.into_azure_core_error(),
+            OpenConsumerError::Session(err) => err.into_azure_core_error(),
+            OpenConsumerError::ReceiverLink(err) => err.into_azure_core_error(),
+            OpenConsumerError::ConsumerFilter(err) => err.into_azure_core_error(),
+            OpenConsumerError::Elapsed(err) => err.into_azure_core_error(),
+        }
+    }
+}
+
 /// Error closing the AMQP connection and AMQP session
 #[derive(Debug, thiserror::Error)]
 pub enum DisposeError {
@@ -940,6 +958,9 @@ pub enum RecoverAndReceiveError {
     Disposition(#[from] DispositionError),
 
     #[error(transparent)]
+    SessionEnd(#[from] fe2o3_amqp::session::Error),
+
+    #[error(transparent)]
     Elapsed(#[from] Elapsed),
 }
 
@@ -973,6 +994,15 @@ impl From<RecoverConsumerError> for RecoverAndReceiveError {
     }
 }
 
+impl From<DisposeConsumerError> for RecoverAndReceiveError {
+    fn from(value: DisposeConsumerError) -> Self {
+        match value {
+            DisposeConsumerError::Receiver(err) => err.into(),
+            DisposeConsumerError::Session(err) => err.into(),
+        }
+    }
+}
+
 impl RecoverableError for RecoverAndReceiveError {
     fn should_try_recover(&self) -> bool {
         match self {
@@ -987,6 +1017,7 @@ impl RecoverableError for RecoverAndReceiveError {
             RecoverAndReceiveError::SenderResume(_) => true,
             RecoverAndReceiveError::Disposition(_) => true,
             RecoverAndReceiveError::Elapsed(_) => true,
+            RecoverAndReceiveError::SessionEnd(_) => true, // TODO: should this be true?
         }
     }
 

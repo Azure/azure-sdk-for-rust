@@ -185,6 +185,14 @@ where
         }
     }
 
+    pub(crate) async fn get_partition_ids<RP>(&mut self, retry_policy: RP) -> Result<Vec<String>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let properties = self.get_properties(retry_policy).await?;
+        Ok(properties.partition_ids)
+    }
+
     pub(crate) async fn get_partition_properties<RP>(
         &mut self,
         partition_id: &str,
@@ -256,8 +264,8 @@ where
 
     pub async fn create_transport_consumer<RP>(
         &mut self,
-        consumer_group: String,
-        partition_id: String,
+        consumer_group: &str,
+        partition_id: &str,
         consumer_identifier: Option<String>,
         event_position: EventPosition,
         retry_policy: RP,

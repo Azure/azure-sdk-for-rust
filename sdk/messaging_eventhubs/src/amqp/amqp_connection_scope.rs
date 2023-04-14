@@ -421,8 +421,8 @@ impl AmqpConnectionScope {
 
     pub(crate) async fn open_consumer_link<RP>(
         &mut self,
-        consumer_group: String,
-        partition_id: String,
+        consumer_group: &str,
+        partition_id: &str,
         event_position: EventPosition,
         prefetch_count: u32,
         // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?

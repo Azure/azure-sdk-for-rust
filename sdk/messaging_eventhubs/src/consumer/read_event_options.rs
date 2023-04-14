@@ -1,10 +1,10 @@
 use std::time::Duration;
 
 /// The default number of events that will be read from the Event Hubs service and held in a local memory
-pub const DEFAULT_CACHE_EVENT_COUNT: usize = 100;
+pub const DEFAULT_CACHE_EVENT_COUNT: u32 = 100;
 
 /// The default number of events that will be eagerly requested from the Event Hubs service when reading is active and
-pub const DEFAULT_PREFETCH_COUNT: usize = 300;
+pub const DEFAULT_PREFETCH_COUNT: u32 = 300;
 
 /// The set of options that can be specified to configure behavior when reading events from an
 /// `EventHubConsumerClient`
@@ -23,15 +23,15 @@ pub struct ReadEventOptions {
     /// The maximum number of events that will be read from the Event Hubs service and held in a local memory
     /// cache when reading is active and events are being emitted to an enumerator for processing.
     ///
-    /// Default to [`DEFAULT_CACHE_EVENT_COUNT`]
-    pub cache_event_count: usize,
+    /// Default to [`Some(DEFAULT_CACHE_EVENT_COUNT)`]
+    pub cache_event_count: Option<u32>,
 
     /// The number of events that will be eagerly requested from the Event Hubs service and queued locally without regard to
     /// whether a read operation is currently active, intended to help maximize throughput by allowing events to be read from
     /// from a local cache rather than waiting on a service request.
     ///
     /// Default to [`DEFAULT_PREFETCH_COUNT`]
-    pub prefetch_count: usize,
+    pub prefetch_count: u32,
 
     /// The desired number of bytes to attempt to eagerly request from the Event Hubs service and queued locally without regard to
     /// whether a read operation is currently active, intended to help maximize throughput by allowing events to be read from
@@ -56,16 +56,19 @@ pub struct ReadEventOptions {
     /// When an exclusive reader is used, other readers which are non-exclusive or which have a lower owner level will either
     /// not be allowed to be created, if they already exist, will encounter an exception during the next attempted operation.
     pub owner_level: Option<i64>,
+
+    pub track_last_enqueued_event_properties: bool,
 }
 
 impl Default for ReadEventOptions {
     fn default() -> Self {
         Self {
             maximum_wait_time: None,
-            cache_event_count: DEFAULT_CACHE_EVENT_COUNT,
+            cache_event_count: Some(DEFAULT_CACHE_EVENT_COUNT),
             prefetch_count: DEFAULT_PREFETCH_COUNT,
             prefetch_size_in_bytes: None,
             owner_level: None,
+            track_last_enqueued_event_properties: true,
         }
     }
 }

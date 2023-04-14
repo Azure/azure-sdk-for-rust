@@ -187,41 +187,51 @@ where
 }
 
 pub struct RecoverableAmqpConsumer<'a, RP> {
-    consumer: &'a mut AmqpConsumer<RP>,
+    /// Wrapping the consumer in an Option doesn't change the memory size.
+    consumer: Option<AmqpConsumer<RP>>,
     client: &'a mut Sharable<AmqpClient>,
 }
 
-#[async_trait]
-impl<'a, RP> TransportConsumer for RecoverableAmqpConsumer<'a, RP>
-where
-    RP: EventHubsRetryPolicy + Send,
-{
-    type ReceivedEvent = ReceivedEvent;
-    type ReceiveError = RecoverAndReceiveError;
-    type Stream<'s> = EventStream<'s, RP> where RP: 's, Self: 's;
-
-    fn last_received_event(&self) -> Option<&Self::ReceivedEvent> {
-        self.consumer.last_received_event.as_ref()
-    }
-
-    fn receive(
-        &mut self,
-        maximum_event_count: Option<u32>,
-        maximum_wait_time: Option<StdDuration>,
-    ) -> Self::Stream<'_> {
-        EventStream {
-            consumer: self.consumer,
-            client: self.client,
-            maximum_event_count,
-            maximum_wait_time,
+impl<'a, RP> RecoverableAmqpConsumer<'a, RP> {
+    pub(crate) fn new(consumer: AmqpConsumer<RP>, client: &'a mut Sharable<AmqpClient>) -> Self {
+        Self {
+            consumer: Some(consumer),
+            client,
         }
     }
 }
 
+// #[async_trait]
+// impl<'a, RP> TransportConsumer for RecoverableAmqpConsumer<'a, RP>
+// where
+//     RP: EventHubsRetryPolicy + Send + Unpin,
+// {
+//     type ReceivedEvent = ReceivedEvent;
+//     type ReceiveError = RecoverAndReceiveError;
+//     type Stream<'s> = EventStream<'s, RP> where RP: 's, Self: 's;
+
+//     fn last_received_event(&self) -> Option<&Self::ReceivedEvent> {
+//         self.consumer.as_ref().and_then(|consumer| consumer.last_received_event.as_ref())
+//     }
+
+//     fn receive(
+//         &mut self,
+//         maximum_event_count: Option<u32>,
+//         maximum_wait_time: Option<StdDuration>,
+//     ) -> Self::Stream<'_> {
+//         EventStream {
+//             consumer: self.consumer.take(),
+//             client: self.client,
+//             maximum_event_count,
+//             maximum_wait_time,
+//         }
+//     }
+// }
+
 pin_project_lite::pin_project! {
     pub struct EventStream<'a, RP> {
         #[pin]
-        consumer: &'a mut AmqpConsumer<RP>,
+        consumer: Option<AmqpConsumer<RP>>,
 
         #[pin]
         client: &'a mut Sharable<AmqpClient>,
@@ -232,20 +242,44 @@ pin_project_lite::pin_project! {
     }
 }
 
+impl<'a, RP> EventStream<'a, RP> {
+    pub(crate) fn new(
+        consumer: AmqpConsumer<RP>,
+        client: &'a mut Sharable<AmqpClient>,
+        maximum_event_count: Option<u32>,
+        maximum_wait_time: Option<StdDuration>,
+    ) -> Self {
+        Self {
+            consumer: Some(consumer),
+            client,
+            maximum_event_count,
+            maximum_wait_time,
+        }
+    }
+}
+
 impl<'a, RP> Stream for EventStream<'a, RP>
 where
-    RP: EventHubsRetryPolicy + Send,
+    RP: EventHubsRetryPolicy + Send + Unpin,
 {
     type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         if self.maximum_event_count == Some(0) {
+            if let Some(consumer) = self.project().consumer.take() {
+                let fut = consumer.dispose();
+                futures_util::pin_mut!(fut);
+                futures_util::ready!(fut.poll_unpin(cx))?;
+            }
             return Poll::Ready(None);
         }
 
         let this = self.project();
         let client = this.client.get_mut();
-        let consumer = this.consumer.get_mut();
+        let consumer = match this.consumer.get_mut() {
+            Some(consumer) => consumer,
+            None => return Poll::Ready(None),
+        };
 
         if consumer.prefetch_count == 0 {
             let credit = this.maximum_event_count.unwrap_or(1);

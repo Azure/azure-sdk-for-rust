@@ -31,11 +31,11 @@ pub struct EventHubProducerClient<RP> {
 }
 
 impl EventHubProducerClient<BasicRetryPolicy> {
-    pub fn with_policy<P>() -> WithCustomRetryPolicy<P>
+    pub fn with_policy<P>() -> EventHubProducerClientBuilder<P>
     where
         P: EventHubsRetryPolicy + Send,
     {
-        WithCustomRetryPolicy {
+        EventHubProducerClientBuilder {
             _retry_policy_marker: PhantomData,
         }
     }
@@ -58,11 +58,11 @@ impl EventHubProducerClient<BasicRetryPolicy> {
     }
 }
 
-pub struct WithCustomRetryPolicy<RP> {
+pub struct EventHubProducerClientBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }
 
-impl<RP> WithCustomRetryPolicy<RP> {
+impl<RP> EventHubProducerClientBuilder<RP> {
     pub async fn new(
         self,
         connection_string: impl Into<String>,
@@ -253,6 +253,14 @@ where
     ) -> Result<EventHubProperties, azure_core::Error> {
         self.connection
             .get_properties(RP::from(self.options.retry_options.clone()))
+            .await
+    }
+
+    pub async fn get_partition_ids(
+        &mut self,
+    ) -> Result<Vec<String>, azure_core::Error> {
+        self.connection
+            .get_partition_ids(RP::from(self.options.retry_options.clone()))
             .await
     }
 
