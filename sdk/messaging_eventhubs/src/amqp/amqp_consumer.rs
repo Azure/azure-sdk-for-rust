@@ -25,24 +25,25 @@ impl<RP> AmqpConsumer<RP> {
     pub async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
         self.receiver.close().await?;
         self.session_handle.close().await?;
+        drop(self.session_handle);
         Ok(())
     }
 
     async fn receive_and_accept(&mut self) -> Result<ReceivedEvent, RecvError> {
-        println!("[receive_and_accept] receiver.recv()");
         let delivery = self.receiver.recv().await?;
         let delivery_info = DeliveryInfo::from(&delivery);
         let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
+
 
         if self.track_last_enqueued_event_properties {
             self.last_received_event = Some(event.clone());
         }
 
-        if event.offset() > i64::MIN {
-            self.current_event_position = Some(EventPosition::from_offset(event.offset(), false));
+        let event_offset = event.offset().unwrap_or(i64::MIN);
+        if event_offset > i64::MIN {
+            self.current_event_position = Some(EventPosition::from_offset(event_offset, false));
         }
 
-        println!("[receive_and_accept] receiver.accept()");
         self.receiver.accept(delivery_info).await?;
         Ok(event)
     }
@@ -144,7 +145,6 @@ where
     }
 
     let event = consumer.receive_and_accept().await?;
-    println!("[recover_and_recv] event: {:?}", event);
     Ok(event)
 }
 
@@ -157,23 +157,15 @@ where
 {
     let mut failed_attempts = 0;
     let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
-    let mut should_try_recover = true;
+    let mut should_try_recover = false;
 
     loop {
-        println!("[receive_event] try_timeout: {:?}", try_timeout);
-
         let fut = recover_and_recv(client, consumer, should_try_recover);
         let err = match util::time::timeout(try_timeout, fut).await {
             Ok(Ok(event)) => return Ok(event),
             Ok(Err(err)) => err,
             Err(elapsed) => elapsed.into(),
         };
-
-        println!(
-            "[receive_event] err: {:?}, is_scope_disposed: {}",
-            err,
-            err.is_scope_disposed()
-        );
 
         if err.is_scope_disposed() {
             return Err(err);
@@ -276,8 +268,6 @@ where
     type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        println!("[poll_next]: {:?}", self.maximum_event_count);
-
         let mut this = self.project();
         if *this.maximum_event_count == Some(0) {
             if let Some(consumer) = this.consumer.take() {
@@ -293,8 +283,6 @@ where
             }
             return Poll::Ready(None);
         } else {
-            println!("[poll_next]: {:?}", this.maximum_event_count);
-
             let mut client = this.client;
             let mut consumer = match this.consumer.as_mut().as_pin_mut() {
                 Some(consumer) => consumer,
@@ -302,7 +290,6 @@ where
             };
 
             if consumer.prefetch_count == 0 {
-                println!("[poll_next]: set_credit");
                 let credit = this.maximum_event_count.unwrap_or(1);
                 let fut = set_credit(*client, &mut *consumer, credit);
                 futures_util::pin_mut!(fut);
@@ -313,23 +300,9 @@ where
                 }
             }
 
-            println!("[poll_next]: receive_event");
             let fut = receive_event(*client, &mut *consumer);
             futures_util::pin_mut!(fut);
-            // match futures_util::ready!(poll) {
-            //     Ok(event) => {
-            //         println!(
-            //             "[poll_next]: event: {:?}, maximum_event_count: {:?}",
-            //             event, this.maximum_event_count
-            //         );
-            //         *this.maximum_event_count = this.maximum_event_count.map(|x| x - 1);
-            //         Poll::Ready(Some(Ok(event)))
-            //     },
-            //     Err(err) => {
-            //         *this.maximum_event_count = Some(0);
-            //         Poll::Ready(Some(Err(err)))
-            //     },
-            // }
+
             if let Poll::Ready(result) = fut.poll(cx) {
                 match result {
                     Ok(event) => {

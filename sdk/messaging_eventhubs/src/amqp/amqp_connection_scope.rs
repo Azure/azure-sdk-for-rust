@@ -565,7 +565,7 @@ impl AmqpConnectionScope {
 
     pub(crate) async fn dispose(&mut self) -> Result<(), DisposeError> {
         let mut is_disposed = self.is_disposed.load(Ordering::Relaxed);
-        if is_disposed {
+        if is_disposed || self.connection.handle.is_closed() {
             return Ok(());
         }
 
@@ -586,6 +586,7 @@ impl AmqpConnectionScope {
 
         let session_close_result = self.cbs_session_handle.close().await;
         let connection_close_result = self.connection.handle.close().await;
+
         match (session_close_result, connection_close_result) {
             (Ok(_), Ok(_)) => Ok(()),
             // Connection error has priority

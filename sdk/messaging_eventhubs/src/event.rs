@@ -178,16 +178,16 @@ impl ReceivedEvent {
             .unwrap_or_default()
     }
 
-    pub fn offset(&self) -> i64 {
+    pub fn offset(&self) -> Option<i64> {
         self.raw_amqp_message
             .message_annotations
             .as_ref()
             .and_then(|m| m.get(&amqp_property::OFFSET as &dyn AnnotationKey))
-            .map(|value| match value {
-                Value::Long(val) => *val,
+            .and_then(|value| match value {
+                Value::Long(val) => Some(*val),
+                Value::String(val) => val.parse().ok(),
                 _ => unreachable!("Expecting a Long"),
             })
-            .unwrap_or(i64::MIN)
     }
 
     pub fn enqueued_time(&self) -> OffsetDateTime {
