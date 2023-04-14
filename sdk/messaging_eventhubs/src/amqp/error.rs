@@ -4,7 +4,7 @@ use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{
         DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError,
-        ReceiverAttachError, ReceiverResumeErrorKind, SenderAttachError, SenderResumeErrorKind,
+        ReceiverAttachError, ReceiverResumeErrorKind, SenderAttachError, SenderResumeErrorKind, RecvError, IllegalLinkStateError, DispositionError,
     },
     session::{self, BeginError},
 };
@@ -907,5 +907,90 @@ impl RecoverableError for RecoverAndCallError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RecoverAndReceiveError {
+    #[error(transparent)]
+    Receive(#[from] RecvError),
 
+    #[error(transparent)]
+    SessionBegin(#[from] BeginError),
+
+    /// Error with resuming the sender
+    #[error(transparent)]
+    ReceiverResume(#[from] ReceiverResumeErrorKind),
+
+    #[error("Connection scope is disposed")]
+    ConnectionScopeDisposed,
+
+    #[error(transparent)]
+    Parse(#[from] url::ParseError),
+
+    #[error(transparent)]
+    Open(#[from] OpenError),
+
+    #[error(transparent)]
+    WebSocket(#[from] fe2o3_amqp_ws::Error),
+
+    #[error(transparent)]
+    LinkDetach(#[from] DetachError),
+
+    /// Error with resuming the sender
+    #[error(transparent)]
+    SenderResume(#[from] SenderResumeErrorKind),
+
+    #[error(transparent)]
+    Disposition(#[from] DispositionError),
+
+    #[error(transparent)]
+    Elapsed(#[from] Elapsed),
+}
+
+impl From<RecoverTransportClientError> for RecoverAndReceiveError {
+    fn from(value: RecoverTransportClientError) -> Self {
+        match value {
+            RecoverTransportClientError::Parse(err) => err.into(),
+            RecoverTransportClientError::Open(err) => err.into(),
+            RecoverTransportClientError::WebSocket(err) => err.into(),
+            RecoverTransportClientError::SessionBegin(err) => err.into(),
+            RecoverTransportClientError::LinkDetach(err) => err.into(),
+            RecoverTransportClientError::SenderResume(err) => err.into(),
+            RecoverTransportClientError::ReceiverResume(err) => err.into(),
+            RecoverTransportClientError::ConnectionScopeDisposed => {
+                RecoverAndReceiveError::ConnectionScopeDisposed
+            }
+        }
+    }
+}
+
+impl From<RecoverConsumerError> for RecoverAndReceiveError {
+    fn from(value: RecoverConsumerError) -> Self {
+        match value {
+            RecoverConsumerError::SessionBegin(err) => err.into(),
+            RecoverConsumerError::ConnectionScopeDisposed => {
+                RecoverAndReceiveError::ConnectionScopeDisposed
+            }
+            RecoverConsumerError::ReceiverDetach(err) => err.into(),
+            RecoverConsumerError::ReceiverResume(err) => err.into(),
+        }
+    }
+}
+
+impl RecoverableError for RecoverAndReceiveError {
+    fn should_try_recover(&self) -> bool {
+        match self {
+            RecoverAndReceiveError::Receive(_) => true,
+            RecoverAndReceiveError::SessionBegin(_) => true,
+            RecoverAndReceiveError::ReceiverResume(_) => true,
+            RecoverAndReceiveError::ConnectionScopeDisposed => false,
+            RecoverAndReceiveError::Parse(_) => false,
+            RecoverAndReceiveError::Open(_) => false,
+            RecoverAndReceiveError::WebSocket(_) => false,
+            RecoverAndReceiveError::LinkDetach(_) => true,
+            RecoverAndReceiveError::SenderResume(_) => true,
+            RecoverAndReceiveError::Disposition(_) => true,
+            RecoverAndReceiveError::Elapsed(_) => true,
+        }
+    }
+
+    fn is_scope_disposed(&self) -> bool {
+        matches!(self, RecoverAndReceiveError::ConnectionScopeDisposed)
+    }
 }

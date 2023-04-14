@@ -464,6 +464,7 @@ impl AmqpConnectionScope {
             current_event_position: None,
             last_received_event: None,
             retry_policy,
+            prefetch_count,
         })
     }
 
