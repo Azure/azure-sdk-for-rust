@@ -54,7 +54,7 @@ async fn producer_client_can_send_an_event_to_a_partition() {
         .await
         .unwrap();
 
-    let event = "Hello, world!";
+    let event = "Hello, world to partition 0";
     let options = SendEventOptions::new().with_partition_id("0");
     producer_client.send_event(event, options).await.unwrap();
 

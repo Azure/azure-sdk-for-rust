@@ -22,6 +22,8 @@ pub struct EventHubConsumerClient<RP> {
 }
 
 impl EventHubConsumerClient<BasicRetryPolicy> {
+    pub const DEFAULT_CONSUMER_GROUP_NAME: &'static str = "$Default";
+
     pub fn with_policy<P>() -> EventHubConsumerClientBuilder<P>
     where
         P: EventHubsRetryPolicy + Send,
@@ -147,6 +149,8 @@ where
             Some(read_event_options.prefetch_count),
         ).await?;
 
+        println!("Created consumer");
+
         let event_stream = EventStream::new(
             consumer,
             &mut self.connection.inner,
@@ -154,5 +158,9 @@ where
             read_event_options.maximum_wait_time
         );
         Ok(event_stream)
+    }
+
+    pub async fn close(self) -> Result<(), azure_core::Error> {
+        self.connection.close_if_owned().await
     }
 }

@@ -51,6 +51,8 @@ pub(crate) use timer_kit::Key;
 use super::IntoAzureCoreError;
 pub(crate) type DelayQueue<T> = timer_kit::DelayQueue<Delay, T>;
 
+pub(crate) type Sleep = timer_kit::Sleep<Delay>;
+
 pub(crate) async fn sleep(duration: Duration) -> <Delay as timer_kit::Delay>::Value {
     timer_kit::sleep::<Delay>(duration).await
 }

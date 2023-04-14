@@ -2,9 +2,9 @@ use std::{time::Duration as StdDuration, task::{Poll, Context}, pin::Pin};
 
 use async_trait::async_trait;
 use fe2o3_amqp::{session::SessionHandle, Receiver, link::{RecvError, delivery::DeliveryInfo}};
-use futures_util::{Sink, SinkExt, Stream, FutureExt};
+use futures_util::{Sink, SinkExt, Stream, FutureExt, Future};
 
-use crate::{core::{TransportConsumer, RecoverableTransport, RecoverableError, TransportClient}, event_hubs_retry_policy::EventHubsRetryPolicy, util::{sharable::Sharable, self}, ReceivedEvent, consumer::EventPosition};
+use crate::{core::{TransportConsumer, RecoverableTransport, RecoverableError, TransportClient}, event_hubs_retry_policy::EventHubsRetryPolicy, util::{sharable::Sharable, self, time::Sleep}, ReceivedEvent, consumer::EventPosition};
 
 use super::{amqp_client::AmqpClient, error::{RecoverAndReceiveError, DisposeConsumerError}};
 
@@ -29,6 +29,7 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     async fn receive_and_accept(&mut self) -> Result<ReceivedEvent, RecvError> {
+        println!("[receive_and_accept] receiver.recv()");
         let delivery = self.receiver.recv().await?;
         let delivery_info = DeliveryInfo::from(&delivery);
         let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
@@ -41,6 +42,7 @@ impl<RP> AmqpConsumer<RP> {
             self.current_event_position = Some(EventPosition::from_offset(event.offset(), false));
         }
 
+        println!("[receive_and_accept] receiver.accept()");
         self.receiver.accept(delivery_info).await?;
         Ok(event)
     }
@@ -142,6 +144,7 @@ where
     }
 
     let event = consumer.receive_and_accept().await?;
+    println!("[recover_and_recv] event: {:?}", event);
     Ok(event)
 }
 
@@ -157,12 +160,20 @@ where
     let mut should_try_recover = true;
 
     loop {
+        println!("[receive_event] try_timeout: {:?}", try_timeout);
+
         let fut = recover_and_recv(client, consumer, should_try_recover);
         let err = match util::time::timeout(try_timeout, fut).await {
             Ok(Ok(event)) => return Ok(event),
             Ok(Err(err)) => err,
             Err(elapsed) => elapsed.into(),
         };
+
+        println!(
+            "[receive_event] err: {:?}, is_scope_disposed: {}",
+            err,
+            err.is_scope_disposed()
+        );
 
         if err.is_scope_disposed() {
             return Err(err);
@@ -238,7 +249,7 @@ pin_project_lite::pin_project! {
 
         maximum_event_count: Option<u32>,
 
-        maximum_wait_time: Option<StdDuration>,
+        maximum_wait_time: Option<Sleep>,
     }
 }
 
@@ -253,7 +264,7 @@ impl<'a, RP> EventStream<'a, RP> {
             consumer: Some(consumer),
             client,
             maximum_event_count,
-            maximum_wait_time,
+            maximum_wait_time: maximum_wait_time.map(|d| Sleep::new(d)),
         }
     }
 }
@@ -265,45 +276,90 @@ where
     type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        if self.maximum_event_count == Some(0) {
-            if let Some(consumer) = self.project().consumer.take() {
+        println!("[poll_next]: {:?}", self.maximum_event_count);
+
+        let mut this = self.project();
+        if *this.maximum_event_count == Some(0) {
+            if let Some(consumer) = this.consumer.take() {
                 let fut = consumer.dispose();
                 futures_util::pin_mut!(fut);
-                futures_util::ready!(fut.poll_unpin(cx))?;
+                match Future::poll(fut, cx) {
+                    Poll::Ready(Ok(_)) => {}
+                    Poll::Ready(Err(err)) => {
+                        return Poll::Ready(Some(Err(RecoverAndReceiveError::from(err))))
+                    }
+                    Poll::Pending => return Poll::Pending,
+                }
             }
             return Poll::Ready(None);
-        }
+        } else {
+            println!("[poll_next]: {:?}", this.maximum_event_count);
 
-        let this = self.project();
-        let client = this.client.get_mut();
-        let consumer = match this.consumer.get_mut() {
-            Some(consumer) => consumer,
-            None => return Poll::Ready(None),
-        };
+            let mut client = this.client;
+            let mut consumer = match this.consumer.as_mut().as_pin_mut() {
+                Some(consumer) => consumer,
+                None => return Poll::Ready(None),
+            };
 
-        if consumer.prefetch_count == 0 {
-            let credit = this.maximum_event_count.unwrap_or(1);
-            let fut = set_credit(client, consumer, credit);
+            if consumer.prefetch_count == 0 {
+                println!("[poll_next]: set_credit");
+                let credit = this.maximum_event_count.unwrap_or(1);
+                let fut = set_credit(*client, &mut *consumer, credit);
+                futures_util::pin_mut!(fut);
+                let poll = fut.poll(cx);
+                if let Poll::Ready(Err(err)) = poll {
+                    *this.maximum_event_count = Some(0);
+                    return Poll::Ready(Some(Err(err)));
+                }
+            }
+
+            println!("[poll_next]: receive_event");
+            let fut = receive_event(*client, &mut *consumer);
             futures_util::pin_mut!(fut);
-            let poll = fut.poll_unpin(cx);
-            if let Err(err) = futures_util::ready!(poll) {
-                *this.maximum_event_count = Some(0);
-                return Poll::Ready(Some(Err(err)));
+            // match futures_util::ready!(poll) {
+            //     Ok(event) => {
+            //         println!(
+            //             "[poll_next]: event: {:?}, maximum_event_count: {:?}",
+            //             event, this.maximum_event_count
+            //         );
+            //         *this.maximum_event_count = this.maximum_event_count.map(|x| x - 1);
+            //         Poll::Ready(Some(Ok(event)))
+            //     },
+            //     Err(err) => {
+            //         *this.maximum_event_count = Some(0);
+            //         Poll::Ready(Some(Err(err)))
+            //     },
+            // }
+            if let Poll::Ready(result) = fut.poll(cx) {
+                match result {
+                    Ok(event) => {
+                        *this.maximum_event_count = this.maximum_event_count.map(|x| x - 1);
+                        return Poll::Ready(Some(Ok(event)))
+                    }
+                    Err(err) => {
+                        *this.maximum_event_count = Some(0);
+                        return Poll::Ready(Some(Err(err)))
+                    }
+                }
             }
         }
 
-        let fut = receive_event(client, consumer);
-        futures_util::pin_mut!(fut);
-        let poll = fut.poll_unpin(cx);
-        match futures_util::ready!(poll) {
-            Ok(event) => {
-                *this.maximum_event_count = this.maximum_event_count.map(|x| x - 1);
-                Poll::Ready(Some(Ok(event)))
+        match this.maximum_wait_time.as_mut().map(|delay| Future::poll(Pin::new(delay), cx)) {
+            Some(Poll::Ready(_)) => {
+                if let Some(consumer) = this.consumer.take() {
+                let fut = consumer.dispose();
+                futures_util::pin_mut!(fut);
+                match Future::poll(fut, cx) {
+                    Poll::Ready(Ok(_)) => {}
+                    Poll::Ready(Err(err)) => {
+                        return Poll::Ready(Some(Err(RecoverAndReceiveError::from(err))))
+                    }
+                    Poll::Pending => return Poll::Pending,
+                }
+            }
+                Poll::Ready(None)
             },
-            Err(err) => {
-                *this.maximum_event_count = Some(0);
-                Poll::Ready(Some(Err(err)))
-            },
+            _ => Poll::Pending,
         }
     }
 }
