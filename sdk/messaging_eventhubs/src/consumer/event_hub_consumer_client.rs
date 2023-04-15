@@ -1,10 +1,7 @@
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
 
 use crate::{
-    amqp::{
-        amqp_client::AmqpClient,
-        amqp_consumer::{EventStream},
-    },
+    amqp::{amqp_client::AmqpClient, amqp_consumer::EventStream},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,

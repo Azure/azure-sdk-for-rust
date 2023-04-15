@@ -4,7 +4,6 @@ use std::{
     time::Duration as StdDuration,
 };
 
-
 use fe2o3_amqp::{
     link::{delivery::DeliveryInfo, RecvError},
     session::SessionHandle,
@@ -12,6 +11,7 @@ use fe2o3_amqp::{
 };
 use futures_util::{Future, FutureExt, SinkExt, Stream};
 use tokio::sync::mpsc;
+use url::Url;
 
 use crate::{
     consumer::EventPosition,
@@ -30,6 +30,7 @@ use super::{
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
     pub(crate) session_identifier: u32,
+    pub(crate) endpoint: Url,
     pub(crate) receiver: Receiver,
     pub(crate) link_identifier: u32,
     pub(crate) invalidate_consumer_when_partition_stolen: bool,

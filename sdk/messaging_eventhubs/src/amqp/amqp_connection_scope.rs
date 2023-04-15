@@ -432,7 +432,7 @@ impl AmqpConnectionScope {
 
         let (session_handle, receiver) = self
             .create_receiving_session_and_link(
-                consumer_endpoint,
+                &consumer_endpoint,
                 event_position,
                 prefetch_count,
                 // prefetch_size_in_bytes,
@@ -455,12 +455,13 @@ impl AmqpConnectionScope {
             retry_policy,
             prefetch_count,
             cbs_command_sender: self.cbs_link_handle.command_sender().clone(),
+            endpoint: consumer_endpoint,
         })
     }
 
     async fn create_receiving_session_and_link(
         &mut self,
-        endpoint: Url,
+        endpoint: &Url,
         event_position: EventPosition,
         prefetch_count: u32,
         // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
@@ -497,7 +498,7 @@ impl AmqpConnectionScope {
         );
         let consumer_filter = ConsumerFilter(amqp_filter::build_filter_expression(event_position)?);
         let source = Source::builder()
-            .address(endpoint)
+            .address(endpoint.to_string())
             .add_to_filter(amqp_filter::CONSUMER_FILTER_NAME, consumer_filter)
             .build();
 

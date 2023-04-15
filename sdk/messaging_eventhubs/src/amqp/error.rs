@@ -3,8 +3,9 @@
 use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{
-        DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError, DispositionError, ReceiverAttachError, ReceiverResumeErrorKind, RecvError,
-        SenderAttachError, SenderResumeErrorKind,
+        DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError, DispositionError,
+        ReceiverAttachError, ReceiverResumeErrorKind, RecvError, SenderAttachError,
+        SenderResumeErrorKind,
     },
     session::{self, BeginError},
 };
@@ -578,7 +579,7 @@ impl RecoverableError for RecoverProducerError {
             RecoverProducerError::SenderResume(_) => true,
             RecoverProducerError::ConnectionScopeDisposed => false,
             RecoverProducerError::ParseEndpoint(_) => false,
-            RecoverProducerError::CbsAuth(_) => false,
+            RecoverProducerError::CbsAuth(_) => true,
             RecoverProducerError::SenderAttach(_) => true,
             RecoverProducerError::Elapsed(_) => true,
         }
@@ -667,7 +668,7 @@ impl RecoverableError for RecoverAndSendError {
             // The first time we try to send after a forced closure may fail with timeout
             RecoverAndSendError::Elapsed(_) => true,
             RecoverAndSendError::ParseEndpoint(_) => false,
-            RecoverAndSendError::CbsAuth(_) => false,
+            RecoverAndSendError::CbsAuth(_) => true,
         }
     }
 
@@ -697,6 +698,9 @@ impl IntoAzureCoreError for RecoverAndSendError {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RecoverConsumerError {
+    #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+
     #[error(transparent)]
     SessionBegin(#[from] BeginError),
 
@@ -926,6 +930,9 @@ impl RecoverableError for RecoverAndCallError {
 #[derive(Debug, thiserror::Error)]
 pub enum RecoverAndReceiveError {
     #[error(transparent)]
+    CbsAuth(#[from] CbsAuthError),
+
+    #[error(transparent)]
     Receive(#[from] RecvError),
 
     #[error(transparent)]
@@ -990,6 +997,7 @@ impl From<RecoverConsumerError> for RecoverAndReceiveError {
             }
             RecoverConsumerError::ReceiverDetach(err) => err.into(),
             RecoverConsumerError::ReceiverResume(err) => err.into(),
+            RecoverConsumerError::CbsAuth(err) => err.into(),
         }
     }
 }
@@ -1018,6 +1026,7 @@ impl RecoverableError for RecoverAndReceiveError {
             RecoverAndReceiveError::Disposition(_) => true,
             RecoverAndReceiveError::Elapsed(_) => true,
             RecoverAndReceiveError::SessionEnd(_) => true, // TODO: should this be true?
+            RecoverAndReceiveError::CbsAuth(_) => true,
         }
     }
 

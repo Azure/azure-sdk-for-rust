@@ -1,7 +1,9 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use async_trait::async_trait;
-use fe2o3_amqp::Session;
+use fe2o3_amqp::{link::ReceiverAttachExchange, Session};
+use fe2o3_amqp_types::messaging::{Body, Modified};
+use serde_amqp::Value;
 use url::Url;
 
 use crate::{
@@ -318,19 +320,65 @@ impl TransportClient for AmqpClient {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        if consumer.session_handle.is_ended() {
+        let endpoint = consumer.endpoint.to_string();
+        let resource = endpoint.clone();
+        let required_claims = vec![event_hub_claim::LISTEN.to_string()];
+        self.connection_scope
+            .request_refreshable_authorization_using_cbs(
+                consumer.link_identifier,
+                endpoint,
+                resource,
+                required_claims,
+            )
+            .await?;
+
+        let mut exchange = if consumer.session_handle.is_ended() {
             let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
-            consumer
+            let exchange = consumer
                 .receiver
                 .detach_then_resume_on_session(&new_session)
                 .await?;
             let mut old_session = std::mem::replace(&mut consumer.session_handle, new_session);
             let _ = old_session.end().await;
+            exchange
         } else {
             consumer
                 .receiver
                 .detach_then_resume_on_session(&consumer.session_handle)
-                .await?;
+                .await?
+        };
+
+        // `ReceiverAttachExchange::Complete` => Resume is complete
+        //
+        // `ReceiverAttachExchange::IncompleteUnsettled` => There are unsettled messages, multiple
+        // detach and re-attach may happen in order to reduce the number of unsettled messages.
+        //
+        // `ReceiverAttachExchange::Resume` => There is one message that is partially transferred,
+        // so it would be OK to let the user use the receiver to receive the message
+        while let ReceiverAttachExchange::IncompleteUnsettled = exchange {
+            match consumer.receiver.recv::<Body<Value>>().await {
+                Ok(delivery) => {
+                    let modified = Modified {
+                        delivery_failed: None,
+                        undeliverable_here: None,
+                        message_annotations: None,
+                    };
+                    if let Err(err) = consumer.receiver.modify(delivery, modified).await {
+                        log::error!("Failed to abandon message: {}", err);
+                        exchange = consumer
+                            .receiver
+                            .detach_then_resume_on_session(&consumer.session_handle)
+                            .await?;
+                    }
+                }
+                Err(err) => {
+                    log::error!("Failed to receive message while trying to settle (abandon) the unsettled: {}", err);
+                    exchange = consumer
+                        .receiver
+                        .detach_then_resume_on_session(&consumer.session_handle)
+                        .await?;
+                }
+            }
         }
 
         Ok(())

@@ -1,7 +1,5 @@
 use time::OffsetDateTime;
 
-
-
 const START_OF_STREAM_OFFSET: &str = "-1";
 const END_OF_STREAM_OFFSET: &str = "@latest";
 
