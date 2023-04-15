@@ -9,7 +9,7 @@ use messaging_eventhubs::{
 mod common;
 
 #[tokio::test]
-async fn event_consumer_can_receive_from_partition() {
+async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins() {
     common::setup_dotenv();
 
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace")).init();
@@ -19,7 +19,7 @@ async fn event_consumer_can_receive_from_partition() {
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
 
     let mut retry_options = EventHubsRetryOptions::default();
-    retry_options.max_retries = MaxRetries(2);
+    retry_options.max_retries = MaxRetries(3);
     retry_options.try_timeout = std::time::Duration::from_secs(5);
     let mut options = EventHubConsumeClientOptions::default();
     options.retry_options = retry_options;
@@ -34,7 +34,7 @@ async fn event_consumer_can_receive_from_partition() {
     let mut options = ReadEventOptions::default();
     // options.cache_event_count = Some(3);
     options.cache_event_count = None;
-    options.maximum_wait_time = Some(std::time::Duration::from_secs(100));
+    options.maximum_wait_time = Some(std::time::Duration::from_secs(10 * 60));
 
     let mut stream = consumer
         .read_events_from_partition(partition_id, starting_position, options)

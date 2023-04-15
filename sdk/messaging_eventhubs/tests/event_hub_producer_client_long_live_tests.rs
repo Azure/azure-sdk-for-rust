@@ -9,7 +9,7 @@ use messaging_eventhubs::producer::{
 mod common;
 
 #[tokio::test]
-async fn producer_client_send_one_event_per_minute() {
+async fn producer_client_send_one_event_per_minute_for_10_mins() {
     common::setup_dotenv();
 
     // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace")).init();

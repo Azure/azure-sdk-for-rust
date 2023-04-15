@@ -142,6 +142,7 @@ async fn recover_and_recv<RP>(
 where
     RP: EventHubsRetryPolicy + Send,
 {
+    log::debug!("should_try_recover: {:?}", should_try_recover);
     if should_try_recover {
         if let Err(recovery_err) = client.recover().await {
             log::error!("Failed to recover client: {:?}", recovery_err);
