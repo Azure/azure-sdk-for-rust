@@ -47,6 +47,7 @@ fe2o3-amqp-ws = "0.3.1"
 dotenv = "0.15"
 tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
 env_logger = "0.10.0"
+fe2o3-amqp = { version = "0.8.21", features = ["log"] }
 
 [features]
 default = ["native-tls"]
