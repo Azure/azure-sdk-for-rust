@@ -185,7 +185,10 @@ where
         }
     }
 
-    pub(crate) async fn get_partition_ids<RP>(&mut self, retry_policy: RP) -> Result<Vec<String>, azure_core::Error>
+    pub(crate) async fn get_partition_ids<RP>(
+        &mut self,
+        retry_policy: RP,
+    ) -> Result<Vec<String>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
     {

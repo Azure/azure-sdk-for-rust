@@ -1,3 +1,1 @@
-pub struct PartitionReceiver {
-
-}
+pub struct PartitionReceiver {}

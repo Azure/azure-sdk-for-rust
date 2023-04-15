@@ -1,6 +1,6 @@
 use time::OffsetDateTime;
 
-use super::error::OffsetIsEmpty;
+
 
 const START_OF_STREAM_OFFSET: &str = "-1";
 const END_OF_STREAM_OFFSET: &str = "@latest";
@@ -56,10 +56,7 @@ impl EventPosition {
     ///
     /// - `offset` - The offset of an event with respect to its relative position in the partition.
     /// - `is_inclusive` - >If true, the event at the `offset` is included; otherwise the next event in sequence will be received.
-    pub fn from_offset(
-        offset: i64,
-        is_inclusive: bool,
-    ) -> Self {
+    pub fn from_offset(offset: i64, is_inclusive: bool) -> Self {
         Self::Offset {
             offset: offset.to_string(),
             is_inclusive,

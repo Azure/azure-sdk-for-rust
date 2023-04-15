@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use azure_core::Url;
 use fe2o3_amqp::{session::SessionHandle, Sender};
 use fe2o3_amqp_types::messaging::Outcome;
+use tokio::sync::mpsc;
 
 use crate::{
     amqp::amqp_message_converter::create_envelope_from_events,
@@ -20,6 +21,7 @@ use crate::{
 };
 
 use super::{
+    amqp_cbs_link::Command,
     amqp_client::AmqpClient,
     amqp_event_batch::AmqpEventBatch,
     amqp_message_converter::{
@@ -39,6 +41,7 @@ pub struct AmqpProducer<RP> {
     pub(crate) initialized_partition_properties: PartitionPublishingOptions,
     pub(crate) retry_policy: RP,
     pub(crate) endpoint: Url,
+    pub(crate) cbs_command_sender: mpsc::Sender<Command>,
 }
 
 impl<RP> AmqpProducer<RP> {
@@ -128,6 +131,12 @@ impl<RP> AmqpProducer<RP> {
     }
 
     pub(crate) async fn dispose(mut self) -> Result<(), DisposeProducerError> {
+        // There is no need to remove the refresher if CBS link is already stopped
+        let _ = self
+            .cbs_command_sender
+            .send(Command::RemoveAuthorizationRefresher(self.link_identifier))
+            .await;
+
         self.sender.close().await?;
         self.session_handle.close().await?;
         Ok(())

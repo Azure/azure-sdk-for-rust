@@ -1,12 +1,31 @@
-use std::{time::Duration as StdDuration, task::{Poll, Context}, pin::Pin};
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+    time::Duration as StdDuration,
+};
 
-use async_trait::async_trait;
-use fe2o3_amqp::{session::SessionHandle, Receiver, link::{RecvError, delivery::DeliveryInfo}};
-use futures_util::{Sink, SinkExt, Stream, FutureExt, Future};
 
-use crate::{core::{TransportConsumer, RecoverableTransport, RecoverableError, TransportClient}, event_hubs_retry_policy::EventHubsRetryPolicy, util::{sharable::Sharable, self, time::Sleep}, ReceivedEvent, consumer::EventPosition};
+use fe2o3_amqp::{
+    link::{delivery::DeliveryInfo, RecvError},
+    session::SessionHandle,
+    Receiver,
+};
+use futures_util::{Future, FutureExt, SinkExt, Stream};
+use tokio::sync::mpsc;
 
-use super::{amqp_client::AmqpClient, error::{RecoverAndReceiveError, DisposeConsumerError}};
+use crate::{
+    consumer::EventPosition,
+    core::{RecoverableError, RecoverableTransport, TransportClient, TransportConsumer},
+    event_hubs_retry_policy::EventHubsRetryPolicy,
+    util::{self, sharable::Sharable, time::Sleep},
+    ReceivedEvent,
+};
+
+use super::{
+    amqp_cbs_link::Command,
+    amqp_client::AmqpClient,
+    error::{DisposeConsumerError, RecoverAndReceiveError},
+};
 
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
@@ -19,10 +38,17 @@ pub struct AmqpConsumer<RP> {
     pub(crate) current_event_position: Option<EventPosition>,
     pub(crate) retry_policy: RP,
     pub(crate) prefetch_count: u32,
+    pub(crate) cbs_command_sender: mpsc::Sender<Command>,
 }
 
 impl<RP> AmqpConsumer<RP> {
     pub async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
+        // There is no need to remove the refresher if CBS link is already stopped
+        let _ = self
+            .cbs_command_sender
+            .send(Command::RemoveAuthorizationRefresher(self.link_identifier))
+            .await;
+
         self.receiver.close().await?;
         self.session_handle.close().await?;
         drop(self.session_handle);
@@ -33,7 +59,6 @@ impl<RP> AmqpConsumer<RP> {
         let delivery = self.receiver.recv().await?;
         let delivery_info = DeliveryInfo::from(&delivery);
         let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
-
 
         if self.track_last_enqueued_event_properties {
             self.last_received_event = Some(event.clone());
@@ -69,13 +94,7 @@ where
         // reattach the link
         match client {
             Sharable::Owned(client) => client.recover_consumer(consumer).await?,
-            Sharable::Shared(client) => {
-                client
-                    .lock()
-                    .await
-                    .recover_consumer(consumer)
-                    .await?
-            }
+            Sharable::Shared(client) => client.lock().await.recover_consumer(consumer).await?,
             Sharable::None => return Err(RecoverAndReceiveError::ConnectionScopeDisposed),
         }
     }
@@ -133,13 +152,7 @@ where
         // reattach the link
         match client {
             Sharable::Owned(client) => client.recover_consumer(consumer).await?,
-            Sharable::Shared(client) => {
-                client
-                    .lock()
-                    .await
-                    .recover_consumer(consumer)
-                    .await?
-            }
+            Sharable::Shared(client) => client.lock().await.recover_consumer(consumer).await?,
             Sharable::None => return Err(RecoverAndReceiveError::ConnectionScopeDisposed),
         }
     }
@@ -180,9 +193,7 @@ where
         match retry_delay {
             Some(retry_delay) => {
                 util::time::sleep(retry_delay).await;
-                try_timeout = consumer
-                    .retry_policy
-                    .calculate_try_timeout(failed_attempts);
+                try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
             }
             None => return Err(err),
         }
@@ -307,31 +318,35 @@ where
                 match result {
                     Ok(event) => {
                         *this.maximum_event_count = this.maximum_event_count.map(|x| x - 1);
-                        return Poll::Ready(Some(Ok(event)))
+                        return Poll::Ready(Some(Ok(event)));
                     }
                     Err(err) => {
                         *this.maximum_event_count = Some(0);
-                        return Poll::Ready(Some(Err(err)))
+                        return Poll::Ready(Some(Err(err)));
                     }
                 }
             }
         }
 
-        match this.maximum_wait_time.as_mut().map(|delay| Future::poll(Pin::new(delay), cx)) {
+        match this
+            .maximum_wait_time
+            .as_mut()
+            .map(|delay| Future::poll(Pin::new(delay), cx))
+        {
             Some(Poll::Ready(_)) => {
                 if let Some(consumer) = this.consumer.take() {
-                let fut = consumer.dispose();
-                futures_util::pin_mut!(fut);
-                match Future::poll(fut, cx) {
-                    Poll::Ready(Ok(_)) => {}
-                    Poll::Ready(Err(err)) => {
-                        return Poll::Ready(Some(Err(RecoverAndReceiveError::from(err))))
+                    let fut = consumer.dispose();
+                    futures_util::pin_mut!(fut);
+                    match Future::poll(fut, cx) {
+                        Poll::Ready(Ok(_)) => {}
+                        Poll::Ready(Err(err)) => {
+                            return Poll::Ready(Some(Err(RecoverAndReceiveError::from(err))))
+                        }
+                        Poll::Pending => return Poll::Pending,
                     }
-                    Poll::Pending => return Poll::Pending,
                 }
-            }
                 Poll::Ready(None)
-            },
+            }
             _ => Poll::Pending,
         }
     }

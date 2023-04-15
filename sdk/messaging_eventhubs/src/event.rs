@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 
 use fe2o3_amqp_types::messaging::annotations::AnnotationKey;
-use fe2o3_amqp_types::messaging::{Data, Message, Body, ApplicationProperties, Properties};
+use fe2o3_amqp_types::messaging::{ApplicationProperties, Body, Data, Message, Properties};
 use fe2o3_amqp_types::primitives::{OrderedMap, SimpleValue};
-use serde_amqp::Value;
 use serde_amqp::primitives::Binary;
+use serde_amqp::Value;
 use time::OffsetDateTime;
 
 use crate::amqp::amqp_property;

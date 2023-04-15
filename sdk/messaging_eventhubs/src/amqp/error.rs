@@ -3,8 +3,8 @@
 use fe2o3_amqp::{
     connection::{self, OpenError},
     link::{
-        DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError,
-        ReceiverAttachError, ReceiverResumeErrorKind, SenderAttachError, SenderResumeErrorKind, RecvError, IllegalLinkStateError, DispositionError,
+        DetachError, DetachThenResumeReceiverError, DetachThenResumeSenderError, DispositionError, ReceiverAttachError, ReceiverResumeErrorKind, RecvError,
+        SenderAttachError, SenderResumeErrorKind,
     },
     session::{self, BeginError},
 };

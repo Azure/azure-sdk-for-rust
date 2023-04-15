@@ -1,5 +1,10 @@
 use futures_util::StreamExt;
-use messaging_eventhubs::{consumer::{EventHubConsumerClient, EventPosition, ReadEventOptions, EventHubConsumeClientOptions}, EventHubsRetryOptions, MaxRetries};
+use messaging_eventhubs::{
+    consumer::{
+        EventHubConsumeClientOptions, EventHubConsumerClient, EventPosition, ReadEventOptions,
+    },
+    EventHubsRetryOptions, MaxRetries,
+};
 
 mod common;
 
@@ -19,23 +24,28 @@ async fn event_consumer_can_receive_from_partition() {
     let mut options = EventHubConsumeClientOptions::default();
     options.retry_options = retry_options;
 
-    let mut consumer = EventHubConsumerClient::new(
-        consumer_group,
-        connection_string,
-        event_hub_name,
-        options,
-    ).await.unwrap();
+    let mut consumer =
+        EventHubConsumerClient::new(consumer_group, connection_string, event_hub_name, options)
+            .await
+            .unwrap();
 
     let partition_id = "0";
     let starting_position = EventPosition::earliest();
     let mut options = ReadEventOptions::default();
-    options.cache_event_count = Some(3);
-    options.maximum_wait_time = Some(std::time::Duration::from_secs(1));
+    // options.cache_event_count = Some(3);
+    options.cache_event_count = None;
+    options.maximum_wait_time = Some(std::time::Duration::from_secs(100));
 
-    let mut stream = consumer.read_events_from_partition(partition_id, starting_position, options).await.unwrap();
+    let mut stream = consumer
+        .read_events_from_partition(partition_id, starting_position, options)
+        .await
+        .unwrap();
 
     while let Some(event) = stream.next().await {
-        println!("{:?}", event.unwrap().body().unwrap());
+        let event = event.unwrap();
+        let body = event.body().unwrap();
+        let value = std::str::from_utf8(body).unwrap();
+        println!("{:?}", value);
     }
 
     consumer.close().await.unwrap();

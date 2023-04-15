@@ -56,12 +56,6 @@ const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 const WEBSOCKETS_PATH_SUFFIX: &str = "/$servicebus/websocket/";
 
 pub(crate) struct AmqpConnectionScope {
-    // /// The recommended timeout to associate with an AMQP session.  It is recommended that this
-    // /// interval be used when creating or opening AMQP links and related constructs.
-    // pub(crate) session_timeout: StdDuration,
-
-    // /// The amount of time to allow a connection to have no observed traffic before considering it idle.
-    // pub(crate) connection_idle_timeout_millis: Milliseconds,
     /// Indicates whether this <see cref="AmqpConnectionScope"/> has been disposed.
     pub(crate) is_disposed: Arc<AtomicBool>,
 
@@ -77,8 +71,6 @@ pub(crate) struct AmqpConnectionScope {
     /// The name of the Event Hub to which the scope is associated.
     pub(crate) event_hub_name: Arc<String>,
 
-    // ///   The provider to use for obtaining a token for authorization with the Event Hubs service.
-    // private CbsTokenProvider TokenProvider { get; }
     /// The type of transport to use for communication.
     pub(crate) transport: EventHubsTransportType,
 
@@ -88,11 +80,7 @@ pub(crate) struct AmqpConnectionScope {
     // Keep a copy of connection_idle_timeout for recovery
     pub(crate) connection_idle_timeout: StdDuration,
 
-    // /// The size of the buffer used for sending information via the active transport.
-    // pub(crate) send_buffer_size_in_bytes: usize,
-
-    // /// The size of the buffer used for receiving information via the active transport.
-    // pub(crate) receive_buffer_size_in_bytes: usize,
+    /// The AMQP connection to the Event Hubs service.
     pub(crate) connection: AmqpConnection,
 
     /// The session dedicated for cbs auth
@@ -341,6 +329,7 @@ impl AmqpConnectionScope {
             initialized_partition_properties,
             retry_policy,
             endpoint: producer_endpoint,
+            cbs_command_sender: self.cbs_link_handle.command_sender().clone(),
         })
     }
 
@@ -465,6 +454,7 @@ impl AmqpConnectionScope {
             last_received_event: None,
             retry_policy,
             prefetch_count,
+            cbs_command_sender: self.cbs_link_handle.command_sender().clone(),
         })
     }
 

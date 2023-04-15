@@ -256,9 +256,7 @@ where
             .await
     }
 
-    pub async fn get_partition_ids(
-        &mut self,
-    ) -> Result<Vec<String>, azure_core::Error> {
+    pub async fn get_partition_ids(&mut self) -> Result<Vec<String>, azure_core::Error> {
         self.connection
             .get_partition_ids(RP::from(self.options.retry_options.clone()))
             .await

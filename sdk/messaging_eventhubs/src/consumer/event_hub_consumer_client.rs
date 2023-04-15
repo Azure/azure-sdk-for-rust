@@ -1,9 +1,9 @@
-use std::{collections::HashMap, marker::PhantomData};
+use std::{marker::PhantomData};
 
 use crate::{
     amqp::{
         amqp_client::AmqpClient,
-        amqp_consumer::{AmqpConsumer, EventStream, RecoverableAmqpConsumer},
+        amqp_consumer::{EventStream},
     },
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -137,17 +137,20 @@ where
         starting_position: EventPosition,
         read_event_options: ReadEventOptions,
     ) -> Result<EventStream<'_, RP>, azure_core::Error> {
-        let consumer = self.connection.create_transport_consumer(
-            &self.consumer_group,
-            partition_id,
-            self.options.identifier.clone(),
-            starting_position,
-            RP::from(self.options.retry_options.clone()),
-            read_event_options.track_last_enqueued_event_properties,
-            self.invalidate_consumer_when_partition_is_stolen,
-            read_event_options.owner_level,
-            Some(read_event_options.prefetch_count),
-        ).await?;
+        let consumer = self
+            .connection
+            .create_transport_consumer(
+                &self.consumer_group,
+                partition_id,
+                self.options.identifier.clone(),
+                starting_position,
+                RP::from(self.options.retry_options.clone()),
+                read_event_options.track_last_enqueued_event_properties,
+                self.invalidate_consumer_when_partition_is_stolen,
+                read_event_options.owner_level,
+                Some(read_event_options.prefetch_count),
+            )
+            .await?;
 
         println!("Created consumer");
 
@@ -155,7 +158,7 @@ where
             consumer,
             &mut self.connection.inner,
             read_event_options.cache_event_count,
-            read_event_options.maximum_wait_time
+            read_event_options.maximum_wait_time,
         );
         Ok(event_stream)
     }
