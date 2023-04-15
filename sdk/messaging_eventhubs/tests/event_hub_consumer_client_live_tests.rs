@@ -1,3 +1,4 @@
+use futures_util::StreamExt;
 use messaging_eventhubs::{
     consumer::{
         EventHubConsumeClientOptions, EventHubConsumerClient, EventPosition, ReadEventOptions,
@@ -36,14 +37,16 @@ async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins()
     let mut stream = consumer
         .read_events_from_partition(partition_id, starting_position, options)
         .await
-        .unwrap();
+        .unwrap()
+        .into_stream();
 
-    while let Ok(event) = stream.next_event().await {
+    while let Some(event) = stream.next().await {
         let event = event.unwrap();
         let body = event.body().unwrap();
         let value = std::str::from_utf8(body).unwrap();
         println!("{:?}", value);
     }
+    drop(stream);
 
     consumer.close().await.unwrap();
 }

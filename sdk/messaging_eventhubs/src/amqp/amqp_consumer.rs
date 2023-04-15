@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, time::Duration as StdDuration};
 
 use fe2o3_amqp::{link::RecvError, session::SessionHandle, Receiver};
-use futures_util::{FutureExt, SinkExt};
+use futures_util::{FutureExt, SinkExt, Stream};
 use tokio::sync::mpsc;
 use url::Url;
 
@@ -210,7 +210,7 @@ pin_project_lite::pin_project! {
 
 impl<'a, RP> EventStream<'a, RP>
 where
-    RP: EventHubsRetryPolicy + Send + Unpin,
+    RP: EventHubsRetryPolicy + Send + Unpin + 'a,
 {
     pub(crate) fn new(
         consumer: AmqpConsumer<RP>,
@@ -255,6 +255,18 @@ where
             self.maximum_wait_time,
         )
         .await
+    }
+
+    pub fn into_stream(self) -> impl Stream<Item = Result<ReceivedEvent, RecoverAndReceiveError>> + Unpin + 'a {
+        Box::pin(
+            futures_util::stream::unfold(self, |mut stream| async move {
+                match stream.next_event().await {
+                    Ok(Some(event)) => Some((Ok(event), stream)),
+                    Ok(None) => None,
+                    Err(err) => Some((Err(err), stream)),
+                }
+            })
+        )
     }
 }
 
