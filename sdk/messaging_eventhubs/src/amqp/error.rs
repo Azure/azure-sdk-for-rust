@@ -406,6 +406,15 @@ pub enum DisposeConsumerError {
     Session(#[from] fe2o3_amqp::session::Error),
 }
 
+impl IntoAzureCoreError for DisposeConsumerError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            DisposeConsumerError::Receiver(err) => err.into_azure_core_error(),
+            DisposeConsumerError::Session(err) => err.into_azure_core_error(),
+        }
+    }
+}
+
 /// Error with adding an event to a batch
 #[derive(Debug, thiserror::Error)]
 pub enum TryAddError {

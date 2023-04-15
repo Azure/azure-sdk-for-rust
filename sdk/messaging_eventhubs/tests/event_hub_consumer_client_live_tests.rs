@@ -32,9 +32,9 @@ async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins()
     let partition_id = "0";
     let starting_position = EventPosition::earliest();
     let mut options = ReadEventOptions::default();
-    // options.cache_event_count = Some(3);
-    options.cache_event_count = None;
-    options.maximum_wait_time = Some(std::time::Duration::from_secs(10 * 60));
+    options.cache_event_count = 3;
+    // options.cache_event_count = None;
+    options.maximum_wait_time = Some(std::time::Duration::from_secs(10));
 
     let mut stream = consumer
         .read_events_from_partition(partition_id, starting_position, options)

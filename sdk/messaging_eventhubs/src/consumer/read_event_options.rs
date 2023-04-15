@@ -24,7 +24,7 @@ pub struct ReadEventOptions {
     /// cache when reading is active and events are being emitted to an enumerator for processing.
     ///
     /// Default to [`Some(DEFAULT_CACHE_EVENT_COUNT)`]
-    pub cache_event_count: Option<u32>,
+    pub cache_event_count: u32,
 
     /// The number of events that will be eagerly requested from the Event Hubs service and queued locally without regard to
     /// whether a read operation is currently active, intended to help maximize throughput by allowing events to be read from
@@ -64,7 +64,7 @@ impl Default for ReadEventOptions {
     fn default() -> Self {
         Self {
             maximum_wait_time: None,
-            cache_event_count: Some(DEFAULT_CACHE_EVENT_COUNT),
+            cache_event_count: DEFAULT_CACHE_EVENT_COUNT,
             prefetch_count: DEFAULT_PREFETCH_COUNT,
             prefetch_size_in_bytes: None,
             owner_level: None,
