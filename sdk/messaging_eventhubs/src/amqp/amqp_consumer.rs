@@ -48,15 +48,19 @@ impl<RP> AmqpConsumer<RP> {
         Ok(())
     }
 
+    #[inline]
     async fn receive_messages(
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
-        max_messages: u32,
     ) -> Result<(), RecvError> {
+        // Only receive messages if there is space in the buffer
+        let max_messages = buffer.capacity() - buffer.len();
         // Credit mode is manual, need to set credit
         if self.prefetch_count == 0 {
             // At least one credit is needed
-            self.receiver.set_credit(max_messages).await?;
+            // max_messages is specified as u32, so it is safe to cast to u32
+            let credit = max_messages.max(1) as u32;
+            self.receiver.set_credit(credit).await?;
         }
 
         for _ in 0..max_messages {
@@ -75,15 +79,15 @@ impl<RP> AmqpConsumer<RP> {
         Ok(())
     }
 
+    #[inline]
     async fn receive_messages_with_timeout(
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
-        max_messages: u32,
         max_wait_time: StdDuration,
     ) -> Result<(), RecoverAndReceiveError> {
         futures_util::select_biased! {
             _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(()),
-            result = self.receive_messages(buffer, max_messages).fuse() => {
+            result = self.receive_messages(buffer).fuse() => {
                 result?;
                 Ok(())
             }
@@ -96,17 +100,11 @@ async fn recover_and_recv<RP>(
     consumer: &mut AmqpConsumer<RP>,
     should_try_recover: bool,
     buffer: &mut VecDeque<ReceivedEvent>,
-    max_messages: u32,
     max_wait_time: StdDuration,
 ) -> Result<(), RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send,
 {
-    // Buffer is full, no need to receive more messages
-    if buffer.len() == max_messages as usize {
-        return Ok(());
-    }
-
     if should_try_recover {
         if let Err(recovery_err) = client.recover().await {
             log::error!("Failed to recover client: {:?}", recovery_err);
@@ -124,7 +122,7 @@ where
     }
 
     consumer
-        .receive_messages_with_timeout(buffer, max_messages, max_wait_time)
+        .receive_messages_with_timeout(buffer, max_wait_time)
         .await?;
     if consumer.track_last_enqueued_event_properties {
         consumer.last_received_event = buffer.back().cloned();
@@ -136,7 +134,6 @@ async fn receive_event<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
-    max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<(), RecoverAndReceiveError>
 where
@@ -153,7 +150,6 @@ where
             consumer,
             should_try_recover,
             buffer,
-            max_messages,
             wait_time,
         )
         .await
@@ -186,7 +182,6 @@ async fn next_event_inner<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
-    max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Option<ReceivedEvent>, RecoverAndReceiveError>
 where
@@ -197,7 +192,7 @@ where
     }
 
     loop {
-        let result = receive_event(client, consumer, buffer, max_messages, max_wait_time).await;
+        let result = receive_event(client, consumer, buffer, max_wait_time).await;
 
         match buffer.pop_front() {
             Some(event) => return Ok(Some(event)),
@@ -210,7 +205,7 @@ async fn next_event<'a, RP>(mut value: EventStreamStateValue<'a, RP>) -> (Option
 where
     RP: EventHubsRetryPolicy + Send,
 {
-    match next_event_inner(value.client, &mut value.consumer, &mut value.buffer, value.max_messages, value.max_wait_time).await {
+    match next_event_inner(value.client, &mut value.consumer, &mut value.buffer, value.max_wait_time).await {
         Ok(Some(event)) => (Some(Ok(event)), value),
         Ok(None) => (None, value),
         Err(err) => (Some(Err(err)), value),
@@ -225,7 +220,6 @@ pub struct EventStreamStateValue<'a, RP> {
     client: &'a mut Sharable<AmqpClient>,
     consumer: AmqpConsumer<RP>,
     buffer: VecDeque<ReceivedEvent>,
-    max_messages: u32,
     max_wait_time: Option<StdDuration>,
 }
 
@@ -240,7 +234,6 @@ impl<'a, RP> EventStreamStateValue<'a, RP> {
             client,
             consumer,
             buffer: VecDeque::with_capacity(max_messages as usize),
-            max_messages,
             max_wait_time,
         }
     }
