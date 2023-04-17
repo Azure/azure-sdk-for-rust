@@ -1,10 +1,12 @@
 use std::marker::PhantomData;
 
+use futures_util::Stream;
+
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_consumer::EventStream},
+    amqp::{amqp_client::AmqpClient, amqp_consumer::{EventStream, next_event}, error::RecoverAndReceiveError},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
+    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, ReceivedEvent,
 };
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
@@ -133,7 +135,7 @@ where
         partition_id: &str,
         starting_position: EventPosition,
         read_event_options: ReadEventOptions,
-    ) -> Result<EventStream<'_, RP>, azure_core::Error> {
+    ) -> Result<impl Stream<Item = Result<ReceivedEvent, RecoverAndReceiveError>> + '_, azure_core::Error> {
         let consumer = self
             .connection
             .create_transport_consumer(
@@ -152,12 +154,15 @@ where
         println!("Created consumer");
 
         let event_stream = EventStream::new(
-            consumer,
             &mut self.connection.inner,
+            consumer,
             read_event_options.cache_event_count,
             read_event_options.maximum_wait_time,
+            |value| async move {
+                next_event(value).await
+            }
         );
-        Ok(event_stream)
+        Ok(Box::pin(event_stream))
     }
 
     pub async fn close(self) -> Result<(), azure_core::Error> {

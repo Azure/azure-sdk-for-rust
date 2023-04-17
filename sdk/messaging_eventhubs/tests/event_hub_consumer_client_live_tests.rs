@@ -37,8 +37,7 @@ async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins()
     let mut stream = consumer
         .read_events_from_partition(partition_id, starting_position, options)
         .await
-        .unwrap()
-        .into_stream();
+        .unwrap();
 
     while let Some(event) = stream.next().await {
         let event = event.unwrap();

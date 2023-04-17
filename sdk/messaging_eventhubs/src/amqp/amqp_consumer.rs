@@ -1,7 +1,7 @@
-use std::{collections::VecDeque, time::Duration as StdDuration};
+use std::{collections::VecDeque, time::Duration as StdDuration, task::{Poll, Context}, pin::Pin};
 
 use fe2o3_amqp::{link::RecvError, session::SessionHandle, Receiver};
-use futures_util::{FutureExt, SinkExt, Stream};
+use futures_util::{FutureExt, SinkExt, Stream, Future, ready};
 use tokio::sync::mpsc;
 use url::Url;
 
@@ -192,85 +192,85 @@ where
     }
 }
 
-pin_project_lite::pin_project! {
-    pub struct EventStream<'a, RP> {
-        #[pin]
-        consumer: Option<AmqpConsumer<RP>>,
+// pin_project_lite::pin_project! {
+//     pub struct EventStreamState<'a, RP> {
+//         #[pin]
+//         consumer: Option<AmqpConsumer<RP>>,
 
-        #[pin]
-        client: &'a mut Sharable<AmqpClient>,
+//         #[pin]
+//         client: &'a mut Sharable<AmqpClient>,
 
-        buffer: VecDeque<ReceivedEvent>,
+//         buffer: VecDeque<ReceivedEvent>,
 
-        maximum_event_count: u32,
+//         maximum_event_count: u32,
 
-        maximum_wait_time: Option<StdDuration>,
-    }
-}
+//         maximum_wait_time: Option<StdDuration>,
+//     }
+// }
 
-impl<'a, RP> EventStream<'a, RP>
-where
-    RP: EventHubsRetryPolicy + Send + Unpin + 'a,
-{
-    pub(crate) fn new(
-        consumer: AmqpConsumer<RP>,
-        client: &'a mut Sharable<AmqpClient>,
-        maximum_event_count: u32,
-        maximum_wait_time: Option<StdDuration>,
-    ) -> Self {
-        log::debug!(
-            "EventStream::new: maximum_wait_time: {:?}",
-            maximum_wait_time
-        );
-        Self {
-            consumer: Some(consumer),
-            client,
-            buffer: VecDeque::with_capacity(maximum_event_count as usize),
-            maximum_event_count,
-            maximum_wait_time,
-        }
-    }
+// impl<'a, RP> EventStreamState<'a, RP>
+// where
+//     RP: EventHubsRetryPolicy + Send + Unpin + 'a,
+// {
+//     pub(crate) fn new(
+//         consumer: AmqpConsumer<RP>,
+//         client: &'a mut Sharable<AmqpClient>,
+//         maximum_event_count: u32,
+//         maximum_wait_time: Option<StdDuration>,
+//     ) -> Self {
+//         log::debug!(
+//             "EventStream::new: maximum_wait_time: {:?}",
+//             maximum_wait_time
+//         );
+//         Self {
+//             consumer: Some(consumer),
+//             client,
+//             buffer: VecDeque::with_capacity(maximum_event_count as usize),
+//             maximum_event_count,
+//             maximum_wait_time,
+//         }
+//     }
 
-    pub async fn dispose(self) -> Result<(), azure_core::Error> {
-        if let Some(consumer) = self.consumer {
-            consumer
-                .dispose()
-                .await
-                .map_err(IntoAzureCoreError::into_azure_core_error)
-        } else {
-            Ok(())
-        }
-    }
+//     pub async fn dispose(self) -> Result<(), azure_core::Error> {
+//         if let Some(consumer) = self.consumer {
+//             consumer
+//                 .dispose()
+//                 .await
+//                 .map_err(IntoAzureCoreError::into_azure_core_error)
+//         } else {
+//             Ok(())
+//         }
+//     }
 
-    pub async fn next_event(&mut self) -> Result<Option<ReceivedEvent>, RecoverAndReceiveError> {
-        let consumer = match self.consumer.as_mut() {
-            Some(consumer) => consumer,
-            None => return Ok(None),
-        };
-        next_event(
-            &mut self.client,
-            consumer,
-            &mut self.buffer,
-            self.maximum_event_count,
-            self.maximum_wait_time,
-        )
-        .await
-    }
+//     pub async fn next_event(&mut self) -> Result<Option<ReceivedEvent>, RecoverAndReceiveError> {
+//         let consumer = match self.consumer.as_mut() {
+//             Some(consumer) => consumer,
+//             None => return Ok(None),
+//         };
+//         next_event(
+//             &mut self.client,
+//             consumer,
+//             &mut self.buffer,
+//             self.maximum_event_count,
+//             self.maximum_wait_time,
+//         )
+//         .await
+//     }
 
-    pub fn into_stream(self) -> impl Stream<Item = Result<ReceivedEvent, RecoverAndReceiveError>> + Unpin + 'a {
-        Box::pin(
-            futures_util::stream::unfold(self, |mut stream| async move {
-                match stream.next_event().await {
-                    Ok(Some(event)) => Some((Ok(event), stream)),
-                    Ok(None) => None,
-                    Err(err) => Some((Err(err), stream)),
-                }
-            })
-        )
-    }
-}
+//     pub fn into_stream(self) -> impl Stream<Item = Result<ReceivedEvent, RecoverAndReceiveError>> + Unpin + 'a {
+//         Box::pin(
+//             futures_util::stream::unfold(self, |mut stream| async move {
+//                 match stream.next_event().await {
+//                     Ok(Some(event)) => Some((Ok(event), stream)),
+//                     Ok(None) => None,
+//                     Err(err) => Some((Err(err), stream)),
+//                 }
+//             })
+//         )
+//     }
+// }
 
-async fn next_event<RP>(
+async fn next_event_inner<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
@@ -294,24 +294,145 @@ where
     }
 }
 
-// impl<'a, RP> Stream for EventStream<'a, RP>
-// where
-//     RP: EventHubsRetryPolicy + Send + Unpin,
-// {
-//     type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
-
-//     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-//         let this = self.project();
-//         let client = this.client.get_mut();
-//         let consumer = match this.consumer.get_mut() {
-//             Some(consumer) => consumer,
-//             None => return Poll::Ready(None),
-//         };
-//         let buffer = this.buffer;
-//         let max_messages = *this.maximum_event_count;
-//         let max_wait_time = *this.maximum_wait_time;
-//         let fut = next_event(client, consumer, buffer, max_messages, max_wait_time);
-//         futures_util::pin_mut!(fut);
-//         fut.poll(cx).map(|result| result.transpose())
-//     }
+// pub(crate) fn event_stream<'a, RP, F, Fut>(
+//     client: &'a mut Sharable<AmqpClient>,
+//     consumer: &'a mut AmqpConsumer<RP>,
+//     max_messages: u32,
+//     max_wait_time: Option<StdDuration>,
+//     f: F,
+// ) -> EventStream<'a, RP, F, Fut> {
+//     let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time);
+//     let state = EventStreamState::Value { value };
+//     EventStream { state, f }
 // }
+
+pub(crate) async fn next_event<'a, RP>(mut value: EventStreamStateValue<'a, RP>) -> Option<(Result<ReceivedEvent, RecoverAndReceiveError>, EventStreamStateValue<'a, RP>)>
+where
+    RP: EventHubsRetryPolicy + Send,
+{
+    match next_event_inner(value.client, &mut value.consumer, &mut value.buffer, value.max_messages, value.max_wait_time).await {
+        Ok(Some(event)) => Some((Ok(event), value)),
+        Ok(None) => None,
+        Err(err) => Some((Err(err), value)),
+    }
+}
+
+pub struct EventStreamStateValue<'a, RP> {
+    client: &'a mut Sharable<AmqpClient>,
+    consumer: AmqpConsumer<RP>,
+    buffer: VecDeque<ReceivedEvent>,
+    max_messages: u32,
+    max_wait_time: Option<StdDuration>,
+}
+
+impl<'a, RP> EventStreamStateValue<'a, RP> {
+    pub(crate) fn new(
+        client: &'a mut Sharable<AmqpClient>,
+        consumer: AmqpConsumer<RP>,
+        max_messages: u32,
+        max_wait_time: Option<StdDuration>,
+    ) -> Self {
+        Self {
+            client,
+            consumer,
+            buffer: VecDeque::with_capacity(max_messages as usize),
+            max_messages,
+            max_wait_time,
+        }
+    }
+}
+
+pin_project_lite::pin_project! {
+    #[project = EventStreamStateProj]
+    #[project_replace = EventStreamStateProjReplace]
+    enum EventStreamState<'a, RP, Fut> {
+        Value {
+            value: EventStreamStateValue<'a, RP>,
+        },
+        Future {
+            #[pin]
+            future: Fut
+        },
+        Empty,
+    }
+}
+
+impl<'a, RP, Fut> EventStreamState<'a, RP, Fut> {
+    pub(crate) fn is_empty(&self) -> bool {
+        matches!(self, Self::Empty)
+    }
+
+    pub(crate) fn is_future(&self) -> bool {
+        matches!(self, Self::Future { .. })
+    }
+
+    pub(crate) fn project_future(self: Pin<&mut Self>) -> Option<Pin<&mut Fut>> {
+        match self.project() {
+            EventStreamStateProj::Future { future } => Some(future),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn take_value(self: Pin<&mut Self>) -> Option<EventStreamStateValue<'a, RP>> {
+        match &*self {
+            EventStreamState::Value { .. } => match self.project_replace(EventStreamState::Empty) {
+                EventStreamStateProjReplace::Value { value } => Some(value),
+                _ => unreachable!(),
+            },
+            _ => None,
+        }
+    }
+}
+
+pin_project_lite::pin_project! {
+    pub struct EventStream<'a, RP, F, Fut> {
+        f: F,
+
+        #[pin]
+        state: EventStreamState<'a, RP, Fut>,
+    }
+}
+
+impl<'a, RP, F, Fut> EventStream<'a, RP, F, Fut> {
+    pub(crate) fn new(
+        client: &'a mut Sharable<AmqpClient>,
+        consumer: AmqpConsumer<RP>,
+        max_messages: u32,
+        max_wait_time: Option<StdDuration>,
+        f: F,
+    ) -> Self {
+        let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time);
+        let state = EventStreamState::Value { value };
+
+        Self { state, f }
+    }
+}
+
+impl<'a, RP, F, Fut> Stream for EventStream<'a, RP, F, Fut>
+where
+    F: FnMut(EventStreamStateValue<'a, RP>) -> Fut,
+    Fut: Future<Output = Option<(Result<ReceivedEvent, RecoverAndReceiveError>, EventStreamStateValue<'a, RP>)>>,
+{
+    type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mut this = self.project();
+
+        if let Some(state) = this.state.as_mut().take_value() {
+            this.state.set(EventStreamState::Future { future: (this.f)(state) });
+        }
+
+        let step = match this.state.as_mut().project_future() {
+            Some(fut) => ready!(fut.poll(cx)),
+            None => panic!("Unfold must not be polled after it returned `Poll::Ready(None)`"),
+        };
+
+        if let Some((item, next_state)) = step {
+            this.state.set(EventStreamState::Value { value: next_state });
+            Poll::Ready(Some(item))
+        } else {
+            this.state.set(EventStreamState::Empty);
+            Poll::Ready(None)
+        }
+    }
+}
