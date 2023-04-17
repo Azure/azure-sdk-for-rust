@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, time::Duration as StdDuration, task::{Poll, Context}, pin::Pin};
 
 use fe2o3_amqp::{link::RecvError, session::SessionHandle, Receiver};
-use futures_util::{FutureExt, SinkExt, Stream, Future, ready};
+use futures_util::{FutureExt, SinkExt, Stream, Future, ready, future::poll_fn};
 use tokio::sync::mpsc;
 use url::Url;
 
@@ -306,15 +306,19 @@ where
 //     EventStream { state, f }
 // }
 
-pub(crate) async fn next_event<'a, RP>(mut value: EventStreamStateValue<'a, RP>) -> Option<(Result<ReceivedEvent, RecoverAndReceiveError>, EventStreamStateValue<'a, RP>)>
+async fn next_event<'a, RP>(mut value: EventStreamStateValue<'a, RP>) -> (Option<Result<ReceivedEvent, RecoverAndReceiveError>>, EventStreamStateValue<'a, RP>)
 where
     RP: EventHubsRetryPolicy + Send,
 {
     match next_event_inner(value.client, &mut value.consumer, &mut value.buffer, value.max_messages, value.max_wait_time).await {
-        Ok(Some(event)) => Some((Ok(event), value)),
-        Ok(None) => None,
-        Err(err) => Some((Err(err), value)),
+        Ok(Some(event)) => (Some(Ok(event)), value),
+        Ok(None) => (None, value),
+        Err(err) => (Some(Err(err)), value),
     }
+}
+
+async fn dispose_consumer<'a, RP>(value: EventStreamStateValue<'a, RP>) -> Result<(), DisposeConsumerError> {
+    value.consumer.dispose().await
 }
 
 pub struct EventStreamStateValue<'a, RP> {
@@ -342,22 +346,32 @@ impl<'a, RP> EventStreamStateValue<'a, RP> {
     }
 }
 
+type StreamBoxedFuture<'a, RP> = Pin<Box<dyn Future<Output = (Option<Result<ReceivedEvent, RecoverAndReceiveError>>, EventStreamStateValue<'a, RP>)> + 'a>>;
+type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + 'a>>;
+
 pin_project_lite::pin_project! {
     #[project = EventStreamStateProj]
     #[project_replace = EventStreamStateProjReplace]
-    enum EventStreamState<'a, RP, Fut> {
+    enum EventStreamState<'a, RP> {
         Value {
             value: EventStreamStateValue<'a, RP>,
         },
         Future {
             #[pin]
-            future: Fut
+            future: StreamBoxedFuture<'a, RP>,
+        },
+        Ending {
+            #[pin]
+            future: ClosingBoxedFuture<'a>,
         },
         Empty,
     }
 }
 
-impl<'a, RP, Fut> EventStreamState<'a, RP, Fut> {
+impl<'a, RP> EventStreamState<'a, RP>
+where
+    RP: Send + 'a,
+{
     pub(crate) fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
     }
@@ -366,9 +380,16 @@ impl<'a, RP, Fut> EventStreamState<'a, RP, Fut> {
         matches!(self, Self::Future { .. })
     }
 
-    pub(crate) fn project_future(self: Pin<&mut Self>) -> Option<Pin<&mut Fut>> {
+    pub(crate) fn project_future(self: Pin<&mut Self>) -> Option<Pin<&mut StreamBoxedFuture<'a, RP>>> {
         match self.project() {
             EventStreamStateProj::Future { future } => Some(future),
+            _ => None,
+        }
+    }
+
+    fn project_ending(self: Pin<&mut Self>) -> Option<Pin<&mut ClosingBoxedFuture<'a>>> {
+        match self.project() {
+            EventStreamStateProj::Ending { future } => Some(future),
             _ => None,
         }
     }
@@ -382,36 +403,62 @@ impl<'a, RP, Fut> EventStreamState<'a, RP, Fut> {
             _ => None,
         }
     }
-}
 
-pin_project_lite::pin_project! {
-    pub struct EventStream<'a, RP, F, Fut> {
-        f: F,
+    pub fn poll_dispose(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), DisposeConsumerError>> {
+        if let Some(value) = self.as_mut().take_value() {
+            self.set(EventStreamState::Ending { future: dispose_consumer(value).boxed() });
+        }
 
-        #[pin]
-        state: EventStreamState<'a, RP, Fut>,
+        if let Some(future) = self.as_mut().project_future() {
+            let (_, value) = ready!(future.poll(cx));
+            self.set(EventStreamState::Ending { future: dispose_consumer(value).boxed() });
+        }
+
+        let result = match self.as_mut().project_ending() {
+            Some(fut) => ready!(fut.poll(cx)),
+            None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
+        };
+
+        self.set(EventStreamState::Empty);
+        Poll::Ready(result)
+    }
+
+    async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
+        poll_fn(|cx| Pin::new(&mut self).poll_dispose(cx)).await
     }
 }
 
-impl<'a, RP, F, Fut> EventStream<'a, RP, F, Fut> {
+pin_project_lite::pin_project! {
+    pub struct EventStream<'a, RP> {
+        #[pin]
+        state: EventStreamState<'a, RP>,
+    }
+}
+
+impl<'a, RP> EventStream<'a, RP>
+where
+    RP: Send + 'a,
+{
     pub(crate) fn new(
         client: &'a mut Sharable<AmqpClient>,
         consumer: AmqpConsumer<RP>,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
-        f: F,
     ) -> Self {
         let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time);
         let state = EventStreamState::Value { value };
 
-        Self { state, f }
+        Self { state }
+    }
+
+    pub async fn dispose(self) -> Result<(), DisposeConsumerError> {
+        self.state.dispose().await
     }
 }
 
-impl<'a, RP, F, Fut> Stream for EventStream<'a, RP, F, Fut>
+impl<'a, RP> Stream for EventStream<'a, RP>
 where
-    F: FnMut(EventStreamStateValue<'a, RP>) -> Fut,
-    Fut: Future<Output = Option<(Result<ReceivedEvent, RecoverAndReceiveError>, EventStreamStateValue<'a, RP>)>>,
+    RP: EventHubsRetryPolicy + Send + 'a,
 {
     type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
 
@@ -419,19 +466,19 @@ where
         let mut this = self.project();
 
         if let Some(state) = this.state.as_mut().take_value() {
-            this.state.set(EventStreamState::Future { future: (this.f)(state) });
+            this.state.set(EventStreamState::Future { future: next_event(state).boxed() });
         }
 
-        let step = match this.state.as_mut().project_future() {
+        let (item, next_state) = match this.state.as_mut().project_future() {
             Some(fut) => ready!(fut.poll(cx)),
-            None => panic!("Unfold must not be polled after it returned `Poll::Ready(None)`"),
+            None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
         };
 
-        if let Some((item, next_state)) = step {
+        if let Some(item) = item {
             this.state.set(EventStreamState::Value { value: next_state });
             Poll::Ready(Some(item))
         } else {
-            this.state.set(EventStreamState::Empty);
+            this.state.set(EventStreamState::Ending { future: dispose_consumer(next_state).boxed() });
             Poll::Ready(None)
         }
     }

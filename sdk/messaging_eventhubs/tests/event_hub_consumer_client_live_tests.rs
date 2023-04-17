@@ -12,7 +12,7 @@ mod common;
 async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins() {
     common::setup_dotenv();
 
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace")).init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
@@ -39,13 +39,20 @@ async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins()
         .await
         .unwrap();
 
+    let mut counter = 0;
     while let Some(event) = stream.next().await {
         let event = event.unwrap();
         let body = event.body().unwrap();
         let value = std::str::from_utf8(body).unwrap();
-        println!("{:?}", value);
+        log::info!("{:?}", value);
+
+        log::info!("counter: {}", counter);
+        counter += 1;
+        if counter > 10 {
+            break;
+        }
     }
-    drop(stream);
+    stream.dispose().await.unwrap();
 
     consumer.close().await.unwrap();
 }
