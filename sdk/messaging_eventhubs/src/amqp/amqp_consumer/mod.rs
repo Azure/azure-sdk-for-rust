@@ -24,6 +24,8 @@ use super::{
     error::{DisposeConsumerError, RecoverAndReceiveError},
 };
 
+mod amqp_consumer_vec;
+
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
     pub(crate) session_identifier: u32,
@@ -53,8 +55,25 @@ impl<RP> AmqpConsumer<RP> {
         Ok(())
     }
 
+    pub(crate) async fn recv_and_accept(&mut self) -> Result<ReceivedEvent, RecvError> {
+        let delivery = self.receiver.recv().await?;
+        self.receiver.accept(&delivery).await?;
+        let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
+
+        let event_offset = event.offset().unwrap_or(i64::MIN);
+        if event_offset > i64::MIN {
+            self.current_event_position = Some(EventPosition::from_offset(event_offset, false));
+        }
+
+        if self.track_last_enqueued_event_properties {
+            self.last_received_event = Some(event.clone());
+        }
+
+        Ok(event)
+    }
+
     #[inline]
-    async fn receive_messages(
+    async fn fill_buf(
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
     ) -> Result<(), RecvError> {
@@ -85,14 +104,14 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     #[inline]
-    async fn receive_messages_with_timeout(
+    async fn fill_buf_with_timeout(
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
         max_wait_time: StdDuration,
     ) -> Result<(), RecoverAndReceiveError> {
         futures_util::select_biased! {
             _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(()),
-            result = self.receive_messages(buffer).fuse() => {
+            result = self.fill_buf(buffer).fuse() => {
                 result?;
                 Ok(())
             }
@@ -127,7 +146,7 @@ where
     }
 
     consumer
-        .receive_messages_with_timeout(buffer, max_wait_time)
+        .fill_buf_with_timeout(buffer, max_wait_time)
         .await?;
     if consumer.track_last_enqueued_event_properties {
         consumer.last_received_event = buffer.back().cloned();
@@ -229,10 +248,10 @@ async fn dispose_consumer<'a, RP>(
 }
 
 pub struct EventStreamStateValue<'a, C> {
-    client: &'a mut Sharable<AmqpClient>,
-    consumer: C,
-    buffer: VecDeque<ReceivedEvent>,
-    max_wait_time: Option<StdDuration>,
+    pub(crate) client: &'a mut Sharable<AmqpClient>,
+    pub(crate) consumer: C,
+    pub(crate) buffer: VecDeque<ReceivedEvent>,
+    pub(crate) max_wait_time: Option<StdDuration>,
 }
 
 impl<'a, C> EventStreamStateValue<'a, C> {
@@ -258,7 +277,7 @@ type StreamBoxedFuture<'a, C> = Pin<
                     Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
                     EventStreamStateValue<'a, C>,
                 ),
-            > + 'a,
+            > + Send + 'a,
     >,
 >;
 type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + 'a>>;
@@ -266,7 +285,7 @@ type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeCons
 pin_project_lite::pin_project! {
     #[project = EventStreamStateProj]
     #[project_replace = EventStreamStateProjReplace]
-    enum EventStreamState<'a, C> {
+    pub(crate) enum EventStreamState<'a, C> {
         Value {
             value: EventStreamStateValue<'a, C>,
         },
@@ -274,7 +293,7 @@ pin_project_lite::pin_project! {
             #[pin]
             future: StreamBoxedFuture<'a, C>,
         },
-        Ending {
+        Closing {
             #[pin]
             future: ClosingBoxedFuture<'a>,
         },
@@ -282,35 +301,27 @@ pin_project_lite::pin_project! {
     }
 }
 
-impl<'a, RP> EventStreamState<'a, AmqpConsumer<RP>>
+impl<'a, C> EventStreamState<'a, C>
 where
-    RP: Send + 'a,
+    C: Send + 'a,
 {
-    pub(crate) fn is_empty(&self) -> bool {
-        matches!(self, Self::Empty)
-    }
-
-    pub(crate) fn is_future(&self) -> bool {
-        matches!(self, Self::Future { .. })
-    }
-
     pub(crate) fn project_future(
         self: Pin<&mut Self>,
-    ) -> Option<Pin<&mut StreamBoxedFuture<'a, AmqpConsumer<RP>>>> {
+    ) -> Option<Pin<&mut StreamBoxedFuture<'a, C>>> {
         match self.project() {
             EventStreamStateProj::Future { future } => Some(future),
             _ => None,
         }
     }
 
-    fn project_ending(self: Pin<&mut Self>) -> Option<Pin<&mut ClosingBoxedFuture<'a>>> {
+    pub(crate) fn project_closing(self: Pin<&mut Self>) -> Option<Pin<&mut ClosingBoxedFuture<'a>>> {
         match self.project() {
-            EventStreamStateProj::Ending { future } => Some(future),
+            EventStreamStateProj::Closing { future } => Some(future),
             _ => None,
         }
     }
 
-    pub(crate) fn take_value(self: Pin<&mut Self>) -> Option<EventStreamStateValue<'a, AmqpConsumer<RP>>> {
+    pub(crate) fn take_value(self: Pin<&mut Self>) -> Option<EventStreamStateValue<'a, C>> {
         match &*self {
             EventStreamState::Value { .. } => match self.project_replace(EventStreamState::Empty) {
                 EventStreamStateProjReplace::Value { value } => Some(value),
@@ -319,25 +330,30 @@ where
             _ => None,
         }
     }
+}
 
-    pub fn poll_dispose(
+impl<'a, RP> EventStreamState<'a, AmqpConsumer<RP>>
+where
+    RP: Send + 'a,
+{
+    fn poll_dispose(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
     ) -> Poll<Result<(), DisposeConsumerError>> {
         if let Some(value) = self.as_mut().take_value() {
-            self.set(EventStreamState::Ending {
+            self.set(EventStreamState::Closing {
                 future: dispose_consumer(value).boxed(),
             });
         }
 
         if let Some(future) = self.as_mut().project_future() {
             let (_, value) = ready!(future.poll(cx));
-            self.set(EventStreamState::Ending {
+            self.set(EventStreamState::Closing {
                 future: dispose_consumer(value).boxed(),
             });
         }
 
-        let result = match self.as_mut().project_ending() {
+        let result = match self.as_mut().project_closing() {
             Some(fut) => ready!(fut.poll(cx)),
             None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
         };
@@ -404,7 +420,7 @@ where
                 .set(EventStreamState::Value { value: next_state });
             Poll::Ready(Some(item))
         } else {
-            this.state.set(EventStreamState::Ending {
+            this.state.set(EventStreamState::Closing {
                 future: dispose_consumer(next_state).boxed(),
             });
             Poll::Ready(None)
