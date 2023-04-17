@@ -53,7 +53,6 @@ impl<RP> AmqpConsumer<RP> {
         buffer: &mut VecDeque<ReceivedEvent>,
         max_messages: u32,
     ) -> Result<(), RecvError> {
-        log::debug!("receive_messages: max_messages={}", max_messages);
         // Credit mode is manual, need to set credit
         if self.prefetch_count == 0 {
             // At least one credit is needed
@@ -61,7 +60,6 @@ impl<RP> AmqpConsumer<RP> {
         }
 
         for _ in 0..max_messages {
-            log::debug!("receive_messages: waiting for delivery");
             let delivery = self.receiver.recv().await?;
             self.receiver.accept(&delivery).await?;
             let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
@@ -74,7 +72,6 @@ impl<RP> AmqpConsumer<RP> {
             buffer.push_back(event);
         }
 
-        log::debug!("receive_messages: received {} messages", max_messages);
         Ok(())
     }
 
@@ -84,14 +81,9 @@ impl<RP> AmqpConsumer<RP> {
         max_messages: u32,
         max_wait_time: StdDuration,
     ) -> Result<(), RecoverAndReceiveError> {
-        log::debug!(
-            "receive_messages_with_timeout: max_wait_time={:?}",
-            max_wait_time
-        );
         futures_util::select_biased! {
             _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(()),
             result = self.receive_messages(buffer, max_messages).fuse() => {
-                log::debug!("receive_messages_with_timeout: received messages");
                 result?;
                 Ok(())
             }
@@ -115,7 +107,6 @@ where
         return Ok(());
     }
 
-    log::debug!("should_try_recover: {:?}", should_try_recover);
     if should_try_recover {
         if let Err(recovery_err) = client.recover().await {
             log::error!("Failed to recover client: {:?}", recovery_err);
@@ -138,7 +129,6 @@ where
     if consumer.track_last_enqueued_event_properties {
         consumer.last_received_event = buffer.back().cloned();
     }
-    log::debug!("buffer.len(): {:?}", buffer.len());
     Ok(())
 }
 
@@ -192,84 +182,6 @@ where
     }
 }
 
-// pin_project_lite::pin_project! {
-//     pub struct EventStreamState<'a, RP> {
-//         #[pin]
-//         consumer: Option<AmqpConsumer<RP>>,
-
-//         #[pin]
-//         client: &'a mut Sharable<AmqpClient>,
-
-//         buffer: VecDeque<ReceivedEvent>,
-
-//         maximum_event_count: u32,
-
-//         maximum_wait_time: Option<StdDuration>,
-//     }
-// }
-
-// impl<'a, RP> EventStreamState<'a, RP>
-// where
-//     RP: EventHubsRetryPolicy + Send + Unpin + 'a,
-// {
-//     pub(crate) fn new(
-//         consumer: AmqpConsumer<RP>,
-//         client: &'a mut Sharable<AmqpClient>,
-//         maximum_event_count: u32,
-//         maximum_wait_time: Option<StdDuration>,
-//     ) -> Self {
-//         log::debug!(
-//             "EventStream::new: maximum_wait_time: {:?}",
-//             maximum_wait_time
-//         );
-//         Self {
-//             consumer: Some(consumer),
-//             client,
-//             buffer: VecDeque::with_capacity(maximum_event_count as usize),
-//             maximum_event_count,
-//             maximum_wait_time,
-//         }
-//     }
-
-//     pub async fn dispose(self) -> Result<(), azure_core::Error> {
-//         if let Some(consumer) = self.consumer {
-//             consumer
-//                 .dispose()
-//                 .await
-//                 .map_err(IntoAzureCoreError::into_azure_core_error)
-//         } else {
-//             Ok(())
-//         }
-//     }
-
-//     pub async fn next_event(&mut self) -> Result<Option<ReceivedEvent>, RecoverAndReceiveError> {
-//         let consumer = match self.consumer.as_mut() {
-//             Some(consumer) => consumer,
-//             None => return Ok(None),
-//         };
-//         next_event(
-//             &mut self.client,
-//             consumer,
-//             &mut self.buffer,
-//             self.maximum_event_count,
-//             self.maximum_wait_time,
-//         )
-//         .await
-//     }
-
-//     pub fn into_stream(self) -> impl Stream<Item = Result<ReceivedEvent, RecoverAndReceiveError>> + Unpin + 'a {
-//         Box::pin(
-//             futures_util::stream::unfold(self, |mut stream| async move {
-//                 match stream.next_event().await {
-//                     Ok(Some(event)) => Some((Ok(event), stream)),
-//                     Ok(None) => None,
-//                     Err(err) => Some((Err(err), stream)),
-//                 }
-//             })
-//         )
-//     }
-// }
-
 async fn next_event_inner<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
@@ -293,18 +205,6 @@ where
         }
     }
 }
-
-// pub(crate) fn event_stream<'a, RP, F, Fut>(
-//     client: &'a mut Sharable<AmqpClient>,
-//     consumer: &'a mut AmqpConsumer<RP>,
-//     max_messages: u32,
-//     max_wait_time: Option<StdDuration>,
-//     f: F,
-// ) -> EventStream<'a, RP, F, Fut> {
-//     let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time);
-//     let state = EventStreamState::Value { value };
-//     EventStream { state, f }
-// }
 
 async fn next_event<'a, RP>(mut value: EventStreamStateValue<'a, RP>) -> (Option<Result<ReceivedEvent, RecoverAndReceiveError>>, EventStreamStateValue<'a, RP>)
 where
