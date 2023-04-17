@@ -66,4 +66,23 @@ impl KeyClient {
     {
         DecryptBuilder::new(self.clone(), name.into(), decrypt_parameters)
     }
+
+    /// Encrypt a single block of data.
+    ///
+    /// The ENCRYPT operation encrypts an arbitrary sequence of plaintext using
+    /// the target encryption key and specified algorithm.
+    //
+    /// This operation is the reverse of the DECRYPT operation; only a single
+    /// block of data may be encrypted, the size of this block is dependent on
+    /// the target key and the algorithm to be used.
+    ///
+    /// The ENCRYPT operation applies to asymmetric and symmetric keys stored in
+    /// Vault or HSM since it uses the private portion of the key. This
+    /// operation requires the keys/encrypt permission.
+    pub fn encrypt<N>(&self, name: N, encrypt_parameters: EncryptParameters) -> EncryptBuilder
+    where
+        N: Into<String>,
+    {
+        EncryptBuilder::new(self.clone(), name.into(), encrypt_parameters)
+    }
 }
