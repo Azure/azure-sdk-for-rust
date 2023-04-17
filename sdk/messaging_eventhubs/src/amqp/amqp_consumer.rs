@@ -200,10 +200,10 @@ where
 }
 
 async fn next_event<'a, RP>(
-    mut value: EventStreamStateValue<'a, RP>,
+    mut value: EventStreamStateValue<'a, AmqpConsumer<RP>>,
 ) -> (
     Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
-    EventStreamStateValue<'a, RP>,
+    EventStreamStateValue<'a, AmqpConsumer<RP>>,
 )
 where
     RP: EventHubsRetryPolicy + Send,
@@ -223,22 +223,22 @@ where
 }
 
 async fn dispose_consumer<'a, RP>(
-    value: EventStreamStateValue<'a, RP>,
+    value: EventStreamStateValue<'a, AmqpConsumer<RP>>,
 ) -> Result<(), DisposeConsumerError> {
     value.consumer.dispose().await
 }
 
-pub struct EventStreamStateValue<'a, RP> {
+pub struct EventStreamStateValue<'a, C> {
     client: &'a mut Sharable<AmqpClient>,
-    consumer: AmqpConsumer<RP>,
+    consumer: C,
     buffer: VecDeque<ReceivedEvent>,
     max_wait_time: Option<StdDuration>,
 }
 
-impl<'a, RP> EventStreamStateValue<'a, RP> {
+impl<'a, C> EventStreamStateValue<'a, C> {
     pub(crate) fn new(
         client: &'a mut Sharable<AmqpClient>,
-        consumer: AmqpConsumer<RP>,
+        consumer: C,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Self {
@@ -251,12 +251,12 @@ impl<'a, RP> EventStreamStateValue<'a, RP> {
     }
 }
 
-type StreamBoxedFuture<'a, RP> = Pin<
+type StreamBoxedFuture<'a, C> = Pin<
     Box<
         dyn Future<
                 Output = (
                     Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
-                    EventStreamStateValue<'a, RP>,
+                    EventStreamStateValue<'a, C>,
                 ),
             > + 'a,
     >,
@@ -266,13 +266,13 @@ type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeCons
 pin_project_lite::pin_project! {
     #[project = EventStreamStateProj]
     #[project_replace = EventStreamStateProjReplace]
-    enum EventStreamState<'a, RP> {
+    enum EventStreamState<'a, C> {
         Value {
-            value: EventStreamStateValue<'a, RP>,
+            value: EventStreamStateValue<'a, C>,
         },
         Future {
             #[pin]
-            future: StreamBoxedFuture<'a, RP>,
+            future: StreamBoxedFuture<'a, C>,
         },
         Ending {
             #[pin]
@@ -282,7 +282,7 @@ pin_project_lite::pin_project! {
     }
 }
 
-impl<'a, RP> EventStreamState<'a, RP>
+impl<'a, RP> EventStreamState<'a, AmqpConsumer<RP>>
 where
     RP: Send + 'a,
 {
@@ -296,7 +296,7 @@ where
 
     pub(crate) fn project_future(
         self: Pin<&mut Self>,
-    ) -> Option<Pin<&mut StreamBoxedFuture<'a, RP>>> {
+    ) -> Option<Pin<&mut StreamBoxedFuture<'a, AmqpConsumer<RP>>>> {
         match self.project() {
             EventStreamStateProj::Future { future } => Some(future),
             _ => None,
@@ -310,7 +310,7 @@ where
         }
     }
 
-    pub(crate) fn take_value(self: Pin<&mut Self>) -> Option<EventStreamStateValue<'a, RP>> {
+    pub(crate) fn take_value(self: Pin<&mut Self>) -> Option<EventStreamStateValue<'a, AmqpConsumer<RP>>> {
         match &*self {
             EventStreamState::Value { .. } => match self.project_replace(EventStreamState::Empty) {
                 EventStreamStateProjReplace::Value { value } => Some(value),
@@ -358,7 +358,7 @@ pin_project_lite::pin_project! {
     }
 }
 
-impl<'a, RP> EventStream<'a, RP>
+impl<'a, RP> EventStream<'a, AmqpConsumer<RP>>
 where
     RP: Send + 'a,
 {
@@ -379,7 +379,7 @@ where
     }
 }
 
-impl<'a, RP> Stream for EventStream<'a, RP>
+impl<'a, RP> Stream for EventStream<'a, AmqpConsumer<RP>>
 where
     RP: EventHubsRetryPolicy + Send + 'a,
 {

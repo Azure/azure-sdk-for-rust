@@ -1,5 +1,4 @@
 mod basic_retry_policy;
-mod cancellable_stream;
 mod recoverable_transport;
 mod transport_client;
 mod transport_consumer;

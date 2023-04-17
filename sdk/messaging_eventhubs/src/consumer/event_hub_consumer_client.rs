@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_consumer::EventStream},
+    amqp::{amqp_client::AmqpClient, amqp_consumer::{EventStream, AmqpConsumer}},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
@@ -133,7 +133,7 @@ where
         partition_id: &str,
         starting_position: EventPosition,
         read_event_options: ReadEventOptions,
-    ) -> Result<EventStream<'_, RP>, azure_core::Error> {
+    ) -> Result<EventStream<'_, AmqpConsumer<RP>>, azure_core::Error> {
         let consumer = self
             .connection
             .create_transport_consumer(
