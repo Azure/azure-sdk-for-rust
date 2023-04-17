@@ -73,10 +73,7 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     #[inline]
-    async fn fill_buf(
-        &mut self,
-        buffer: &mut VecDeque<ReceivedEvent>,
-    ) -> Result<(), RecvError> {
+    async fn fill_buf(&mut self, buffer: &mut VecDeque<ReceivedEvent>) -> Result<(), RecvError> {
         // Only receive messages if there is space in the buffer
         let max_messages = buffer.capacity() - buffer.len();
         // Credit mode is manual, need to set credit
@@ -165,10 +162,10 @@ where
 {
     let mut failed_attempts = 0;
     let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
-    let wait_time = max_wait_time.unwrap_or(try_timeout);
     let mut should_try_recover = false;
 
     loop {
+        let wait_time = max_wait_time.unwrap_or(try_timeout);
         let err =
             match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time).await {
                 Ok(_) => return Ok(()),
@@ -277,7 +274,8 @@ type StreamBoxedFuture<'a, C> = Pin<
                     Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
                     EventStreamStateValue<'a, C>,
                 ),
-            > + Send + 'a,
+            > + Send
+            + 'a,
     >,
 >;
 type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + 'a>>;
@@ -314,7 +312,9 @@ where
         }
     }
 
-    pub(crate) fn project_closing(self: Pin<&mut Self>) -> Option<Pin<&mut ClosingBoxedFuture<'a>>> {
+    pub(crate) fn project_closing(
+        self: Pin<&mut Self>,
+    ) -> Option<Pin<&mut ClosingBoxedFuture<'a>>> {
         match self.project() {
             EventStreamStateProj::Closing { future } => Some(future),
             _ => None,
@@ -378,7 +378,7 @@ impl<'a, RP> EventStream<'a, AmqpConsumer<RP>>
 where
     RP: Send + 'a,
 {
-    pub(crate) fn new(
+    pub(crate) fn with_consumer(
         client: &'a mut Sharable<AmqpClient>,
         consumer: AmqpConsumer<RP>,
         max_messages: u32,

@@ -1,7 +1,10 @@
 use std::marker::PhantomData;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_consumer::{EventStream, AmqpConsumer}},
+    amqp::{
+        amqp_client::AmqpClient,
+        amqp_consumer::{AmqpConsumer, EventStream},
+    },
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
@@ -151,7 +154,7 @@ where
 
         println!("Created consumer");
 
-        let event_stream = EventStream::new(
+        let event_stream = EventStream::with_consumer(
             &mut self.connection.inner,
             consumer,
             read_event_options.cache_event_count,
