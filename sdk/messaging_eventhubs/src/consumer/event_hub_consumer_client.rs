@@ -1,12 +1,10 @@
 use std::marker::PhantomData;
 
-use futures_util::Stream;
-
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_consumer::{EventStream}, error::RecoverAndReceiveError},
+    amqp::{amqp_client::AmqpClient, amqp_consumer::EventStream},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, ReceivedEvent,
+    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
 };
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};

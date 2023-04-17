@@ -1,6 +1,9 @@
-use std::{pin::Pin, task::{Context, Poll}};
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 
-use futures_util::{Stream, Future};
+use futures_util::{Future, Stream};
 
 pin_project_lite::pin_project! {
     pub struct CancelStreamFut<'a, T> {
@@ -32,7 +35,9 @@ where
 }
 
 pub trait CancellableStream: Stream {
-    type CancelFut<'a>: Future<Output = Result<(), Self::CancelError>> where Self: 'a;
+    type CancelFut<'a>: Future<Output = Result<(), Self::CancelError>>
+    where
+        Self: 'a;
     type CancelError: std::error::Error;
 
     fn try_cancel(&mut self) -> Result<(), Self::CancelError>;

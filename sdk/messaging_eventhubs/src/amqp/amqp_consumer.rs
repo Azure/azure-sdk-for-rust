@@ -1,7 +1,12 @@
-use std::{collections::VecDeque, time::Duration as StdDuration, task::{Poll, Context}, pin::Pin};
+use std::{
+    collections::VecDeque,
+    pin::Pin,
+    task::{Context, Poll},
+    time::Duration as StdDuration,
+};
 
 use fe2o3_amqp::{link::RecvError, session::SessionHandle, Receiver};
-use futures_util::{FutureExt, SinkExt, Stream, Future, ready, future::poll_fn};
+use futures_util::{future::poll_fn, ready, Future, FutureExt, SinkExt, Stream};
 use tokio::sync::mpsc;
 use url::Url;
 
@@ -9,7 +14,7 @@ use crate::{
     consumer::EventPosition,
     core::{RecoverableError, RecoverableTransport, TransportClient, TransportConsumer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util::{self, sharable::Sharable, IntoAzureCoreError},
+    util::{self, sharable::Sharable},
     ReceivedEvent,
 };
 
@@ -145,18 +150,11 @@ where
     let mut should_try_recover = false;
 
     loop {
-        let err = match recover_and_recv(
-            client,
-            consumer,
-            should_try_recover,
-            buffer,
-            wait_time,
-        )
-        .await
-        {
-            Ok(_) => return Ok(()),
-            Err(err) => err,
-        };
+        let err =
+            match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time).await {
+                Ok(_) => return Ok(()),
+                Err(err) => err,
+            };
 
         if err.is_scope_disposed() {
             return Err(err);
@@ -201,18 +199,32 @@ where
     }
 }
 
-async fn next_event<'a, RP>(mut value: EventStreamStateValue<'a, RP>) -> (Option<Result<ReceivedEvent, RecoverAndReceiveError>>, EventStreamStateValue<'a, RP>)
+async fn next_event<'a, RP>(
+    mut value: EventStreamStateValue<'a, RP>,
+) -> (
+    Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
+    EventStreamStateValue<'a, RP>,
+)
 where
     RP: EventHubsRetryPolicy + Send,
 {
-    match next_event_inner(value.client, &mut value.consumer, &mut value.buffer, value.max_wait_time).await {
+    match next_event_inner(
+        value.client,
+        &mut value.consumer,
+        &mut value.buffer,
+        value.max_wait_time,
+    )
+    .await
+    {
         Ok(Some(event)) => (Some(Ok(event)), value),
         Ok(None) => (None, value),
         Err(err) => (Some(Err(err)), value),
     }
 }
 
-async fn dispose_consumer<'a, RP>(value: EventStreamStateValue<'a, RP>) -> Result<(), DisposeConsumerError> {
+async fn dispose_consumer<'a, RP>(
+    value: EventStreamStateValue<'a, RP>,
+) -> Result<(), DisposeConsumerError> {
     value.consumer.dispose().await
 }
 
@@ -239,7 +251,16 @@ impl<'a, RP> EventStreamStateValue<'a, RP> {
     }
 }
 
-type StreamBoxedFuture<'a, RP> = Pin<Box<dyn Future<Output = (Option<Result<ReceivedEvent, RecoverAndReceiveError>>, EventStreamStateValue<'a, RP>)> + 'a>>;
+type StreamBoxedFuture<'a, RP> = Pin<
+    Box<
+        dyn Future<
+                Output = (
+                    Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
+                    EventStreamStateValue<'a, RP>,
+                ),
+            > + 'a,
+    >,
+>;
 type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + 'a>>;
 
 pin_project_lite::pin_project! {
@@ -273,7 +294,9 @@ where
         matches!(self, Self::Future { .. })
     }
 
-    pub(crate) fn project_future(self: Pin<&mut Self>) -> Option<Pin<&mut StreamBoxedFuture<'a, RP>>> {
+    pub(crate) fn project_future(
+        self: Pin<&mut Self>,
+    ) -> Option<Pin<&mut StreamBoxedFuture<'a, RP>>> {
         match self.project() {
             EventStreamStateProj::Future { future } => Some(future),
             _ => None,
@@ -297,14 +320,21 @@ where
         }
     }
 
-    pub fn poll_dispose(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Result<(), DisposeConsumerError>> {
+    pub fn poll_dispose(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context,
+    ) -> Poll<Result<(), DisposeConsumerError>> {
         if let Some(value) = self.as_mut().take_value() {
-            self.set(EventStreamState::Ending { future: dispose_consumer(value).boxed() });
+            self.set(EventStreamState::Ending {
+                future: dispose_consumer(value).boxed(),
+            });
         }
 
         if let Some(future) = self.as_mut().project_future() {
             let (_, value) = ready!(future.poll(cx));
-            self.set(EventStreamState::Ending { future: dispose_consumer(value).boxed() });
+            self.set(EventStreamState::Ending {
+                future: dispose_consumer(value).boxed(),
+            });
         }
 
         let result = match self.as_mut().project_ending() {
@@ -359,7 +389,9 @@ where
         let mut this = self.project();
 
         if let Some(state) = this.state.as_mut().take_value() {
-            this.state.set(EventStreamState::Future { future: next_event(state).boxed() });
+            this.state.set(EventStreamState::Future {
+                future: next_event(state).boxed(),
+            });
         }
 
         let (item, next_state) = match this.state.as_mut().project_future() {
@@ -368,10 +400,13 @@ where
         };
 
         if let Some(item) = item {
-            this.state.set(EventStreamState::Value { value: next_state });
+            this.state
+                .set(EventStreamState::Value { value: next_state });
             Poll::Ready(Some(item))
         } else {
-            this.state.set(EventStreamState::Ending { future: dispose_consumer(next_state).boxed() });
+            this.state.set(EventStreamState::Ending {
+                future: dispose_consumer(next_state).boxed(),
+            });
             Poll::Ready(None)
         }
     }
