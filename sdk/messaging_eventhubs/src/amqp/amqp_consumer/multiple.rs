@@ -1,6 +1,6 @@
 //! A wrapper around a vector of consumers.
 
-use std::{pin::Pin, task::{Context, Poll}, collections::VecDeque, time::Duration as StdDuration};
+use std::{pin::Pin, task::{Context, Poll}, collections::VecDeque, time::Duration as StdDuration, ops::{Deref, DerefMut}};
 
 use fe2o3_amqp::link::RecvError;
 use futures_util::{FutureExt, Future, ready, future::poll_fn, Stream};
@@ -127,25 +127,29 @@ pub struct MultiAmqpConsumer<RP> {
     retry_policy: RP,
 }
 
-pub(crate) struct MultiAmqpConsumerRecv<'a, RP> {
-    state: &'a mut MultiAmqpConsumer<RP>,
+pin_project_lite::pin_project! {
+    pub(crate) struct MultiAmqpConsumerRecv<'a, RP> {
+        #[pin]
+        state: &'a mut MultiAmqpConsumer<RP>,
+    }
 }
 
 impl<'a, RP> Future for MultiAmqpConsumerRecv<'a, RP>
 where
-    RP: Send + Unpin,
+    RP: Send + Unpin + 'static,
 {
     type Output = Option<Result<ReceivedEvent, RecvError>>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let state = Pin::new(self.state);
-        state.poll_recv(cx)
+        let this = self.project();
+        let pinned = Pin::new(this.state.get_mut().deref_mut());
+        pinned.poll_recv(cx)
     }
 }
 
 impl<RP> MultiAmqpConsumer<RP>
 where
-    RP: Send + Unpin,
+    RP: Send + Unpin + 'static,
 {
     fn poll_recv(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Result<ReceivedEvent, RecvError>>> {
         if self.inner.is_empty() {
@@ -228,7 +232,7 @@ async fn recover_and_recv<RP>(
     max_wait_time: StdDuration,
 ) -> Result<(), RecoverAndReceiveError>
 where
-    RP: EventHubsRetryPolicy + Send + Unpin,
+    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
     if should_try_recover {
         if let Err(recovery_err) = client.recover().await {
@@ -254,7 +258,7 @@ async fn receive_event<RP>(
     max_wait_time: Option<StdDuration>,
 ) -> Result<(), RecoverAndReceiveError>
 where
-    RP: EventHubsRetryPolicy + Send + Unpin,
+    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
     let mut failed_attempts = 0;
     let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
@@ -295,7 +299,7 @@ async fn next_event_inner<RP>(
     max_wait_time: Option<StdDuration>,
 ) -> Result<Option<ReceivedEvent>, RecoverAndReceiveError>
 where
-    RP: EventHubsRetryPolicy + Send + Unpin,
+    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
     if let Some(event) = buffer.pop_front() {
         return Ok(Some(event));
@@ -318,7 +322,7 @@ async fn next_event<'a, RP>(
     EventStreamStateValue<'a, MultiAmqpConsumer<RP>>,
 )
 where
-    RP: EventHubsRetryPolicy + Send + Unpin,
+    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
     match next_event_inner(
         value.client,
@@ -349,7 +353,7 @@ where
 
 impl<'a, RP> EventStreamState<'a, MultiAmqpConsumer<RP>>
 where
-    RP: Send + 'a,
+    RP: Send + 'static,
 {
     fn poll_dispose(
         mut self: Pin<&mut Self>,
@@ -384,7 +388,7 @@ where
 
 impl<'a, RP> Stream for EventStream<'a, MultiAmqpConsumer<RP>>
 where
-    RP: EventHubsRetryPolicy + Send + Unpin + 'a,
+    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
     type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
 

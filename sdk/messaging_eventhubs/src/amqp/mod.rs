@@ -18,7 +18,6 @@ pub(crate) mod amqp_system_properties;
 pub(crate) mod cbs_token_provider;
 pub(crate) mod error;
 pub(crate) mod token_type;
-pub(crate) mod amqp_consumer_vec;
 
 use std::sync::atomic::AtomicU32;
 

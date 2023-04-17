@@ -24,7 +24,7 @@ use super::{
     error::{DisposeConsumerError, RecoverAndReceiveError},
 };
 
-mod amqp_consumer_vec;
+mod multiple;
 
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
