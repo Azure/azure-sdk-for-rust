@@ -2,8 +2,8 @@ use std::sync::{atomic::Ordering, Arc};
 
 use async_trait::async_trait;
 use fe2o3_amqp::{link::ReceiverAttachExchange, Session};
-use fe2o3_amqp_types::messaging::{Body, Modified};
-use serde_amqp::Value;
+use fe2o3_amqp_types::messaging::{Body, FilterSet, Modified, Source};
+use serde_amqp::{described::Described, Value};
 use url::Url;
 
 use crate::{
@@ -22,6 +22,7 @@ use crate::{
 use super::{
     amqp_connection_scope::AmqpConnectionScope,
     amqp_consumer::AmqpConsumer,
+    amqp_filter::{self, ConsumerFilter},
     amqp_management::partition_properties::PartitionPropertiesRequest,
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
@@ -331,6 +332,24 @@ impl TransportClient for AmqpClient {
                 required_claims,
             )
             .await?;
+
+        if let Some(Ok(event_position)) = consumer
+            .current_event_position
+            .clone()
+            .map(amqp_filter::build_filter_expression)
+        {
+            let consumer_filter = Described::<Value>::from(ConsumerFilter(event_position));
+            let source = consumer.receiver.source_mut().get_or_insert(
+                Source::builder()
+                    .address(consumer.endpoint.to_string())
+                    .build(),
+            );
+            let source_filter = source.filter.get_or_insert(FilterSet::new());
+            source_filter.insert(
+                amqp_filter::CONSUMER_FILTER_NAME.into(),
+                consumer_filter.into(),
+            );
+        }
 
         let mut exchange = if consumer.session_handle.is_ended() {
             let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;

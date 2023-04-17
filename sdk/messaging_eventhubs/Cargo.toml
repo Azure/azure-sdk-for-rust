@@ -30,7 +30,7 @@ pin-project-lite = "0.2.9"
 azure_core = { path = "../core" }
 
 # AMQP dependencies
-fe2o3-amqp = { version = "0.8.21" }
+fe2o3-amqp = { version = "0.8.22" }
 fe2o3-amqp-types = "0.7.1"
 fe2o3-amqp-management = "0.2.2"
 fe2o3-amqp-cbs = "0.2"

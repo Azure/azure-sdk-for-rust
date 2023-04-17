@@ -48,7 +48,7 @@ async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins()
 
         log::info!("counter: {}", counter);
         counter += 1;
-        if counter > 10 {
+        if counter > 30 {
             break;
         }
     }
