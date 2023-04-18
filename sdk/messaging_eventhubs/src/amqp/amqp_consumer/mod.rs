@@ -8,6 +8,7 @@ use std::{
 use fe2o3_amqp::{link::RecvError, session::SessionHandle, Receiver};
 use futures_util::{future::poll_fn, ready, Future, FutureExt, SinkExt, Stream};
 use tokio::sync::mpsc;
+use tokio_util::sync::CancellationToken;
 use url::Url;
 
 use crate::{
@@ -105,12 +106,17 @@ impl<RP> AmqpConsumer<RP> {
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
         max_wait_time: StdDuration,
-    ) -> Result<(), RecoverAndReceiveError> {
+        cancellation_token: &CancellationToken,
+    ) -> Result<Option<()>, RecoverAndReceiveError> {
         futures_util::select_biased! {
-            _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(()),
+            _ = cancellation_token.cancelled().fuse() => {
+                log::debug!("Cancellation token is cancelled");
+                Ok(None)
+            },
+            _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(Some(())),
             result = self.fill_buf(buffer).fuse() => {
                 result?;
-                Ok(())
+                Ok(Some(()))
             }
         }
     }
@@ -122,7 +128,8 @@ async fn recover_and_recv<RP>(
     should_try_recover: bool,
     buffer: &mut VecDeque<ReceivedEvent>,
     max_wait_time: StdDuration,
-) -> Result<(), RecoverAndReceiveError>
+    cancellation_token: &CancellationToken,
+) -> Result<Option<()>, RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -142,13 +149,20 @@ where
         }
     }
 
-    consumer
-        .fill_buf_with_timeout(buffer, max_wait_time)
-        .await?;
-    if consumer.track_last_enqueued_event_properties {
-        consumer.last_received_event = buffer.back().cloned();
+    match consumer
+        .fill_buf_with_timeout(buffer, max_wait_time, cancellation_token)
+        .await?
+    {
+        Some(_) => {
+            if consumer.track_last_enqueued_event_properties {
+                if let Some(event) = buffer.back().cloned() {
+                    consumer.last_received_event = Some(event);
+                }
+            }
+            Ok(Some(()))
+        }
+        None => Ok(None),
     }
-    Ok(())
 }
 
 async fn receive_event<RP>(
@@ -156,7 +170,8 @@ async fn receive_event<RP>(
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
     max_wait_time: Option<StdDuration>,
-) -> Result<(), RecoverAndReceiveError>
+    cancellation_token: &CancellationToken,
+) -> Option<Result<(), RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -167,13 +182,13 @@ where
     loop {
         let wait_time = max_wait_time.unwrap_or(try_timeout);
         let err =
-            match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time).await {
-                Ok(_) => return Ok(()),
+            match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time, cancellation_token).await.transpose()? {
+                Ok(_) => return Some(Ok(())),
                 Err(err) => err,
             };
 
         if err.is_scope_disposed() {
-            return Err(err);
+            return Some(Err(err));
         }
         should_try_recover = err.should_try_recover();
 
@@ -187,7 +202,7 @@ where
                 util::time::sleep(retry_delay).await;
                 try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
             }
-            None => return Err(err),
+            None => return Some(Err(err)),
         }
     }
 }
@@ -197,20 +212,23 @@ async fn next_event_inner<RP>(
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
     max_wait_time: Option<StdDuration>,
-) -> Result<Option<ReceivedEvent>, RecoverAndReceiveError>
+    cancellation_token: &CancellationToken,
+) -> Option<Result<ReceivedEvent, RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send,
 {
     if let Some(event) = buffer.pop_front() {
-        return Ok(Some(event));
+        return Some(Ok(event));
     }
 
     loop {
-        let result = receive_event(client, consumer, buffer, max_wait_time).await;
+        let result = receive_event(client, consumer, buffer, max_wait_time, cancellation_token).await?;
 
         match buffer.pop_front() {
-            Some(event) => return Ok(Some(event)),
-            None => result?,
+            Some(event) => return Some(Ok(event)),
+            None => if let Err(err) = result {
+                return Some(Err(err));
+            },
         }
     }
 }
@@ -224,18 +242,15 @@ async fn next_event<'a, RP>(
 where
     RP: EventHubsRetryPolicy + Send,
 {
-    match next_event_inner(
+    let outcome = next_event_inner(
         value.client,
         &mut value.consumer,
         &mut value.buffer,
         value.max_wait_time,
+        &value.cancellation_token
     )
-    .await
-    {
-        Ok(Some(event)) => (Some(Ok(event)), value),
-        Ok(None) => (None, value),
-        Err(err) => (Some(Err(err)), value),
-    }
+    .await;
+    (outcome, value)
 }
 
 async fn close_consumer<'a, RP>(
@@ -249,6 +264,7 @@ pub struct EventStreamStateValue<'a, C> {
     pub(crate) consumer: C,
     pub(crate) buffer: VecDeque<ReceivedEvent>,
     pub(crate) max_wait_time: Option<StdDuration>,
+    pub(crate) cancellation_token: CancellationToken,
 }
 
 impl<'a, C> EventStreamStateValue<'a, C> {
@@ -257,12 +273,14 @@ impl<'a, C> EventStreamStateValue<'a, C> {
         consumer: C,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
+        cancellation_token: CancellationToken,
     ) -> Self {
         Self {
             client,
             consumer,
             buffer: VecDeque::with_capacity(max_messages as usize),
             max_wait_time,
+            cancellation_token,
         }
     }
 }
@@ -371,6 +389,7 @@ pin_project_lite::pin_project! {
     pub struct EventStream<'a, RP> {
         #[pin]
         state: EventStreamState<'a, RP>,
+        cancel_source: CancellationToken,
     }
 }
 
@@ -384,13 +403,16 @@ where
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Self {
-        let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time);
+        let cancel_source = CancellationToken::new();
+        let cancellation_token = cancel_source.child_token();
+        let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time, cancellation_token);
         let state = EventStreamState::Value { value };
 
-        Self { state }
+        Self { state, cancel_source }
     }
 
     pub async fn close(self) -> Result<(), DisposeConsumerError> {
+        self.cancel_source.cancel();
         self.state.close().await
     }
 }
