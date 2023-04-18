@@ -80,7 +80,10 @@ async fn event_consumer_can_receive_events_from_all_partitions() {
 
     let mut options = ReadEventOptions::default();
     options.cache_event_count = 3;
-    let mut stream = consumer.read_events(true, Default::default()).await.unwrap();
+    let mut stream = consumer
+        .read_events(true, Default::default())
+        .await
+        .unwrap();
 
     let mut counter = 0;
     while let Some(Ok(event)) = stream.next().await {

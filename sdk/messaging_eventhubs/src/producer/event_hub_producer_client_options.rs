@@ -12,16 +12,12 @@ pub struct EventHubProducerClientOptions {
     pub connection_options: EventHubConnectionOptions,
     pub retry_options: EventHubsRetryOptions,
     pub identifier: Option<String>,
-    pub enable_idempotent_partitions: bool,
     pub partition_options: HashMap<String, PartitionPublishingOptions>,
 }
 
 impl EventHubProducerClientOptions {
     pub(crate) fn create_features(&self) -> TransportProducerFeatures {
-        match self.enable_idempotent_partitions {
-            true => TransportProducerFeatures::IdempotentPublishing,
-            false => TransportProducerFeatures::None,
-        }
+        TransportProducerFeatures::None
     }
 
     pub(crate) fn get_publishing_options_or_default_for_partition(

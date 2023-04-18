@@ -1,7 +1,11 @@
 use async_trait::async_trait;
 
 use crate::{
-    producer::{create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions, partition_publishing_properties::PartitionPublishingProperties},
+    producer::{
+        create_batch_options::CreateBatchOptions,
+        partition_publishing_properties::PartitionPublishingProperties,
+        send_event_options::SendEventOptions,
+    },
     Event,
 };
 

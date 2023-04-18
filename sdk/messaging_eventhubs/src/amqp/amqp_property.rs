@@ -25,9 +25,9 @@ pub(crate) const TRACK_LAST_ENQUEUED_EVENT_PROPERTIES: SymbolRef = SymbolRef(con
     ":enable-receiver-runtime-metric"
 ));
 
-/// The capability for opting-into idempotent publishing.
-pub(crate) const ENABLE_IDEMPOTENT_PUBLISHING: SymbolRef =
-    SymbolRef(concatcp!(amqp_constants::VENDOR, ":idempotent-producer"));
+// /// The capability for opting-into idempotent publishing.
+// pub(crate) const ENABLE_IDEMPOTENT_PUBLISHING: SymbolRef =
+//     SymbolRef(concatcp!(amqp_constants::VENDOR, ":idempotent-producer"));
 
 /// The identifier of the producer group to associate with a producer.
 pub(crate) const PRODUCER_GROUP_ID: SymbolRef =

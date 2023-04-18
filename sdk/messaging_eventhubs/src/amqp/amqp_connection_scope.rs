@@ -35,7 +35,9 @@ use crate::{
     consumer::EventPosition,
     core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
-    producer::{PartitionPublishingOptions, partition_publishing_properties::PartitionPublishingProperties},
+    producer::{
+        partition_publishing_properties::PartitionPublishingProperties, PartitionPublishingOptions,
+    },
 };
 
 use super::{
@@ -315,7 +317,7 @@ impl AmqpConnectionScope {
                     _ => None,
                 });
             PartitionPublishingProperties {
-                is_idempotent_publishing_enabled: false,
+                // is_idempotent_publishing_enabled: false, // TODO: should idempotent publishing be implemented?
                 producer_group_id,
                 owner_level,
                 last_published_sequence_number: starting_sequence_number,
@@ -337,7 +339,7 @@ impl AmqpConnectionScope {
     async fn create_sending_session_and_link(
         &mut self,
         endpoint: &Url,
-        features: TransportProducerFeatures,
+        _features: TransportProducerFeatures,
         options: PartitionPublishingOptions,
         session_identifier: u32,
         link_identifier: u32,
@@ -372,10 +374,6 @@ impl AmqpConnectionScope {
             .name(link_name)
             .source(identifier)
             .target(endpoint.to_string());
-
-        if let TransportProducerFeatures::IdempotentPublishing = features {
-            builder = builder.add_desired_capabilities(amqp_property::ENABLE_IDEMPOTENT_PUBLISHING);
-        }
 
         // If any of the options have a value, the entire set must be specified for the link
         // settings.  For any options that did not have a value, specifying null will signal the

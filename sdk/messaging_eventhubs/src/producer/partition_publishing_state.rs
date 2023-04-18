@@ -16,6 +16,8 @@ impl PartitionPublishingState {
     }
 
     pub fn is_initialized(&self) -> bool {
-        self.producer_group_id.is_some() && self.owner_level.is_some() && self.last_published_sequence_number.is_some()
+        self.producer_group_id.is_some()
+            && self.owner_level.is_some()
+            && self.last_published_sequence_number.is_some()
     }
 }

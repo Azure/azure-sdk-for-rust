@@ -1,5 +1,3 @@
-use crate::util::IntoAzureCoreError;
-
 #[derive(Debug)]
 pub struct CannotPublishToGateway {
     _sealed: (),

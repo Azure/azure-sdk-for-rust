@@ -10,7 +10,9 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
         create_batch_options::CreateBatchOptions,
-        event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT, send_event_options::SendEventOptions, partition_publishing_properties::PartitionPublishingProperties,
+        event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT,
+        partition_publishing_properties::PartitionPublishingProperties,
+        send_event_options::SendEventOptions,
     },
     util::{self, sharable::Sharable},
     Event,

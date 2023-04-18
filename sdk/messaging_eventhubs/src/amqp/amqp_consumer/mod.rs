@@ -181,11 +181,20 @@ where
 
     loop {
         let wait_time = max_wait_time.unwrap_or(try_timeout);
-        let err =
-            match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time, cancellation_token).await.transpose()? {
-                Ok(_) => return Some(Ok(())),
-                Err(err) => err,
-            };
+        let err = match recover_and_recv(
+            client,
+            consumer,
+            should_try_recover,
+            buffer,
+            wait_time,
+            cancellation_token,
+        )
+        .await
+        .transpose()?
+        {
+            Ok(_) => return Some(Ok(())),
+            Err(err) => err,
+        };
 
         if err.is_scope_disposed() {
             return Some(Err(err));
@@ -222,13 +231,16 @@ where
     }
 
     loop {
-        let result = receive_event(client, consumer, buffer, max_wait_time, cancellation_token).await?;
+        let result =
+            receive_event(client, consumer, buffer, max_wait_time, cancellation_token).await?;
 
         match buffer.pop_front() {
             Some(event) => return Some(Ok(event)),
-            None => if let Err(err) = result {
-                return Some(Err(err));
-            },
+            None => {
+                if let Err(err) = result {
+                    return Some(Err(err));
+                }
+            }
         }
     }
 }
@@ -247,7 +259,7 @@ where
         &mut value.consumer,
         &mut value.buffer,
         value.max_wait_time,
-        &value.cancellation_token
+        &value.cancellation_token,
     )
     .await;
     (outcome, value)
@@ -405,10 +417,19 @@ where
     ) -> Self {
         let cancel_source = CancellationToken::new();
         let cancellation_token = cancel_source.child_token();
-        let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time, cancellation_token);
+        let value = EventStreamStateValue::new(
+            client,
+            consumer,
+            max_messages,
+            max_wait_time,
+            cancellation_token,
+        );
         let state = EventStreamState::Value { value };
 
-        Self { state, cancel_source }
+        Self {
+            state,
+            cancel_source,
+        }
     }
 
     pub async fn close(self) -> Result<(), DisposeConsumerError> {
