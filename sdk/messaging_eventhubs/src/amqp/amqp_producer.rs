@@ -10,8 +10,7 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
         create_batch_options::CreateBatchOptions,
-        event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT, send_event_options::SendEventOptions,
-        PartitionPublishingOptions,
+        event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT, send_event_options::SendEventOptions, partition_publishing_properties::PartitionPublishingProperties,
     },
     util::{self, sharable::Sharable},
     Event,
@@ -35,7 +34,7 @@ pub struct AmqpProducer<RP> {
     pub(crate) session_identifier: u32,
     pub(crate) sender: Sender,
     pub(crate) link_identifier: u32,
-    pub(crate) initialized_partition_properties: PartitionPublishingOptions,
+    pub(crate) initialized_partition_properties: PartitionPublishingProperties,
     pub(crate) retry_policy: RP,
     pub(crate) endpoint: Url,
     pub(crate) cbs_command_sender: mpsc::Sender<Command>,
@@ -270,5 +269,9 @@ where
             Some(batch) => self.send_batch_envelope(batch).await,
             None => Ok(()),
         }
+    }
+
+    fn read_initialization_publishing_properties(&self) -> &PartitionPublishingProperties {
+        &self.producer.initialized_partition_properties
     }
 }

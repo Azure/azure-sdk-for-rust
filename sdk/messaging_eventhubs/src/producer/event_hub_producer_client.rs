@@ -8,17 +8,26 @@ use crate::{
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
+    producer::error::{CannotPublishToGateway, InvalidPartitionState},
     util::IntoAzureCoreError,
-    Event, EventHubConnection, EventHubsRetryOptions, PartitionProperties,
+    Event, EventHubConnection, EventHubsRetryOptions, PartitionProperties, PublishSequenceNumber,
 };
 
 use super::{
     create_batch_options::CreateBatchOptions, event_batch::EventBatch,
     event_hub_producer_client_options::EventHubProducerClientOptions,
-    send_event_options::SendEventOptions,
+    partition_publishing_state::PartitionPublishingState, send_event_options::SendEventOptions,
 };
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
+
+fn next_sequence_number(current: i32) -> i32 {
+    let next = current.wrapping_add(1);
+    match next < 0 {
+        true => 0,
+        false => next,
+    }
+}
 
 pub struct EventHubProducerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
@@ -28,6 +37,7 @@ pub struct EventHubProducerClient<RP> {
     producer_pool: HashMap<String, AmqpProducer<RP>>,
     options: EventHubProducerClientOptions,
     retry_policy_marker: PhantomData<RP>,
+    partition_state: HashMap<String, PartitionPublishingState>,
 }
 
 impl EventHubProducerClient<BasicRetryPolicy> {
@@ -78,12 +88,17 @@ impl<RP> EventHubProducerClientBuilder<RP> {
             client_options.connection_options.clone(),
         )
         .await?;
+        let partition_state = match client_options.enable_idempotent_partitions {
+            true => HashMap::new(),
+            false => HashMap::with_capacity(0),
+        };
         Ok(EventHubProducerClient {
             connection,
             gateway_producer: None,
             producer_pool: HashMap::new(),
             options: client_options,
             retry_policy_marker: PhantomData,
+            partition_state,
         })
     }
 
@@ -93,6 +108,10 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         client_options: EventHubProducerClientOptions,
     ) -> EventHubProducerClient<RP> {
         let connection = connection.clone_as_shared();
+        let partition_state = match client_options.enable_idempotent_partitions {
+            true => HashMap::new(),
+            false => HashMap::with_capacity(0),
+        };
 
         EventHubProducerClient {
             connection,
@@ -100,6 +119,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
             producer_pool: HashMap::new(),
             options: client_options,
             retry_policy_marker: PhantomData,
+            partition_state,
         }
     }
 }
@@ -208,6 +228,82 @@ where
             .await
     }
 
+    async fn send_idempotent(
+        &mut self,
+        events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
+        let partition_id = options
+            .partition_id
+            .as_deref()
+            .ok_or(CannotPublishToGateway::new())?;
+        let contains_key = self.partition_state.contains_key(partition_id);
+
+        let mut producer = self.get_pooled_producer_mut(Some(partition_id)).await?;
+
+        if !contains_key {
+            let initial_properties = producer.read_initialization_publishing_properties().clone();
+
+            let mut state = PartitionPublishingState::new(partition_id.to_string());
+            state.producer_group_id = initial_properties.producer_group_id;
+            state.owner_level = initial_properties.owner_level;
+            state.last_published_sequence_number =
+                initial_properties.last_published_sequence_number;
+            self.partition_state.insert(partition_id.to_string(), state);
+        }
+
+        let partition_state = self
+            .partition_state
+            .get_mut(partition_id)
+            .ok_or(InvalidPartitionState::new())?;
+
+        let producer_group_id = partition_state.producer_group_id.ok_or(InvalidPartitionState::new())?;
+        let owner_level = partition_state.owner_level.ok_or(InvalidPartitionState::new())?;
+        let pending_publish_sequence_numbers = next_sequence_number(
+            partition_state
+                .last_published_sequence_number
+                .ok_or(InvalidPartitionState::new())?,
+        );
+
+        // let events = events.map(|mut event| {
+        //     let sequence_no = PublishSequenceNumber::Pending { value: pending_publish_sequence_numbers, producer_group_id, owner_level };
+        //     event.sequence_number = Some(sequence_no);
+        //     event
+        // });
+
+        // let partition_state = match self.partition_state.con(partition_id) {
+        //     Some(state) => state,
+        //     None => {
+        //         let state = PartitionPublishingState::new(partition_id.to_string());
+        //         self.partition_state.insert(partition_id.to_string(), state);
+        //         self.partition_state.get_mut(partition_id).unwrap()
+        //     }
+        // };
+
+        // // Creating the link should initialize the state. If a producer is created but the state is
+        // if !partition_state.is_initialized() {
+        //     let initial_properties = producer
+        //         .read_initialization_publishing_properties().clone();
+
+        //     return Err(InvalidPartitionState::new().into())
+        // }
+
+        todo!()
+    }
+
+    async fn send_inner(
+        &mut self,
+        events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
+        let partition_id = options.partition_id.as_deref();
+        let mut producer = self.get_pooled_producer_mut(partition_id).await?;
+        producer
+            .send(events.into_iter(), options)
+            .await
+            .map_err(IntoAzureCoreError::into_azure_core_error)
+    }
+
     pub async fn send_events<E>(
         &mut self,
         events: E,
@@ -219,15 +315,21 @@ where
     {
         match self.options.enable_idempotent_partitions {
             true => todo!(),
-            false => {
-                let partition_id = options.partition_id.as_deref();
-                let mut producer = self.get_pooled_producer_mut(partition_id).await?;
-                producer
-                    .send(events.into_iter(), options)
-                    .await
-                    .map_err(IntoAzureCoreError::into_azure_core_error)
-            }
+            false => self.send_inner(events.into_iter(), options).await,
         }
+    }
+
+    async fn send_batch_inner(
+        &mut self,
+        batch: EventBatch,
+        options: SendEventOptions,
+    ) -> Result<(), azure_core::Error> {
+        let partition_id = options.partition_id.as_deref();
+        let mut producer = self.get_pooled_producer_mut(partition_id).await?;
+        producer
+            .send_batch(batch.inner, options)
+            .await
+            .map_err(IntoAzureCoreError::into_azure_core_error)
     }
 
     pub async fn send_batch(
@@ -237,14 +339,7 @@ where
     ) -> Result<(), azure_core::Error> {
         match self.options.enable_idempotent_partitions {
             true => todo!(),
-            false => {
-                let partition_id = options.partition_id.as_deref();
-                let mut producer = self.get_pooled_producer_mut(partition_id).await?;
-                producer
-                    .send_batch(batch.inner, options)
-                    .await
-                    .map_err(IntoAzureCoreError::into_azure_core_error)
-            }
+            false => self.send_batch_inner(batch, options).await,
         }
     }
 

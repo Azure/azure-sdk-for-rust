@@ -35,7 +35,7 @@ use crate::{
     consumer::EventPosition,
     core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
-    producer::PartitionPublishingOptions,
+    producer::{PartitionPublishingOptions, partition_publishing_properties::PartitionPublishingProperties},
 };
 
 use super::{
@@ -314,10 +314,11 @@ impl AmqpConnectionScope {
                     Value::Int(v) => Some(*v),
                     _ => None,
                 });
-            PartitionPublishingOptions {
+            PartitionPublishingProperties {
+                is_idempotent_publishing_enabled: false,
                 producer_group_id,
                 owner_level,
-                starting_sequence_number,
+                last_published_sequence_number: starting_sequence_number,
             }
         });
 
