@@ -68,10 +68,25 @@ async fn event_consumer_can_receive_events_from_all_partitions() {
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
 
     let options = Default::default();
-    let consumer =
+    let mut consumer =
         EventHubConsumerClient::new(consumer_group, connection_string, event_hub_name, options)
             .await
             .unwrap();
+    let mut stream = consumer.read_events(true, Default::default()).await.unwrap();
+
+    let mut counter = 0;
+    while let Some(Ok(event)) = stream.next().await {
+        let body = event.body().unwrap();
+        let value = std::str::from_utf8(body).unwrap();
+        log::info!("{:?}", value);
+
+        log::info!("counter: {}", counter);
+        counter += 1;
+        if counter > 30 {
+            break;
+        }
+    }
+    stream.close().await.unwrap();
 
     consumer.close().await.unwrap();
 }

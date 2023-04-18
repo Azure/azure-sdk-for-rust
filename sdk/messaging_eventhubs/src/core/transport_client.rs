@@ -91,7 +91,7 @@ pub trait TransportClient: Sized {
 
     /// Performs the task needed to clean up resources used by the client,
     /// including ensuring that the client itself has been closed.
-    async fn dispose(mut self) -> Result<(), Self::DisposeError> {
+    async fn cl(mut self) -> Result<(), Self::DisposeError> {
         self.close().await?;
         Ok(())
     }

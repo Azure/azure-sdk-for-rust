@@ -14,7 +14,6 @@ use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
 
 pub struct EventHubConsumerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
-    // consumer_pool: HashMap<String, AmqpConsumer<RP>>,
     retry_policy_marker: PhantomData<RP>,
     options: EventHubConsumeClientOptions,
     consumer_group: String,
@@ -177,6 +176,7 @@ where
         let retry_policy = RP::from(self.options.retry_options.clone());
         let partitions = self.connection.get_partition_ids(retry_policy).await?;
 
+        // Create one consumer per partition
         let mut consumers = Vec::with_capacity(partitions.len());
         for partition in partitions {
             let retry_policy = RP::from(self.options.retry_options.clone());
@@ -197,6 +197,7 @@ where
             consumers.push(consumer);
         }
 
+        // Create an event stream that will read from all consumers
         let retry_policy = RP::from(self.options.retry_options.clone());
         let event_stream = EventStream::with_multiple_consumers(
             &mut self.connection.inner,
