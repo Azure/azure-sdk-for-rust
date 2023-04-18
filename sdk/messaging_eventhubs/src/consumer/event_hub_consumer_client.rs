@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::{
     amqp::{
         amqp_client::AmqpClient,
-        amqp_consumer::{AmqpConsumer, EventStream},
+        amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
     },
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -152,13 +152,58 @@ where
             )
             .await?;
 
-        println!("Created consumer");
-
         let event_stream = EventStream::with_consumer(
             &mut self.connection.inner,
             consumer,
             read_event_options.cache_event_count,
             read_event_options.maximum_wait_time,
+        );
+        Ok(event_stream)
+    }
+
+    pub async fn read_events(
+        &mut self,
+        start_reading_at_earliest_event: bool,
+        read_event_options: ReadEventOptions,
+    ) -> Result<EventStream<'_, MultipleAmqpConsumers<RP>>, azure_core::Error>
+    where
+        RP: 'static,
+    {
+        let starting_position = match start_reading_at_earliest_event {
+            true => EventPosition::earliest(),
+            false => EventPosition::latest(),
+        };
+
+        let retry_policy = RP::from(self.options.retry_options.clone());
+        let partitions = self.connection.get_partition_ids(retry_policy).await?;
+
+        let mut consumers = Vec::with_capacity(partitions.len());
+        for partition in partitions {
+            let retry_policy = RP::from(self.options.retry_options.clone());
+            let consumer = self
+                .connection
+                .create_transport_consumer(
+                    &self.consumer_group,
+                    &partition,
+                    self.options.identifier.clone(),
+                    starting_position.clone(),
+                    retry_policy,
+                    read_event_options.track_last_enqueued_event_properties,
+                    self.invalidate_consumer_when_partition_is_stolen,
+                    read_event_options.owner_level,
+                    Some(read_event_options.prefetch_count),
+                )
+                .await?;
+            consumers.push(consumer);
+        }
+
+        let retry_policy = RP::from(self.options.retry_options.clone());
+        let event_stream = EventStream::with_multiple_consumers(
+            &mut self.connection.inner,
+            consumers,
+            read_event_options.cache_event_count,
+            read_event_options.maximum_wait_time,
+            retry_policy,
         );
         Ok(event_stream)
     }

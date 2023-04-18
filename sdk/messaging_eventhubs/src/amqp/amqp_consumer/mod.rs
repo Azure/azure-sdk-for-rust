@@ -24,7 +24,7 @@ use super::{
     error::{DisposeConsumerError, RecoverAndReceiveError},
 };
 
-mod multiple;
+pub(crate) mod multiple;
 
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
@@ -42,7 +42,7 @@ pub struct AmqpConsumer<RP> {
 }
 
 impl<RP> AmqpConsumer<RP> {
-    pub async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
+    pub async fn close(mut self) -> Result<(), DisposeConsumerError> {
         // There is no need to remove the refresher if CBS link is already stopped
         let _ = self
             .cbs_command_sender
@@ -238,10 +238,10 @@ where
     }
 }
 
-async fn dispose_consumer<'a, RP>(
+async fn close_consumer<'a, RP>(
     value: EventStreamStateValue<'a, AmqpConsumer<RP>>,
 ) -> Result<(), DisposeConsumerError> {
-    value.consumer.dispose().await
+    value.consumer.close().await
 }
 
 pub struct EventStreamStateValue<'a, C> {
@@ -336,20 +336,20 @@ impl<'a, RP> EventStreamState<'a, AmqpConsumer<RP>>
 where
     RP: Send + 'a,
 {
-    fn poll_dispose(
+    fn poll_close(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
     ) -> Poll<Result<(), DisposeConsumerError>> {
         if let Some(value) = self.as_mut().take_value() {
             self.set(EventStreamState::Closing {
-                future: dispose_consumer(value).boxed(),
+                future: close_consumer(value).boxed(),
             });
         }
 
         if let Some(future) = self.as_mut().project_future() {
             let (_, value) = ready!(future.poll(cx));
             self.set(EventStreamState::Closing {
-                future: dispose_consumer(value).boxed(),
+                future: close_consumer(value).boxed(),
             });
         }
 
@@ -362,8 +362,8 @@ where
         Poll::Ready(result)
     }
 
-    async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
-        poll_fn(|cx| Pin::new(&mut self).poll_dispose(cx)).await
+    async fn close(mut self) -> Result<(), DisposeConsumerError> {
+        poll_fn(|cx| Pin::new(&mut self).poll_close(cx)).await
     }
 }
 
@@ -390,8 +390,8 @@ where
         Self { state }
     }
 
-    pub async fn dispose(self) -> Result<(), DisposeConsumerError> {
-        self.state.dispose().await
+    pub async fn close(self) -> Result<(), DisposeConsumerError> {
+        self.state.close().await
     }
 }
 
@@ -421,7 +421,7 @@ where
             Poll::Ready(Some(item))
         } else {
             this.state.set(EventStreamState::Closing {
-                future: dispose_consumer(next_state).boxed(),
+                future: close_consumer(next_state).boxed(),
             });
             Poll::Ready(None)
         }

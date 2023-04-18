@@ -554,7 +554,7 @@ impl AmqpConnectionScope {
         Ok((session_handle, receiver))
     }
 
-    pub(crate) async fn dispose(&mut self) -> Result<(), DisposeError> {
+    pub(crate) async fn close(&mut self) -> Result<(), DisposeError> {
         let mut is_disposed = self.is_disposed.load(Ordering::Relaxed);
         if is_disposed || self.connection.handle.is_closed() {
             return Ok(());

@@ -127,7 +127,7 @@ impl<RP> AmqpProducer<RP> {
     //     }
     // }
 
-    pub(crate) async fn dispose(mut self) -> Result<(), DisposeProducerError> {
+    pub(crate) async fn close(mut self) -> Result<(), DisposeProducerError> {
         // There is no need to remove the refresher if CBS link is already stopped
         let _ = self
             .cbs_command_sender

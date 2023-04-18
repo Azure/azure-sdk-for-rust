@@ -275,7 +275,7 @@ where
         let mut result = Ok(());
         for (_, producer) in self.producer_pool {
             let res = producer
-                .dispose()
+                .close()
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error);
             result = result.and(res);

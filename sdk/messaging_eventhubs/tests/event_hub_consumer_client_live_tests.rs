@@ -9,7 +9,7 @@ use messaging_eventhubs::{
 mod common;
 
 #[tokio::test]
-async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins() {
+async fn event_consumer_can_receive_events_from_partition() {
     common::setup_dotenv();
 
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -52,7 +52,26 @@ async fn event_consumer_can_receive_infinite_events_from_partition_for_10_mins()
             break;
         }
     }
-    stream.dispose().await.unwrap();
+    stream.close().await.unwrap();
+
+    consumer.close().await.unwrap();
+}
+
+#[tokio::test]
+async fn event_consumer_can_receive_events_from_all_partitions() {
+    common::setup_dotenv();
+
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+    let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+    let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
+
+    let options = Default::default();
+    let consumer =
+        EventHubConsumerClient::new(consumer_group, connection_string, event_hub_name, options)
+            .await
+            .unwrap();
 
     consumer.close().await.unwrap();
 }

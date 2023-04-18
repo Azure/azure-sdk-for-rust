@@ -404,7 +404,7 @@ impl TransportClient for AmqpClient {
     }
 
     async fn close(&mut self) -> Result<(), Self::DisposeError> {
-        self.connection_scope.dispose().await
+        self.connection_scope.close().await
     }
 }
 

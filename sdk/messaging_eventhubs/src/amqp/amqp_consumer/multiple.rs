@@ -91,20 +91,20 @@ where
         }
     }
 
-    fn poll_dispose(
+    fn poll_close(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
     ) -> Poll<Result<(), DisposeConsumerError>> {
         if let Some(value) = self.as_mut().take_value() {
             self.set(ConsumerState::Closing {
-                future: value.dispose().boxed(),
+                future: value.close().boxed(),
             });
         }
 
         if let Some(future) = self.as_mut().project_future() {
             let (_, value) = ready!(future.poll(cx));
             self.set(ConsumerState::Closing {
-                future: value.dispose().boxed(),
+                future: value.close().boxed(),
             });
         }
 
@@ -117,8 +117,8 @@ where
         Poll::Ready(result)
     }
 
-    async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
-        poll_fn(|cx| Pin::new(&mut self).poll_dispose(cx)).await
+    async fn close(mut self) -> Result<(), DisposeConsumerError> {
+        poll_fn(|cx| Pin::new(&mut self).poll_close(cx)).await
     }
 
     fn poll_recv_and_accept(
@@ -378,7 +378,7 @@ where
     }
 }
 
-async fn dispose_consumers<'a, RP>(
+async fn close_consumers<'a, RP>(
     value: EventStreamStateValue<'a, MultipleAmqpConsumers<RP>>,
 ) -> Result<(), DisposeConsumerError>
 where
@@ -386,7 +386,7 @@ where
 {
     let mut result = Ok(());
     for consumer in value.consumer.inner {
-        result = result.and(consumer.dispose().await);
+        result = result.and(consumer.close().await);
     }
     result
 }
@@ -395,20 +395,20 @@ impl<'a, RP> EventStreamState<'a, MultipleAmqpConsumers<RP>>
 where
     RP: Send + 'static,
 {
-    fn poll_dispose(
+    fn poll_close(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
     ) -> Poll<Result<(), DisposeConsumerError>> {
         if let Some(value) = self.as_mut().take_value() {
             self.set(EventStreamState::Closing {
-                future: dispose_consumers(value).boxed(),
+                future: close_consumers(value).boxed(),
             });
         }
 
         if let Some(future) = self.as_mut().project_future() {
             let (_, value) = ready!(future.poll(cx));
             self.set(EventStreamState::Closing {
-                future: dispose_consumers(value).boxed(),
+                future: close_consumers(value).boxed(),
             });
         }
 
@@ -421,8 +421,8 @@ where
         Poll::Ready(result)
     }
 
-    async fn dispose(mut self) -> Result<(), DisposeConsumerError> {
-        poll_fn(|cx| Pin::new(&mut self).poll_dispose(cx)).await
+    async fn close(mut self) -> Result<(), DisposeConsumerError> {
+        poll_fn(|cx| Pin::new(&mut self).poll_close(cx)).await
     }
 }
 
@@ -437,17 +437,22 @@ where
         max_wait_time: Option<StdDuration>,
         retry_policy: RP,
     ) -> Self {
-        let consumers = consumers.into_iter().map(|value| ConsumerState::Value { value }).collect();
-        let consumers = MultipleAmqpConsumers { inner: consumers, retry_policy };
+        let consumers = consumers
+            .into_iter()
+            .map(|value| ConsumerState::Value { value })
+            .collect();
+        let consumers = MultipleAmqpConsumers {
+            inner: consumers,
+            retry_policy,
+        };
         let value = EventStreamStateValue::new(client, consumers, max_messages, max_wait_time);
         let state = EventStreamState::Value { value };
 
         Self { state }
     }
 
-
-    pub async fn dispose(self) -> Result<(), DisposeConsumerError> {
-        self.state.dispose().await
+    pub async fn close(self) -> Result<(), DisposeConsumerError> {
+        self.state.close().await
     }
 }
 
@@ -477,7 +482,7 @@ where
             Poll::Ready(Some(item))
         } else {
             this.state.set(EventStreamState::Closing {
-                future: dispose_consumers(next_state).boxed(),
+                future: close_consumers(next_state).boxed(),
             });
             Poll::Ready(None)
         }
