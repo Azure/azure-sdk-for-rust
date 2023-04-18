@@ -5,7 +5,7 @@ use std::{
     ops::DerefMut,
     pin::Pin,
     task::{Context, Poll},
-    time::Duration as StdDuration,
+    time::Duration as StdDuration, fmt::Debug,
 };
 
 use fe2o3_amqp::link::RecvError;
@@ -45,6 +45,17 @@ pin_project_lite::pin_project! {
             future: ConsumerClosingBoxedFuture,
         },
         Empty,
+    }
+}
+
+impl<RP> Debug for ConsumerState<RP> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Value { .. } => f.debug_struct("Value").finish(),
+            Self::Future { .. } => f.debug_struct("Future").finish(),
+            Self::Closing { .. } => f.debug_struct("Closing").finish(),
+            Self::Empty => write!(f, "Empty"),
+        }
     }
 }
 
@@ -95,6 +106,8 @@ where
         mut self: Pin<&mut Self>,
         cx: &mut Context,
     ) -> Poll<Result<(), DisposeConsumerError>> {
+        log::debug!("poll_close() self = {:?}", self);
+
         if let Some(value) = self.as_mut().take_value() {
             self.set(ConsumerState::Closing {
                 future: value.close().boxed(),
