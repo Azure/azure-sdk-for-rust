@@ -105,29 +105,6 @@ impl<RP> AmqpProducer<RP> {
         Ok(AmqpEventBatch::new(max_size_in_bytes, options))
     }
 
-    // async fn send(
-    //     &mut self,
-    //     events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
-    //     options: SendEventOptions,
-    // ) -> Result<(), AmqpSendError> {
-    //     // TODO: check size of envelope and make sure it's not too big
-    //     match create_envelope_from_events(events, options.partition_key) {
-    //         Some(mut batch) => self.send_batch_envelope(&mut batch).await,
-    //         None => Ok(()),
-    //     }
-    // }
-
-    // async fn send_batch(
-    //     &mut self,
-    //     batch: AmqpEventBatch,
-    //     options: SendEventOptions,
-    // ) -> Result<(), AmqpSendError> {
-    //     match build_amqp_batch_from_messages(batch.events.into_iter(), options.partition_key) {
-    //         Some(mut batch) => self.send_batch_envelope(&mut batch).await,
-    //         None => Ok(()),
-    //     }
-    // }
-
     pub(crate) async fn close(mut self) -> Result<(), DisposeProducerError> {
         // There is no need to remove the refresher if CBS link is already stopped
         let _ = self
@@ -273,7 +250,7 @@ where
         }
     }
 
-    fn read_initialization_publishing_properties(&self) -> &PartitionPublishingProperties {
-        &self.producer.initialized_partition_properties
-    }
+    // fn read_initialization_publishing_properties(&self) -> &PartitionPublishingProperties {
+    //     &self.producer.initialized_partition_properties
+    // }
 }

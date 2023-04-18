@@ -95,6 +95,7 @@ pub(crate) struct AmqpConnectionScope {
 impl AmqpConnectionScope {
     const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(60);
     const AUTHORIZATION_REFRESH_TIMEOUT: StdDuration = StdDuration::from_secs(60 * 7);
+
     /// The amount of buffer to apply when considering an authorization token
     /// to be expired.  The token's actual expiration will be decreased by this
     /// amount, ensuring that it is renewed before it has expired.

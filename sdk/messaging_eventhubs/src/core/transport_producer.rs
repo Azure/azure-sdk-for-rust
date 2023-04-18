@@ -1,11 +1,7 @@
 use async_trait::async_trait;
 
 use crate::{
-    producer::{
-        create_batch_options::CreateBatchOptions,
-        partition_publishing_properties::PartitionPublishingProperties,
-        send_event_options::SendEventOptions,
-    },
+    producer::{create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions},
     Event,
 };
 
@@ -35,5 +31,5 @@ pub trait TransportProducer {
         options: SendEventOptions,
     ) -> Result<(), Self::SendError>;
 
-    fn read_initialization_publishing_properties(&self) -> &PartitionPublishingProperties;
+    // fn read_initialization_publishing_properties(&self) -> &PartitionPublishingProperties;
 }

@@ -20,14 +20,6 @@ use super::{
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
 
-fn next_sequence_number(current: i32) -> i32 {
-    let next = current.wrapping_add(1);
-    match next < 0 {
-        true => 0,
-        false => next,
-    }
-}
-
 pub struct EventHubProducerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
     /// An abstracted Event Hub transport-specific producer that is associated with the

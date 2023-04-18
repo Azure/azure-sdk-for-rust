@@ -15,23 +15,25 @@ use crate::amqp::{
 };
 use crate::constants::DEFAULT_OFFSET_DATE_TIME;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum PublishSequenceNumber {
-    Pending {
-        value: i32,
-        producer_group_id: i64,
-        owner_level: i16,
-    },
-    Published {
-        value: i32,
-    },
-}
+// /// TODO: This is not being used because `send_idempotent` is not implemented yet.
+// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// pub(crate) enum PublishSequenceNumber {
+//     Pending {
+//         value: i32,
+//         producer_group_id: i64,
+//         owner_level: i16,
+//     },
+//     Published {
+//         value: i32,
+//     },
+// }
 
 /// An Event Hubs event, encapsulating a set of data and its associated metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Event {
     pub(crate) amqp_message: Message<Data>,
-    pub(crate) sequence_number: Option<PublishSequenceNumber>,
+    // /// TODO: This is not being used because `send_idempotent` is not implemented yet.
+    // pub(crate) sequence_number: Option<PublishSequenceNumber>,
 }
 
 impl<T> From<T> for Event
@@ -41,7 +43,6 @@ where
     fn from(value: T) -> Self {
         Self {
             amqp_message: Message::builder().data(Binary::from(value)).build(),
-            sequence_number: None,
         }
     }
 }
