@@ -102,7 +102,7 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     #[inline]
-    pub(crate) async fn fill_buf_with_timeout(
+    async fn fill_buf_with_timeout(
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
         max_wait_time: StdDuration,
@@ -159,7 +159,7 @@ where
     }
 }
 
-async fn receive_event<RP>(
+pub(crate) async fn receive_event_batch<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
@@ -216,7 +216,7 @@ where
     }
 
     loop {
-        let result = receive_event(client, consumer, buffer, max_wait_time).await?;
+        let result = receive_event_batch(client, consumer, buffer, max_wait_time).await?;
 
         match buffer.pop_front() {
             Some(event) => return Some(Ok(event)),

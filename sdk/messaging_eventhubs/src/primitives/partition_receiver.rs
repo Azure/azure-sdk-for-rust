@@ -1,7 +1,11 @@
 use std::{collections::VecDeque, marker::PhantomData};
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, amqp_consumer::AmqpConsumer},
+    amqp::{
+        amqp_client::AmqpClient,
+        amqp_consumer::{receive_event_batch, AmqpConsumer},
+    },
+    authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
@@ -51,6 +55,28 @@ impl PartitionReceiver<BasicRetryPolicy> {
             )
             .await
     }
+
+    pub async fn new_with_credential(
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        options: PartitionReceiverOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .new_with_credential(
+                consumer_group,
+                partition_id,
+                event_position,
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                options,
+            )
+            .await
+    }
 }
 
 impl<RP> PartitionReceiverBuilder<RP>
@@ -95,6 +121,47 @@ where
             options,
         })
     }
+
+    pub async fn new_with_credential(
+        self,
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        options: PartitionReceiverOptions,
+    ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
+        let mut connection = EventHubConnection::new_with_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential.into(),
+            options.connection_options.clone(),
+        )
+        .await?;
+
+        let consumer_identifier = options.identifier.clone();
+        let retry_policy = RP::from(options.retry_options.clone());
+        let inner_consumer = connection
+            .create_transport_consumer(
+                consumer_group,
+                partition_id,
+                consumer_identifier,
+                event_position,
+                retry_policy,
+                options.track_last_enqueued_event_properties,
+                DEFAULT_INVALIDATE_CONSUMER_WHEN_PARTITION_STOLEN,
+                options.owner_level,
+                Some(options.prefetch_count),
+            )
+            .await?;
+
+        Ok(PartitionReceiver {
+            connection,
+            inner_consumer,
+            options,
+        })
+    }
 }
 
 impl<RP> PartitionReceiver<RP>
@@ -106,10 +173,19 @@ where
         max_event_count: usize,
     ) -> Result<VecDeque<ReceivedEvent>, azure_core::Error> {
         let mut buffer = VecDeque::with_capacity(max_event_count);
-        self.inner_consumer
-            .fill_buf_with_timeout(&mut buffer, self.options.maximum_receive_wait_time)
-            .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+        match receive_event_batch(
+            &mut self.connection.inner,
+            &mut self.inner_consumer,
+            &mut buffer,
+            Some(self.options.maximum_receive_wait_time),
+        )
+        .await
+        {
+            Some(result) => result.map_err(IntoAzureCoreError::into_azure_core_error)?,
+            None => {
+                // Return an empty buffer
+            },
+        }
         Ok(buffer)
     }
 }
