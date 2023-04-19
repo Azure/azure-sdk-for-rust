@@ -7,7 +7,7 @@ use fe2o3_amqp::{
     connection::OpenError,
     link::{
         DetachError, IllegalLinkStateError, ReceiverAttachError, ReceiverResumeErrorKind,
-        SendError, SenderAttachError, SenderResumeErrorKind,
+        RecvError, SendError, SenderAttachError, SenderResumeErrorKind,
     },
     session::BeginError,
 };
@@ -191,6 +191,20 @@ impl IntoAzureCoreError for ReceiverResumeErrorKind {
             ReceiverResumeErrorKind::Timeout => {
                 azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
             }
+        }
+    }
+}
+
+impl IntoAzureCoreError for RecvError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            RecvError::LinkStateError(_) => azure_core::Error::new(ErrorKind::Io, self),
+            RecvError::MessageDecodeError => {
+                azure_core::Error::new(ErrorKind::DataConversion, self)
+            }
+            _ => azure_core::Error::new(ErrorKind::Other, self),
         }
     }
 }

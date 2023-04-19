@@ -1020,6 +1020,28 @@ impl From<DisposeConsumerError> for RecoverAndReceiveError {
     }
 }
 
+impl IntoAzureCoreError for RecoverAndReceiveError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        match self {
+            RecoverAndReceiveError::CbsAuth(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::Receive(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::SessionBegin(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::ReceiverResume(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::ConnectionScopeDisposed => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
+            RecoverAndReceiveError::Parse(err) => err.into(),
+            RecoverAndReceiveError::Open(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::WebSocket(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::LinkDetach(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::SenderResume(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::Disposition(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::SessionEnd(err) => err.into_azure_core_error(),
+            RecoverAndReceiveError::Elapsed(err) => err.into_azure_core_error(),
+        }
+    }
+}
+
 impl RecoverableError for RecoverAndReceiveError {
     fn should_try_recover(&self) -> bool {
         match self {

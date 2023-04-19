@@ -37,6 +37,7 @@ pub mod prelude {
     pub use crate::event_hubs_retry_options::*;
     pub use crate::event_hubs_transport_type::EventHubsTransportType;
     pub use crate::partition_properties::*;
+    pub use crate::primitives::partition_receiver::*;
 }
 
 pub use prelude::*;

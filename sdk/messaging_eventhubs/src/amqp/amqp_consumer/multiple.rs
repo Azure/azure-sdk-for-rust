@@ -174,7 +174,6 @@ pin_project_lite::pin_project! {
     pub(crate) struct MultiAmqpConsumerRecv<'a, RP> {
         #[pin]
         state: &'a mut MultipleAmqpConsumers<RP>,
-        cancellation_token: CancellationToken,
     }
 }
 
@@ -188,7 +187,7 @@ where
         log::debug!("MultiAmqpConsumerRecv::poll()");
         let this = self.project();
         let pinned = Pin::new(this.state.get_mut().deref_mut());
-        pinned.poll_recv(cx, this.cancellation_token)
+        pinned.poll_recv(cx)
     }
 }
 
@@ -199,11 +198,10 @@ where
     fn poll_recv(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
-        cancellation_token: &CancellationToken,
     ) -> Poll<Option<Result<ReceivedEvent, RecvError>>> {
         log::debug!("MultipleAmqpConsumers::poll_recv()");
 
-        if self.inner.is_empty() | cancellation_token.is_cancelled() {
+        if self.inner.is_empty() {
             // Only return None if all consumers are dead
             return Poll::Ready(None);
         }
@@ -227,23 +225,19 @@ where
         }
     }
 
-    fn recv(&mut self, cancellation_token: &CancellationToken) -> MultiAmqpConsumerRecv<'_, RP> {
-        MultiAmqpConsumerRecv {
-            state: self,
-            cancellation_token: cancellation_token.clone(),
-        } // TODO: remove clone
+    fn recv(&mut self) -> MultiAmqpConsumerRecv<'_, RP> {
+        MultiAmqpConsumerRecv { state: self } // TODO: remove clone
     }
 
     async fn fill_buf(
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
-        cancellation_token: &CancellationToken,
     ) -> Option<Result<(), RecvError>> {
         // Only receive messages if there is space in the buffer
         let max_messages = buffer.capacity() - buffer.len();
 
         let mut counter = 0;
-        while let Some(event) = self.recv(cancellation_token).await {
+        while let Some(event) = self.recv().await {
             counter += 1;
             if counter > max_messages {
                 return Some(Ok(()));
@@ -266,16 +260,11 @@ where
         &mut self,
         buffer: &mut VecDeque<ReceivedEvent>,
         max_wait_time: StdDuration,
-        cancellation_token: &CancellationToken,
     ) -> Option<Result<(), RecvError>> {
         log::debug!("fill_buf_with_timeout()");
         futures_util::select_biased! {
-            _ = cancellation_token.cancelled().fuse() => {
-                log::debug!("Cancellation token was cancelled");
-                None
-            },
             _ = crate::util::time::sleep(max_wait_time).fuse() => Some(Ok(())),
-            option = self.fill_buf(buffer, cancellation_token).fuse() => {
+            option = self.fill_buf(buffer).fuse() => {
                 option
             }
         }
@@ -309,15 +298,10 @@ async fn recover_and_recv<RP>(
     should_try_recover: bool,
     buffer: &mut VecDeque<ReceivedEvent>,
     max_wait_time: StdDuration,
-    cancellation_token: &CancellationToken,
 ) -> Result<Option<()>, RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
-    if cancellation_token.is_cancelled() {
-        return Ok(None);
-    }
-
     if should_try_recover {
         if let Err(recovery_err) = client.recover().await {
             log::error!("Failed to recover client: {:?}", recovery_err);
@@ -337,7 +321,7 @@ where
     }
 
     consumers
-        .fill_buf_with_timeout(buffer, max_wait_time, cancellation_token)
+        .fill_buf_with_timeout(buffer, max_wait_time)
         .await
         .transpose()
         .map_err(Into::into)
@@ -349,31 +333,19 @@ async fn receive_event<RP>(
     consumer: &mut MultipleAmqpConsumers<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
     max_wait_time: Option<StdDuration>,
-    cancellation_token: &CancellationToken,
 ) -> Option<Result<(), RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
-    if cancellation_token.is_cancelled() {
-        return None;
-    }
-
     let mut failed_attempts = 0;
     let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
     let mut should_try_recover = false;
 
     loop {
         let wait_time = max_wait_time.unwrap_or(try_timeout);
-        let err = match recover_and_recv(
-            client,
-            consumer,
-            should_try_recover,
-            buffer,
-            wait_time,
-            cancellation_token,
-        )
-        .await
-        .transpose()?
+        let err = match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time)
+            .await
+            .transpose()?
         {
             Ok(_) => return Some(Ok(())),
             Err(err) => err,
@@ -404,22 +376,16 @@ async fn next_event_inner<RP>(
     consumer: &mut MultipleAmqpConsumers<RP>,
     buffer: &mut VecDeque<ReceivedEvent>,
     max_wait_time: Option<StdDuration>,
-    cancellation_token: &CancellationToken,
 ) -> Option<Result<ReceivedEvent, RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
-    if cancellation_token.is_cancelled() {
-        return None;
-    }
-
     if let Some(event) = buffer.pop_front() {
         return Some(Ok(event));
     }
 
     loop {
-        let result =
-            receive_event(client, consumer, buffer, max_wait_time, cancellation_token).await?;
+        let result = receive_event(client, consumer, buffer, max_wait_time).await?;
 
         match buffer.pop_front() {
             Some(event) => return Some(Ok(event)),
@@ -446,7 +412,6 @@ where
         &mut value.consumer,
         &mut value.buffer,
         value.max_wait_time,
-        &value.cancellation_token,
     )
     .await;
     (outcome, value)
@@ -521,7 +486,7 @@ where
         retry_policy: RP,
     ) -> Self {
         let cancel_source = CancellationToken::new();
-        let cancellation_token = cancel_source.child_token();
+        let _cancellation_token = cancel_source.child_token();
         let consumers = consumers
             .into_iter()
             .map(|value| ConsumerState::Value { value })
@@ -530,24 +495,14 @@ where
             inner: consumers,
             retry_policy,
         };
-        let value = EventStreamStateValue::new(
-            client,
-            consumers,
-            max_messages,
-            max_wait_time,
-            cancellation_token,
-        );
+        let value = EventStreamStateValue::new(client, consumers, max_messages, max_wait_time);
         let state = EventStreamState::Value { value };
 
-        Self {
-            state,
-            cancel_source,
-        }
+        Self { state }
     }
 
     pub async fn close(self) -> Result<(), DisposeConsumerError> {
         log::debug!("Closing EventStream");
-        self.cancel_source.cancel();
         self.state.close().await
     }
 }
