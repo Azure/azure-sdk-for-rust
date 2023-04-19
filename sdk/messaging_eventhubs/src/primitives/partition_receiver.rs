@@ -171,9 +171,10 @@ where
     pub async fn recv_batch(
         &mut self,
         max_event_count: usize,
-        max_wait_time: Option<StdDuration>,
-    ) -> Result<VecDeque<ReceivedEvent>, azure_core::Error> {
+        max_wait_time: impl Into<Option<StdDuration>>,
+    ) -> Result<impl Iterator<Item = ReceivedEvent> + ExactSizeIterator, azure_core::Error> {
         let mut buffer = VecDeque::with_capacity(max_event_count);
+        let max_wait_time = max_wait_time.into();
         let max_wait_time = max_wait_time.map(|t| t.max(self.options.maximum_receive_wait_time));
         match receive_event_batch(
             &mut self.connection.inner,
@@ -188,6 +189,14 @@ where
                 // Return an empty buffer
             },
         }
-        Ok(buffer)
+        Ok(buffer.into_iter())
+    }
+}
+
+impl<RP> PartitionReceiver<RP> {
+    pub async fn close(self) -> Result<(), azure_core::Error> {
+        self.inner_consumer.close().await.map_err(IntoAzureCoreError::into_azure_core_error)?;
+        self.connection.close_if_owned().await?;
+        Ok(())
     }
 }
