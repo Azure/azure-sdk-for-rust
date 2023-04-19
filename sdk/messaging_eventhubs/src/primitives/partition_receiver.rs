@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, marker::PhantomData};
+use std::{collections::VecDeque, marker::PhantomData, time::Duration as StdDuration};
 
 use crate::{
     amqp::{
@@ -171,13 +171,15 @@ where
     pub async fn recv_batch(
         &mut self,
         max_event_count: usize,
+        max_wait_time: Option<StdDuration>,
     ) -> Result<VecDeque<ReceivedEvent>, azure_core::Error> {
         let mut buffer = VecDeque::with_capacity(max_event_count);
+        let max_wait_time = max_wait_time.map(|t| t.max(self.options.maximum_receive_wait_time));
         match receive_event_batch(
             &mut self.connection.inner,
             &mut self.inner_consumer,
             &mut buffer,
-            Some(self.options.maximum_receive_wait_time),
+            max_wait_time,
         )
         .await
         {
