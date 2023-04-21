@@ -12,3 +12,9 @@ impl Header for EncryptionScope {
         self.0.clone().into()
     }
 }
+
+impl From<String> for EncryptionScope {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
