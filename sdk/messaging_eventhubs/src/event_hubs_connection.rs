@@ -273,7 +273,6 @@ where
         event_position: EventPosition,
         retry_policy: RP,
         track_last_enqueued_event_properties: bool,
-        invalidate_consumer_when_partition_stolen: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
     ) -> Result<C::Consumer<RP>, azure_core::Error>
@@ -290,7 +289,6 @@ where
                     event_position,
                     retry_policy,
                     track_last_enqueued_event_properties,
-                    invalidate_consumer_when_partition_stolen,
                     owner_level,
                     prefetch_count,
                 )
@@ -306,7 +304,6 @@ where
                     event_position,
                     retry_policy,
                     track_last_enqueued_event_properties,
-                    invalidate_consumer_when_partition_stolen,
                     owner_level,
                     prefetch_count,
                 )

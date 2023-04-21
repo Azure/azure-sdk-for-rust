@@ -33,7 +33,6 @@ pub struct AmqpConsumer<RP> {
     pub(crate) endpoint: Url,
     pub(crate) receiver: Receiver,
     pub(crate) link_identifier: u32,
-    pub(crate) invalidate_consumer_when_partition_stolen: bool,
     pub(crate) track_last_enqueued_event_properties: bool,
     pub(crate) last_received_event: Option<ReceivedEvent>,
     pub(crate) current_event_position: Option<EventPosition>,

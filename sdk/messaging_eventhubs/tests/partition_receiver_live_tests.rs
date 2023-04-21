@@ -1,4 +1,7 @@
-use messaging_eventhubs::{consumer::{EventHubConsumerClient, EventPosition}, PartitionReceiver};
+use messaging_eventhubs::{
+    consumer::{EventHubConsumerClient, EventPosition},
+    PartitionReceiver,
+};
 
 mod common;
 
@@ -20,9 +23,14 @@ async fn partition_receiver_can_receive_events() {
         connection_string,
         event_hub_name,
         Default::default(),
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
 
-    let batch = receiver.recv_batch(3, std::time::Duration::from_secs(10)).await.unwrap();
+    let batch = receiver
+        .recv_batch(3, std::time::Duration::from_secs(10))
+        .await
+        .unwrap();
 
     for event in batch {
         let body = event.body().unwrap();

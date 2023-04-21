@@ -290,7 +290,6 @@ impl TransportClient for AmqpClient {
         event_position: EventPosition,
         retry_policy: RP,
         track_last_enqueued_event_properties: bool,
-        invalidate_consumer_when_partition_stolen: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
     ) -> Result<Self::Consumer<RP>, Self::OpenConsumerError>
@@ -305,7 +304,6 @@ impl TransportClient for AmqpClient {
             prefetch_count.unwrap_or(DEFAULT_PREFETCH_COUNT),
             owner_level,
             track_last_enqueued_event_properties,
-            invalidate_consumer_when_partition_stolen,
             consumer_identifier,
             retry_policy,
         );

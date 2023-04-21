@@ -14,8 +14,6 @@ use crate::{
 
 use super::partition_receiver_options::PartitionReceiverOptions;
 
-const DEFAULT_INVALIDATE_CONSUMER_WHEN_PARTITION_STOLEN: bool = false;
-
 pub struct PartitionReceiver<RP> {
     connection: EventHubConnection<AmqpClient>,
     inner_consumer: AmqpConsumer<RP>,
@@ -109,7 +107,6 @@ where
                 event_position,
                 retry_policy,
                 options.track_last_enqueued_event_properties,
-                DEFAULT_INVALIDATE_CONSUMER_WHEN_PARTITION_STOLEN,
                 options.owner_level,
                 Some(options.prefetch_count),
             )
@@ -150,7 +147,6 @@ where
                 event_position,
                 retry_policy,
                 options.track_last_enqueued_event_properties,
-                DEFAULT_INVALIDATE_CONSUMER_WHEN_PARTITION_STOLEN,
                 options.owner_level,
                 Some(options.prefetch_count),
             )
@@ -187,7 +183,7 @@ where
             Some(result) => result.map_err(IntoAzureCoreError::into_azure_core_error)?,
             None => {
                 // Return an empty buffer
-            },
+            }
         }
         Ok(buffer.into_iter())
     }
@@ -195,7 +191,10 @@ where
 
 impl<RP> PartitionReceiver<RP> {
     pub async fn close(self) -> Result<(), azure_core::Error> {
-        self.inner_consumer.close().await.map_err(IntoAzureCoreError::into_azure_core_error)?;
+        self.inner_consumer
+            .close()
+            .await
+            .map_err(IntoAzureCoreError::into_azure_core_error)?;
         self.connection.close_if_owned().await?;
         Ok(())
     }

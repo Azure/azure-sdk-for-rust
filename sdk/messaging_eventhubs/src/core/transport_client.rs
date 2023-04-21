@@ -69,7 +69,6 @@ pub trait TransportClient: Sized {
         event_position: EventPosition,
         retry_policy: RP,
         track_last_enqueued_event_properties: bool,
-        invalidate_consumer_when_partition_stolen: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
     ) -> Result<Self::Consumer<RP>, Self::OpenConsumerError>

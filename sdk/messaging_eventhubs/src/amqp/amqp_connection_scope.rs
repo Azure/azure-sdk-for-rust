@@ -417,7 +417,6 @@ impl AmqpConnectionScope {
         // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
         owner_level: Option<i64>,
         track_last_enqueued_event_properties: bool,
-        invalidate_consumer_when_partition_stolen: bool,
         identifier: Option<String>,
         retry_policy: RP,
     ) -> Result<AmqpConsumer<RP>, OpenConsumerError> {
@@ -448,7 +447,6 @@ impl AmqpConnectionScope {
             session_identifier,
             receiver,
             link_identifier,
-            invalidate_consumer_when_partition_stolen,
             track_last_enqueued_event_properties,
             current_event_position: None,
             last_received_event: None,

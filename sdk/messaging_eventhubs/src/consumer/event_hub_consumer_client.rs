@@ -17,7 +17,6 @@ pub struct EventHubConsumerClient<RP> {
     retry_policy_marker: PhantomData<RP>,
     options: EventHubConsumeClientOptions,
     consumer_group: String,
-    invalidate_consumer_when_partition_is_stolen: bool,
 }
 
 impl EventHubConsumerClient<BasicRetryPolicy> {
@@ -83,7 +82,6 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
             retry_policy_marker: PhantomData,
             options: client_options,
             consumer_group: consumer_group.into(),
-            invalidate_consumer_when_partition_is_stolen: false,
         })
     }
 
@@ -98,7 +96,6 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
             retry_policy_marker: PhantomData,
             options: client_options,
             consumer_group: consumer_group.into(),
-            invalidate_consumer_when_partition_is_stolen: false,
         }
     }
 }
@@ -145,7 +142,6 @@ where
                 starting_position,
                 RP::from(self.options.retry_options.clone()),
                 read_event_options.track_last_enqueued_event_properties,
-                self.invalidate_consumer_when_partition_is_stolen,
                 read_event_options.owner_level,
                 Some(read_event_options.prefetch_count),
             )
@@ -189,7 +185,6 @@ where
                     starting_position.clone(),
                     retry_policy,
                     read_event_options.track_last_enqueued_event_properties,
-                    self.invalidate_consumer_when_partition_is_stolen,
                     read_event_options.owner_level,
                     Some(read_event_options.prefetch_count),
                 )
