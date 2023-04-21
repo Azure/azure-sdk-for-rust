@@ -9,7 +9,7 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    Event, EventHubConnection, EventHubsRetryOptions, PartitionProperties,
+    Event, EventHubConnection, EventHubsRetryOptions, PartitionProperties, authorization::event_hub_token_credential::EventHubTokenCredential,
 };
 
 use super::{
@@ -50,6 +50,22 @@ impl EventHubProducerClient<BasicRetryPolicy> {
             .await
     }
 
+    pub async fn from_namespace_and_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .from_namespace_and_credential(
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                client_options,
+            )
+            .await
+    }
+
     pub fn with_connection(
         connection: &mut EventHubConnection<AmqpClient>,
         client_options: EventHubProducerClientOptions,
@@ -75,6 +91,33 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         let connection = EventHubConnection::from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
+            client_options.connection_options.clone(),
+        )
+        .await?;
+
+        Ok(EventHubProducerClient {
+            connection,
+            gateway_producer: None,
+            producer_pool: HashMap::new(),
+            options: client_options,
+            retry_policy_marker: PhantomData,
+        })
+    }
+
+    pub async fn from_namespace_and_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<EventHubProducerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let connection = EventHubConnection::from_namespace_and_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential.into(),
             client_options.connection_options.clone(),
         )
         .await?;

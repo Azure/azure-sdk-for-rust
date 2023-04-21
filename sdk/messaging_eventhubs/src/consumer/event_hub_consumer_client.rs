@@ -7,7 +7,7 @@ use crate::{
     },
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
+    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, authorization::event_hub_token_credential::EventHubTokenCredential,
 };
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
@@ -74,6 +74,32 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
         let connection = EventHubConnection::from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
+            client_options.connection_options.clone(),
+        )
+        .await?;
+        Ok(EventHubConsumerClient {
+            connection,
+            retry_policy_marker: PhantomData,
+            options: client_options,
+            consumer_group: consumer_group.into(),
+        })
+    }
+
+    pub async fn from_namespace_and_credential(
+        self,
+        consumer_group: impl Into<String>,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        client_options: EventHubConsumeClientOptions,
+    ) -> Result<EventHubConsumerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let connection = EventHubConnection::from_namespace_and_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential.into(),
             client_options.connection_options.clone(),
         )
         .await?;
