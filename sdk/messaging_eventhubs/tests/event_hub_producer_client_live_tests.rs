@@ -84,16 +84,27 @@ async fn producer_client_can_send_without_specifying_partition_id() {
 async fn producer_client_can_create_and_send_event_batch() {
     common::setup_dotenv();
 
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("trace")).init();
+
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
     let options = EventHubProducerClientOptions::default();
     let mut producer_client = EventHubProducerClient::from_connection_string(connection_string, None, options)
         .await
         .unwrap();
 
-    let event = "Hello, world!";
     let options = CreateBatchOptions::new();
     let mut event_batch = producer_client.create_batch(options).await.unwrap();
-    event_batch.try_add(event).unwrap();
+
+    // let event = "Hello, world to a random partition";
+    // event_batch.try_add(event).unwrap();
+
+    // let event = "Hello, world to a random partition again";
+    // event_batch.try_add(event).unwrap();
+
+    let event = "Hello, world to a random partition again and again";
+    while let Ok(_) = event_batch.try_add(event) {}
+    log::info!("Batch size: {}", event_batch.size_in_bytes());
+
     producer_client
         .send_batch(event_batch, SendEventOptions::default())
         .await

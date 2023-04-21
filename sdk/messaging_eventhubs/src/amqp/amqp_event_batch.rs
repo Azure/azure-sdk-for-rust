@@ -56,52 +56,40 @@ impl TransportEventBatch for AmqpEventBatch {
         self.events.is_empty()
     }
 
+    /// TODO: A phantom data type should probably be implemented to test the serialized data size
+    /// in order to reduce number of clones.
     fn try_add(&mut self, event: EventData) -> Result<(), Self::TryAddError> {
-        let serializable_message = Serializable(&event.amqp_message);
+        let EventData {amqp_message} = event.clone();
+        self.events.push(amqp_message);
 
-        // Initialize the size by reserving space for the batch envelope taking into account the
-        // properties from the first message which will be used to populate properties on the batch
-        // envelope.
-        let new_size = if self.events.is_empty() {
-            // TODO: avoid clone
-            let reservce_overhead_message = std::iter::once(event.clone().amqp_message);
-            // Force batching to get the overhead size
-            let reserve_overhead_envelope = match build_amqp_batch_from_messages(
-                reservce_overhead_message,
-                self.options.partition_key.clone(),
-            ) {
-                Some(envelope) => envelope,
-                None => unreachable!(), // force batching a single message should never fail
-            };
-            let result = match reserve_overhead_envelope.sendable {
-                SendableEnvelope::Single(sendable) => {
-                    serialized_size(&Serializable(sendable.message))
-                }
-                SendableEnvelope::Batch(sendable) => {
-                    serialized_size(&Serializable(sendable.message))
-                }
-            };
-            match result {
-                Ok(size) => size as u64,
-                Err(err) => return Err(Self::TryAddError::Codec { source: err, event }),
-            }
-        } else {
-            let ssize = match serialized_size(&serializable_message) {
-                Ok(size) => size,
-                Err(err) => return Err(Self::TryAddError::Codec { source: err, event }),
-            };
-
-            self.size_in_bytes + ssize as u64
+        let envelope = match build_amqp_batch_from_messages(
+            self.events.iter().cloned(),
+            self.options.partition_key.clone(),
+        ) {
+            Some(envelope) => envelope,
+            None => unreachable!(),
         };
 
-        if new_size > self.max_size_in_bytes {
-            return Err(TryAddError::BatchFull(event));
+        let result = match envelope.sendable {
+            SendableEnvelope::Single(sendable) => {
+                serialized_size(&Serializable(sendable.message))
+            }
+            SendableEnvelope::Batch(sendable) => {
+                serialized_size(&Serializable(sendable.message))
+            }
+        };
+        let serialized_size = match result {
+            Ok(size) => size as u64,
+            Err(err) => return Err(Self::TryAddError::Codec { source: err, event }),
+        };
+
+        if serialized_size > self.max_size_in_bytes {
+            let _ = self.events.pop();
+            Err(Self::TryAddError::BatchFull(event))
+        } else {
+            self.size_in_bytes = serialized_size;
+            Ok(())
         }
-
-        self.size_in_bytes = new_size;
-        self.events.push(event.amqp_message);
-
-        Ok(())
     }
 
     fn iter(&self) -> Self::Iter<'_> {
@@ -116,6 +104,11 @@ impl TransportEventBatch for AmqpEventBatch {
 
 #[cfg(test)]
 mod tests {
+
+    use bytes::{BytesMut, BufMut};
+    use serde_amqp::{ser::Serializer, serde::Serialize};
+
+    use crate::amqp::amqp_message_converter::BatchEnvelope;
 
     use super::*;
 
@@ -135,23 +128,67 @@ mod tests {
         assert_eq!(batch.max_size_in_bytes, 1024);
     }
 
-    // #[test]
-    // fn try_add_sets_batch_size_in_bytes() {
-    //     let overhead = OVERHEAD_BYTES_SMALL_MESSAGE; // The events added are small
-    //     let mut batch = AmqpEventBatch::new(1024);
-    //     let message = EventData::new("hello world");
+    #[test]
+    fn try_add_sets_batch_size_in_bytes() {
+        let options = CreateBatchOptions::default();
+        let overhead = OVERHEAD_BYTES_SMALL_MESSAGE; // The events added are small
+        let mut batch = AmqpEventBatch::new(1024, options);
+        let message = EventData::new("hello world");
 
-    //     let serializable = Serializable(&message.amqp_message);
-    //     let size = serialized_size(&serializable).unwrap();
+        let serializable = Serializable(&message.amqp_message);
+        let size = serialized_size(&serializable).unwrap();
+        println!("size: {}", size);
 
-    //     assert!(size * 2 < 1024);
+        assert!(size * 2 < 1024);
 
-    //     assert!(batch.try_add(message.clone()).is_ok());
-    //     assert_eq!(batch.size_in_bytes, (size + overhead) as u64);
+        assert!(batch.try_add(message.clone()).is_ok());
+        assert_eq!(batch.size_in_bytes, (size + overhead) as u64);
 
-    //     assert!(batch.try_add(message).is_ok());
-    //     assert_eq!(batch.size_in_bytes, (size * 2 + overhead) as u64);
-    // }
+        assert!(batch.try_add(message).is_ok());
+        assert_eq!(batch.size_in_bytes, (size * 2 + overhead) as u64);
+    }
+
+    #[test]
+    fn serialized_size_matches() {
+        let options = CreateBatchOptions::default();
+        let mut batch = AmqpEventBatch::new(32768, options);
+        let event = "abcdefg";
+
+        while let Ok(_) = batch.try_add(EventData::from(event)) {}
+
+        println!("batch size: {}", batch.size_in_bytes());
+
+        let batch = build_amqp_batch_from_messages(batch.events.into_iter(), None).unwrap();
+        let (ssize, payload, value) = match batch.sendable {
+            SendableEnvelope::Single(sendable) => {
+                let message = sendable.message;
+                let serializable=  Serializable(message);
+                let ssize = serialized_size(&serializable).unwrap();
+                let mut payload = BytesMut::new();
+                let mut serializer = Serializer::from((&mut payload).writer());
+                serializable.serialize(&mut serializer).unwrap();
+
+                let value = serde_amqp::to_value(&serializable).unwrap();
+
+                (ssize, payload.freeze(), value)
+            },
+            SendableEnvelope::Batch(sendable) => {
+                let message = sendable.message;
+                let serializable=  Serializable(message);
+                let ssize = serialized_size(&serializable).unwrap();
+                let mut payload = BytesMut::new();
+                let mut serializer = Serializer::from((&mut payload).writer());
+                serializable.serialize(&mut serializer).unwrap();
+
+                let value = serde_amqp::to_value(&serializable).unwrap();
+
+                (ssize, payload.freeze(), value)
+            },
+        };
+        println!("ssize: {}", ssize);
+        println!("payload size: {}", payload.len());
+        println!("value: {:?}", value);
+    }
 
     // #[test]
     // fn try_add_accepts_message_smaller_than_max_size() {
