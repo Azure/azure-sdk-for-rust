@@ -15,7 +15,7 @@ use crate::{
         send_event_options::SendEventOptions,
     },
     util::{self, sharable::Sharable},
-    Event,
+    EventData,
 };
 
 use super::{
@@ -229,7 +229,7 @@ where
 
     async fn send(
         &mut self,
-        events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
+        events: impl Iterator<Item = EventData> + ExactSizeIterator + Send,
         options: SendEventOptions,
     ) -> Result<(), Self::SendError> {
         // TODO: check size of envelope and make sure it's not too big

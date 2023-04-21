@@ -1,6 +1,6 @@
 use fe2o3_amqp_types::messaging::{Data, Message};
 
-use crate::Event;
+use crate::EventData;
 
 use super::amqp_property;
 
@@ -54,7 +54,7 @@ pub(crate) struct BatchEnvelope {
 }
 
 pub(crate) fn create_envelope_from_event(
-    event: Event,
+    event: EventData,
     partition_key: Option<String>,
 ) -> BatchEnvelope {
     let message = build_amqp_message_from_event(event, partition_key);
@@ -71,14 +71,14 @@ pub(crate) fn create_envelope_from_event(
 }
 
 pub(crate) fn create_envelope_from_events(
-    events: impl Iterator<Item = Event> + ExactSizeIterator,
+    events: impl Iterator<Item = EventData> + ExactSizeIterator,
     partition_key: Option<String>,
 ) -> Option<BatchEnvelope> {
     build_amqp_batch_from_events(events, partition_key)
 }
 
 #[inline]
-fn build_amqp_message_from_event(event: Event, partition_key: Option<String>) -> Message<Data> {
+fn build_amqp_message_from_event(event: EventData, partition_key: Option<String>) -> Message<Data> {
     let mut message = event.amqp_message;
 
     // add partition key to message annotation
@@ -96,7 +96,7 @@ fn build_amqp_message_from_event(event: Event, partition_key: Option<String>) ->
 
 #[inline]
 fn build_amqp_batch_from_events(
-    events: impl Iterator<Item = Event> + ExactSizeIterator,
+    events: impl Iterator<Item = EventData> + ExactSizeIterator,
     partition_key: Option<String>,
 ) -> Option<BatchEnvelope> {
     let partition_key_clone = partition_key.clone();

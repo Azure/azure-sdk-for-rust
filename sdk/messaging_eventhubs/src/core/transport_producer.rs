@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::{
     producer::{create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions},
-    Event,
+    EventData,
 };
 
 use super::transport_event_batch::TransportEventBatch;
@@ -21,7 +21,7 @@ pub trait TransportProducer {
 
     async fn send(
         &mut self,
-        events: impl Iterator<Item = Event> + ExactSizeIterator + Send,
+        events: impl Iterator<Item = EventData> + ExactSizeIterator + Send,
         options: SendEventOptions,
     ) -> Result<(), Self::SendError>;
 

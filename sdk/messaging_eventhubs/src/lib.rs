@@ -10,7 +10,7 @@ pub(crate) mod authorization;
 pub(crate) mod constants;
 pub(crate) mod core;
 pub(crate) mod diagnostics;
-pub(crate) mod event;
+pub(crate) mod event_data;
 pub(crate) mod event_hubs_connection;
 pub(crate) mod event_hubs_connection_option;
 pub(crate) mod event_hubs_connection_string_properties;
@@ -31,7 +31,7 @@ pub mod prelude {
 
     pub use crate::amqp::amqp_system_properties::AmqpSystemProperties;
     pub use crate::core::BasicRetryPolicy;
-    pub use crate::event::*;
+    pub use crate::event_data::*;
     pub use crate::event_hubs_connection::EventHubConnection;
     pub use crate::event_hubs_connection_option::EventHubConnectionOptions;
     pub use crate::event_hubs_retry_options::*;

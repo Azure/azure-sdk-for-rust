@@ -9,7 +9,7 @@ use crate::{
     consumer::EventPosition,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, ReceivedEvent,
+    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
 };
 
 use super::partition_receiver_options::PartitionReceiverOptions;
@@ -168,7 +168,7 @@ where
         &mut self,
         max_event_count: usize,
         max_wait_time: impl Into<Option<StdDuration>>,
-    ) -> Result<impl Iterator<Item = ReceivedEvent> + ExactSizeIterator, azure_core::Error> {
+    ) -> Result<impl Iterator<Item = ReceivedEventData> + ExactSizeIterator, azure_core::Error> {
         let mut buffer = VecDeque::with_capacity(max_event_count);
         let max_wait_time = max_wait_time.into();
         let max_wait_time = max_wait_time.map(|t| t.max(self.options.maximum_receive_wait_time));

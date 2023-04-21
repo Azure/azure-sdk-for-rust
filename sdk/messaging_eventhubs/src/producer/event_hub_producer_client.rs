@@ -9,7 +9,7 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    Event, EventHubConnection, EventHubsRetryOptions, PartitionProperties, authorization::event_hub_token_credential::EventHubTokenCredential,
+    EventData, EventHubConnection, EventHubsRetryOptions, PartitionProperties, authorization::event_hub_token_credential::EventHubTokenCredential,
 };
 
 use super::{
@@ -245,7 +245,7 @@ where
 
     pub async fn send_event(
         &mut self,
-        event: impl Into<Event>,
+        event: impl Into<EventData>,
         options: SendEventOptions,
     ) -> Result<(), azure_core::Error> {
         self.send_events(std::iter::once(event.into()), options)
@@ -258,7 +258,7 @@ where
         options: SendEventOptions,
     ) -> Result<(), azure_core::Error>
     where
-        E: IntoIterator<Item = Event>,
+        E: IntoIterator<Item = EventData>,
         E::IntoIter: ExactSizeIterator + Send,
     {
         let partition_id = options.partition_id.as_deref();

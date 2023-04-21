@@ -30,13 +30,13 @@ use crate::constants::DEFAULT_OFFSET_DATE_TIME;
 
 /// An Event Hubs event, encapsulating a set of data and its associated metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Event {
+pub struct EventData {
     pub(crate) amqp_message: Message<Data>,
     // /// TODO: This is not being used because `send_idempotent` is not implemented yet.
     // pub(crate) sequence_number: Option<PublishSequenceNumber>,
 }
 
-impl<T> From<T> for Event
+impl<T> From<T> for EventData
 where
     T: Into<Vec<u8>>,
 {
@@ -47,7 +47,7 @@ where
     }
 }
 
-impl Event {
+impl EventData {
     /// Creates a new event from the given data
     pub fn new(body: impl Into<Vec<u8>>) -> Self {
         Self::from(body)
@@ -111,11 +111,11 @@ impl Event {
 }
 
 #[derive(Debug, Clone)]
-pub struct ReceivedEvent {
+pub struct ReceivedEventData {
     raw_amqp_message: Message<Body<Value>>,
 }
 
-impl ReceivedEvent {
+impl ReceivedEventData {
     pub(crate) fn from_raw_amqp_message(raw_amqp_message: Message<Body<Value>>) -> Self {
         Self { raw_amqp_message }
     }

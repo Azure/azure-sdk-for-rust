@@ -1,4 +1,4 @@
-use crate::Event;
+use crate::EventData;
 
 pub trait TransportEventBatch {
     /// Error with adding a message to the batch.
@@ -22,7 +22,7 @@ pub trait TransportEventBatch {
     fn is_empty(&self) -> bool;
 
     /// Attempts to add a [`ServiceBusMessage`] to the batch.
-    fn try_add(&mut self, message: Event) -> Result<(), Self::TryAddError>;
+    fn try_add(&mut self, message: EventData) -> Result<(), Self::TryAddError>;
 
     /// Iterate over the messages in the batch.
     fn iter(&self) -> Self::Iter<'_>;

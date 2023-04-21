@@ -21,13 +21,13 @@ use crate::{
     core::{RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::{self, sharable::Sharable},
-    ReceivedEvent,
+    ReceivedEventData,
 };
 
 use super::{AmqpConsumer, EventStream, EventStreamState, EventStreamStateValue};
 
 type ConsumerBoxedFuture<RP> =
-    Pin<Box<dyn Future<Output = (Result<ReceivedEvent, RecvError>, AmqpConsumer<RP>)> + Send>>;
+    Pin<Box<dyn Future<Output = (Result<ReceivedEventData, RecvError>, AmqpConsumer<RP>)> + Send>>;
 type ConsumerClosingBoxedFuture =
     Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + Send>>;
 
@@ -63,7 +63,7 @@ impl<RP> Debug for ConsumerState<RP> {
 
 async fn recv_and_accept<RP>(
     mut consumer: AmqpConsumer<RP>,
-) -> (Result<ReceivedEvent, RecvError>, AmqpConsumer<RP>) {
+) -> (Result<ReceivedEventData, RecvError>, AmqpConsumer<RP>) {
     if consumer.prefetch_count == 0 {
         // At least one credit is needed
         // TODO: set prefetch to other values
@@ -148,7 +148,7 @@ where
     fn poll_recv_and_accept(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
-    ) -> Poll<Option<Result<ReceivedEvent, RecvError>>> {
+    ) -> Poll<Option<Result<ReceivedEventData, RecvError>>> {
         if let Some(consumer) = self.as_mut().take_value() {
             self.set(ConsumerState::Future {
                 future: recv_and_accept(consumer).boxed(),
@@ -181,7 +181,7 @@ impl<'a, RP> Future for MultiAmqpConsumerRecv<'a, RP>
 where
     RP: Send + Unpin + 'static,
 {
-    type Output = Option<Result<ReceivedEvent, RecvError>>;
+    type Output = Option<Result<ReceivedEventData, RecvError>>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         log::debug!("MultiAmqpConsumerRecv::poll()");
@@ -198,7 +198,7 @@ where
     fn poll_recv(
         mut self: Pin<&mut Self>,
         cx: &mut Context,
-    ) -> Poll<Option<Result<ReceivedEvent, RecvError>>> {
+    ) -> Poll<Option<Result<ReceivedEventData, RecvError>>> {
         log::debug!("MultipleAmqpConsumers::poll_recv()");
 
         if self.inner.is_empty() {
@@ -231,7 +231,7 @@ where
 
     async fn fill_buf(
         &mut self,
-        buffer: &mut VecDeque<ReceivedEvent>,
+        buffer: &mut VecDeque<ReceivedEventData>,
     ) -> Option<Result<(), RecvError>> {
         // Only receive messages if there is space in the buffer
         let max_messages = buffer.capacity() - buffer.len();
@@ -258,7 +258,7 @@ where
 
     async fn fill_buf_with_timeout(
         &mut self,
-        buffer: &mut VecDeque<ReceivedEvent>,
+        buffer: &mut VecDeque<ReceivedEventData>,
         max_wait_time: StdDuration,
     ) -> Option<Result<(), RecvError>> {
         log::debug!("fill_buf_with_timeout()");
@@ -296,7 +296,7 @@ async fn recover_and_recv<RP>(
     client: &mut Sharable<AmqpClient>,
     consumers: &mut MultipleAmqpConsumers<RP>,
     should_try_recover: bool,
-    buffer: &mut VecDeque<ReceivedEvent>,
+    buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: StdDuration,
 ) -> Result<Option<()>, RecoverAndReceiveError>
 where
@@ -331,7 +331,7 @@ where
 async fn receive_event<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut MultipleAmqpConsumers<RP>,
-    buffer: &mut VecDeque<ReceivedEvent>,
+    buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
 ) -> Option<Result<(), RecoverAndReceiveError>>
 where
@@ -374,9 +374,9 @@ where
 async fn next_event_inner<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut MultipleAmqpConsumers<RP>,
-    buffer: &mut VecDeque<ReceivedEvent>,
+    buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
-) -> Option<Result<ReceivedEvent, RecoverAndReceiveError>>
+) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
@@ -401,7 +401,7 @@ where
 async fn next_event<'a, RP>(
     mut value: EventStreamStateValue<'a, MultipleAmqpConsumers<RP>>,
 ) -> (
-    Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
+    Option<Result<ReceivedEventData, RecoverAndReceiveError>>,
     EventStreamStateValue<'a, MultipleAmqpConsumers<RP>>,
 )
 where
@@ -511,7 +511,7 @@ impl<'a, RP> Stream for EventStream<'a, MultipleAmqpConsumers<RP>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
-    type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
+    type Item = Result<ReceivedEventData, RecoverAndReceiveError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();

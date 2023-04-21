@@ -14,7 +14,7 @@ use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
 use timer_kit::error::Elapsed;
 
 use crate::{
-    consumer::error::OffsetIsEmpty, core::RecoverableError, util::IntoAzureCoreError, Event,
+    consumer::error::OffsetIsEmpty, core::RecoverableError, util::IntoAzureCoreError, EventData,
 };
 
 impl IntoAzureCoreError for ManagementError {
@@ -420,7 +420,7 @@ impl IntoAzureCoreError for DisposeConsumerError {
 pub enum TryAddError {
     /// The message is too large to fit in a batch
     #[error("Message is too large to fit in a batch")]
-    BatchFull(Event),
+    BatchFull(EventData),
 
     /// The message cannot be serialized
     #[error("Cannot serialize message")]
@@ -428,7 +428,7 @@ pub enum TryAddError {
         /// The error from the codec
         source: serde_amqp::Error,
         /// The message that could not be serialized
-        event: Event,
+        event: EventData,
     },
 }
 

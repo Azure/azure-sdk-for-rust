@@ -16,7 +16,7 @@ use crate::{
     core::{RecoverableError, RecoverableTransport, TransportClient, TransportConsumer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::{self, sharable::Sharable},
-    ReceivedEvent,
+    ReceivedEventData,
 };
 
 use super::{
@@ -34,7 +34,7 @@ pub struct AmqpConsumer<RP> {
     pub(crate) receiver: Receiver,
     pub(crate) link_identifier: u32,
     pub(crate) track_last_enqueued_event_properties: bool,
-    pub(crate) last_received_event: Option<ReceivedEvent>,
+    pub(crate) last_received_event: Option<ReceivedEventData>,
     pub(crate) current_event_position: Option<EventPosition>,
     pub(crate) retry_policy: RP,
     pub(crate) prefetch_count: u32,
@@ -55,10 +55,10 @@ impl<RP> AmqpConsumer<RP> {
         Ok(())
     }
 
-    pub(crate) async fn recv_and_accept(&mut self) -> Result<ReceivedEvent, RecvError> {
+    pub(crate) async fn recv_and_accept(&mut self) -> Result<ReceivedEventData, RecvError> {
         let delivery = self.receiver.recv().await?;
         self.receiver.accept(&delivery).await?;
-        let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
+        let event = ReceivedEventData::from_raw_amqp_message(delivery.into_message());
 
         let event_offset = event.offset().unwrap_or(i64::MIN);
         if event_offset > i64::MIN {
@@ -73,7 +73,7 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     #[inline]
-    async fn fill_buf(&mut self, buffer: &mut VecDeque<ReceivedEvent>) -> Result<(), RecvError> {
+    async fn fill_buf(&mut self, buffer: &mut VecDeque<ReceivedEventData>) -> Result<(), RecvError> {
         // Only receive messages if there is space in the buffer
         let max_messages = buffer.capacity() - buffer.len();
         // Credit mode is manual, need to set credit
@@ -87,7 +87,7 @@ impl<RP> AmqpConsumer<RP> {
         for _ in 0..max_messages {
             let delivery = self.receiver.recv().await?;
             self.receiver.accept(&delivery).await?;
-            let event = ReceivedEvent::from_raw_amqp_message(delivery.into_message());
+            let event = ReceivedEventData::from_raw_amqp_message(delivery.into_message());
 
             let event_offset = event.offset().unwrap_or(i64::MIN);
             if event_offset > i64::MIN {
@@ -103,7 +103,7 @@ impl<RP> AmqpConsumer<RP> {
     #[inline]
     async fn fill_buf_with_timeout(
         &mut self,
-        buffer: &mut VecDeque<ReceivedEvent>,
+        buffer: &mut VecDeque<ReceivedEventData>,
         max_wait_time: StdDuration,
     ) -> Result<Option<()>, RecoverAndReceiveError> {
         futures_util::select_biased! {
@@ -120,7 +120,7 @@ async fn recover_and_recv<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
     should_try_recover: bool,
-    buffer: &mut VecDeque<ReceivedEvent>,
+    buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: StdDuration,
 ) -> Result<Option<()>, RecoverAndReceiveError>
 where
@@ -161,7 +161,7 @@ where
 pub(crate) async fn receive_event_batch<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
-    buffer: &mut VecDeque<ReceivedEvent>,
+    buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
 ) -> Option<Result<(), RecoverAndReceiveError>>
 where
@@ -204,9 +204,9 @@ where
 async fn next_event_inner<RP>(
     client: &mut Sharable<AmqpClient>,
     consumer: &mut AmqpConsumer<RP>,
-    buffer: &mut VecDeque<ReceivedEvent>,
+    buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
-) -> Option<Result<ReceivedEvent, RecoverAndReceiveError>>
+) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -231,7 +231,7 @@ where
 async fn next_event<'a, RP>(
     mut value: EventStreamStateValue<'a, AmqpConsumer<RP>>,
 ) -> (
-    Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
+    Option<Result<ReceivedEventData, RecoverAndReceiveError>>,
     EventStreamStateValue<'a, AmqpConsumer<RP>>,
 )
 where
@@ -256,7 +256,7 @@ async fn close_consumer<'a, RP>(
 pub struct EventStreamStateValue<'a, C> {
     pub(crate) client: &'a mut Sharable<AmqpClient>,
     pub(crate) consumer: C,
-    pub(crate) buffer: VecDeque<ReceivedEvent>,
+    pub(crate) buffer: VecDeque<ReceivedEventData>,
     pub(crate) max_wait_time: Option<StdDuration>,
 }
 
@@ -280,7 +280,7 @@ type StreamBoxedFuture<'a, C> = Pin<
     Box<
         dyn Future<
                 Output = (
-                    Option<Result<ReceivedEvent, RecoverAndReceiveError>>,
+                    Option<Result<ReceivedEventData, RecoverAndReceiveError>>,
                     EventStreamStateValue<'a, C>,
                 ),
             > + Send
@@ -408,7 +408,7 @@ impl<'a, RP> Stream for EventStream<'a, AmqpConsumer<RP>>
 where
     RP: EventHubsRetryPolicy + Send + 'a,
 {
-    type Item = Result<ReceivedEvent, RecoverAndReceiveError>;
+    type Item = Result<ReceivedEventData, RecoverAndReceiveError>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();

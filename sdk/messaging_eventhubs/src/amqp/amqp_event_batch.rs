@@ -1,14 +1,14 @@
 use fe2o3_amqp_types::messaging::{message::__private::Serializable, Data, Message};
 use serde_amqp::serialized_size;
 
-use crate::{core::TransportEventBatch, producer::create_batch_options::CreateBatchOptions, Event};
+use crate::{core::TransportEventBatch, producer::create_batch_options::CreateBatchOptions, EventData};
 
 use super::{
     amqp_message_converter::{build_amqp_batch_from_messages, SendableEnvelope},
     error::TryAddError,
 };
 
-/// A set of [`Event`] with size constraints known up-front, intended to be
+/// A set of [`EventData`] with size constraints known up-front, intended to be
 /// sent to the Queue/Topic as a single batch. A [`EventBatch`] can be
 /// created using `ServiceBusSender::create_message_batch()`.
 /// Messages can be added to the batch using the [`try_add`] method on the batch.
@@ -56,7 +56,7 @@ impl TransportEventBatch for AmqpEventBatch {
         self.events.is_empty()
     }
 
-    fn try_add(&mut self, event: Event) -> Result<(), Self::TryAddError> {
+    fn try_add(&mut self, event: EventData) -> Result<(), Self::TryAddError> {
         let serializable_message = Serializable(&event.amqp_message);
 
         // Initialize the size by reserving space for the batch envelope taking into account the
@@ -139,7 +139,7 @@ mod tests {
     // fn try_add_sets_batch_size_in_bytes() {
     //     let overhead = OVERHEAD_BYTES_SMALL_MESSAGE; // The events added are small
     //     let mut batch = AmqpEventBatch::new(1024);
-    //     let message = Event::new("hello world");
+    //     let message = EventData::new("hello world");
 
     //     let serializable = Serializable(&message.amqp_message);
     //     let size = serialized_size(&serializable).unwrap();
@@ -156,7 +156,7 @@ mod tests {
     // #[test]
     // fn try_add_accepts_message_smaller_than_max_size() {
     //     let mut batch = AmqpEventBatch::new(1024);
-    //     let message = Event::new("hello world");
+    //     let message = EventData::new("hello world");
 
     //     // Make sure the message is smaller than the max size
     //     let serializable = Serializable(message.amqp_message.clone());
@@ -169,7 +169,7 @@ mod tests {
     // #[test]
     // fn try_add_does_not_accept_message_larger_than_max_size() {
     //     let mut batch = AmqpEventBatch::new(1024);
-    //     let message = Event::new(vec![0u8; 1025]);
+    //     let message = EventData::new(vec![0u8; 1025]);
 
     //     // Make sure the message is larger than the max size
     //     let serializable = Serializable(message.amqp_message.clone());
@@ -188,7 +188,7 @@ mod tests {
     //     };
     //     let mut batch = AmqpEventBatch::new(max_size_in_bytes);
 
-    //     let message = Event::new("hello world");
+    //     let message = EventData::new("hello world");
 
     //     let mut cumulated_size_in_bytes = 0;
     //     loop {
@@ -210,7 +210,7 @@ mod tests {
     //     let mut batch = AmqpEventBatch::new(1024);
 
     //     let events: Vec<_> = (0..5)
-    //         .map(|i| Event::new(format!("message {}", i)))
+    //         .map(|i| EventData::new(format!("message {}", i)))
     //         .collect();
     //     for message in events.iter() {
     //         assert!(batch.try_add(message.clone()).is_ok());
@@ -225,7 +225,7 @@ mod tests {
     // #[test]
     // fn clear_resets_batch_len_and_size_in_bytes() {
     //     let mut batch = AmqpEventBatch::new(1024);
-    //     let message = Event::new("hello world");
+    //     let message = EventData::new("hello world");
 
     //     assert!(batch.try_add(message.clone()).is_ok());
     //     assert_eq!(batch.len(), 1);
