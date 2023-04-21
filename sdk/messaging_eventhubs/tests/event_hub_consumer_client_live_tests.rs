@@ -25,7 +25,7 @@ async fn event_consumer_can_receive_events_from_partition() {
     options.retry_options = retry_options;
 
     let mut consumer =
-        EventHubConsumerClient::new(consumer_group, connection_string, event_hub_name, options)
+        EventHubConsumerClient::from_connection_string(consumer_group, connection_string, event_hub_name, options)
             .await
             .unwrap();
 
@@ -74,7 +74,7 @@ async fn event_consumer_can_receive_events_from_all_partitions() {
     options.retry_options = retry_options;
 
     let mut consumer =
-        EventHubConsumerClient::new(consumer_group, connection_string, event_hub_name, options)
+        EventHubConsumerClient::from_connection_string(consumer_group, connection_string, event_hub_name, options)
             .await
             .unwrap();
 

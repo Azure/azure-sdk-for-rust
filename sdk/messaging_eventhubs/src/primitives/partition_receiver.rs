@@ -34,7 +34,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         }
     }
 
-    pub async fn new(
+    pub async fn from_connection_string(
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
@@ -43,7 +43,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         options: PartitionReceiverOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .new(
+            .from_connection_string(
                 consumer_group,
                 partition_id,
                 event_position,
@@ -54,7 +54,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
             .await
     }
 
-    pub async fn new_with_credential(
+    pub async fn from_namespace_and_credential(
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
@@ -64,7 +64,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         options: PartitionReceiverOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .new_with_credential(
+            .from_namespace_and_credential(
                 consumer_group,
                 partition_id,
                 event_position,
@@ -81,7 +81,7 @@ impl<RP> PartitionReceiverBuilder<RP>
 where
     RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send,
 {
-    pub async fn new(
+    pub async fn from_connection_string(
         self,
         consumer_group: &str,
         partition_id: &str,
@@ -90,7 +90,7 @@ where
         event_hub_name: impl Into<Option<String>>,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
-        let mut connection = EventHubConnection::new(
+        let mut connection = EventHubConnection::from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
             options.connection_options.clone(),
@@ -119,7 +119,7 @@ where
         })
     }
 
-    pub async fn new_with_credential(
+    pub async fn from_namespace_and_credential(
         self,
         consumer_group: &str,
         partition_id: &str,
@@ -129,7 +129,7 @@ where
         credential: impl Into<EventHubTokenCredential>,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
-        let mut connection = EventHubConnection::new_with_credential(
+        let mut connection = EventHubConnection::from_namespace_and_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential.into(),

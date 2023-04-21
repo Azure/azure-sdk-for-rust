@@ -44,7 +44,7 @@ pub struct EventHubConnection<C> {
 }
 
 impl EventHubConnection<AmqpClient> {
-    pub async fn new(
+    pub async fn from_connection_string(
         connection_string: String,
         event_hub_name: impl Into<Option<String>>,
         options: EventHubConnectionOptions,
@@ -123,7 +123,7 @@ impl EventHubConnection<AmqpClient> {
         let token_credential =
             EventHubTokenCredential::SharedAccessCredential(shared_access_credential);
 
-        Self::new_with_credential(
+        Self::from_namespace_and_credential(
             fully_qualified_namespace.to_string(),
             event_hub_name,
             token_credential,
@@ -132,7 +132,7 @@ impl EventHubConnection<AmqpClient> {
         .await
     }
 
-    pub async fn new_with_credential(
+    pub async fn from_namespace_and_credential(
         fully_qualified_namespace: String,
         event_hub_name: String,
         credential: impl Into<EventHubTokenCredential>,

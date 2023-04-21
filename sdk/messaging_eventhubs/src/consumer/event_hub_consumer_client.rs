@@ -31,14 +31,14 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
         }
     }
 
-    pub async fn new(
+    pub async fn from_connection_string(
         consumer_group: impl Into<String>,
         connection_string: impl Into<String>,
         event_hub_name: impl Into<Option<String>>,
         client_options: EventHubConsumeClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .new(
+            .from_connection_string(
                 consumer_group,
                 connection_string,
                 event_hub_name,
@@ -61,7 +61,7 @@ pub struct EventHubConsumerClientBuilder<RP> {
 }
 
 impl<RP> EventHubConsumerClientBuilder<RP> {
-    pub async fn new(
+    pub async fn from_connection_string(
         self,
         consumer_group: impl Into<String>,
         connection_string: impl Into<String>,
@@ -71,7 +71,7 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        let connection = EventHubConnection::new(
+        let connection = EventHubConnection::from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
             client_options.connection_options.clone(),

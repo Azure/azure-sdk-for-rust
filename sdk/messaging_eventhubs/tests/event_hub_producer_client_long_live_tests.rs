@@ -19,7 +19,7 @@ async fn producer_client_send_one_event_per_minute_for_10_mins() {
     let partition_id = "0";
     let options = EventHubProducerClientOptions::default();
     let mut producer_client =
-        EventHubProducerClient::new(connection_string, event_hub_name, options)
+        EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
             .await
             .unwrap();
 
@@ -52,7 +52,7 @@ async fn producer_client_can_recover_and_send_after_sleeping_for_40_mins() {
     let partition_id = "0";
     let options = EventHubProducerClientOptions::default();
     let mut producer_client =
-        EventHubProducerClient::new(connection_string, event_hub_name, options)
+        EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
             .await
             .unwrap();
 
@@ -87,7 +87,7 @@ async fn producer_client_can_recover_and_get_properties_after_idling_40_mins() {
     let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
     let options = EventHubProducerClientOptions::default();
     let mut producer_client =
-        EventHubProducerClient::new(connection_string, event_hub_name, options)
+        EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
             .await
             .unwrap();
     let properties = producer_client.get_event_hub_properties().await.unwrap();
