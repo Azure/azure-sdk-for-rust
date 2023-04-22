@@ -1,8 +1,11 @@
-use fe2o3_amqp_types::messaging::{Data, Message};
+use fe2o3_amqp_types::messaging::{Data, Message, MessageAnnotations};
 
 use crate::EventData;
 
-use super::amqp_property;
+use super::{
+    amqp_phantom_message::{Phantom, PhantomMessage},
+    amqp_property,
+};
 
 use fe2o3_amqp::{
     link::{delivery::DeliveryFut, SendError},
@@ -159,4 +162,35 @@ pub(crate) fn build_amqp_batch_from_messages(
             })
         }
     }
+}
+
+pub(crate) fn create_empty_phantom_envelope(
+    partition_key: Option<String>,
+) -> Result<PhantomMessage<Batch<Data>>, serde_amqp::Error> {
+    let header = None;
+    let mut message_annotations: Option<MessageAnnotations> = None;
+
+    if let Some(partition_key) = partition_key {
+        if !partition_key.is_empty() {
+            message_annotations
+                .get_or_insert(Default::default())
+                .insert(amqp_property::PARTITION_KEY.into(), partition_key.into());
+        }
+    }
+
+    let delivery_annotations = None;
+    let properties = None;
+    let application_properties = None;
+    let body = Phantom::<Batch<Data>>::new(0);
+    let footer = None;
+
+    Ok(PhantomMessage {
+        header: Phantom::try_from(&header)?,
+        message_annotations: Phantom::try_from(&message_annotations)?,
+        delivery_annotations: Phantom::try_from(&delivery_annotations)?,
+        properties: Phantom::try_from(&properties)?,
+        application_properties: Phantom::try_from(&application_properties)?,
+        body,
+        footer: Phantom::try_from(&footer)?,
+    })
 }

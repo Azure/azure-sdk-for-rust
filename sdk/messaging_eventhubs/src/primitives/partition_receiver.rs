@@ -168,7 +168,8 @@ where
         &mut self,
         max_event_count: usize,
         max_wait_time: impl Into<Option<StdDuration>>,
-    ) -> Result<impl Iterator<Item = ReceivedEventData> + ExactSizeIterator, azure_core::Error> {
+    ) -> Result<impl Iterator<Item = ReceivedEventData> + ExactSizeIterator, azure_core::Error>
+    {
         let mut buffer = VecDeque::with_capacity(max_event_count);
         let max_wait_time = max_wait_time.into();
         let max_wait_time = max_wait_time.map(|t| t.max(self.options.maximum_receive_wait_time));

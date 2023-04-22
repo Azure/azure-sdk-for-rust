@@ -2,7 +2,6 @@
 pub struct CreateBatchOptions {
     pub max_size_in_bytes: Option<u64>,
     pub partition_key: Option<String>,
-    pub partition_id: Option<String>,
 }
 
 impl CreateBatchOptions {
@@ -17,11 +16,6 @@ impl CreateBatchOptions {
 
     pub fn with_partition_key(mut self, partition_key: impl Into<String>) -> Self {
         self.partition_key = Some(partition_key.into());
-        self
-    }
-
-    pub fn with_partition_id(mut self, partition_id: impl Into<String>) -> Self {
-        self.partition_id = Some(partition_id.into());
         self
     }
 }

@@ -73,7 +73,10 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     #[inline]
-    async fn fill_buf(&mut self, buffer: &mut VecDeque<ReceivedEventData>) -> Result<(), RecvError> {
+    async fn fill_buf(
+        &mut self,
+        buffer: &mut VecDeque<ReceivedEventData>,
+    ) -> Result<(), RecvError> {
         // Only receive messages if there is space in the buffer
         let max_messages = buffer.capacity() - buffer.len();
         // Credit mode is manual, need to set credit

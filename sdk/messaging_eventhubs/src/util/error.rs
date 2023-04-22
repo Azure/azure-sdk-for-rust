@@ -208,3 +208,9 @@ impl IntoAzureCoreError for RecvError {
         }
     }
 }
+
+impl IntoAzureCoreError for serde_amqp::Error {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, self)
+    }
+}

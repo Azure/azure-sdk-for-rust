@@ -432,29 +432,25 @@ pub enum TryAddError {
     },
 }
 
-/// The requested message batch size is out of range
-#[derive(Debug)]
-pub struct RequestedSizeOutOfRange {}
+#[derive(Debug, thiserror::Error)]
+pub enum CreateBatchError {
+    /// The requested message batch size is out of range
+    #[error("Requested size is out of range")]
+    RequestedSizeOutOfRange,
 
-impl std::fmt::Display for RequestedSizeOutOfRange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Requested size is out of range")
-    }
+    /// The sent message is not accepted by the service
+    #[error(transparent)]
+    Codec(#[from] serde_amqp::Error),
 }
 
-impl std::error::Error for RequestedSizeOutOfRange {}
-
-impl IntoAzureCoreError for RequestedSizeOutOfRange {
+impl IntoAzureCoreError for CreateBatchError {
     fn into_azure_core_error(self) -> azure_core::Error {
-        use azure_core::error::ErrorKind;
-
-        azure_core::Error::new(ErrorKind::Other, self)
-    }
-}
-
-impl From<RequestedSizeOutOfRange> for azure_core::Error {
-    fn from(err: RequestedSizeOutOfRange) -> Self {
-        err.into_azure_core_error()
+        match self {
+            CreateBatchError::RequestedSizeOutOfRange => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+            }
+            CreateBatchError::Codec(err) => err.into_azure_core_error(),
+        }
     }
 }
 

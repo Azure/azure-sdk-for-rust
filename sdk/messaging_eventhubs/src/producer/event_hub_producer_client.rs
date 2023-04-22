@@ -5,11 +5,12 @@ use crate::{
         amqp_client::AmqpClient,
         amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
     },
+    authorization::event_hub_token_credential::EventHubTokenCredential,
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    EventData, EventHubConnection, EventHubsRetryOptions, PartitionProperties, authorization::event_hub_token_credential::EventHubTokenCredential,
+    EventData, EventHubConnection, EventHubsRetryOptions, PartitionProperties,
 };
 
 use super::{
@@ -18,7 +19,7 @@ use super::{
     send_event_options::SendEventOptions,
 };
 
-pub const MINIMUM_BATCH_SIZE_LIMIT: usize = 24;
+pub const MINIMUM_BATCH_SIZE_LIMIT: u64 = 24;
 
 pub struct EventHubProducerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
@@ -239,7 +240,8 @@ where
         let inner = self
             .get_or_create_gateway_producer_mut()
             .await?
-            .create_batch(options)?;
+            .create_batch(options)
+            .map_err(IntoAzureCoreError::into_azure_core_error)?;
         Ok(EventBatch { inner })
     }
 

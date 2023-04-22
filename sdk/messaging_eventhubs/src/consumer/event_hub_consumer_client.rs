@@ -5,9 +5,10 @@ use crate::{
         amqp_client::AmqpClient,
         amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
     },
+    authorization::event_hub_token_credential::EventHubTokenCredential,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, authorization::event_hub_token_credential::EventHubTokenCredential,
+    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
 };
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};

@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
 use fe2o3_amqp_types::messaging::{
-    ApplicationProperties, Batch, Data, DeliveryAnnotations, Footer, Header, Message,
-    MessageAnnotations, Properties, message::__private::Serializable,
+    message::__private::Serializable, ApplicationProperties, Batch, Data, DeliveryAnnotations,
+    Footer, Header, Message, MessageAnnotations, Properties,
 };
 use serde_amqp::serialized_size;
 
@@ -73,7 +73,7 @@ macro_rules! impl_try_from_type_for_phantom {
     };
 }
 
-impl_try_from_type_for_phantom!{
+impl_try_from_type_for_phantom! {
     Header,
     DeliveryAnnotations,
     MessageAnnotations,
@@ -104,7 +104,7 @@ macro_rules! impl_try_from_optional_type_for_phantom {
     };
 }
 
-impl_try_from_optional_type_for_phantom!{
+impl_try_from_optional_type_for_phantom! {
     Option<Header>,
     Option<DeliveryAnnotations>,
     Option<MessageAnnotations>,
@@ -151,6 +151,14 @@ impl<'a> TryFrom<&'a Message<Data>> for Phantom<Data> {
 impl Phantom<Batch<Data>> {
     pub(crate) fn push(&mut self, data: Phantom<Data>) {
         self.serialized_len += data.serialized_len;
+    }
+
+    pub(crate) fn pop(&mut self, data: Phantom<Data>) {
+        self.serialized_len -= data.serialized_len;
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.serialized_len = 0;
     }
 }
 
@@ -209,24 +217,24 @@ impl<T> PhantomMessage<T> {
 }
 
 impl PhantomMessage<Batch<Data>> {
-    pub(crate) fn map_body_from_data(source: PhantomMessage<Data>) -> Self {
-        let body = {
-            let message_size = source.body.serialized_len;
-            let mut batch = Phantom::try_from(&Batch::new(Vec::with_capacity(0))).unwrap();
-            batch.push(Phantom::with_message_size(message_size).unwrap());
-            batch
-        };
+    // pub(crate) fn map_body_from_data(source: PhantomMessage<Data>) -> Self {
+    //     let body = {
+    //         let message_size = source.body.serialized_len;
+    //         let mut batch = Phantom::try_from(&Batch::new(Vec::with_capacity(0))).unwrap();
+    //         batch.push(Phantom::with_message_size(message_size).unwrap());
+    //         batch
+    //     };
 
-        Self {
-            header: source.header,
-            delivery_annotations: source.delivery_annotations,
-            message_annotations: source.message_annotations,
-            properties: source.properties,
-            application_properties: source.application_properties,
-            body,
-            footer: source.footer,
-        }
-    }
+    //     Self {
+    //         header: source.header,
+    //         delivery_annotations: source.delivery_annotations,
+    //         message_annotations: source.message_annotations,
+    //         properties: source.properties,
+    //         application_properties: source.application_properties,
+    //         body,
+    //         footer: source.footer,
+    //     }
+    // }
 }
 
 impl<'a> TryFrom<&'a Message<Data>> for PhantomMessage<Data> {
@@ -277,25 +285,26 @@ impl<'a> TryFrom<&'a Message<Batch<Data>>> for PhantomMessage<Batch<Data>> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use fe2o3_amqp_types::messaging::{message::__private::Serializable, Batch, Data};
-    use serde_amqp::{serialized_size, to_value, Value, to_vec};
+    use fe2o3_amqp_types::messaging::message::__private::Serializable;
+    use serde_amqp::{serialized_size, to_value, to_vec, Value};
 
     use crate::{
         amqp::amqp_message_converter::{build_amqp_batch_from_messages, SendableEnvelope},
         EventData,
     };
 
-    use super::{PhantomMessage, Phantom};
+    use super::{Phantom, PhantomMessage};
 
-    fn phantom_size_and_serialized_size_of_sendable_envelope(sendable: SendableEnvelope) -> (usize, usize) {
+    fn phantom_size_and_serialized_size_of_sendable_envelope(
+        sendable: SendableEnvelope,
+    ) -> (usize, usize) {
         match sendable {
             SendableEnvelope::Single(sendable) => {
                 let phantom_message = PhantomMessage::try_from(&sendable.message).unwrap();
                 let phantom_size = phantom_message.serialized_size();
-                let serializable=  Serializable(sendable.message);
+                let serializable = Serializable(sendable.message);
                 let ssize = serialized_size(&serializable).unwrap();
 
                 (phantom_size, ssize)
@@ -303,41 +312,41 @@ mod tests {
             SendableEnvelope::Batch(sendable) => {
                 let phantom_message = PhantomMessage::try_from(&sendable.message).unwrap();
                 let phantom_size = phantom_message.serialized_size();
-                let serializable=  Serializable(sendable.message);
+                let serializable = Serializable(sendable.message);
                 let ssize = serialized_size(&serializable).unwrap();
 
                 (phantom_size, ssize)
-            },
+            }
         }
     }
 
     fn serialized_value_of_sendable(sendable: SendableEnvelope) -> Value {
         match sendable {
             SendableEnvelope::Single(sendable) => {
-                let serializable=  Serializable(sendable.message);
+                let serializable = Serializable(sendable.message);
                 let value = to_value(&serializable).unwrap();
                 value
             }
             SendableEnvelope::Batch(sendable) => {
-                let serializable=  Serializable(sendable.message);
+                let serializable = Serializable(sendable.message);
                 let value = to_value(&serializable).unwrap();
                 value
-            },
+            }
         }
     }
 
     fn serialized_bytes_of_sendable(sendable: SendableEnvelope) -> Vec<u8> {
         match sendable {
             SendableEnvelope::Single(sendable) => {
-                let serializable=  Serializable(sendable.message);
+                let serializable = Serializable(sendable.message);
                 let value = to_vec(&serializable).unwrap();
                 value
             }
             SendableEnvelope::Batch(sendable) => {
-                let serializable=  Serializable(sendable.message);
+                let serializable = Serializable(sendable.message);
                 let value = to_vec(&serializable).unwrap();
                 value
-            },
+            }
         }
     }
 
@@ -356,7 +365,8 @@ mod tests {
         println!("serialized_bytes: {:?}", serialized_bytes);
 
         let batch = build_amqp_batch_from_messages(message_iter, None).unwrap();
-        let (phantom_size, ssize) = phantom_size_and_serialized_size_of_sendable_envelope(batch.sendable);
+        let (phantom_size, ssize) =
+            phantom_size_and_serialized_size_of_sendable_envelope(batch.sendable);
         println!("serialized_size: {}", ssize);
         assert_eq!(phantom_size, ssize)
     }
@@ -371,21 +381,23 @@ mod tests {
         let serialized_bytes = serialized_bytes_of_sendable(batch.sendable);
 
         let batch = build_amqp_batch_from_messages(messages.into_iter(), None).unwrap();
-        let (_, serialized_size) = phantom_size_and_serialized_size_of_sendable_envelope(batch.sendable);
+        let (_, serialized_size) =
+            phantom_size_and_serialized_size_of_sendable_envelope(batch.sendable);
 
         assert_eq!(serialized_size, serialized_bytes.len());
 
-        let phantom_envelope = PhantomMessage {
+        let mut phantom_envelope = PhantomMessage {
             header: Phantom::try_from(&None).unwrap(),
             delivery_annotations: Phantom::try_from(&None).unwrap(),
             message_annotations: Phantom::try_from(&None).unwrap(),
             properties: Phantom::try_from(&None).unwrap(),
             application_properties: Phantom::try_from(&None).unwrap(),
-            body: Phantom::try_from(&event.amqp_message).unwrap(),
+            body: Phantom::new(0),
             footer: Phantom::try_from(&None).unwrap(),
         };
-        let mut phantom_envelope = PhantomMessage::map_body_from_data(phantom_envelope);
-        let phantom_event_body = Phantom::try_from(&event.amqp_message.body).unwrap();
+        let phantom_event_body = Phantom::try_from(&event.amqp_message).unwrap();
+        phantom_envelope.body.push(phantom_event_body);
+        let phantom_event_body = Phantom::try_from(&event.amqp_message).unwrap();
         phantom_envelope.body.push(phantom_event_body);
         let phantom_size = phantom_envelope.serialized_size();
 

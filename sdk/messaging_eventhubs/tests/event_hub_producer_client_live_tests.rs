@@ -16,9 +16,10 @@ async fn producer_client_can_connect_to_event_hubs_using_full_connection_string_
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
     let options = EventHubProducerClientOptions::default();
-    let producer_client = EventHubProducerClient::from_connection_string(connection_string, None, options)
-        .await
-        .unwrap();
+    let producer_client =
+        EventHubProducerClient::from_connection_string(connection_string, None, options)
+            .await
+            .unwrap();
     producer_client.close().await.unwrap();
 }
 
@@ -28,9 +29,10 @@ async fn close_producer_client_does_not_close_shared_connection() {
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
     let connection_options = EventHubConnectionOptions::default();
-    let mut connection = EventHubConnection::from_connection_string(connection_string, None, connection_options)
-        .await
-        .unwrap();
+    let mut connection =
+        EventHubConnection::from_connection_string(connection_string, None, connection_options)
+            .await
+            .unwrap();
 
     let client_options = EventHubProducerClientOptions::default();
     let producer_client_1 =
@@ -50,9 +52,10 @@ async fn producer_client_can_send_an_event_to_a_partition() {
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
     let options = EventHubProducerClientOptions::default();
-    let mut producer_client = EventHubProducerClient::from_connection_string(connection_string, None, options)
-        .await
-        .unwrap();
+    let mut producer_client =
+        EventHubProducerClient::from_connection_string(connection_string, None, options)
+            .await
+            .unwrap();
 
     let event = "Hello, world to partition 0";
     let options = SendEventOptions::new().with_partition_id("0");
@@ -67,9 +70,10 @@ async fn producer_client_can_send_without_specifying_partition_id() {
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
     let options = EventHubProducerClientOptions::default();
-    let mut producer_client = EventHubProducerClient::from_connection_string(connection_string, None, options)
-        .await
-        .unwrap();
+    let mut producer_client =
+        EventHubProducerClient::from_connection_string(connection_string, None, options)
+            .await
+            .unwrap();
 
     let event = "Hello, world to a random partition";
     producer_client
@@ -88,9 +92,10 @@ async fn producer_client_can_create_and_send_event_batch() {
 
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
     let options = EventHubProducerClientOptions::default();
-    let mut producer_client = EventHubProducerClient::from_connection_string(connection_string, None, options)
-        .await
-        .unwrap();
+    let mut producer_client =
+        EventHubProducerClient::from_connection_string(connection_string, None, options)
+            .await
+            .unwrap();
 
     let options = CreateBatchOptions::new();
     let mut event_batch = producer_client.create_batch(options).await.unwrap();

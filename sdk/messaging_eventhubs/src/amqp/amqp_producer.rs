@@ -26,8 +26,8 @@ use super::{
         build_amqp_batch_from_messages, BatchEnvelope, BatchEnvelopeState, SendableEnvelope,
     },
     error::{
-        AmqpSendError, DisposeProducerError, NotAcceptedError, RecoverAndSendError,
-        RequestedSizeOutOfRange,
+        AmqpSendError, CreateBatchError, DisposeProducerError, NotAcceptedError,
+        RecoverAndSendError,
     },
 };
 
@@ -87,14 +87,14 @@ impl<RP> AmqpProducer<RP> {
     pub(crate) fn create_batch(
         &self,
         options: CreateBatchOptions,
-    ) -> Result<AmqpEventBatch, RequestedSizeOutOfRange> {
+    ) -> Result<AmqpEventBatch, CreateBatchError> {
         let link_max_message_size = self.sender.max_message_size().unwrap_or(u64::MAX);
-        let max_size_in_bytes = match options.max_size_in_bytes {
+        let max_size_in_bytes: u64 = match options.max_size_in_bytes {
             Some(max_size_in_bytes) => {
-                if max_size_in_bytes < MINIMUM_BATCH_SIZE_LIMIT as u64
+                if max_size_in_bytes < MINIMUM_BATCH_SIZE_LIMIT
                     || max_size_in_bytes > link_max_message_size
                 {
-                    return Err(RequestedSizeOutOfRange {});
+                    return Err(CreateBatchError::RequestedSizeOutOfRange);
                 }
 
                 max_size_in_bytes
@@ -102,7 +102,10 @@ impl<RP> AmqpProducer<RP> {
             // If this field is zero or unset, there is no maximum size imposed by the link endpoint.
             None => link_max_message_size,
         };
-        Ok(AmqpEventBatch::new(max_size_in_bytes, options))
+        Ok(AmqpEventBatch::new(
+            max_size_in_bytes,
+            options.partition_key,
+        )?)
     }
 
     pub(crate) async fn close(mut self) -> Result<(), DisposeProducerError> {
@@ -218,7 +221,7 @@ where
     type MessageBatch = AmqpEventBatch;
 
     type SendError = RecoverAndSendError;
-    type CreateBatchError = RequestedSizeOutOfRange;
+    type CreateBatchError = CreateBatchError;
 
     fn create_batch(
         &self,

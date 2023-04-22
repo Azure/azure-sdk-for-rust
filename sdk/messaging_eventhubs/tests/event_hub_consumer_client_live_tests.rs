@@ -24,10 +24,14 @@ async fn event_consumer_can_receive_events_from_partition() {
     let mut options = EventHubConsumeClientOptions::default();
     options.retry_options = retry_options;
 
-    let mut consumer =
-        EventHubConsumerClient::from_connection_string(consumer_group, connection_string, event_hub_name, options)
-            .await
-            .unwrap();
+    let mut consumer = EventHubConsumerClient::from_connection_string(
+        consumer_group,
+        connection_string,
+        event_hub_name,
+        options,
+    )
+    .await
+    .unwrap();
 
     let partition_id = "0";
     let starting_position = EventPosition::earliest();
@@ -73,10 +77,14 @@ async fn event_consumer_can_receive_events_from_all_partitions() {
     let mut options = EventHubConsumeClientOptions::default();
     options.retry_options = retry_options;
 
-    let mut consumer =
-        EventHubConsumerClient::from_connection_string(consumer_group, connection_string, event_hub_name, options)
-            .await
-            .unwrap();
+    let mut consumer = EventHubConsumerClient::from_connection_string(
+        consumer_group,
+        connection_string,
+        event_hub_name,
+        options,
+    )
+    .await
+    .unwrap();
 
     let mut options = ReadEventOptions::default();
     options.cache_event_count = 3;
