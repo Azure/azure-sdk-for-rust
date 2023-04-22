@@ -25,6 +25,7 @@ mockall = "0.11"
 async-trait = "0.1"
 rand = "0.8"
 pin-project-lite = "0.2.9"
+serde = "1"
 
 # Azure dependencies
 azure_core = { path = "../core" }
@@ -34,7 +35,7 @@ fe2o3-amqp = { version = "0.8.22" }
 fe2o3-amqp-types = "0.7.1"
 fe2o3-amqp-management = "0.2.2"
 fe2o3-amqp-cbs = "0.2"
-serde_amqp = { version = "0.5.8", features = ["derive", "time"] }
+serde_amqp = { version = "0.5.9", features = ["derive", "time"] }
 fe2o3-amqp-ws = "0.3.1"
 # fe2o3-amqp = { path = "../../../fe2o3-amqp/fe2o3-amqp", features = ["log"] }
 # fe2o3-amqp-types = { path = "../../../fe2o3-amqp/fe2o3-amqp-types" }

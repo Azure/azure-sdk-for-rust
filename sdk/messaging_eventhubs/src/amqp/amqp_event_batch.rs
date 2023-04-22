@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn serialized_size_matches() {
         let options = CreateBatchOptions::default();
-        let mut batch = AmqpEventBatch::new(32768, options);
+        let mut batch = AmqpEventBatch::new(64, options);
         let event = "abcdefg";
 
         while let Ok(_) = batch.try_add(EventData::from(event)) {}
