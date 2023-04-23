@@ -27,6 +27,7 @@ use super::{
 
 pub(crate) mod multiple;
 
+#[derive(Debug)]
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
     pub(crate) _session_identifier: u32,

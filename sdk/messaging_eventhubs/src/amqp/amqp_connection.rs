@@ -1,6 +1,7 @@
 use super::CONNECTION_IDENTIFIER;
 
 /// A wrapper around the AMQP connection handle that also tracks the identifier for the connection.
+#[derive(Debug)]
 pub(crate) struct AmqpConnection {
     pub identifier: u32,
     pub handle: fe2o3_amqp::connection::ConnectionHandle<()>,

@@ -21,6 +21,7 @@ use super::{
 
 pub const MINIMUM_BATCH_SIZE_LIMIT: u64 = 24;
 
+#[derive(Debug)]
 pub struct EventHubProducerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
     /// An abstracted Event Hub transport-specific producer that is associated with the
@@ -75,6 +76,7 @@ impl EventHubProducerClient<BasicRetryPolicy> {
     }
 }
 
+#[derive(Debug)]
 pub struct EventHubProducerClientBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }

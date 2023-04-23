@@ -165,6 +165,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct MultipleAmqpConsumers<RP> {
     inner: Vec<ConsumerState<RP>>,
     retry_policy: RP,

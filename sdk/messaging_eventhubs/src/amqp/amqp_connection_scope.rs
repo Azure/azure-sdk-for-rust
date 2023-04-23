@@ -35,9 +35,7 @@ use crate::{
     consumer::EventPosition,
     core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
-    producer::{
-        PartitionPublishingOptions,
-    },
+    producer::PartitionPublishingOptions,
 };
 
 use super::{
@@ -57,6 +55,7 @@ use super::{
 const AUTHORIZATION_REFRESH_BUFFER_SECONDS: u64 = 7 * 60;
 const WEBSOCKETS_PATH_SUFFIX: &str = "/$servicebus/websocket/";
 
+#[derive(Debug)]
 pub(crate) struct AmqpConnectionScope {
     /// Indicates whether this <see cref="AmqpConnectionScope"/> has been disposed.
     pub(crate) is_disposed: Arc<AtomicBool>,

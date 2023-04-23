@@ -36,6 +36,7 @@ impl IntoAzureCoreError for EventHubConnectionError {
     }
 }
 
+#[derive(Debug)]
 pub struct EventHubConnection<C> {
     fully_qualified_namespace: String,
     event_hub_name: Arc<String>,

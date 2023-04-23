@@ -1,9 +1,6 @@
 use messaging_eventhubs::{
     producer::{
-        CreateBatchOptions,
-        EventHubProducerClient,
-        EventHubProducerClientOptions,
-        SendEventOptions,
+        CreateBatchOptions, EventHubProducerClient, EventHubProducerClientOptions, SendEventOptions,
     },
     EventHubConnection, EventHubConnectionOptions,
 };

@@ -15,7 +15,6 @@ const DEFAULT_JITTER_FACTOR: f64 = 0.08;
 pub struct BasicRetryPolicy {
     options: EventHubsRetryOptions,
     jitter_factor: f64,
-
     // /// The minimum number of seconds to wait before retrying when the service
     // /// indicates that the client should throttle its requests.
     // ///

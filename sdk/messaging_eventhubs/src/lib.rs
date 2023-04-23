@@ -1,6 +1,9 @@
 //! # Azure Event Hubs
 
-// #![deny(missing_docs, missing_debug_implementations)]
+#![deny(
+    // missing_docs,
+    missing_debug_implementations
+)]
 
 #[macro_use]
 mod cfg;
@@ -31,13 +34,13 @@ pub mod prelude {
     pub use crate::event_data::*;
     pub use crate::event_hubs_connection::*;
     pub use crate::event_hubs_connection_option::*;
-    pub use crate::event_hubs_properties::*;
     pub use crate::event_hubs_connection_string_properties::*;
+    pub use crate::event_hubs_properties::*;
+    pub use crate::event_hubs_retry_mode::*;
     pub use crate::event_hubs_retry_options::*;
     pub use crate::event_hubs_retry_policy::*;
-    pub use crate::partition_properties::*;
     pub use crate::event_hubs_transport_type::*;
-    pub use crate::event_hubs_retry_mode::*;
+    pub use crate::partition_properties::*;
 }
 
 pub use prelude::*;

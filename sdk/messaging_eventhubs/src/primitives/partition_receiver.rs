@@ -7,19 +7,22 @@ use crate::{
     },
     authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
+    core::BasicRetryPolicy,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    EventHubConnection, EventHubsRetryOptions, ReceivedEventData, core::BasicRetryPolicy,
+    EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
 };
 
 use super::partition_receiver_options::PartitionReceiverOptions;
 
+#[derive(Debug)]
 pub struct PartitionReceiver<RP> {
     connection: EventHubConnection<AmqpClient>,
     inner_consumer: AmqpConsumer<RP>,
     options: PartitionReceiverOptions,
 }
 
+#[derive(Debug)]
 pub struct PartitionReceiverBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }

@@ -49,6 +49,12 @@ pub(crate) struct AmqpCbsLinkHandle {
     join_handle: JoinHandle<Result<(), DetachError>>,
 }
 
+impl std::fmt::Debug for AmqpCbsLinkHandle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AmqpCbsLinkHandle").finish()
+    }
+}
+
 impl AmqpCbsLinkHandle {
     pub(crate) fn command_sender(&self) -> &mpsc::Sender<Command> {
         &self.command_sender

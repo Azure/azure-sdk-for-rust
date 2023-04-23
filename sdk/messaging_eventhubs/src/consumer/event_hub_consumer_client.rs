@@ -6,13 +6,15 @@ use crate::{
         amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
     },
     authorization::event_hub_token_credential::EventHubTokenCredential,
+    core::BasicRetryPolicy,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    EventHubConnection, EventHubsRetryOptions, core::BasicRetryPolicy,
+    EventHubConnection, EventHubsRetryOptions,
 };
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
 
+#[derive(Debug)]
 pub struct EventHubConsumerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
     retry_policy_marker: PhantomData<RP>,
@@ -57,6 +59,7 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
     }
 }
 
+#[derive(Debug)]
 pub struct EventHubConsumerClientBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }

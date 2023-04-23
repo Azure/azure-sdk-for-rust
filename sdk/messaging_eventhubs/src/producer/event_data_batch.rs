@@ -6,6 +6,7 @@ use crate::{
     EventData,
 };
 
+#[derive(Debug)]
 pub struct EventDataBatch {
     pub(crate) inner: AmqpEventBatch,
 }

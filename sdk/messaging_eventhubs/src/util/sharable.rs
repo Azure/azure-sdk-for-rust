@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex;
 
+#[derive(Debug)]
 pub(crate) enum Sharable<C> {
     Owned(C),
     Shared(Arc<Mutex<C>>),

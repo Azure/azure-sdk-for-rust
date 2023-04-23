@@ -8,10 +8,7 @@ use crate::{
     amqp::amqp_message_converter::create_envelope_from_events,
     core::{RecoverableError, RecoverableTransport, TransportClient, TransportProducer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    producer::{
-        CreateBatchOptions,
-        SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT,
-    },
+    producer::{CreateBatchOptions, SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT},
     util::{self, sharable::Sharable},
     EventData,
 };
@@ -29,6 +26,7 @@ use super::{
     },
 };
 
+#[derive(Debug)]
 pub struct AmqpProducer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
     pub(crate) _session_identifier: u32,
@@ -37,7 +35,6 @@ pub struct AmqpProducer<RP> {
 
     // /// TODO: this is only useful for idempotent sending, which won't be implemented in the current plan
     // pub(crate) initialized_partition_properties: PartitionPublishingProperties,
-
     pub(crate) retry_policy: RP,
     pub(crate) endpoint: Url,
     pub(crate) cbs_command_sender: mpsc::Sender<Command>,
