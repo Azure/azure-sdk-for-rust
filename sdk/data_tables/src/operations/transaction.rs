@@ -207,7 +207,6 @@ impl TryFrom<CollectedResponse> for TransactionResponse {
 
         for change_set_response in body
             .split("\n--changesetresponse_")
-            .into_iter()
             .filter(|change_set_response| change_set_response.contains("HTTP/1.1"))
         {
             trace!("changeset --> {}", change_set_response);

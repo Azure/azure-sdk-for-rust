@@ -1,4 +1,4 @@
-use azure_core::AppendToUrlQuery;
+use azure_core::{base64, AppendToUrlQuery};
 use bytes::Bytes;
 
 /// Struct wrapping the bytes of a block blob block-id,

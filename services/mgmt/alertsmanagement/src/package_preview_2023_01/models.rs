@@ -9,15 +9,15 @@ pub struct AlertRuleRecommendationProperties {
     #[doc = "The recommendation alert rule type."]
     #[serde(rename = "alertRuleType")]
     pub alert_rule_type: String,
-    #[doc = "Provides the display information for an alert rule recommendation recommendations."]
+    #[doc = "A dictionary that provides the display information for an alert rule recommendation."]
     #[serde(rename = "displayInformation")]
-    pub display_information: DisplayInformationItem,
+    pub display_information: serde_json::Value,
     #[doc = "A complete ARM template to deploy the alert rules."]
     #[serde(rename = "ruleArmTemplate")]
     pub rule_arm_template: RuleArmTemplate,
 }
 impl AlertRuleRecommendationProperties {
-    pub fn new(alert_rule_type: String, display_information: DisplayInformationItem, rule_arm_template: RuleArmTemplate) -> Self {
+    pub fn new(alert_rule_type: String, display_information: serde_json::Value, rule_arm_template: RuleArmTemplate) -> Self {
         Self {
             alert_rule_type,
             display_information,
@@ -59,27 +59,6 @@ impl azure_core::Continuable for AlertRuleRecommendationsListResponse {
 impl AlertRuleRecommendationsListResponse {
     pub fn new(value: Vec<AlertRuleRecommendationResource>) -> Self {
         Self { value, next_link: None }
-    }
-}
-#[doc = "Provides the display information for an alert rule recommendation recommendations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DisplayInformationItem {
-    #[doc = "The alert rule information."]
-    #[serde(rename = "ruleInfo", default, skip_serializing_if = "Option::is_none")]
-    pub rule_info: Option<String>,
-    #[doc = "The information to display inside an information balloon."]
-    #[serde(rename = "infoBallonMessage", default, skip_serializing_if = "Option::is_none")]
-    pub info_ballon_message: Option<String>,
-    #[doc = "The documentation link to display inside an information balloon."]
-    #[serde(rename = "infoBallonLink", default, skip_serializing_if = "Option::is_none")]
-    pub info_ballon_link: Option<String>,
-    #[doc = "Provides display information specific for Metric Alerts rule."]
-    #[serde(rename = "metricAlertsDisplayInformation", default, skip_serializing_if = "Option::is_none")]
-    pub metric_alerts_display_information: Option<MetricAlertsDisplayInformation>,
-}
-impl DisplayInformationItem {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The resource management error additional info."]
@@ -146,24 +125,6 @@ impl azure_core::Continuable for ErrorResponse {
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Provides display information specific for Metric Alerts rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertsDisplayInformation {
-    #[doc = "The metric display name to use in the UI for the metric alert rule."]
-    #[serde(rename = "metricDisplayName")]
-    pub metric_display_name: String,
-    #[doc = "The unit to display for a metric alert rule."]
-    #[serde(rename = "displayUnits")]
-    pub display_units: MetricAlertsDisplayUnit,
-}
-impl MetricAlertsDisplayInformation {
-    pub fn new(metric_display_name: String, display_units: MetricAlertsDisplayUnit) -> Self {
-        Self {
-            metric_display_name,
-            display_units,
-        }
     }
 }
 #[doc = "The unit to display for a metric alert rule."]

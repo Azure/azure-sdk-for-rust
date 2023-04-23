@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{base64, headers::*, prelude::*, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use time::OffsetDateTime;

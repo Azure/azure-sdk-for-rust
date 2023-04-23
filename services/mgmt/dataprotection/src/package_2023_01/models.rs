@@ -3239,6 +3239,79 @@ impl ResourceGuardOperation {
         Self::default()
     }
 }
+#[doc = "VaultCritical Operation protected by a resource guard"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceGuardOperationDetail {
+    #[serde(rename = "vaultCriticalOperation", default, skip_serializing_if = "Option::is_none")]
+    pub vault_critical_operation: Option<String>,
+    #[serde(rename = "defaultResourceRequest", default, skip_serializing_if = "Option::is_none")]
+    pub default_resource_request: Option<String>,
+}
+impl ResourceGuardOperationDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "ResourceGuardProxyBase object, used in ResourceGuardProxyBaseResource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceGuardProxyBase {
+    #[serde(rename = "resourceGuardResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_guard_resource_id: Option<String>,
+    #[serde(
+        rename = "resourceGuardOperationDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub resource_guard_operation_details: Vec<ResourceGuardOperationDetail>,
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+impl ResourceGuardProxyBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "ResourceGuardProxyBaseResource object, used for response and request bodies for ResourceGuardProxy APIs"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceGuardProxyBaseResource {
+    #[serde(flatten)]
+    pub dpp_resource: DppResource,
+    #[doc = "ResourceGuardProxyBase object, used in ResourceGuardProxyBaseResource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ResourceGuardProxyBase>,
+}
+impl ResourceGuardProxyBaseResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of ResourceGuardProxyBase resources"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceGuardProxyBaseResourceList {
+    #[serde(flatten)]
+    pub dpp_resource_list: DppResourceList,
+    #[doc = "List of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ResourceGuardProxyBaseResource>,
+}
+impl azure_core::Continuable for ResourceGuardProxyBaseResourceList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl ResourceGuardProxyBaseResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceGuardResource {
     #[serde(flatten)]
@@ -4072,6 +4145,36 @@ pub struct TriggerContext {
 impl TriggerContext {
     pub fn new(object_type: String) -> Self {
         Self { object_type }
+    }
+}
+#[doc = "Request body of unlock delete API."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UnlockDeleteRequest {
+    #[serde(
+        rename = "resourceGuardOperationRequests",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub resource_guard_operation_requests: Vec<String>,
+    #[serde(rename = "resourceToBeDeleted", default, skip_serializing_if = "Option::is_none")]
+    pub resource_to_be_deleted: Option<String>,
+}
+impl UnlockDeleteRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Response of Unlock Delete API."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UnlockDeleteResponse {
+    #[doc = "This is the time when unlock delete privileges will get expired."]
+    #[serde(rename = "unlockDeleteExpiryTime", default, skip_serializing_if = "Option::is_none")]
+    pub unlock_delete_expiry_time: Option<String>,
+}
+impl UnlockDeleteResponse {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Error object used by layers that have access to localized content, and propagate that to user"]

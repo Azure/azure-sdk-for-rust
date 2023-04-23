@@ -1,5 +1,7 @@
-use azure_core::error::{Error, ErrorKind};
-use base64::{CharacterSet, Config};
+use azure_core::{
+    base64,
+    error::{Error, ErrorKind},
+};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{Map, Value};
 use std::fmt::{Debug, Display};
@@ -155,13 +157,11 @@ pub struct JsonWebKey {
     pub y: Option<Vec<u8>>,
 }
 
-pub(crate) const BASE64_URL_SAFE: Config = Config::new(CharacterSet::UrlSafe, false);
-
 fn ser_base64<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    let base_64 = base64::encode_config(bytes, BASE64_URL_SAFE);
+    let base_64 = base64::encode_url_safe(bytes);
     serializer.serialize_str(&base_64)
 }
 
@@ -170,7 +170,7 @@ where
     S: Serializer,
 {
     if let Some(bytes) = bytes {
-        let base_64 = base64::encode_config(bytes, BASE64_URL_SAFE);
+        let base_64 = base64::encode_url_safe(bytes);
         serializer.serialize_str(&base_64)
     } else {
         serializer.serialize_none()
@@ -182,7 +182,7 @@ where
     D: Deserializer<'de>,
 {
     let s: String = String::deserialize(deserializer)?;
-    let res = base64::decode_config(s, BASE64_URL_SAFE).map_err(serde::de::Error::custom)?;
+    let res = base64::decode_url_safe(s).map_err(serde::de::Error::custom)?;
     Ok(res)
 }
 
@@ -192,9 +192,7 @@ where
 {
     let s: Option<&str> = Option::deserialize(deserializer)?;
     let res = match s {
-        Some(s) => {
-            Some(base64::decode_config(s, BASE64_URL_SAFE).map_err(serde::de::Error::custom)?)
-        }
+        Some(s) => Some(base64::decode_url_safe(s).map_err(serde::de::Error::custom)?),
         None => None,
     };
     Ok(res)
@@ -243,8 +241,9 @@ impl Display for SignatureAlgorithm {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub enum EncryptionAlgorithm {
+    #[default]
     #[serde(rename = "A128CBC")]
     A128Cbc,
     #[serde(rename = "A128CBCPAD")]
@@ -271,12 +270,6 @@ pub enum EncryptionAlgorithm {
     Rsa15,
 }
 
-impl Default for EncryptionAlgorithm {
-    fn default() -> Self {
-        EncryptionAlgorithm::A128Cbc
-    }
-}
-
 impl Display for EncryptionAlgorithm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(self, f)
@@ -285,25 +278,32 @@ impl Display for EncryptionAlgorithm {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DecryptParameters {
-    pub decrypt_parameters_encryption: DecryptParametersEncryption,
+    pub decrypt_parameters_encryption: CryptographParamtersEncryption,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub ciphertext: Vec<u8>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
-pub enum DecryptParametersEncryption {
-    Rsa(RsaDecryptParameters),
-    AesGcm(AesGcmDecryptParameters),
-    AesCbc(AesCbcDecryptParameters),
+pub enum CryptographParamtersEncryption {
+    Rsa(RsaEncryptionParameters),
+    AesGcm(AesGcmEncryptionParameters),
+    AesCbc(AesCbcEncryptionParameters),
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RsaDecryptParameters {
+pub struct EncryptParameters {
+    pub encrypt_parameters_encryption: CryptographParamtersEncryption,
+    #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
+    pub plaintext: Vec<u8>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RsaEncryptionParameters {
     pub algorithm: EncryptionAlgorithm,
 }
 
-impl RsaDecryptParameters {
+impl RsaEncryptionParameters {
     pub fn new(algorithm: EncryptionAlgorithm) -> Result<Self, Error> {
         match algorithm {
             EncryptionAlgorithm::Rsa15
@@ -317,7 +317,7 @@ impl RsaDecryptParameters {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AesGcmDecryptParameters {
+pub struct AesGcmEncryptionParameters {
     pub algorithm: EncryptionAlgorithm,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub iv: Vec<u8>,
@@ -330,7 +330,7 @@ pub struct AesGcmDecryptParameters {
     pub additional_authenticated_data: Option<Vec<u8>>,
 }
 
-impl AesGcmDecryptParameters {
+impl AesGcmEncryptionParameters {
     pub fn new(
         algorithm: EncryptionAlgorithm,
         iv: Vec<u8>,
@@ -354,13 +354,13 @@ impl AesGcmDecryptParameters {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AesCbcDecryptParameters {
+pub struct AesCbcEncryptionParameters {
     pub algorithm: EncryptionAlgorithm,
     #[serde(serialize_with = "ser_base64", deserialize_with = "deser_base64")]
     pub iv: Vec<u8>,
 }
 
-impl AesCbcDecryptParameters {
+impl AesCbcEncryptionParameters {
     pub fn new(algorithm: EncryptionAlgorithm, iv: Vec<u8>) -> Result<Self, Error> {
         match algorithm {
             EncryptionAlgorithm::A128Cbc
@@ -378,6 +378,20 @@ impl AesCbcDecryptParameters {
 
 #[derive(Debug, Deserialize)]
 pub struct DecryptResult {
+    #[serde(skip)]
+    pub algorithm: EncryptionAlgorithm,
+    #[serde(rename = "kid")]
+    pub key_id: String,
+    #[serde(
+        rename = "value",
+        serialize_with = "ser_base64",
+        deserialize_with = "deser_base64"
+    )]
+    pub result: Vec<u8>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EncryptResult {
     #[serde(skip)]
     pub algorithm: EncryptionAlgorithm,
     #[serde(rename = "kid")]

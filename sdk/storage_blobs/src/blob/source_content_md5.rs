@@ -1,4 +1,7 @@
-use azure_core::headers::{self, Header};
+use azure_core::{
+    base64,
+    headers::{self, Header},
+};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct SourceContentMD5([u8; 16]);

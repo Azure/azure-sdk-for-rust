@@ -15,7 +15,8 @@ operation! {
     ?metadata: Metadata,
     ?access_tier: AccessTier,
     ?tags: Tags,
-    ?lease_id: LeaseId
+    ?lease_id: LeaseId,
+    ?encryption_scope: EncryptionScope
 }
 
 impl PutBlockBlobBuilder {
@@ -38,6 +39,7 @@ impl PutBlockBlobBuilder {
             }
             headers.add(self.access_tier);
             headers.add(self.lease_id);
+            headers.add(self.encryption_scope);
 
             let mut request = self.client.finalize_request(
                 url,

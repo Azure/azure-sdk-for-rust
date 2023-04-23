@@ -653,7 +653,7 @@ pub struct DataEncryption {
     #[doc = "Resource Id for the User assigned identity to be used for data encryption for primary server."]
     #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub primary_user_assigned_identity_id: Option<String>,
-    #[doc = "Data encryption type to depict if it is System assigned vs Azure Key vault."]
+    #[doc = "Data encryption type to depict if it is System Managed vs Azure Key vault."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<data_encryption::Type>,
 }
@@ -664,11 +664,11 @@ impl DataEncryption {
 }
 pub mod data_encryption {
     use super::*;
-    #[doc = "Data encryption type to depict if it is System assigned vs Azure Key vault."]
+    #[doc = "Data encryption type to depict if it is System Managed vs Azure Key vault."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Type")]
     pub enum Type {
-        SystemAssigned,
+        SystemManaged,
         AzureKeyVault,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -695,7 +695,7 @@ pub mod data_encryption {
             S: Serializer,
         {
             match self {
-                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 0u32, "SystemAssigned"),
+                Self::SystemManaged => serializer.serialize_unit_variant("Type", 0u32, "SystemManaged"),
                 Self::AzureKeyVault => serializer.serialize_unit_variant("Type", 1u32, "AzureKeyVault"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }

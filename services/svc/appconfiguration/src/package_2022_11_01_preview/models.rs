@@ -184,9 +184,6 @@ pub struct Snapshot {
     #[doc = "The current status of the snapshot."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<snapshot::Status>,
-    #[doc = "Provides additional information about the status of the snapshot. The status code values are modeled after HTTP status codes."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<i32>,
     #[doc = "A list of filters used to filter the key-values included in the snapshot."]
     pub filters: Vec<KeyValueFilter>,
     #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'all' composition type includes all key-values. The 'group_by_key' composition type ensures there are no two key-values containing the same key."]
@@ -219,7 +216,6 @@ impl Snapshot {
         Self {
             name: None,
             status: None,
-            status_code: None,
             filters,
             composition_type: None,
             created: None,

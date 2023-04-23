@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{base64, headers::Headers, CollectedResponse, Method};
 use serde_json::{Map, Value};
 
 operation! {
@@ -27,12 +27,12 @@ impl DecryptBuilder {
             );
 
             let algorithm = match self.decrypt_parameters.decrypt_parameters_encryption {
-                DecryptParametersEncryption::Rsa(RsaDecryptParameters { algorithm }) => {
+                CryptographParamtersEncryption::Rsa(RsaEncryptionParameters { algorithm }) => {
                     request_body
                         .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
                     algorithm
                 }
-                DecryptParametersEncryption::AesGcm(AesGcmDecryptParameters {
+                CryptographParamtersEncryption::AesGcm(AesGcmEncryptionParameters {
                     algorithm,
                     iv,
                     authentication_tag,
@@ -50,7 +50,10 @@ impl DecryptBuilder {
                     };
                     algorithm
                 }
-                DecryptParametersEncryption::AesCbc(AesCbcDecryptParameters { algorithm, iv }) => {
+                CryptographParamtersEncryption::AesCbc(AesCbcEncryptionParameters {
+                    algorithm,
+                    iv,
+                }) => {
                     request_body
                         .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
                     request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());

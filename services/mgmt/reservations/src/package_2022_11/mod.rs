@@ -2395,9 +2395,9 @@ pub mod return_ {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::RefundResponse> {
+            pub async fn into_body(self) -> azure_core::Result<models::ReservationOrderResponse> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::RefundResponse = serde_json::from_slice(&bytes)?;
+                let body: models::ReservationOrderResponse = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2480,8 +2480,8 @@ pub mod return_ {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::RefundResponse>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::RefundResponse>>;
+            type Output = azure_core::Result<models::ReservationOrderResponse>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ReservationOrderResponse>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

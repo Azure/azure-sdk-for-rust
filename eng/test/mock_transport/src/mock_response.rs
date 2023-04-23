@@ -1,5 +1,5 @@
 use azure_core::{
-    error,
+    base64, error,
     headers::{HeaderName, HeaderValue, Headers},
     BytesStream, Response, StatusCode,
 };
@@ -85,7 +85,7 @@ impl Serialize for MockResponse {
             headers.insert(h.as_str().into(), v.as_str().into());
         }
         let status = self.status as u16;
-        let body = base64::encode(&self.body as &[u8]);
+        let body = base64::encode(&self.body);
         let s = SerializedMockResponse {
             status,
             headers,
