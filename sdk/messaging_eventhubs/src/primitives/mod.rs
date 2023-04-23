@@ -12,7 +12,7 @@
 // TODO: mod pluggable_checkpoint_store_event_processor;
 
 mod partition_receiver;
-pub mod partition_receiver_options;
+mod partition_receiver_options;
 
-pub use partition_receiver::PartitionReceiver;
-pub use partition_receiver_options::PartitionReceiverOptions;
+pub use partition_receiver::*;
+pub use partition_receiver_options::*;

@@ -13,8 +13,8 @@ mod send_event_options;
 
 pub(crate) use partition_publishing_options::PartitionPublishingOptions;
 
-pub use create_batch_options::CreateBatchOptions;
-pub use event_data_batch::EventDataBatch;
-pub use event_hub_producer_client::{EventHubProducerClient, MINIMUM_BATCH_SIZE_LIMIT};
-pub use event_hub_producer_client_options::EventHubProducerClientOptions;
-pub use send_event_options::SendEventOptions;
+pub use create_batch_options::*;
+pub use event_data_batch::*;
+pub use event_hub_producer_client::*;
+pub use event_hub_producer_client_options::*;
+pub use send_event_options::*;

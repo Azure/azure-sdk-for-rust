@@ -1,4 +1,4 @@
-
+/// The partitioning strategy to use when publishing events to Event Hubs.
 #[derive(Debug, Clone)]
 pub enum Partition {
     /// Events will be published to this specific partition.
@@ -26,20 +26,28 @@ pub struct SendEventOptions {
 }
 
 impl SendEventOptions {
+    /// Create a new instance of [`SendEventOptions`] with default values
+    ///
+    /// # Default Value
+    ///
+    /// - `partition`: `None`
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Set the `partition` field to `Some(Partition::Key(key))`
     pub fn with_partition_key(mut self, partition_key: impl Into<String>) -> Self {
         self.partition = Some(Partition::Key(partition_key.into()));
         self
     }
 
+    /// Set the `partition` field to `Some(Partition::Id(id))`
     pub fn with_partition_id(mut self, partition_id: impl Into<String>) -> Self {
         self.partition = Some(Partition::Id(partition_id.into()));
         self
     }
 
+    /// Get a reference to the partition key, if specified.
     pub fn partition_key(&self) -> Option<&str> {
         match &self.partition {
             Some(Partition::Key(key)) => Some(key),
@@ -47,6 +55,7 @@ impl SendEventOptions {
         }
     }
 
+    /// Get a reference to the partition id, if specified.
     pub fn partition_id(&self) -> Option<&str> {
         match &self.partition {
             Some(Partition::Id(id)) => Some(id),
@@ -54,6 +63,7 @@ impl SendEventOptions {
         }
     }
 
+    /// Consumes the options, returning the partition key, if specified.
     pub fn into_partition_key(self) -> Option<String> {
         match self.partition {
             Some(Partition::Key(key)) => Some(key),
@@ -61,6 +71,7 @@ impl SendEventOptions {
         }
     }
 
+    /// Consumes the options, returning the partition id, if specified.
     pub fn into_partition_id(self) -> Option<String> {
         match self.partition {
             Some(Partition::Id(id)) => Some(id),

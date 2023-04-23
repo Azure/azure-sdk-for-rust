@@ -14,6 +14,16 @@ use crate::{
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
 
+/// A client responsible for reading [`crate::EventData`] from a specific Event Hub
+/// as a member of a specific consumer group.
+///
+/// A consumer may be exclusive, which asserts ownership over associated partitions for the consumer
+/// group to ensure that only one consumer from that group is reading the from the partition.
+/// These exclusive consumers are sometimes referred to as "Epoch Consumers."
+///
+/// A consumer may also be non-exclusive, allowing multiple consumers from the same consumer
+/// group to be actively reading events from a given partition. These non-exclusive consumers are
+/// sometimes referred to as "Non-Epoch Consumers."
 #[derive(Debug)]
 pub struct EventHubConsumerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
@@ -23,8 +33,10 @@ pub struct EventHubConsumerClient<RP> {
 }
 
 impl EventHubConsumerClient<BasicRetryPolicy> {
+    /// The name of the default consumer group in the Event Hubs service.
     pub const DEFAULT_CONSUMER_GROUP_NAME: &'static str = "$Default";
 
+    /// Creates a new [`EventHubConsumerClientBuilder`] with a custom retry policy.
     pub fn with_policy<P>() -> EventHubConsumerClientBuilder<P>
     where
         P: EventHubsRetryPolicy + Send,
@@ -34,6 +46,7 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
         }
     }
 
+    /// Creates a new [`EventHubConsumerClient`] from a connection string.
     pub async fn from_connection_string(
         consumer_group: impl Into<String>,
         connection_string: impl Into<String>,
@@ -50,6 +63,7 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a new [`EventHubConsumerClient`] from an existing connection.
     pub fn with_connection(
         consumer_group: impl Into<String>,
         connection: &mut EventHubConnection<AmqpClient>,
@@ -134,6 +148,8 @@ impl<RP> EventHubConsumerClient<RP>
 where
     RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send + Unpin,
 {
+    /// Retrieves information about the Event Hub instance the client is associated with, including
+    /// the number of partitions present and their identifiers.
     pub async fn get_event_hub_properties(
         &mut self,
     ) -> Result<EventHubProperties, azure_core::Error> {
@@ -142,12 +158,15 @@ where
             .await
     }
 
+    /// Retrieves the set of identifiers for the partitions of an Event Hub.
     pub async fn get_partition_ids(&mut self) -> Result<Vec<String>, azure_core::Error> {
         self.connection
             .get_partition_ids(RP::from(self.options.retry_options.clone()))
             .await
     }
 
+    /// Retrieves information about a specific partition for an Event Hub, including elements that describe the available
+    /// events in the partition event stream.
     pub async fn get_partition_properties(
         &mut self,
         partition_id: &str,
@@ -157,6 +176,8 @@ where
             .await
     }
 
+    /// Reads events from the requested partition as an `Stream`, allowing events to be `.await`ed
+    /// as they become available on the partition.
     pub async fn read_events_from_partition(
         &mut self,
         partition_id: &str,
@@ -186,6 +207,8 @@ where
         Ok(event_stream)
     }
 
+    /// Reads events from all partitions as an `Stream`, allowing events to be `.await`ed
+    /// as they become available on the partition.
     pub async fn read_events(
         &mut self,
         start_reading_at_earliest_event: bool,
@@ -234,6 +257,9 @@ where
         Ok(event_stream)
     }
 
+    /// Closes the consumer.
+    ///
+    /// The underlying connection will be closed if the consumer is the last one using it.
     pub async fn close(self) -> Result<(), azure_core::Error> {
         self.connection.close_if_owned().await
     }

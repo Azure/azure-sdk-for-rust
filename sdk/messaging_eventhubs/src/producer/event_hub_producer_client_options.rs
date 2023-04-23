@@ -7,11 +7,19 @@ use crate::{
 
 use super::PartitionPublishingOptions;
 
+/// The set of options that can be specified when creating an Event Hub producer.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct EventHubProducerClientOptions {
+    /// The set of options that can be specified when creating an Event Hub connection.
     pub connection_options: EventHubConnectionOptions,
+
+    /// The set of options that can be specified when retrying operations.
     pub retry_options: EventHubsRetryOptions,
+
+    /// The identifier of the producer. If not specified, a UUID will be generated.
     pub identifier: Option<String>,
+
+    /// The set of options that can be specified when publishing events to a specific partition.
     pub partition_options: HashMap<String, PartitionPublishingOptions>,
 }
 

@@ -19,8 +19,16 @@ use super::{
     send_event_options::SendEventOptions,
 };
 
-pub const MINIMUM_BATCH_SIZE_LIMIT: u64 = 24;
+/// The minimum
+pub const MINIMUM_BATCH_SIZE_LIMIT_IN_BYTES: u64 = 24;
 
+/// A client responsible for publishing [`EventData`] to a specific Event Hub, grouped together in
+/// batches.  Depending on the options specified when sending, events may be automatically assigned
+/// an available partition or may request a specific partition.
+///
+/// The [`EventHubProducerClient`] publishes immediately, ensuring a deterministic outcome for each
+/// send operation, though requires that callers own the responsibility of building and managing
+/// batches.
 #[derive(Debug)]
 pub struct EventHubProducerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
@@ -33,6 +41,7 @@ pub struct EventHubProducerClient<RP> {
 }
 
 impl EventHubProducerClient<BasicRetryPolicy> {
+    /// Creates a new client with a custom retry policy.
     pub fn with_policy<P>() -> EventHubProducerClientBuilder<P>
     where
         P: EventHubsRetryPolicy + Send,
@@ -42,6 +51,7 @@ impl EventHubProducerClient<BasicRetryPolicy> {
         }
     }
 
+    /// Creates a [`EventHubProducerClient`] using a connection string.
     pub async fn from_connection_string(
         connection_string: impl Into<String>,
         event_hub_name: impl Into<Option<String>>,
@@ -52,6 +62,7 @@ impl EventHubProducerClient<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a [`EventHubProducerClient`] using a namespace and a credential.
     pub async fn from_namespace_and_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
@@ -68,6 +79,7 @@ impl EventHubProducerClient<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
         connection: &mut EventHubConnection<AmqpClient>,
         client_options: EventHubProducerClientOptions,
@@ -76,12 +88,16 @@ impl EventHubProducerClient<BasicRetryPolicy> {
     }
 }
 
+/// A builder for creating a [`EventHubProducerClient`].
+///
+/// This currently is only used for specifying a custom retry policy.
 #[derive(Debug)]
 pub struct EventHubProducerClientBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }
 
 impl<RP> EventHubProducerClientBuilder<RP> {
+    /// Creates a [`EventHubProducerClient`] using a connection string.
     pub async fn from_connection_string(
         self,
         connection_string: impl Into<String>,
@@ -107,6 +123,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         })
     }
 
+    /// Creates a [`EventHubProducerClient`] using a namespace and a credential.
     pub async fn from_namespace_and_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
@@ -134,6 +151,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         })
     }
 
+    /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
         self,
         connection: &mut EventHubConnection<AmqpClient>,
@@ -235,6 +253,7 @@ where
         }
     }
 
+    /// Creates a new [`EventDataBatch`] with the given options.
     pub async fn create_batch(
         &mut self,
         options: CreateBatchOptions,
@@ -247,6 +266,7 @@ where
         Ok(EventDataBatch { inner })
     }
 
+    /// Sends a single event to the Event Hub.
     pub async fn send_event(
         &mut self,
         event: impl Into<EventData>,
@@ -256,6 +276,7 @@ where
             .await
     }
 
+    /// Sends a set of events to the Event Hub.
     pub async fn send_events<E>(
         &mut self,
         events: E,
@@ -273,6 +294,7 @@ where
             .map_err(IntoAzureCoreError::into_azure_core_error)
     }
 
+    /// Sends a batch of events to the Event Hub.
     pub async fn send_batch(
         &mut self,
         batch: EventDataBatch,
@@ -286,6 +308,8 @@ where
             .map_err(IntoAzureCoreError::into_azure_core_error)
     }
 
+    /// Retrieves information about the Event Hub that the connection is associated with, including
+    /// the number of partitions present and their identifiers.
     pub async fn get_event_hub_properties(
         &mut self,
     ) -> Result<EventHubProperties, azure_core::Error> {
@@ -294,12 +318,15 @@ where
             .await
     }
 
+    /// Retrieves the set of identifiers for the partitions of an Event Hub.
     pub async fn get_partition_ids(&mut self) -> Result<Vec<String>, azure_core::Error> {
         self.connection
             .get_partition_ids(RP::from(self.options.retry_options.clone()))
             .await
     }
 
+    /// Retrieves information about a specific partition for an Event Hub, including elements that
+    /// describe the available events in the partition event stream.
     pub async fn get_partition_properties(
         &mut self,
         partition_id: &str,
@@ -309,6 +336,11 @@ where
             .await
     }
 
+    /// Performs the task needed to clean up resources used by the [`EventHubProducerClient`],
+    /// including ensuring that the client itself has been closed.
+    ///
+    /// This won't close the underlying connection if the connection was shared among multiple
+    /// clients.
     pub async fn close(self) -> Result<(), azure_core::Error> {
         let mut result = Ok(());
         for (_, producer) in self.producer_pool {

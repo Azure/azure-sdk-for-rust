@@ -6,6 +6,9 @@ use crate::{
     EventData,
 };
 
+/// A set of [`EventData`] with size constraints known up-front, intended to be sent to the Event
+/// Hubs service in a single operation. When published, the result is atomic; either all events that
+/// belong to the batch were successful or all have failed. Partial success is not possible.
 #[derive(Debug)]
 pub struct EventDataBatch {
     pub(crate) inner: AmqpEventBatch,

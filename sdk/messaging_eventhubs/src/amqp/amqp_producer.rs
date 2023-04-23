@@ -8,7 +8,7 @@ use crate::{
     amqp::amqp_message_converter::create_envelope_from_events,
     core::{RecoverableError, RecoverableTransport, TransportClient, TransportProducer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    producer::{CreateBatchOptions, SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT},
+    producer::{CreateBatchOptions, SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT_IN_BYTES},
     util::{self, sharable::Sharable},
     EventData,
 };
@@ -89,7 +89,7 @@ impl<RP> AmqpProducer<RP> {
         let link_max_message_size = self.sender.max_message_size().unwrap_or(u64::MAX);
         let max_size_in_bytes: u64 = match options.max_size_in_bytes {
             Some(max_size_in_bytes) => {
-                if max_size_in_bytes < MINIMUM_BATCH_SIZE_LIMIT
+                if max_size_in_bytes < MINIMUM_BATCH_SIZE_LIMIT_IN_BYTES
                     || max_size_in_bytes > link_max_message_size
                 {
                     return Err(CreateBatchError::RequestedSizeOutOfRange);

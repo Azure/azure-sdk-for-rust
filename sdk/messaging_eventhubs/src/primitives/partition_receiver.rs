@@ -13,8 +13,11 @@ use crate::{
     EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
 };
 
-use super::partition_receiver_options::PartitionReceiverOptions;
+use super::partition_receiver_options::{PartitionReceiverOptions};
 
+/// Allows reading events from a specific partition of an Event Hub, and in the context of a
+/// specific consumer group, to be read with a greater level of control over communication with the
+/// Event Hubs service than is offered by other event consumers.
 #[derive(Debug)]
 pub struct PartitionReceiver<RP> {
     connection: EventHubConnection<AmqpClient>,
@@ -22,12 +25,14 @@ pub struct PartitionReceiver<RP> {
     options: PartitionReceiverOptions,
 }
 
+/// A builder for a [`PartitionReceiver`].
 #[derive(Debug)]
 pub struct PartitionReceiverBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }
 
 impl PartitionReceiver<BasicRetryPolicy> {
+    /// Creates a new [`PartitionReceiverBuilder`] with a custom retry policy.
     pub fn with_policy<RP>() -> PartitionReceiverBuilder<RP>
     where
         RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send,
@@ -37,6 +42,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         }
     }
 
+    /// Creates a new [`PartitionReceiver`] from a connection string.
     pub async fn from_connection_string(
         consumer_group: &str,
         partition_id: &str,
@@ -57,6 +63,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
     pub async fn from_namespace_and_credential(
         consumer_group: &str,
         partition_id: &str,
@@ -78,12 +85,26 @@ impl PartitionReceiver<BasicRetryPolicy> {
             )
             .await
     }
+
+    /// Creates a new [`PartitionReceiver`] from an existing [`EventHubConnection`].
+    pub async fn with_conneciton(
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        connection: EventHubConnection<AmqpClient>,
+        options: PartitionReceiverOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .with_connection(consumer_group, partition_id, event_position, connection, options)
+            .await
+    }
 }
 
 impl<RP> PartitionReceiverBuilder<RP>
 where
     RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send,
 {
+    /// Creates a new [`PartitionReceiver`] from a connection string.
     pub async fn from_connection_string(
         self,
         consumer_group: &str,
@@ -93,35 +114,17 @@ where
         event_hub_name: impl Into<Option<String>>,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
-        let mut connection = EventHubConnection::from_connection_string(
+        let connection = EventHubConnection::from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
             options.connection_options.clone(),
         )
         .await?;
 
-        let consumer_identifier = options.identifier.clone();
-        let retry_policy = RP::from(options.retry_options.clone());
-        let inner_consumer = connection
-            .create_transport_consumer(
-                consumer_group,
-                partition_id,
-                consumer_identifier,
-                event_position,
-                retry_policy,
-                options.track_last_enqueued_event_properties,
-                options.owner_level,
-                Some(options.prefetch_count),
-            )
-            .await?;
-
-        Ok(PartitionReceiver {
-            connection,
-            inner_consumer,
-            options,
-        })
+        self.with_connection(consumer_group, partition_id, event_position, connection, options).await
     }
 
+    /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
     pub async fn from_namespace_and_credential(
         self,
         consumer_group: &str,
@@ -132,7 +135,7 @@ where
         credential: impl Into<EventHubTokenCredential>,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
-        let mut connection = EventHubConnection::from_namespace_and_credential(
+        let connection = EventHubConnection::from_namespace_and_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential.into(),
@@ -140,6 +143,18 @@ where
         )
         .await?;
 
+        self.with_connection(consumer_group, partition_id, event_position, connection, options).await
+    }
+
+    /// Creates a new [`PartitionReceiver`] from an existing [`EventHubConnection`].
+    pub async fn with_connection(
+        self,
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        mut connection: EventHubConnection<AmqpClient>,
+        options: PartitionReceiverOptions,
+    ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
         let consumer_identifier = options.identifier.clone();
         let retry_policy = RP::from(options.retry_options.clone());
         let inner_consumer = connection
@@ -167,6 +182,7 @@ impl<RP> PartitionReceiver<RP>
 where
     RP: EventHubsRetryPolicy + Send,
 {
+    /// Receives a batch of events from the Event Hub partition.
     pub async fn recv_batch(
         &mut self,
         max_event_count: usize,
@@ -194,6 +210,7 @@ where
 }
 
 impl<RP> PartitionReceiver<RP> {
+    /// Closes the [`PartitionReceiver`].
     pub async fn close(self) -> Result<(), azure_core::Error> {
         self.inner_consumer
             .close()
