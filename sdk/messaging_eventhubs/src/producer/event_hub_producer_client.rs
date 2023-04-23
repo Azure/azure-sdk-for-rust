@@ -14,7 +14,7 @@ use crate::{
 };
 
 use super::{
-    create_batch_options::CreateBatchOptions, event_batch::EventBatch,
+    create_batch_options::CreateBatchOptions, event_data_batch::EventDataBatch,
     event_hub_producer_client_options::EventHubProducerClientOptions,
     send_event_options::SendEventOptions,
 };
@@ -236,13 +236,13 @@ where
     pub async fn create_batch(
         &mut self,
         options: CreateBatchOptions,
-    ) -> Result<EventBatch, azure_core::Error> {
+    ) -> Result<EventDataBatch, azure_core::Error> {
         let inner = self
             .get_or_create_gateway_producer_mut()
             .await?
             .create_batch(options)
             .map_err(IntoAzureCoreError::into_azure_core_error)?;
-        Ok(EventBatch { inner })
+        Ok(EventDataBatch { inner })
     }
 
     pub async fn send_event(
@@ -273,7 +273,7 @@ where
 
     pub async fn send_batch(
         &mut self,
-        batch: EventBatch,
+        batch: EventDataBatch,
         options: SendEventOptions,
     ) -> Result<(), azure_core::Error> {
         let partition_id = options.partition_id.as_deref();

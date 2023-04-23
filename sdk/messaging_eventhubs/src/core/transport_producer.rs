@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::{
-    producer::{create_batch_options::CreateBatchOptions, send_event_options::SendEventOptions},
+    producer::{CreateBatchOptions, SendEventOptions},
     EventData,
 };
 

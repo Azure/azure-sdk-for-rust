@@ -1,9 +1,9 @@
 use std::time::Duration;
 
 use messaging_eventhubs::producer::{
-    event_hub_producer_client::EventHubProducerClient,
-    event_hub_producer_client_options::EventHubProducerClientOptions,
-    send_event_options::SendEventOptions,
+    EventHubProducerClient,
+    EventHubProducerClientOptions,
+    SendEventOptions,
 };
 
 mod common;

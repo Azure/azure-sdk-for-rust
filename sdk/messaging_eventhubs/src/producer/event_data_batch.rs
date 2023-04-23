@@ -6,11 +6,11 @@ use crate::{
     EventData,
 };
 
-pub struct EventBatch {
+pub struct EventDataBatch {
     pub(crate) inner: AmqpEventBatch,
 }
 
-impl EventBatch {
+impl EventDataBatch {
     /// The maximum size of the batch, in bytes.
     pub fn max_size_in_bytes(&self) -> u64 {
         self.inner.max_size_in_bytes()

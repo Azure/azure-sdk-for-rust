@@ -9,7 +9,7 @@ use super::{
 };
 
 /// A set of [`EventData`] with size constraints known up-front, intended to be
-/// sent to the Queue/Topic as a single batch. A [`EventBatch`] can be
+/// sent to the Queue/Topic as a single batch. A [`EventDataBatch`] can be
 /// created using `ServiceBusSender::create_message_batch()`.
 /// Messages can be added to the batch using the [`try_add`] method on the batch.
 #[derive(Debug, Clone)]
@@ -95,7 +95,7 @@ mod tests {
 
     use crate::{
         amqp::amqp_message_converter::{build_amqp_batch_from_messages, SendableEnvelope},
-        producer::create_batch_options::CreateBatchOptions,
+        producer::CreateBatchOptions,
     };
 
     use super::*;

@@ -9,10 +9,9 @@ use crate::{
     core::{RecoverableError, RecoverableTransport, TransportClient, TransportProducer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
-        create_batch_options::CreateBatchOptions,
-        event_hub_producer_client::MINIMUM_BATCH_SIZE_LIMIT,
-        partition_publishing_properties::PartitionPublishingProperties,
-        send_event_options::SendEventOptions,
+        CreateBatchOptions,
+        PartitionPublishingProperties,
+        SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT,
     },
     util::{self, sharable::Sharable},
     EventData,

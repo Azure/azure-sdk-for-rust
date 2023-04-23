@@ -36,7 +36,7 @@ use crate::{
     core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
     producer::{
-        partition_publishing_properties::PartitionPublishingProperties, PartitionPublishingOptions,
+        PartitionPublishingOptions, PartitionPublishingProperties,
     },
 };
 
@@ -318,7 +318,6 @@ impl AmqpConnectionScope {
                     _ => None,
                 });
             PartitionPublishingProperties {
-                // is_idempotent_publishing_enabled: false, // TODO: should idempotent publishing be implemented?
                 producer_group_id,
                 owner_level,
                 last_published_sequence_number: starting_sequence_number,
