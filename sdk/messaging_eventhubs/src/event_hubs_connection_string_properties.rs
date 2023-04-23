@@ -48,9 +48,6 @@ impl IntoAzureCoreError for ToConnectionStringError {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum ValidationError {}
-
 /// The set of properties that comprise a Service Bus connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct EventHubsConnectionStringProperties<'a> {

@@ -22,8 +22,10 @@ use crate::{
     PartitionProperties,
 };
 
+/// Error with the `EventHubConnection`.
 #[derive(Debug, thiserror::Error)]
 pub enum EventHubConnectionError {
+    /// The event hub name is not specified.
     #[error("The EventHub name is not specified")]
     EventHubNameIsNotSpecified,
 }
@@ -36,6 +38,10 @@ impl IntoAzureCoreError for EventHubConnectionError {
     }
 }
 
+/// A connection to the Azure Event Hubs service, enabling client communications with a specific
+/// Event Hub instance within an Event Hubs namespace.  A single connection may be shared among multiple
+/// Event Hub producers and/or consumers, or may be used as a dedicated connection for a single
+/// producer or consumer client.
 #[derive(Debug)]
 pub struct EventHubConnection<C> {
     fully_qualified_namespace: String,
@@ -45,13 +51,14 @@ pub struct EventHubConnection<C> {
 }
 
 impl EventHubConnection<AmqpClient> {
+    /// Creates a new [`EventHubConnection`] from a connection string.
     pub async fn from_connection_string(
-        connection_string: String,
+        connection_string: impl AsRef<str>,
         event_hub_name: impl Into<Option<String>>,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
         let connection_string_properties =
-            EventHubsConnectionStringProperties::parse(&connection_string)
+            EventHubsConnectionStringProperties::parse(connection_string.as_ref())
                 .map_err(IntoAzureCoreError::into_azure_core_error)?;
 
         let event_hub_name =
@@ -133,12 +140,15 @@ impl EventHubConnection<AmqpClient> {
         .await
     }
 
+    /// Creates a new [`EventHubConnection`] from a namespace and a credential.
     pub async fn from_namespace_and_credential(
-        fully_qualified_namespace: String,
-        event_hub_name: String,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
         credential: impl Into<EventHubTokenCredential>,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
+        let fully_qualified_namespace = fully_qualified_namespace.into();
+        let event_hub_name = event_hub_name.into();
         let token_credential = credential.into();
         let event_hub_name = Arc::new(event_hub_name);
 
@@ -222,7 +232,7 @@ where
         }
     }
 
-    pub async fn create_transport_producer<RP>(
+    pub(crate) async fn create_transport_producer<RP>(
         &mut self,
         partition_id: Option<String>,
         producer_identifier: Option<String>,
@@ -266,7 +276,7 @@ where
         }
     }
 
-    pub async fn create_transport_consumer<RP>(
+    pub(crate) async fn create_transport_consumer<RP>(
         &mut self,
         consumer_group: &str,
         partition_id: &str,
@@ -338,7 +348,7 @@ where
 
     /// Closes the inner client if it is owned or if it is shared and this is the last reference to
     /// it.
-    pub(crate) async fn close_if_owned(self) -> Result<(), azure_core::Error> {
+    pub async fn close_if_owned(self) -> Result<(), azure_core::Error> {
         match self.inner {
             Sharable::Owned(mut client) => client
                 .close()
@@ -379,23 +389,32 @@ impl<C> EventHubConnection<C> {
         }
     }
 
+    /// The fully qualified namespace that the connection is associated with.
     pub fn fully_qualified_namespace(&self) -> &str {
         &self.fully_qualified_namespace
     }
 
+    /// The name of the event hub that the connection is associated with.
     pub fn event_hub_name(&self) -> &str {
         &self.event_hub_name
     }
 
+    /// Returns true if the connection is closed.
     pub fn is_closed(&self) -> bool {
         matches!(self.inner, Sharable::None)
             | self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
     }
 
+    /// Returns true if the connection is owned.
+    ///
+    /// This will return false even if it is the last reference to the shared connection.
     pub fn is_owned(&self) -> bool {
         matches!(self.inner, Sharable::Owned(_))
     }
 
+    /// Returns true if the connection is shared.
+    ///
+    /// This will return true even if it is the last reference to the shared connection.
     pub fn is_shared(&self) -> bool {
         matches!(self.inner, Sharable::Shared(_))
     }

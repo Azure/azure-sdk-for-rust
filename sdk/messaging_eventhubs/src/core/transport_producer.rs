@@ -30,6 +30,4 @@ pub trait TransportProducer {
         batch: Self::MessageBatch,
         options: SendEventOptions,
     ) -> Result<(), Self::SendError>;
-
-    // fn read_initialization_publishing_properties(&self) -> &PartitionPublishingProperties;
 }

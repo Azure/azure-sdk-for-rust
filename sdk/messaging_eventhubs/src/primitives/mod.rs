@@ -1,3 +1,7 @@
+//! Primitives for the Azure Event Hubs client.
+//!
+//! This module matches to the `Azure.Messaging.EventHubs.Primitives` namespace in the .NET SDK.
+
 // TODO: mod blob_checkpoint_store;
 // TODO: mod checkpoint_store;
 // TODO: mod event_processor;

@@ -15,25 +15,10 @@ use crate::amqp::{
 };
 use crate::constants::DEFAULT_OFFSET_DATE_TIME;
 
-// /// TODO: This is not being used because `send_idempotent` is not implemented yet.
-// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-// pub(crate) enum PublishSequenceNumber {
-//     Pending {
-//         value: i32,
-//         producer_group_id: i64,
-//         owner_level: i16,
-//     },
-//     Published {
-//         value: i32,
-//     },
-// }
-
 /// An Event Hubs event, encapsulating a set of data and its associated metadata.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EventData {
     pub(crate) amqp_message: Message<Data>,
-    // /// TODO: This is not being used because `send_idempotent` is not implemented yet.
-    // pub(crate) sequence_number: Option<PublishSequenceNumber>,
 }
 
 impl<T> From<T> for EventData
@@ -110,6 +95,7 @@ impl EventData {
     }
 }
 
+/// A received event.
 #[derive(Debug, Clone)]
 pub struct ReceivedEventData {
     raw_amqp_message: Message<Body<Value>>,
@@ -120,10 +106,12 @@ impl ReceivedEventData {
         Self { raw_amqp_message }
     }
 
+    /// Gets the raw AMQP message.
     pub fn raw_amqp_message(&self) -> &Message<Body<Value>> {
         &self.raw_amqp_message
     }
 
+    /// Consumes the event and returns the raw AMQP message.
     pub fn into_raw_amqp_message(self) -> Message<Body<Value>> {
         self.raw_amqp_message
     }
@@ -161,14 +149,19 @@ impl ReceivedEventData {
         self.raw_amqp_message.correlation_id()
     }
 
+    /// The set of free-form properties which may be used for associating metadata with the event that
+    /// is meaningful within the application context.
     pub fn properties(&self) -> Option<&ApplicationProperties> {
         self.raw_amqp_message.application_properties.as_ref()
     }
 
+    /// The set of free-form event properties which were provided by the Event Hubs service to pass metadata associated with the
+    /// event or associated Event Hubs operation.
     pub fn system_properties(&self) -> Option<&Properties> {
         self.raw_amqp_message.properties.as_ref()
     }
 
+    /// The sequence number assigned to the event when it was enqueued in the associated Event Hub partition.
     pub fn sequence_number(&self) -> i64 {
         self.raw_amqp_message
             .message_annotations
@@ -181,6 +174,7 @@ impl ReceivedEventData {
             .unwrap_or_default()
     }
 
+    /// The offset of the event when it was received from the associated Event Hub partition.
     pub fn offset(&self) -> Option<i64> {
         self.raw_amqp_message
             .message_annotations
@@ -193,6 +187,8 @@ impl ReceivedEventData {
             })
     }
 
+    /// The date and time, in UTC, that the event was enqueued in the associated Event Hub
+    /// partition.
     pub fn enqueued_time(&self) -> OffsetDateTime {
         self.raw_amqp_message
             .message_annotations
@@ -205,6 +201,7 @@ impl ReceivedEventData {
             .unwrap_or(DEFAULT_OFFSET_DATE_TIME)
     }
 
+    /// The partition key set when the event was enqueued in the associated Event Hub partition.
     pub fn partition_key(&self) -> Option<&str> {
         self.raw_amqp_message.partition_key()
     }

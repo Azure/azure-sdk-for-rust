@@ -8,6 +8,7 @@ const DEFAULT_DELAY: Duration = Duration::from_millis(800);
 const DEFAULT_MAXIMUM_DELAY: Duration = Duration::from_secs(60);
 const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(60);
 
+/// The maximum number of retry attempts before considering the associated operation to have failed
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct MaxRetries(pub u32);
 

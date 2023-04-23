@@ -2,7 +2,10 @@ use std::time::Duration as StdDuration;
 
 use crate::{EventHubConnectionOptions, EventHubsRetryOptions};
 
+/// The default amount of time to wait for messages when reading
 pub const DEFAULT_MAXIMUM_RECEIVE_WAIT_TIME: StdDuration = StdDuration::from_secs(60);
+
+/// The default prefetch count
 pub const DEFAULT_PREFETCH_COUNT: u32 = 300;
 
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]

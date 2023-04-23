@@ -22,8 +22,6 @@ pub(crate) trait AmqpMessageExt {
 
     fn partition_key(&self) -> Option<&str>;
 
-    // fn via_partition_key(&self) -> Option<&str>;
-
     fn session_id(&self) -> Option<&str>;
 
     fn reply_to_session_id(&self) -> Option<&str>;
@@ -58,26 +56,6 @@ pub(crate) trait AmqpMessageExt {
 
 pub(crate) trait AmqpMessageMutExt {
     fn set_message_id(&mut self, message_id: impl Into<String>) -> Result<(), SetMessageIdError>;
-
-    // fn set_partition_key(
-    //     &mut self,
-    //     key: impl Into<Option<String>>,
-    // ) -> Result<(), SetPartitionKeyError>;
-
-    // fn set_via_partition_key(
-    //     &mut self,
-    //     key: impl Into<Option<String>>,
-    // ) -> Result<(), MaxLengthExceededError>;
-
-    // fn set_session_id(
-    //     &mut self,
-    //     session_id: impl Into<Option<String>>,
-    // ) -> Result<(), MaxLengthExceededError>;
-
-    // fn set_reply_to_session_id(
-    //     &mut self,
-    //     session_id: impl Into<Option<String>>,
-    // ) -> Result<(), MaxLengthExceededError>;
 
     fn set_time_to_live(
         &mut self,
@@ -125,17 +103,6 @@ impl<B> AmqpMessageExt for Message<B> {
                 _ => unreachable!("Expecting a String"),
             })
     }
-
-    // #[inline]
-    // fn via_partition_key(&self) -> Option<&str> {
-    //     self.message_annotations
-    //         .as_ref()?
-    //         .get(&amqp_message_constants::VIA_PARTITION_KEY_NAME as &dyn AnnotationKey)
-    //         .map(|value| match value {
-    //             Value::String(s) => s.as_str(),
-    //             _ => unreachable!("Expecting a String"),
-    //         })
-    // }
 
     #[inline]
     fn session_id(&self) -> Option<&str> {
@@ -316,115 +283,6 @@ impl<B> AmqpMessageMutExt for Message<B> {
             .message_id = Some(MessageId::String(message_id));
         Ok(())
     }
-
-    // /// Returns error if key length exceeds [`MAX_PARTITION_KEY_LENGTH`]
-    // #[inline]
-    // fn set_partition_key(
-    //     &mut self,
-    //     key: impl Into<Option<String>>,
-    // ) -> Result<(), SetPartitionKeyError> {
-    //     let key: Option<String> = key.into();
-    //     match key.as_ref().map(|k| k.len()) {
-    //         Some(len) if len > MAX_PARTITION_KEY_LENGTH => {
-    //             return Err(MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH).into())
-    //         }
-    //         _ => {}
-    //     }
-
-    //     match (key.as_ref(), self.session_id()) {
-    //         (Some(key), Some(session_id)) if key != session_id => {
-    //             return Err(SetPartitionKeyError::PartitionKeyAndSessionIdAreDifferent);
-    //         }
-    //         _ => {}
-    //     }
-
-    //     self.message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(
-    //             amqp_message_constants::PARTITION_KEY_NAME.into(),
-    //             key.map(Value::String).unwrap_or(Value::Null),
-    //         );
-    //     Ok(())
-    // }
-
-    // /// Returns error if key length exceeds [`MAX_PARTITION_KEY_LENGTH`]
-    // #[inline]
-    // fn set_via_partition_key(
-    //     &mut self,
-    //     key: impl Into<Option<String>>,
-    // ) -> Result<(), MaxLengthExceededError> {
-    //     let key = key.into();
-
-    //     match key.as_ref().map(|k| k.len()) {
-    //         Some(len) if len > MAX_PARTITION_KEY_LENGTH => {
-    //             return Err(MaxLengthExceededError::new(len, MAX_PARTITION_KEY_LENGTH))
-    //         }
-    //         _ => {}
-    //     }
-
-    //     self.message_annotations
-    //         .get_or_insert(MessageAnnotations::default())
-    //         .insert(
-    //             amqp_message_constants::VIA_PARTITION_KEY_NAME.into(),
-    //             key.map(Value::String).unwrap_or(Value::Null),
-    //         );
-    //     Ok(())
-    // }
-
-    // /// Returns error if key length exceeds [`MAX_SESSION_ID_LENGTH`]
-    // #[inline]
-    // fn set_session_id(
-    //     &mut self,
-    //     session_id: impl Into<Option<String>>,
-    // ) -> Result<(), MaxLengthExceededError> {
-    //     let session_id = session_id.into();
-    //     match session_id.as_ref().map(|s| s.len()) {
-    //         Some(session_id_len) if session_id_len > MAX_SESSION_ID_LENGTH => {
-    //             return Err(MaxLengthExceededError::new(
-    //                 session_id_len,
-    //                 MAX_SESSION_ID_LENGTH,
-    //             ))
-    //         }
-    //         _ => {}
-    //     }
-
-    //     // If the PartitionKey was already set to a different value, override it with the SessionId,
-    //     if let Some(partition_key) = self.message_annotations.as_mut().and_then(|m| {
-    //         m.get_mut(&amqp_message_constants::PARTITION_KEY_NAME as &dyn AnnotationKey)
-    //     }) {
-    //         *partition_key = session_id.clone().map(Value::String).unwrap_or(Value::Null);
-    //     }
-
-    //     self.properties
-    //         .get_or_insert(Properties::default())
-    //         .group_id = session_id;
-    //     Ok(())
-    // }
-
-    // /// Returns error if key length exceeds [`MAX_SESSION_ID_LENGTH`]
-    // #[inline]
-    // fn set_reply_to_session_id(
-    //     &mut self,
-    //     session_id: impl Into<Option<String>>,
-    // ) -> Result<(), MaxLengthExceededError> {
-    //     let session_id = session_id
-    //         .into()
-    //         .map(|s| {
-    //             if s.len() > MAX_SESSION_ID_LENGTH {
-    //                 Result::<String, _>::Err(MaxLengthExceededError::new(
-    //                     s.len(),
-    //                     MAX_SESSION_ID_LENGTH,
-    //                 ))
-    //             } else {
-    //                 Ok(s)
-    //             }
-    //         })
-    //         .transpose()?;
-    //     self.properties
-    //         .get_or_insert(Properties::default())
-    //         .reply_to_group_id = session_id;
-    //     Ok(())
-    // }
 
     /// Returns error if `ttl.whole_milliseconds()` exceeds valid range of u32
     #[inline]

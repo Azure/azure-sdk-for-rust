@@ -265,7 +265,7 @@ where
         E: IntoIterator<Item = EventData>,
         E::IntoIter: ExactSizeIterator + Send,
     {
-        let partition_id = options.partition_id.as_deref();
+        let partition_id = options.partition_id();
         let mut producer = self.get_pooled_producer_mut(partition_id).await?;
         producer
             .send(events.into_iter(), options)
@@ -278,7 +278,7 @@ where
         batch: EventDataBatch,
         options: SendEventOptions,
     ) -> Result<(), azure_core::Error> {
-        let partition_id = options.partition_id.as_deref();
+        let partition_id = options.partition_id();
         let mut producer = self.get_pooled_producer_mut(partition_id).await?;
         producer
             .send_batch(batch.inner, options)
