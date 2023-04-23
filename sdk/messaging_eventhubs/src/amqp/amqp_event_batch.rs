@@ -133,7 +133,7 @@ mod tests {
         let mut batch = AmqpEventBatch::new(262144, options.partition_key).unwrap();
         let event = "abcdefg";
 
-        while let Ok(_) = batch.try_add(EventData::from(event)) {}
+        while batch.try_add(EventData::from(event)).is_ok() {}
         let batch_size_in_bytes = batch.size_in_bytes();
 
         let batch = build_amqp_batch_from_messages(batch.events.into_iter(), None).unwrap();
@@ -201,7 +201,7 @@ mod tests {
         let event = EventData::from(data);
         let mut batch = AmqpEventBatch::new(max_size_in_bytes, None).unwrap();
 
-        while let Ok(_) = batch.try_add(event.clone()) {}
+        while batch.try_add(event.clone()).is_ok() {}
 
         assert!(batch.try_add(event).is_err());
     }
@@ -228,7 +228,7 @@ mod tests {
         let mut batch = AmqpEventBatch::new(1024, None).unwrap();
         let message = EventData::new("hello world");
 
-        assert!(batch.try_add(message.clone()).is_ok());
+        assert!(batch.try_add(message).is_ok());
         assert_eq!(batch.len(), 1);
         assert!(batch.size_in_bytes() > 0);
 

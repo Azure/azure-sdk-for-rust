@@ -315,7 +315,7 @@ where
             Sharable::Owned(c) => recover_consumers(c, consumers).await?,
             Sharable::Shared(c) => {
                 let mut guard = c.lock().await;
-                recover_consumers(&mut *guard, consumers).await?
+                recover_consumers(&mut guard, consumers).await?
             }
             Sharable::None => return Err(RecoverAndReceiveError::ConnectionScopeDisposed),
         };

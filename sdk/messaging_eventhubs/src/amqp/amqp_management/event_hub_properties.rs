@@ -61,7 +61,7 @@ impl<'a> Request for EventHubPropertiesRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        ()
+        
     }
 }
 
@@ -80,7 +80,7 @@ impl<'a> Request for &'a EventHubPropertiesRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        ()
+        
     }
 }
 
@@ -99,7 +99,7 @@ impl<'a> Request for &'a mut EventHubPropertiesRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        ()
+        
     }
 }
 

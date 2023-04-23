@@ -150,12 +150,12 @@ where
 
             // reattach the link
             match self.client {
-                Sharable::Owned(client) => client.recover_producer(&mut self.producer).await?,
+                Sharable::Owned(client) => client.recover_producer(self.producer).await?,
                 Sharable::Shared(client) => {
                     client
                         .lock()
                         .await
-                        .recover_producer(&mut self.producer)
+                        .recover_producer(self.producer)
                         .await?
                 }
                 Sharable::None => return Err(RecoverAndSendError::ConnectionScopeDisposed),

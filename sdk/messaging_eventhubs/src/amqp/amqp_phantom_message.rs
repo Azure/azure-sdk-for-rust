@@ -288,13 +288,13 @@ mod tests {
         match sendable {
             SendableEnvelope::Single(sendable) => {
                 let serializable = Serializable(sendable.message);
-                let value = to_value(&serializable).unwrap();
-                value
+                
+                to_value(&serializable).unwrap()
             }
             SendableEnvelope::Batch(sendable) => {
                 let serializable = Serializable(sendable.message);
-                let value = to_value(&serializable).unwrap();
-                value
+                
+                to_value(&serializable).unwrap()
             }
         }
     }
@@ -303,13 +303,13 @@ mod tests {
         match sendable {
             SendableEnvelope::Single(sendable) => {
                 let serializable = Serializable(sendable.message);
-                let value = to_vec(&serializable).unwrap();
-                value
+                
+                to_vec(&serializable).unwrap()
             }
             SendableEnvelope::Batch(sendable) => {
                 let serializable = Serializable(sendable.message);
-                let value = to_vec(&serializable).unwrap();
-                value
+                
+                to_vec(&serializable).unwrap()
             }
         }
     }
@@ -324,7 +324,7 @@ mod tests {
         let serialized_value = serialized_value_of_sendable(batch.sendable);
         println!("serialized_value: {:?}", serialized_value);
 
-        let batch = build_amqp_batch_from_messages(message_iter.clone().into_iter(), None).unwrap();
+        let batch = build_amqp_batch_from_messages(message_iter.clone(), None).unwrap();
         let serialized_bytes = serialized_bytes_of_sendable(batch.sendable);
         println!("serialized_bytes: {:?}", serialized_bytes);
 

@@ -535,7 +535,7 @@ impl AmqpConnectionScope {
             }
         }
 
-        let _ = self.cbs_link_handle.stop();
+        self.cbs_link_handle.stop();
         let _cbs_close_result = self.cbs_link_handle.join_handle_mut().await;
 
         let session_close_result = self.cbs_session_handle.close().await;

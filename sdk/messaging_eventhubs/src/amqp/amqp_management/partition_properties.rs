@@ -68,7 +68,7 @@ impl<'a> Request for PartitionPropertiesRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        ()
+        
     }
 }
 
@@ -88,7 +88,7 @@ impl<'a> Request for &'a PartitionPropertiesRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        ()
+        
     }
 }
 
@@ -108,7 +108,7 @@ impl<'a> Request for &'a mut PartitionPropertiesRequest<'a> {
     }
 
     fn encode_body(self) -> Self::Body {
-        ()
+        
     }
 }
 

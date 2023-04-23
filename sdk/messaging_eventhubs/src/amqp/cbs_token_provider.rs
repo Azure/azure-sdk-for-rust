@@ -157,7 +157,7 @@ mod tests {
                 .returning(move |_resource| {
                     Ok(TokenResponse {
                         token: AccessToken::new(token_value),
-                        expires_on: expires_on,
+                        expires_on,
                     })
                 });
 
@@ -189,7 +189,7 @@ mod tests {
                 .returning(move |_resource| {
                     Ok(TokenResponse {
                         token: AccessToken::new(token_value),
-                        expires_on: expires_on,
+                        expires_on,
                     })
                 });
 
@@ -236,7 +236,7 @@ mod tests {
                 .returning(move |_resource| {
                     Ok(TokenResponse {
                         token: AccessToken::new(token_value),
-                        expires_on: expires_on,
+                        expires_on,
                     })
                 });
 

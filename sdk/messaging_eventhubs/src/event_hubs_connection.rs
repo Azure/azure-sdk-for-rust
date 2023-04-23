@@ -188,7 +188,7 @@ where
             Sharable::Owned(c) => c.get_properties(retry_policy).await,
             Sharable::Shared(c) => c.lock().await.get_properties(retry_policy).await,
             Sharable::None => {
-                return Err(azure_core::Error::new(
+                Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
                 ))
@@ -224,7 +224,7 @@ where
                     .await
             }
             Sharable::None => {
-                return Err(azure_core::Error::new(
+                Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
                 ))
@@ -268,7 +268,7 @@ where
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
             Sharable::None => {
-                return Err(azure_core::Error::new(
+                Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
                 ))
@@ -321,7 +321,7 @@ where
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
             Sharable::None => {
-                return Err(azure_core::Error::new(
+                Err(azure_core::Error::new(
                     azure_core::error::ErrorKind::Io,
                     AmqpConnectionScopeError::ScopeDisposed,
                 ))

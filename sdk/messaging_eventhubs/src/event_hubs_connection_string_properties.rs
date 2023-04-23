@@ -805,7 +805,7 @@ mod tests {
     fn to_connection_string_returns_ok_with_servicebus_endpoint_scheme() {
         let endpoint = "sb://myhub.servicebus.windows.net";
         let properties = EventHubsConnectionStringProperties {
-            endpoint: Some(url::Url::parse(&endpoint).unwrap()),
+            endpoint: Some(url::Url::parse(endpoint).unwrap()),
             event_hub_name: Some("HubName"),
             shared_access_signature: None,
             shared_access_key_name: Some("RootSharedAccessManagementKey"),
