@@ -3,3 +3,7 @@ members = [
   "sdk/*",
   "./eng/test/mock_transport"
 ]
+
+exclude = [
+  "sdk/messaging_eventhubs", # excluded because of wasm support
+]

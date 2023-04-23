@@ -10,10 +10,7 @@ time = "0.3"
 url = "2"
 uuid = { version = "1", features = ["v4"] }
 const_format = "0.2"
-tokio = { version = "1", features = ["sync"] }
-tokio-util = "0.7"
 thiserror = "1"
-timer-kit = { version = "0.1", features = ["tokio"] }
 futures-util = "0.3"
 log = "0.4"
 urlencoding = "2"
@@ -38,7 +35,21 @@ fe2o3-amqp-cbs = "0.2"
 serde_amqp = { version = "0.5.9", features = ["derive", "time"] }
 fe2o3-amqp-ws = "0.3.1"
 
-[dev-dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1", features = ["rt", "macros", "sync", "time", "net"] }
+tokio-util = "0.7"
+timer-kit = { version = "0.1", features = ["tokio"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+# Add dependency to getrandom to enable WASM support
+getrandom = { version = "0.2", features = ["js"] }
+tokio = { version = "1", features = ["rt", "macros"]}
+tokio-util = {version = "0.7.3"}
+fluvio-wasm-timer = "0.2"
+timer-kit = { version = "0.1", features = ["fluvio-wasm-timer"] }
+js-sys = "0.3"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 dotenv = "0.15"
 tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
 env_logger = "0.10.0"
