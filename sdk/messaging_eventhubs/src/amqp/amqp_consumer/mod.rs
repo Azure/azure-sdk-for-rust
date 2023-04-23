@@ -232,11 +232,11 @@ where
     }
 }
 
-async fn next_event<'a, RP>(
-    mut value: EventStreamStateValue<'a, AmqpConsumer<RP>>,
+async fn next_event<RP>(
+    mut value: EventStreamStateValue<'_, AmqpConsumer<RP>>,
 ) -> (
     Option<Result<ReceivedEventData, RecoverAndReceiveError>>,
-    EventStreamStateValue<'a, AmqpConsumer<RP>>,
+    EventStreamStateValue<'_, AmqpConsumer<RP>>,
 )
 where
     RP: EventHubsRetryPolicy + Send,
@@ -251,8 +251,8 @@ where
     (outcome, value)
 }
 
-async fn close_consumer<'a, RP>(
-    value: EventStreamStateValue<'a, AmqpConsumer<RP>>,
+async fn close_consumer<RP>(
+    value: EventStreamStateValue<'_, AmqpConsumer<RP>>,
 ) -> Result<(), DisposeConsumerError> {
     value.consumer.close().await
 }

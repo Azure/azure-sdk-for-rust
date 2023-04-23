@@ -180,7 +180,7 @@ where
             self.options
                 .identifier
                 .clone()
-                .unwrap_or(uuid::Uuid::new_v4().to_string()),
+                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
         );
         let requested_features = self.options.create_features();
         let retry_policy = RP::from(self.options.retry_options.clone());
@@ -216,7 +216,7 @@ where
             self.options
                 .identifier
                 .clone()
-                .unwrap_or(uuid::Uuid::new_v4().to_string()),
+                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
         );
         let requested_features = self.options.create_features();
         let retry_policy = RP::from(self.options.retry_options.clone());

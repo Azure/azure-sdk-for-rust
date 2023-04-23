@@ -152,11 +152,7 @@ where
             match self.client {
                 Sharable::Owned(client) => client.recover_producer(self.producer).await?,
                 Sharable::Shared(client) => {
-                    client
-                        .lock()
-                        .await
-                        .recover_producer(self.producer)
-                        .await?
+                    client.lock().await.recover_producer(self.producer).await?
                 }
                 Sharable::None => return Err(RecoverAndSendError::ConnectionScopeDisposed),
             }

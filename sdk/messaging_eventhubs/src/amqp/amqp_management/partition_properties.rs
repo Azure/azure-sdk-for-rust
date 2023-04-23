@@ -67,9 +67,7 @@ impl<'a> Request for PartitionPropertiesRequest<'a> {
         ))
     }
 
-    fn encode_body(self) -> Self::Body {
-        
-    }
+    fn encode_body(self) -> Self::Body {}
 }
 
 impl<'a> Request for &'a PartitionPropertiesRequest<'a> {
@@ -87,9 +85,7 @@ impl<'a> Request for &'a PartitionPropertiesRequest<'a> {
         ))
     }
 
-    fn encode_body(self) -> Self::Body {
-        
-    }
+    fn encode_body(self) -> Self::Body {}
 }
 
 impl<'a> Request for &'a mut PartitionPropertiesRequest<'a> {
@@ -107,9 +103,7 @@ impl<'a> Request for &'a mut PartitionPropertiesRequest<'a> {
         ))
     }
 
-    fn encode_body(self) -> Self::Body {
-        
-    }
+    fn encode_body(self) -> Self::Body {}
 }
 
 type PartitionPropertiesResponseBody = OrderedMap<String, Value>;

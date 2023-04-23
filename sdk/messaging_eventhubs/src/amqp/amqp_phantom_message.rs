@@ -288,12 +288,12 @@ mod tests {
         match sendable {
             SendableEnvelope::Single(sendable) => {
                 let serializable = Serializable(sendable.message);
-                
+
                 to_value(&serializable).unwrap()
             }
             SendableEnvelope::Batch(sendable) => {
                 let serializable = Serializable(sendable.message);
-                
+
                 to_value(&serializable).unwrap()
             }
         }
@@ -303,12 +303,12 @@ mod tests {
         match sendable {
             SendableEnvelope::Single(sendable) => {
                 let serializable = Serializable(sendable.message);
-                
+
                 to_vec(&serializable).unwrap()
             }
             SendableEnvelope::Batch(sendable) => {
                 let serializable = Serializable(sendable.message);
-                
+
                 to_vec(&serializable).unwrap()
             }
         }

@@ -61,6 +61,7 @@ pub trait TransportClient: Sized {
     where
         RP: EventHubsRetryPolicy + Send;
 
+    #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
     async fn create_consumer<RP>(
         &mut self,
         consumer_group: &str,

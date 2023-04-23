@@ -34,7 +34,7 @@ impl<'a> EventHubPropertiesRequest<'a> {
     }
 }
 
-fn encode_application_properties<'a>(
+fn encode_application_properties(
     event_hub_name: String,
     management_authorization_token: String,
 ) -> ApplicationProperties {
@@ -60,9 +60,7 @@ impl<'a> Request for EventHubPropertiesRequest<'a> {
         ))
     }
 
-    fn encode_body(self) -> Self::Body {
-        
-    }
+    fn encode_body(self) -> Self::Body {}
 }
 
 impl<'a> Request for &'a EventHubPropertiesRequest<'a> {
@@ -79,9 +77,7 @@ impl<'a> Request for &'a EventHubPropertiesRequest<'a> {
         ))
     }
 
-    fn encode_body(self) -> Self::Body {
-        
-    }
+    fn encode_body(self) -> Self::Body {}
 }
 
 impl<'a> Request for &'a mut EventHubPropertiesRequest<'a> {
@@ -98,9 +94,7 @@ impl<'a> Request for &'a mut EventHubPropertiesRequest<'a> {
         ))
     }
 
-    fn encode_body(self) -> Self::Body {
-        
-    }
+    fn encode_body(self) -> Self::Body {}
 }
 
 type EventHubPropertiesResponseBody = OrderedMap<String, Value>;

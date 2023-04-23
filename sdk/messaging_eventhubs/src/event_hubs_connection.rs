@@ -92,10 +92,12 @@ impl EventHubConnection<AmqpClient> {
 
         let fully_qualified_namespace = connection_string_properties
             .fully_qualified_namespace()
-            .ok_or(azure_core::Error::new(
-                azure_core::error::ErrorKind::Credential,
-                "fully_qualified_namespace cannot be None",
-            ))?;
+            .ok_or_else(|| {
+                azure_core::Error::new(
+                    azure_core::error::ErrorKind::Credential,
+                    "fully_qualified_namespace cannot be None",
+                )
+            })?;
 
         let shared_access_signature = if let Some(shared_access_signature) =
             connection_string_properties.shared_access_signature
@@ -187,12 +189,10 @@ where
         match &mut self.inner {
             Sharable::Owned(c) => c.get_properties(retry_policy).await,
             Sharable::Shared(c) => c.lock().await.get_properties(retry_policy).await,
-            Sharable::None => {
-                Err(azure_core::Error::new(
-                    azure_core::error::ErrorKind::Io,
-                    AmqpConnectionScopeError::ScopeDisposed,
-                ))
-            }
+            Sharable::None => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
         }
     }
 
@@ -223,12 +223,10 @@ where
                     .get_partition_properties(partition_id, retry_policy)
                     .await
             }
-            Sharable::None => {
-                Err(azure_core::Error::new(
-                    azure_core::error::ErrorKind::Io,
-                    AmqpConnectionScopeError::ScopeDisposed,
-                ))
-            }
+            Sharable::None => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
         }
     }
 
@@ -267,15 +265,14 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            Sharable::None => {
-                Err(azure_core::Error::new(
-                    azure_core::error::ErrorKind::Io,
-                    AmqpConnectionScopeError::ScopeDisposed,
-                ))
-            }
+            Sharable::None => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
         }
     }
 
+    #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
     pub(crate) async fn create_transport_consumer<RP>(
         &mut self,
         consumer_group: &str,
@@ -320,12 +317,10 @@ where
                 )
                 .await
                 .map_err(IntoAzureCoreError::into_azure_core_error),
-            Sharable::None => {
-                Err(azure_core::Error::new(
-                    azure_core::error::ErrorKind::Io,
-                    AmqpConnectionScopeError::ScopeDisposed,
-                ))
-            }
+            Sharable::None => Err(azure_core::Error::new(
+                azure_core::error::ErrorKind::Io,
+                AmqpConnectionScopeError::ScopeDisposed,
+            )),
         }
     }
 

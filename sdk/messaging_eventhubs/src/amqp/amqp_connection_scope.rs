@@ -277,7 +277,7 @@ impl AmqpConnectionScope {
         };
         let producer_endpoint = self.service_endpoint.join(&path)?;
 
-        let identifier = identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
+        let identifier = identifier.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let (session_handle, sender) = self
@@ -373,13 +373,13 @@ impl AmqpConnectionScope {
         Ok((session_handle, sender))
     }
 
+    #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
     pub(crate) async fn open_consumer_link<RP>(
         &mut self,
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
         prefetch_count: u32,
-        // prefetch_size_in_bytes: Option<usize>, // TODO: what does this do in the c# sdk?
         owner_level: Option<i64>,
         track_last_enqueued_event_properties: bool,
         identifier: Option<String>,
@@ -390,7 +390,7 @@ impl AmqpConnectionScope {
             self.event_hub_name, consumer_group, partition_id
         );
         let consumer_endpoint = self.service_endpoint.join(&path)?;
-        let identifier = identifier.unwrap_or(uuid::Uuid::new_v4().to_string());
+        let identifier = identifier.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
         let session_identifier = SESSION_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
         let link_identifier = LINK_IDENTIFIER.fetch_add(1, Ordering::Relaxed);
 
@@ -422,6 +422,7 @@ impl AmqpConnectionScope {
         })
     }
 
+    #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
     async fn create_receiving_session_and_link(
         &mut self,
         endpoint: &Url,

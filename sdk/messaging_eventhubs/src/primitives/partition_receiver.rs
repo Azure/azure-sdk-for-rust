@@ -138,6 +138,7 @@ where
     }
 
     /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
+    #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
     pub async fn from_namespace_and_credential(
         self,
         consumer_group: &str,
@@ -220,12 +221,15 @@ where
         )
         .await
         {
-            Some(result) => result.map_err(IntoAzureCoreError::into_azure_core_error)?,
+            Some(result) => {
+                result.map_err(IntoAzureCoreError::into_azure_core_error)?;
+                Ok(buffer.into_iter())
+            }
             None => {
                 // Return an empty buffer
+                Ok(buffer.into_iter())
             }
         }
-        Ok(buffer.into_iter())
     }
 }
 

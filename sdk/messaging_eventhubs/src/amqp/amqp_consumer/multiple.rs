@@ -116,7 +116,7 @@ where
             });
         }
 
-        if let Some(future) = self.as_mut().project_future() {
+        if let Some(_future) = self.as_mut().project_future() {
             // let (_, value) = ready!(future.poll(cx));
             // self.set(ConsumerState::Closing {
             //     future: value.close().boxed(),
@@ -127,7 +127,7 @@ where
             // This is a temporary hack which simply drops the future.
             // Both Link and Session have internal states that implements Drop trait and
             // will exchange messages with the server to close the link/session.
-            drop(future);
+            // drop(future);
             self.set(ConsumerState::Empty);
             return Poll::Ready(Ok(()));
         }
@@ -399,11 +399,11 @@ where
     }
 }
 
-async fn next_event<'a, RP>(
-    mut value: EventStreamStateValue<'a, MultipleAmqpConsumers<RP>>,
+async fn next_event<RP>(
+    mut value: EventStreamStateValue<'_, MultipleAmqpConsumers<RP>>,
 ) -> (
     Option<Result<ReceivedEventData, RecoverAndReceiveError>>,
-    EventStreamStateValue<'a, MultipleAmqpConsumers<RP>>,
+    EventStreamStateValue<'_, MultipleAmqpConsumers<RP>>,
 )
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
@@ -418,8 +418,8 @@ where
     (outcome, value)
 }
 
-async fn close_consumers<'a, RP>(
-    value: EventStreamStateValue<'a, MultipleAmqpConsumers<RP>>,
+async fn close_consumers<RP>(
+    value: EventStreamStateValue<'_, MultipleAmqpConsumers<RP>>,
 ) -> Result<(), DisposeConsumerError>
 where
     RP: Send + 'static,
@@ -445,7 +445,7 @@ where
             });
         }
 
-        if let Some(future) = self.as_mut().project_future() {
+        if let Some(_future) = self.as_mut().project_future() {
             // let (_, value) = ready!(future.poll(cx));
             // self.set(EventStreamState::Closing {
             //     future: close_consumers(value).boxed(),
@@ -456,7 +456,7 @@ where
             // This is a temporary hack which simply drops the future.
             // Both Link and Session have internal states that implements Drop trait and
             // will exchange messages with the server to close the link/session.
-            drop(future);
+            // drop(future);
             self.set(EventStreamState::Empty);
             return Poll::Ready(Ok(()));
         }
