@@ -15,14 +15,30 @@ const DEFAULT_MAXIMUM_THROTTLE_SECONDS: u32 = 8;
 pub struct BasicRetryPolicy {
     options: EventHubsRetryOptions,
     jitter_factor: f64,
-    minimum_throttle_seconds: u32,
-    maximum_throttle_seconds: u32,
+
+    // /// The minimum number of seconds to wait before retrying when the service
+    // /// indicates that the client should throttle its requests.
+    // ///
+    // /// TODO: This is not being used right now
+    // minimum_throttle_seconds: u32,
+
+    // /// The maximum number of seconds to wait before retrying when the service
+    // /// indicates that the client should throttle its requests.
+    // ///
+    // /// TODO: This is not being used right now
+    // maximum_throttle_seconds: u32,
 }
 
 impl BasicRetryPolicy {
-    //     fn should_retry_last_error(&self, last_error: &dyn std::error::Error) -> bool {
-    //         todo!()
-    //     }
+    /// The set of options used to configure the retry policy.
+    pub fn options(&self) -> &EventHubsRetryOptions {
+        &self.options
+    }
+
+    /// The factor to apply to the base delay for use as a base jitter value.
+    pub fn jitter_factor(&self) -> f64 {
+        self.jitter_factor
+    }
 }
 
 impl From<EventHubsRetryOptions> for BasicRetryPolicy {
@@ -30,8 +46,8 @@ impl From<EventHubsRetryOptions> for BasicRetryPolicy {
         Self {
             options,
             jitter_factor: DEFAULT_JITTER_FACTOR,
-            minimum_throttle_seconds: DEFAULT_MINIMUM_THROTTLE_SECONDS,
-            maximum_throttle_seconds: DEFAULT_MAXIMUM_THROTTLE_SECONDS,
+            // minimum_throttle_seconds: DEFAULT_MINIMUM_THROTTLE_SECONDS,
+            // maximum_throttle_seconds: DEFAULT_MAXIMUM_THROTTLE_SECONDS,
         }
     }
 }

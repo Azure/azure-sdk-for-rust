@@ -28,16 +28,16 @@ pub mod producer;
 
 pub mod prelude {
     //! Prelude for the Azure Event Hubs crate.
-
-    pub use crate::amqp::amqp_system_properties::AmqpSystemProperties;
-    pub use crate::core::BasicRetryPolicy;
     pub use crate::event_data::*;
-    pub use crate::event_hubs_connection::EventHubConnection;
-    pub use crate::event_hubs_connection_option::EventHubConnectionOptions;
+    pub use crate::event_hubs_connection::*;
+    pub use crate::event_hubs_connection_option::*;
+    pub use crate::event_hubs_properties::*;
+    pub use crate::event_hubs_connection_string_properties::*;
     pub use crate::event_hubs_retry_options::*;
-    pub use crate::event_hubs_transport_type::EventHubsTransportType;
+    pub use crate::event_hubs_retry_policy::*;
     pub use crate::partition_properties::*;
-    pub use crate::primitives::partition_receiver::*;
+    pub use crate::event_hubs_transport_type::*;
+    pub use crate::event_hubs_retry_mode::*;
 }
 
 pub use prelude::*;

@@ -8,7 +8,7 @@ use crate::{
     authorization::event_hub_token_credential::EventHubTokenCredential,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions,
+    EventHubConnection, EventHubsRetryOptions, core::BasicRetryPolicy,
 };
 
 use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};

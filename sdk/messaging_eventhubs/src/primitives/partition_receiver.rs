@@ -9,7 +9,7 @@ use crate::{
     consumer::EventPosition,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::IntoAzureCoreError,
-    BasicRetryPolicy, EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
+    EventHubConnection, EventHubsRetryOptions, ReceivedEventData, core::BasicRetryPolicy,
 };
 
 use super::partition_receiver_options::PartitionReceiverOptions;

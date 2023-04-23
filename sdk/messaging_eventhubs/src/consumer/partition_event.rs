@@ -8,9 +8,8 @@ use serde_amqp::Value;
 use time::OffsetDateTime;
 
 use crate::{
-    amqp::{amqp_message_extension::AmqpMessageExt, error::RawAmqpMessageError},
+    amqp::{amqp_message_extension::AmqpMessageExt, error::RawAmqpMessageError, amqp_system_properties::AmqpSystemProperties},
     constants::DEFAULT_OFFSET_DATE_TIME,
-    AmqpSystemProperties,
 };
 
 use super::PartitionContext;
