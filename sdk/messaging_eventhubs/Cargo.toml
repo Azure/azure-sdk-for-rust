@@ -37,12 +37,6 @@ fe2o3-amqp-management = "0.2.2"
 fe2o3-amqp-cbs = "0.2"
 serde_amqp = { version = "0.5.9", features = ["derive", "time"] }
 fe2o3-amqp-ws = "0.3.1"
-# fe2o3-amqp = { path = "../../../fe2o3-amqp/fe2o3-amqp", features = ["log"] }
-# fe2o3-amqp-types = { path = "../../../fe2o3-amqp/fe2o3-amqp-types" }
-# fe2o3-amqp-management = { path = "../../../fe2o3-amqp/fe2o3-amqp-management" }
-# fe2o3-amqp-cbs = { path = "../../../fe2o3-amqp/fe2o3-amqp-cbs" }
-# serde_amqp = { path = "../../../fe2o3-amqp/serde_amqp", features = ["derive", "time"] }
-# fe2o3-amqp-ws = { path = "../../../fe2o3-amqp/fe2o3-amqp-ws" }
 
 [dev-dependencies]
 dotenv = "0.15"
@@ -53,6 +47,10 @@ bytes = "1"
 
 [features]
 default = ["native-tls"]
+
+# CI tests related features
+test_e2e = [] # This enables tests under the `sdk/messaging_servicebus/tests` directory
+test_integration = [] # TODO: this feature is not used for now
 
 rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
 native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
