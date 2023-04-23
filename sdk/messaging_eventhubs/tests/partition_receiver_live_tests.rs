@@ -1,6 +1,5 @@
 use messaging_eventhubs::{
-    consumer::{EventHubConsumerClient, EventPosition},
-    PartitionReceiver,
+    consumer::{EventHubConsumerClient, EventPosition}, primitives::PartitionReceiver,
 };
 
 mod common;

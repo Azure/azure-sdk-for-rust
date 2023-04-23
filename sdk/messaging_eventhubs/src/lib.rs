@@ -20,10 +20,10 @@ pub(crate) mod event_hubs_retry_options;
 pub(crate) mod event_hubs_retry_policy;
 pub(crate) mod event_hubs_transport_type;
 pub(crate) mod partition_properties;
-pub(crate) mod primitives;
 pub(crate) mod util;
 
 pub mod consumer;
+pub mod primitives;
 pub mod producer;
 
 pub mod prelude {
