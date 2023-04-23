@@ -1,9 +1,6 @@
 /// The partitioning strategy to use when publishing events to Event Hubs.
 #[derive(Debug, Clone)]
 pub enum Partition {
-    /// Events will be published to this specific partition.
-    Id(String),
-
     /// Allows a hashing key to be provided for the batch of events, which instructs Event Hubs to
     /// map the key to an automatically-assigned partition.
     ///
@@ -13,9 +10,12 @@ pub enum Partition {
     ///
     /// The partition key should be specified when there is a need to group events together, but the
     /// partition to which they are assigned is unimportant.  If ensuring that a batch of events is
-    /// assigned a specific partition, it is recommended that the [`Self::partition_id`] be
+    /// assigned a specific partition, it is recommended that the [`Partition::Id`] be
     /// assigned instead.
     Key(String),
+
+    /// Events will be published to this specific partition.
+    Id(String),
 }
 
 /// The set of options that can be specified when sending an event to an Event Hubs service.

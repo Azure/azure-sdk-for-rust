@@ -3,7 +3,7 @@
 use futures_util::StreamExt;
 use messaging_eventhubs::{
     consumer::{
-        EventHubConsumeClientOptions, EventHubConsumerClient, EventPosition, ReadEventOptions,
+        EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
     },
     EventHubsRetryOptions, MaxRetries,
 };
@@ -27,7 +27,7 @@ cfg_not_wasm32! {
         let mut retry_options = EventHubsRetryOptions::default();
         retry_options.max_retries = MaxRetries(3);
         retry_options.try_timeout = std::time::Duration::from_secs(5);
-        let mut options = EventHubConsumeClientOptions::default();
+        let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
 
         let mut consumer = EventHubConsumerClient::from_connection_string(
@@ -80,7 +80,7 @@ cfg_not_wasm32! {
         let mut retry_options = EventHubsRetryOptions::default();
         retry_options.max_retries = MaxRetries(3);
         retry_options.try_timeout = std::time::Duration::from_secs(5);
-        let mut options = EventHubConsumeClientOptions::default();
+        let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
 
         let mut consumer = EventHubConsumerClient::from_connection_string(

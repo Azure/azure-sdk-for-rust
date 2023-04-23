@@ -1,9 +1,9 @@
 use crate::{EventHubConnectionOptions, EventHubsRetryOptions};
 
-/// The set of options that can be specified when creating an [`EventHubConsumerClient`] to
-/// configure its behavior.
+/// The set of options that can be specified when creating an
+/// [`crate::consumer::EventHubConsumerClient`] to configure its behavior.
 #[derive(Debug, PartialEq, Eq, Clone, Default, Hash)]
-pub struct EventHubConsumeClientOptions {
+pub struct EventHubConsumerClientOptions {
     /// The set of options that can be specified when creating an Event Hub connection.
     pub connection_options: EventHubConnectionOptions,
 

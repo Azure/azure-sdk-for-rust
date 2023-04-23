@@ -49,7 +49,7 @@ bytes = "1"
 default = ["native-tls"]
 
 # CI tests related features
-test_e2e = [] # This enables tests under the `sdk/messaging_servicebus/tests` directory
+test_e2e = [] # This enables tests under the `sdk/messaging_eventhubs/tests` directory
 test_integration = [] # TODO: this feature is not used for now
 
 rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]

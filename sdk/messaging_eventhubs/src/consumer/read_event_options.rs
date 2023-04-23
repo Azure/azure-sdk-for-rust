@@ -35,25 +35,6 @@ pub struct ReadEventOptions {
     /// Default to [`DEFAULT_PREFETCH_COUNT`]
     pub prefetch_count: u32,
 
-    /// The desired number of bytes to attempt to eagerly request from the Event Hubs service and
-    /// queued locally without regard to whether a read operation is currently active, intended to
-    /// help maximize throughput by allowing events to be read from from a local cache rather than
-    /// waiting on a service request.
-    ///
-    /// When set to `None`, the option is considered disabled; otherwise, it will be considered
-    /// enabled and take precedence over any value specified for the `prefetch_count` The
-    /// `prefetch_size_in_bytes` is an advanced control that developers can use to help tune
-    /// performance in some scenarios; it is recommended to prefer using the `prefetch_count` over
-    /// this option where possible for more accurate control and more predictable throughput.
-    ///
-    /// This size should be considered a statement of intent rather than a guaranteed limit; the
-    /// local cache may be larger or smaller than the number of bytes specified, and will always
-    /// contain at least one event when the `prefetch_size_in_bytes` is specified.  A heuristic is
-    /// used to predict the average event size to use for size calculations, which should be
-    /// expected to fluctuate as traffic passes through the system.  Consequently, the resulting
-    /// resource use will fluctuate as well.
-    pub prefetch_size_in_bytes: Option<usize>,
-
     /// When populated, the owner level indicates that a reading is intended to be performed
     /// exclusively for events in the requested partition and for the associated consumer group.  To
     /// do so, reading will attempt to assert ownership over the partition; in the case where more
@@ -82,9 +63,49 @@ impl Default for ReadEventOptions {
             maximum_wait_time: None,
             cache_event_count: DEFAULT_CACHE_EVENT_COUNT,
             prefetch_count: DEFAULT_PREFETCH_COUNT,
-            prefetch_size_in_bytes: None,
             owner_level: None,
             track_last_enqueued_event_properties: true,
         }
+    }
+}
+
+impl ReadEventOptions {
+    /// Creates a new instance with default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the maximum amount of time to wait to for an event to be available when reading before
+    /// reading an empty event.
+    pub fn with_maximum_wait_time(mut self, maximum_wait_time: Duration) -> Self {
+        self.maximum_wait_time = Some(maximum_wait_time);
+        self
+    }
+
+    /// Sets the cache event count.
+    pub fn with_cache_event_count(mut self, cache_event_count: u32) -> Self {
+        self.cache_event_count = cache_event_count;
+        self
+    }
+
+    /// Sets the prefetch count.
+    pub fn with_prefetch_count(mut self, prefetch_count: u32) -> Self {
+        self.prefetch_count = prefetch_count;
+        self
+    }
+
+    /// Sets the owner level.
+    pub fn with_owner_level(mut self, owner_level: i64) -> Self {
+        self.owner_level = Some(owner_level);
+        self
+    }
+
+    /// Sets the track last enqueued event properties.
+    pub fn with_track_last_enqueued_event_properties(
+        mut self,
+        track_last_enqueued_event_properties: bool,
+    ) -> Self {
+        self.track_last_enqueued_event_properties = track_last_enqueued_event_properties;
+        self
     }
 }

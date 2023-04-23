@@ -245,7 +245,8 @@ where
         batch: Self::MessageBatch,
         options: SendEventOptions,
     ) -> Result<(), Self::SendError> {
-        match build_amqp_batch_from_messages(batch.events.into_iter(), options.into_partition_key()) {
+        match build_amqp_batch_from_messages(batch.events.into_iter(), options.into_partition_key())
+        {
             Some(batch) => self.send_batch_envelope(batch).await,
             None => Ok(()),
         }

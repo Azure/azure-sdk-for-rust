@@ -149,5 +149,3 @@ cfg_not_wasm32! {
         producer_client.close().await.unwrap();
     }
 }
-
-

@@ -12,7 +12,7 @@ use crate::{
     EventHubConnection, EventHubsRetryOptions,
 };
 
-use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
+use super::{EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
 
 /// A client responsible for reading [`crate::EventData`] from a specific Event Hub
 /// as a member of a specific consumer group.
@@ -28,7 +28,7 @@ use super::{EventHubConsumeClientOptions, EventPosition, ReadEventOptions};
 pub struct EventHubConsumerClient<RP> {
     connection: EventHubConnection<AmqpClient>,
     retry_policy_marker: PhantomData<RP>,
-    options: EventHubConsumeClientOptions,
+    options: EventHubConsumerClientOptions,
     consumer_group: String,
 }
 
@@ -51,7 +51,7 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
         consumer_group: impl Into<String>,
         connection_string: impl Into<String>,
         event_hub_name: impl Into<Option<String>>,
-        client_options: EventHubConsumeClientOptions,
+        client_options: EventHubConsumerClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
             .from_connection_string(
@@ -67,24 +67,26 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
     pub fn with_connection(
         consumer_group: impl Into<String>,
         connection: &mut EventHubConnection<AmqpClient>,
-        client_options: EventHubConsumeClientOptions,
+        client_options: EventHubConsumerClientOptions,
     ) -> Self {
         Self::with_policy().with_connection(consumer_group, connection, client_options)
     }
 }
 
+/// A builder for creating an [`EventHubConsumerClient`].
 #[derive(Debug)]
 pub struct EventHubConsumerClientBuilder<RP> {
     _retry_policy_marker: PhantomData<RP>,
 }
 
 impl<RP> EventHubConsumerClientBuilder<RP> {
+    /// Creates a new [`EventHubConsumerClient`] from an existing connection.
     pub async fn from_connection_string(
         self,
         consumer_group: impl Into<String>,
         connection_string: impl Into<String>,
         event_hub_name: impl Into<Option<String>>,
-        client_options: EventHubConsumeClientOptions,
+        client_options: EventHubConsumerClientOptions,
     ) -> Result<EventHubConsumerClient<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
@@ -103,13 +105,14 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
         })
     }
 
+    /// Creates a new [`EventHubConsumerClient`] from a namespace and credential.
     pub async fn from_namespace_and_credential(
         self,
         consumer_group: impl Into<String>,
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: impl Into<EventHubTokenCredential>,
-        client_options: EventHubConsumeClientOptions,
+        client_options: EventHubConsumerClientOptions,
     ) -> Result<EventHubConsumerClient<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
@@ -129,11 +132,12 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
         })
     }
 
+    /// Creates a new [`EventHubConsumerClient`] from an existing [`EventHubConnection`].
     pub fn with_connection(
         self,
         consumer_group: impl Into<String>,
         connection: &mut EventHubConnection<AmqpClient>,
-        client_options: EventHubConsumeClientOptions,
+        client_options: EventHubConsumerClientOptions,
     ) -> EventHubConsumerClient<RP> {
         EventHubConsumerClient {
             connection: connection.clone_as_shared(),

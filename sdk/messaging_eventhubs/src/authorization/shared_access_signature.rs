@@ -93,13 +93,13 @@ impl SharedAccessSignature {
 }
 
 impl SharedAccessSignature {
-    /// The name of the shared access key, either for the Service Bus namespace or the Service Bus
+    /// The name of the shared access key, either for the Event Hubs namespace or the Event Hubs
     /// entity.
     pub fn shared_access_key_name(&self) -> &str {
         &self.shared_access_key_name
     }
 
-    /// The value of the shared access key, either for the Service Bus namespace or the Service Bus
+    /// The value of the shared access key, either for the Event Hubs namespace or the Event Hubs
     /// entity.
     pub fn shared_access_key(&self) -> &str {
         &self.shared_access_key
@@ -115,15 +115,15 @@ impl SharedAccessSignature {
         &self.resource
     }
 
-    /// The shared access signature to be used for authorization, either for the Service Bus
-    /// namespace or the Service Bus entity.
+    /// The shared access signature to be used for authorization, either for the Event Hubs
+    /// namespace or the Event Hubs entity.
     pub fn value(&self) -> &str {
         &self.value
     }
 
     /// Initializes a new instance of the [`SharedAccessSignature`] class.
     ///
-    /// - `service_bus_resource` - The Service Bus resource to which the token is intended to serve as authorization.
+    /// - `service_bus_resource` - The Event Hubs resource to which the token is intended to serve as authorization.
     /// - `shared_access_key_name` - The name of the shared access key that the signature should be based on.
     /// - `shared_access_key` - The value of the shared access key for the signature.
     /// - `signature_validity_duration` - The duration that the signature should be considered valid; if not specified, a default will be assumed.
@@ -185,7 +185,7 @@ impl SharedAccessSignature {
 
     /// Initializes a new instance of the [`SharedAccessSignature`] class.
     ///
-    /// - `event_hub_resource` - The Service Bus resource to which the token is intended to serve as authorization.
+    /// - `event_hub_resource` - The Event Hubs resource to which the token is intended to serve as authorization.
     /// - `shared_access_key_name` - The name of the shared access key that the signature should be based on.
     /// - `shared_access_key` - The value of the shared access key for the signature.
     /// - `signature_expiration` - The date and time that the shared access signature expires, in UTC.
@@ -328,7 +328,7 @@ impl SharedAccessSignature {
     }
 
     /// Builds the shared access signature value, which can be used as a token for
-    /// access to the Service Bus service.
+    /// access to the Event Hubs service.
     ///
     /// - `audience` - The audience scope to which this signature applies.
     /// - `shared_access_key_name` - The name of the shared access key that the signature should be based on.

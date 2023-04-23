@@ -79,7 +79,7 @@ impl SharedAccessCredential {
 
 impl SharedAccessCredential {
     /// Retrieves the token that represents the shared access signature credential, for
-    /// use in authorization against a Service Bus entity.
+    /// use in authorization against a Event Hubs entity.
     ///
     /// FIXME: this is a temporary workaround until specialization is stablized.
     pub(crate) async fn get_token(&self, _resource: &str) -> azure_core::Result<TokenResponse> {

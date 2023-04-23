@@ -6,9 +6,7 @@ use crate::{
     EventData,
 };
 
-/// A set of [`EventData`] with size constraints known up-front, intended to be sent to the Event
-/// Hubs service in a single operation. When published, the result is atomic; either all events that
-/// belong to the batch were successful or all have failed. Partial success is not possible.
+/// A set of [`EventData`] with size constraints known up-front.
 #[derive(Debug)]
 pub struct EventDataBatch {
     pub(crate) inner: AmqpEventBatch,
@@ -35,7 +33,7 @@ impl EventDataBatch {
         self.inner.is_empty()
     }
 
-    /// Attempts to add a [`ServiceBusMessage`] to the [`ServiceBusMessageBatch`].
+    /// Attempts to add an [`EventData`] to the [`EventDataBatch`].
     ///
     /// Returns an error if the message is too large to fit in the batch or
     /// if the message fails to serialize. The original message can be recovered

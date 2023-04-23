@@ -9,7 +9,7 @@ use crate::{
 
 #[derive(Debug)]
 pub(crate) enum TokenType {
-    /// The type to consider a token if it is based on an Service Bus shared access signature.
+    /// The type to consider a token if it is based on an Event Hubs shared access signature.
     SharedAccessToken {
         credential: Arc<EventHubTokenCredential>,
     },

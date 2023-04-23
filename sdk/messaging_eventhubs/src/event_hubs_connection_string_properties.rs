@@ -1,4 +1,4 @@
-//! The set of properties that comprise a Service Bus connection string.
+//! The set of properties that comprise a Event Hubs connection string.
 
 use azure_core::Url;
 
@@ -48,7 +48,7 @@ impl IntoAzureCoreError for ToConnectionStringError {
     }
 }
 
-/// The set of properties that comprise a Service Bus connection string.
+/// The set of properties that comprise a Event Hubs connection string.
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct EventHubsConnectionStringProperties<'a> {
     pub(crate) endpoint: Option<url::Url>,
@@ -65,13 +65,13 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
     /// The character used to mark the beginning of a new token/value pair in the connection string.
     const TOKEN_VALUE_PAIR_DELIMITER: char = ';';
 
-    /// The name of the protocol used by an Service Bus endpoint.
+    /// The name of the protocol used by an Event Hubs endpoint.
     const SERVICE_BUS_ENDPOINT_SCHEME_NAME: &'static str = "sb";
 
-    /// The token that identifies the endpoint address for the Service Bus namespace.
+    /// The token that identifies the endpoint address for the Event Hubs namespace.
     const ENDPOINT_TOKEN: &'static str = "Endpoint";
 
-    /// The token that identifies the name of a specific Service Bus entity under the namespace.
+    /// The token that identifies the name of a specific Event Hubs entity under the namespace.
     const EVENT_HUB_NAME_TOKEN: &'static str = "EntityPath";
 
     /// The token that identifies the name of a shared access key.
@@ -83,42 +83,42 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
     /// The token that identifies the value of a shared access signature.
     const SHARED_ACCESS_SIGNATURE_TOKEN: &'static str = "SharedAccessSignature";
 
-    /// The fully qualified Service Bus namespace that the consumer is associated with.  This is
+    /// The fully qualified Event Hubs namespace that the consumer is associated with.  This is
     /// likely to be similar to `"{yournamespace}.servicebus.windows.net"`.
     pub fn fully_qualified_namespace(&self) -> Option<&str> {
         self.endpoint.as_ref().and_then(|url| url.host_str())
     }
 
-    /// The endpoint to be used for connecting to the Service Bus namespace.
+    /// The endpoint to be used for connecting to the Event Hubs namespace.
     pub fn endpoint(&self) -> Option<&Url> {
         self.endpoint.as_ref()
     }
 
-    /// The name of the specific Service Bus entity instance under the associated Service Bus
+    /// The name of the specific Event Hubs entity instance under the associated Event Hubs
     /// namespace.
     pub fn event_hub_name(&self) -> Option<&str> {
         self.event_hub_name
     }
 
-    /// The name of the shared access key, either for the Service Bus namespace or the Service Bus
+    /// The name of the shared access key, either for the Event Hubs namespace or the Event Hubs
     /// entity.
     pub fn shared_access_key_name(&self) -> Option<&str> {
         self.shared_access_key_name
     }
 
-    /// The value of the shared access key, either for the Service Bus namespace or the Service Bus
+    /// The value of the shared access key, either for the Event Hubs namespace or the Event Hubs
     /// entity.
     pub fn shared_access_key(&self) -> Option<&str> {
         self.shared_access_key
     }
 
-    /// The value of the fully-formed shared access signature, either for the Service Bus namespace
-    /// or the Service Bus entity.
+    /// The value of the fully-formed shared access signature, either for the Event Hubs namespace
+    /// or the Event Hubs entity.
     pub fn shared_access_signature(&self) -> Option<&str> {
         self.shared_access_signature
     }
 
-    /// Creates an Service Bus connection string based on this set of
+    /// Creates an Event Hubs connection string based on this set of
     /// [`EventHubsConnectionStringProperties`].
     pub fn to_connection_string(&self) -> Result<String, ToConnectionStringError> {
         let mut s = String::new();
@@ -183,7 +183,7 @@ impl<'a> EventHubsConnectionStringProperties<'a> {
         Ok(s)
     }
 
-    /// Parses the specified Service Bus connection string into its component properties.
+    /// Parses the specified Event Hubs connection string into its component properties.
     pub fn parse(connection_string: &'a str) -> Result<Self, FormatError> {
         if connection_string.is_empty() {
             return Err(FormatError::ConnectionStringIsEmpty);

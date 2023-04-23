@@ -21,7 +21,7 @@ pub trait TransportEventBatch {
     /// Returns true if the batch is empty.
     fn is_empty(&self) -> bool;
 
-    /// Attempts to add a [`ServiceBusMessage`] to the batch.
+    /// Attempts to add a [`EventData`] to the batch.
     fn try_add(&mut self, event: EventData) -> Result<(), Self::TryAddError>;
 
     /// Iterate over the messages in the batch.

@@ -8,9 +8,7 @@ use super::{
     error::TryAddError,
 };
 
-/// A set of [`EventData`] with size constraints known up-front, intended to be
-/// sent to the Queue/Topic as a single batch. A [`EventDataBatch`] can be
-/// created using `ServiceBusSender::create_message_batch()`.
+/// A set of [`EventData`] with size constraints known up-front.
 /// Messages can be added to the batch using the [`try_add`] method on the batch.
 #[derive(Debug, Clone)]
 pub struct AmqpEventBatch {

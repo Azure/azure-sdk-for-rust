@@ -13,7 +13,7 @@ use crate::{
     EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
 };
 
-use super::partition_receiver_options::{PartitionReceiverOptions};
+use super::partition_receiver_options::PartitionReceiverOptions;
 
 /// Allows reading events from a specific partition of an Event Hub, and in the context of a
 /// specific consumer group, to be read with a greater level of control over communication with the
@@ -95,7 +95,13 @@ impl PartitionReceiver<BasicRetryPolicy> {
         options: PartitionReceiverOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .with_connection(consumer_group, partition_id, event_position, connection, options)
+            .with_connection(
+                consumer_group,
+                partition_id,
+                event_position,
+                connection,
+                options,
+            )
             .await
     }
 }
@@ -121,7 +127,14 @@ where
         )
         .await?;
 
-        self.with_connection(consumer_group, partition_id, event_position, connection, options).await
+        self.with_connection(
+            consumer_group,
+            partition_id,
+            event_position,
+            connection,
+            options,
+        )
+        .await
     }
 
     /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
@@ -143,7 +156,14 @@ where
         )
         .await?;
 
-        self.with_connection(consumer_group, partition_id, event_position, connection, options).await
+        self.with_connection(
+            consumer_group,
+            partition_id,
+            event_position,
+            connection,
+            options,
+        )
+        .await
     }
 
     /// Creates a new [`PartitionReceiver`] from an existing [`EventHubConnection`].

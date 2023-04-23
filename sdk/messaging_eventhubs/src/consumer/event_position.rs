@@ -4,7 +4,7 @@ const START_OF_STREAM_OFFSET: &str = "-1";
 const END_OF_STREAM_OFFSET: &str = "@latest";
 
 /// The position of events in an Event Hub partition, typically used in the creation of
-/// an [`EventHubConsumerClient`].
+/// an [`crate::consumer::EventHubConsumerClient`].
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EventPosition {
     /// The offset of the event identified by this position.

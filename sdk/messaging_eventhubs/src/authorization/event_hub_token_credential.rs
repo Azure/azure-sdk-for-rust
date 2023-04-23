@@ -2,7 +2,7 @@ use azure_core::auth::{TokenCredential, TokenResponse};
 
 use super::shared_access_credential::SharedAccessCredential;
 
-/// FIXME: This is an exact copy from the Service Bus crate. This should probably moved
+/// FIXME: This is an exact copy from the Event Hubs crate. This should probably moved
 /// to a common crate.
 pub enum EventHubTokenCredential {
     /// Shared Access Signature credential.
@@ -45,7 +45,7 @@ impl EventHubTokenCredential {
         source.into()
     }
 
-    /// Indicates whether the credential is based on an Service Bus
+    /// Indicates whether the credential is based on an Event Hubs
     /// shared access policy.
     pub fn is_shared_access_credential(&self) -> bool {
         matches!(self, EventHubTokenCredential::SharedAccessCredential(_))
