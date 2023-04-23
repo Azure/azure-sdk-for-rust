@@ -12,13 +12,6 @@ cfg_not_wasm32! {
     pub(crate) type Delay = tokio::time::Sleep;
     pub(crate) type Instant = tokio::time::Instant;
 
-    pub(crate) fn handle_delay_value(
-        _value: <Delay as timer_kit::Delay>::Value,
-        _is_scope_disposed: &mut bool,
-    ) {
-        // There is nothing for non-wasm32 targets
-    }
-
     pub(crate) fn now_utc() -> time::OffsetDateTime {
         time::OffsetDateTime::now_utc()
     }
@@ -27,16 +20,6 @@ cfg_not_wasm32! {
 cfg_wasm32! {
     pub(crate) type Delay = fluvio_wasm_timer::Delay;
     pub(crate) type Instant = fluvio_wasm_timer::Instant;
-
-    pub(crate) fn handle_delay_value(
-        value: <Delay as timer_kit::Delay>::Value,
-        is_scope_disposed: &mut bool,
-    ) {
-        if let Err(err) = value {
-            log::error!("Timer error: {:?}", err);
-            *is_scope_disposed = true;
-        }
-    }
 
     pub(crate) fn now_utc() -> time::OffsetDateTime {
         let js_now = js_sys::Date::new_0();
@@ -50,8 +33,6 @@ pub(crate) use timer_kit::Key;
 
 use super::IntoAzureCoreError;
 pub(crate) type DelayQueue<T> = timer_kit::DelayQueue<Delay, T>;
-
-pub(crate) type Sleep = timer_kit::Sleep<Delay>;
 
 pub(crate) async fn sleep(duration: Duration) -> <Delay as timer_kit::Delay>::Value {
     timer_kit::sleep::<Delay>(duration).await

@@ -36,7 +36,7 @@ use crate::{
     core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
     producer::{
-        PartitionPublishingOptions, PartitionPublishingProperties,
+        PartitionPublishingOptions,
     },
 };
 
@@ -93,9 +93,6 @@ pub(crate) struct AmqpConnectionScope {
 }
 
 impl AmqpConnectionScope {
-    const CONNECTION_IDLE_TIMEOUT: StdDuration = StdDuration::from_secs(60);
-    const AUTHORIZATION_REFRESH_TIMEOUT: StdDuration = StdDuration::from_secs(60 * 7);
-
     /// The amount of buffer to apply when considering an authorization token
     /// to be expired.  The token's actual expiration will be decreased by this
     /// amount, ensuring that it is renewed before it has expired.
@@ -295,41 +292,11 @@ impl AmqpConnectionScope {
             )
             .await?;
 
-        let initialized_partition_properties = sender.properties(|properties| {
-            let producer_group_id = properties
-                .as_ref()
-                .and_then(|p| p.get(amqp_property::PRODUCER_GROUP_ID.as_str()))
-                .and_then(|value| match value {
-                    Value::Long(v) => Some(*v),
-                    _ => None,
-                });
-            let owner_level = properties
-                .as_ref()
-                .and_then(|p| p.get(amqp_property::PRODUCER_OWNER_LEVEL.as_str()))
-                .and_then(|value| match value {
-                    Value::Short(v) => Some(*v),
-                    _ => None,
-                });
-            let starting_sequence_number = properties
-                .as_ref()
-                .and_then(|p| p.get(amqp_property::PRODUCER_SEQUENCE_NUMBER.as_str()))
-                .and_then(|value| match value {
-                    Value::Int(v) => Some(*v),
-                    _ => None,
-                });
-            PartitionPublishingProperties {
-                producer_group_id,
-                owner_level,
-                last_published_sequence_number: starting_sequence_number,
-            }
-        });
-
         Ok(AmqpProducer {
             session_handle,
-            session_identifier,
+            _session_identifier: session_identifier,
             sender,
             link_identifier,
-            initialized_partition_properties,
             retry_policy,
             endpoint: producer_endpoint,
             cbs_command_sender: self.cbs_link_handle.command_sender().clone(),
@@ -443,7 +410,7 @@ impl AmqpConnectionScope {
             .await?;
         Ok(AmqpConsumer {
             session_handle,
-            session_identifier,
+            _session_identifier: session_identifier,
             receiver,
             link_identifier,
             track_last_enqueued_event_properties,

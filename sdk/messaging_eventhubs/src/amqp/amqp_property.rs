@@ -39,8 +39,10 @@ pub(crate) const PRODUCER_SEQUENCE_NUMBER: SymbolRef = SymbolRef(concatcp!(
     ":producer-sequence-number"
 ));
 
-/// The timeout to associate with a link.
-pub(crate) const TIMEOUT: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":timeout"));
+// /// The timeout to associate with a link.
+// ///
+// /// TODO: Should user be able to customize link timeout value?
+// pub(crate) const TIMEOUT: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":timeout"));
 
 /// The date and time, in UTC, that a message was enqueued.
 pub(crate) const ENQUEUED_TIME: SymbolRef = SymbolRef("x-opt-enqueued-time");
@@ -69,25 +71,25 @@ pub(crate) const PARTITION_LAST_ENQUEUED_TIME_UTC: SymbolRef = SymbolRef("last_e
 pub(crate) const LAST_PARTITION_PROPERTIES_RETRIEVAL_TIME_UTC: SymbolRef =
     SymbolRef("runtime_info_retrieval_time_utc");
 
-/// The set of descriptors for well-known <see cref="DescribedType" />
-/// property types.
-pub(crate) mod descriptor {
-    use const_format::concatcp;
-    use serde_amqp::primitives::SymbolRef;
+// /// The set of descriptors for well-known <see cref="DescribedType" />
+// /// property types.
+// pub(crate) mod descriptor {
+//     use const_format::concatcp;
+//     use serde_amqp::primitives::SymbolRef;
 
-    use crate::amqp::amqp_constants;
+//     use crate::amqp::amqp_constants;
 
-    /// The type annotation for representing a `TimeSpan` in a message.
-    pub(crate) const TIME_SPAN: SymbolRef =
-        SymbolRef(concatcp!(amqp_constants::VENDOR, ":timespan"));
+//     /// The type annotation for representing a `TimeSpan` in a message.
+//     pub(crate) const TIME_SPAN: SymbolRef =
+//         SymbolRef(concatcp!(amqp_constants::VENDOR, ":timespan"));
 
-    /// The type annotation for representing a `Url` in a message.
-    pub(crate) const URI: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":uri"));
+//     /// The type annotation for representing a `Url` in a message.
+//     pub(crate) const URI: SymbolRef = SymbolRef(concatcp!(amqp_constants::VENDOR, ":uri"));
 
-    /// The type annotation for representing a `OffsetDateTime` in a message.
-    pub(crate) const DATE_TIME_OFFSET: SymbolRef =
-        SymbolRef(concatcp!(amqp_constants::VENDOR, ":datetime-offset"));
-}
+//     /// The type annotation for representing a `OffsetDateTime` in a message.
+//     pub(crate) const DATE_TIME_OFFSET: SymbolRef =
+//         SymbolRef(concatcp!(amqp_constants::VENDOR, ":datetime-offset"));
+// }
 
 /// Represents the entity mapping for AMQP properties between the client library and
 /// the Event Hubs service.
@@ -100,6 +102,7 @@ pub(crate) mod descriptor {
 ///
 /// When adding a new member, remember to always do so before the Unknown
 /// member.
+#[allow(dead_code)]
 pub(crate) enum Entity {
     Namespace = 4,
     EventHub = 7,
@@ -107,40 +110,4 @@ pub(crate) enum Entity {
     Partition = 9,
     Checkpoint = 10,
     Unknown = 0x7FFFFFFE,
-}
-
-/// Represents the type mapping for AMQP properties between the client library and
-/// the Event Hubs service.
-///
-/// # WARNING:
-///
-/// These values are synchronized between the Event Hubs service and the client
-/// library.  You must consult with the Event Hubs service team before making
-/// changes, including adding a new member.
-///
-/// When adding a new member, remember to always do so before the Unknown
-/// member.
-pub(crate) enum Type {
-    Null,
-    Byte,
-    SByte,
-    Char,
-    Int16,
-    UInt16,
-    Int32,
-    UInt32,
-    Int64,
-    UInt64,
-    Single,
-    Double,
-    Decimal,
-    Boolean,
-    Guid,
-    String,
-    Uri,
-    DateTime,
-    DateTimeOffset,
-    TimeSpan,
-    Stream,
-    Unknown,
 }

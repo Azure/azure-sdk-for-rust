@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tokio::sync::watch;
 
 use super::{LastEnqueuedEventProperties, PartitionEvent};
@@ -11,18 +13,35 @@ use super::{LastEnqueuedEventProperties, PartitionEvent};
 /// can be achieved by using a `tokio::sync::watch` channel.
 #[derive(Debug)]
 pub struct PartitionContext {
-    pub(crate) fully_qualified_namespace: String,
-    pub(crate) event_hub_name: String,
-    pub(crate) consumer_group: String,
-    pub(crate) partition_id: String,
+    pub(crate) fully_qualified_namespace: Arc<String>,
+    pub(crate) event_hub_name: Arc<String>,
+    pub(crate) consumer_group: Arc<String>,
+    pub(crate) partition_id: Arc<String>,
     pub(crate) watch_last_received_event: watch::Receiver<Option<PartitionEvent>>,
 }
 
 impl PartitionContext {
+    /// The fully qualified Event Hubs namespace that this context is associated with.
+    pub fn fully_qualified_namespace(&self) -> &str {
+        &self.fully_qualified_namespace
+    }
+
+    pub fn event_hub_name(&self) -> &str {
+        &self.event_hub_name
+    }
+
+    pub fn consumer_group(&self) -> &str {
+        &self.consumer_group
+    }
+
+    pub fn partition_id(&self) -> &str {
+        &self.partition_id
+    }
+
     /// A set of information about the last enqueued event of a partition, as observed by the associated EventHubs client
     /// associated with this context as events are received from the Event Hubs service.  This is only available if the consumer was
     /// created with [`ReadEventOptions::track_last_enqueued_event_properties`] set.
-    fn read_last_enqueued_event_properties(&self) -> LastEnqueuedEventProperties {
+    pub fn read_last_enqueued_event_properties(&self) -> LastEnqueuedEventProperties {
         let last_enqueued_event = self.watch_last_received_event.borrow();
         let sequence_number = last_enqueued_event
             .as_ref()

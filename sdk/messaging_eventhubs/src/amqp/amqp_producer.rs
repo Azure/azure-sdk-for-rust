@@ -10,7 +10,6 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{
         CreateBatchOptions,
-        PartitionPublishingProperties,
         SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT,
     },
     util::{self, sharable::Sharable},
@@ -32,10 +31,13 @@ use super::{
 
 pub struct AmqpProducer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
-    pub(crate) session_identifier: u32,
+    pub(crate) _session_identifier: u32,
     pub(crate) sender: Sender,
     pub(crate) link_identifier: u32,
-    pub(crate) initialized_partition_properties: PartitionPublishingProperties,
+
+    // /// TODO: this is only useful for idempotent sending, which won't be implemented in the current plan
+    // pub(crate) initialized_partition_properties: PartitionPublishingProperties,
+
     pub(crate) retry_policy: RP,
     pub(crate) endpoint: Url,
     pub(crate) cbs_command_sender: mpsc::Sender<Command>,

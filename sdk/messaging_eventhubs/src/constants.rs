@@ -4,9 +4,9 @@ use time::OffsetDateTime;
 
 pub(crate) const MAX_MESSAGE_ID_LENGTH: usize = 128;
 
-pub(crate) const MAX_PARTITION_KEY_LENGTH: usize = 128;
+// pub(crate) const MAX_PARTITION_KEY_LENGTH: usize = 128;
 
-pub(crate) const MAX_SESSION_ID_LENGTH: usize = 128;
+// pub(crate) const MAX_SESSION_ID_LENGTH: usize = 128;
 
 // pub(crate) const PATH_DELIMITER: &str = r#"/"#;
 
@@ -20,7 +20,7 @@ pub(crate) const MAX_SESSION_ID_LENGTH: usize = 128;
 
 // pub(crate) const MAX_DEAD_LETTER_REASON_LENGTH: usize = 4096;
 
-pub(crate) const DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER: i64 = 0;
+// pub(crate) const DEFAULT_LAST_PEEKED_SEQUENCE_NUMBER: i64 = 0;
 
 // pub(crate) const DEFAULT_OPERATION_TIMEOUT: TimeSpan = TimeSpan::minutes(1);
 
@@ -50,5 +50,5 @@ pub(crate) const JSON_WEB_TOKEN_TYPE: &str = "jwt";
 pub(crate) const DEFAULT_OFFSET_DATE_TIME: OffsetDateTime =
     time::macros::datetime!(0001-01-01 12:00:00 AM +00:00);
 
-pub(crate) const MAX_OFFSET_DATE_TIME: OffsetDateTime =
-    time::macros::datetime!(9999-12-31 11:59:59 PM +00:00);
+// pub(crate) const MAX_OFFSET_DATE_TIME: OffsetDateTime =
+//     time::macros::datetime!(9999-12-31 11:59:59 PM +00:00);

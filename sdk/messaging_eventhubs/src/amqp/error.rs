@@ -492,10 +492,6 @@ pub enum AmqpSendError {
     /// The operation timed out
     #[error(transparent)]
     Elapsed(#[from] Elapsed),
-
-    /// Connection scope is disposed
-    #[error("Connection scope is disposed")]
-    ConnectionScopeDisposed,
 }
 
 impl IntoAzureCoreError for AmqpSendError {
@@ -504,9 +500,6 @@ impl IntoAzureCoreError for AmqpSendError {
             AmqpSendError::Send(err) => err.into_azure_core_error(),
             AmqpSendError::NotAccepted(err) => err.into_azure_core_error(),
             AmqpSendError::Elapsed(err) => err.into_azure_core_error(),
-            AmqpSendError::ConnectionScopeDisposed => {
-                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
-            }
         }
     }
 }
@@ -517,12 +510,11 @@ impl RecoverableError for AmqpSendError {
             AmqpSendError::Send(_) => true,
             AmqpSendError::NotAccepted(_) => false,
             AmqpSendError::Elapsed(_) => true,
-            AmqpSendError::ConnectionScopeDisposed => false,
         }
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, AmqpSendError::ConnectionScopeDisposed)
+        false
     }
 }
 
@@ -655,7 +647,6 @@ impl From<AmqpSendError> for RecoverAndSendError {
             AmqpSendError::Send(err) => err.into(),
             AmqpSendError::NotAccepted(err) => err.into(),
             AmqpSendError::Elapsed(err) => err.into(),
-            AmqpSendError::ConnectionScopeDisposed => RecoverAndSendError::ConnectionScopeDisposed,
         }
     }
 }

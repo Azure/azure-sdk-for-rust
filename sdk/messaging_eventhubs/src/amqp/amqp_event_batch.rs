@@ -103,12 +103,6 @@ mod tests {
     /// The amount of bytes to reserve as overhead for a small message.
     const OVERHEAD_BYTES_SMALL_MESSAGE: usize = 5;
 
-    /// The amount of bytes to reserve as overhead for a large message.
-    const OVERHEAD_BYTES_LARGE_MESSAGE: usize = 8;
-
-    /// The maximum number of bytes that a message may be to be considered small.
-    const MAXIMUM_BYTES_SMALL_MESSAGE: usize = 255;
-
     #[test]
     fn new_sets_max_size_in_bytes() {
         let options = CreateBatchOptions::default();

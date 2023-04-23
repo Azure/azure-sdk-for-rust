@@ -16,8 +16,6 @@ use serde_amqp::to_vec;
 
 use super::amqp_constants;
 
-pub(crate) const LOCK_TOKEN_DELIVERY_ANNOTATION: &str = "x-opt-lock-token";
-
 /// State of a batch envelope. Delivery is not considered complete until the envelope is settled.
 ///
 /// The AMQP sender will keep the message in its internal unsettled map until the delivery is
@@ -54,23 +52,6 @@ pub(crate) enum SendableEnvelope {
 pub(crate) struct BatchEnvelope {
     pub state: BatchEnvelopeState,
     pub sendable: SendableEnvelope,
-}
-
-pub(crate) fn create_envelope_from_event(
-    event: EventData,
-    partition_key: Option<String>,
-) -> BatchEnvelope {
-    let message = build_amqp_message_from_event(event, partition_key);
-    let sendable = Sendable {
-        message,
-        message_format: Default::default(),
-        settled: Default::default(),
-    };
-
-    BatchEnvelope {
-        state: BatchEnvelopeState::NotSent,
-        sendable: SendableEnvelope::Single(sendable),
-    }
 }
 
 pub(crate) fn create_envelope_from_events(

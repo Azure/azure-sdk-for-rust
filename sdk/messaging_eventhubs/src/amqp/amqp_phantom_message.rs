@@ -199,42 +199,6 @@ impl<T> PhantomMessage<T> {
             + self.body.serialized_len
             + self.footer.serialized_len
     }
-
-    pub(crate) fn map_body<F, U>(self, f: F) -> PhantomMessage<U>
-    where
-        F: FnOnce(Phantom<T>) -> Phantom<U>,
-    {
-        PhantomMessage {
-            header: self.header,
-            delivery_annotations: self.delivery_annotations,
-            message_annotations: self.message_annotations,
-            properties: self.properties,
-            application_properties: self.application_properties,
-            body: f(self.body),
-            footer: self.footer,
-        }
-    }
-}
-
-impl PhantomMessage<Batch<Data>> {
-    // pub(crate) fn map_body_from_data(source: PhantomMessage<Data>) -> Self {
-    //     let body = {
-    //         let message_size = source.body.serialized_len;
-    //         let mut batch = Phantom::try_from(&Batch::new(Vec::with_capacity(0))).unwrap();
-    //         batch.push(Phantom::with_message_size(message_size).unwrap());
-    //         batch
-    //     };
-
-    //     Self {
-    //         header: source.header,
-    //         delivery_annotations: source.delivery_annotations,
-    //         message_annotations: source.message_annotations,
-    //         properties: source.properties,
-    //         application_properties: source.application_properties,
-    //         body,
-    //         footer: source.footer,
-    //     }
-    // }
 }
 
 impl<'a> TryFrom<&'a Message<Data>> for PhantomMessage<Data> {

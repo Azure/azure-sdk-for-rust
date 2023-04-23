@@ -6,14 +6,14 @@ use std::{
 };
 
 use fe2o3_amqp::{link::RecvError, session::SessionHandle, Receiver};
-use futures_util::{future::poll_fn, ready, Future, FutureExt, SinkExt, Stream};
+use futures_util::{future::poll_fn, ready, Future, FutureExt, Stream};
 use tokio::sync::mpsc;
 
 use url::Url;
 
 use crate::{
     consumer::EventPosition,
-    core::{RecoverableError, RecoverableTransport, TransportClient, TransportConsumer},
+    core::{RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     util::{self, sharable::Sharable},
     ReceivedEventData,
@@ -29,7 +29,7 @@ pub(crate) mod multiple;
 
 pub struct AmqpConsumer<RP> {
     pub(crate) session_handle: SessionHandle<()>,
-    pub(crate) session_identifier: u32,
+    pub(crate) _session_identifier: u32,
     pub(crate) endpoint: Url,
     pub(crate) receiver: Receiver,
     pub(crate) link_identifier: u32,
