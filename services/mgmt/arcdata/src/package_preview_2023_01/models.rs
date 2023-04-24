@@ -3,36 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "The information about each failover group replica."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgReplicas {
-    #[doc = "The health state of the replica."]
-    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
-    pub health_state: Option<String>,
-    #[doc = "The replica name."]
-    #[serde(rename = "replicaName", default, skip_serializing_if = "Option::is_none")]
-    pub replica_name: Option<String>,
-    #[doc = "The role of the replica."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
-    #[doc = "The connected state of the replica."]
-    #[serde(rename = "connectedState", default, skip_serializing_if = "Option::is_none")]
-    pub connected_state: Option<String>,
-    #[doc = "The synchronization state of the availability group replicas."]
-    #[serde(rename = "synchronizationState", default, skip_serializing_if = "Option::is_none")]
-    pub synchronization_state: Option<String>,
-    #[doc = "The availability mode of the replica."]
-    #[serde(rename = "availabilityMode", default, skip_serializing_if = "Option::is_none")]
-    pub availability_mode: Option<String>,
-    #[doc = "The secondary role allowed connections."]
-    #[serde(rename = "secondaryRoleAllowConnections", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_role_allow_connections: Option<String>,
-}
-impl AgReplicas {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "DNS server details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectoryConnectorDnsDetails {
@@ -577,9 +547,9 @@ pub struct FailoverGroupProperties {
     pub partner_managed_instance_id: String,
     #[doc = "The specifications of the failover group resource."]
     pub spec: FailoverGroupSpec,
-    #[doc = "The status of the Kubernetes custom resource."]
+    #[doc = "The status of the failover group custom resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<FailoverGroupStatus>,
+    pub status: Option<serde_json::Value>,
 }
 impl FailoverGroupProperties {
     pub fn new(partner_managed_instance_id: String, spec: FailoverGroupSpec) -> Self {
@@ -782,124 +752,6 @@ pub mod failover_group_spec {
     impl Default for Role {
         fn default() -> Self {
             Self::Primary
-        }
-    }
-}
-#[doc = "The status of the Kubernetes custom resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct FailoverGroupStatus {
-    #[doc = "The time that the custom resource was last updated."]
-    #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time: Option<time::OffsetDateTime>,
-    #[doc = "The version of the replicaSet associated with the failover group custom resource."]
-    #[serde(rename = "observedGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub observed_generation: Option<i64>,
-    #[doc = "The state of the failover group custom resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<failover_group_status::State>,
-    #[doc = "The message in case of a failure in the failover group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub results: Option<String>,
-    #[doc = "The role of the managed instance in the failover group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<failover_group_status::Role>,
-    #[doc = "A list of failover group replicas."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub replicas: Vec<AgReplicas>,
-}
-impl FailoverGroupStatus {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod failover_group_status {
-    use super::*;
-    #[doc = "The state of the failover group custom resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "State")]
-    pub enum State {
-        Waiting,
-        Succeeded,
-        Failed,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for State {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for State {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for State {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Waiting => serializer.serialize_unit_variant("State", 0u32, "Waiting"),
-                Self::Succeeded => serializer.serialize_unit_variant("State", 1u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("State", 2u32, "Failed"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The role of the managed instance in the failover group."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Role")]
-    pub enum Role {
-        #[serde(rename = "primary")]
-        Primary,
-        #[serde(rename = "secondary")]
-        Secondary,
-        #[serde(rename = "force-primary-allow-data-loss")]
-        ForcePrimaryAllowDataLoss,
-        #[serde(rename = "force-secondary")]
-        ForceSecondary,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Role {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Role {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Role {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Primary => serializer.serialize_unit_variant("Role", 0u32, "primary"),
-                Self::Secondary => serializer.serialize_unit_variant("Role", 1u32, "secondary"),
-                Self::ForcePrimaryAllowDataLoss => serializer.serialize_unit_variant("Role", 2u32, "force-primary-allow-data-loss"),
-                Self::ForceSecondary => serializer.serialize_unit_variant("Role", 3u32, "force-secondary"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
         }
     }
 }

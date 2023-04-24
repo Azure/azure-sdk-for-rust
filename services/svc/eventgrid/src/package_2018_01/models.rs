@@ -5039,6 +5039,85 @@ impl StorageLifecyclePolicyCompletedEventData {
         Self::default()
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskCompleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTaskCompletedEventData {
+    #[doc = "The status for a storage task."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<storage_task_completed_event_data::Status>,
+    #[doc = "The time at which a storage task was completed."]
+    #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub completed_date_time: Option<time::OffsetDateTime>,
+    #[doc = "The execution id for a storage task."]
+    #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub task_execution_id: Option<String>,
+    #[doc = "The task name for a storage task."]
+    #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
+    pub task_name: Option<String>,
+    #[doc = "The summary report blob url for a storage task"]
+    #[serde(rename = "summaryReportBlobUrl", default, skip_serializing_if = "Option::is_none")]
+    pub summary_report_blob_url: Option<String>,
+}
+impl StorageTaskCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod storage_task_completed_event_data {
+    use super::*;
+    #[doc = "The status for a storage task."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Succeeded,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("Status", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 1u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Storage.StorageTaskQueued event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTaskQueuedEventData {
+    #[doc = "The time at which a storage task was queued."]
+    #[serde(rename = "queuedDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub queued_date_time: Option<time::OffsetDateTime>,
+    #[doc = "The execution id for a storage task."]
+    #[serde(rename = "taskExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub task_execution_id: Option<String>,
+}
+impl StorageTaskQueuedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SubscriptionDeletedEvent event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDeletedEventData {

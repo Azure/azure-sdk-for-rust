@@ -532,7 +532,7 @@ pub struct HierarchySettingsList {
     )]
     pub value: Vec<HierarchySettingsInfo>,
     #[doc = "The URL to use for getting the next set of results."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 impl HierarchySettingsList {
@@ -715,7 +715,7 @@ pub struct ManagementGroupListResult {
     )]
     pub value: Vec<ManagementGroupInfo>,
     #[doc = "The URL to use for getting the next set of results."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 impl azure_core::Continuable for ManagementGroupListResult {

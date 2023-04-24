@@ -1025,6 +1025,70 @@ impl FirewallResourceUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Firewall Status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FirewallStatusProperty {
+    #[doc = "Boolean Enum"]
+    #[serde(rename = "isPanoramaManaged", default, skip_serializing_if = "Option::is_none")]
+    pub is_panorama_managed: Option<BooleanEnum>,
+    #[doc = "Status Codes for the Firewall"]
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    pub health_status: Option<HealthStatus>,
+    #[doc = "Detail description of current health of the Firewall"]
+    #[serde(rename = "healthReason", default, skip_serializing_if = "Option::is_none")]
+    pub health_reason: Option<String>,
+    #[doc = "Panorama connectivity information"]
+    #[serde(rename = "panoramaStatus", default, skip_serializing_if = "Option::is_none")]
+    pub panorama_status: Option<PanoramaStatus>,
+    #[doc = "Provisioning state of the firewall resource."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ReadOnlyProvisioningState>,
+}
+impl FirewallStatusProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Firewall Status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirewallStatusResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Firewall Status"]
+    pub properties: FirewallStatusProperty,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl FirewallStatusResource {
+    pub fn new(properties: FirewallStatusProperty) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            system_data: None,
+        }
+    }
+}
+#[doc = "The response of a FirewallStatusResource list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirewallStatusResourceListResult {
+    #[doc = "The items on this page"]
+    pub value: Vec<FirewallStatusResource>,
+    #[doc = "The link to the next page of items"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FirewallStatusResourceListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl FirewallStatusResourceListResult {
+    pub fn new(value: Vec<FirewallStatusResource>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[doc = "GlobalRulestack fqdnList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FqdnListGlobalRulestackResource {
@@ -1277,6 +1341,51 @@ pub struct GlobalRulestackResourceUpdateProperties {
 impl GlobalRulestackResourceUpdateProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Status Codes for the Firewall"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "HealthStatus")]
+pub enum HealthStatus {
+    #[serde(rename = "GREEN")]
+    Green,
+    #[serde(rename = "YELLOW")]
+    Yellow,
+    #[serde(rename = "RED")]
+    Red,
+    #[serde(rename = "INITIALIZING")]
+    Initializing,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for HealthStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for HealthStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for HealthStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Green => serializer.serialize_unit_variant("HealthStatus", 0u32, "GREEN"),
+            Self::Yellow => serializer.serialize_unit_variant("HealthStatus", 1u32, "YELLOW"),
+            Self::Red => serializer.serialize_unit_variant("HealthStatus", 2u32, "RED"),
+            Self::Initializing => serializer.serialize_unit_variant("HealthStatus", 3u32, "INITIALIZING"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "IP Address"]
@@ -1995,6 +2104,21 @@ impl PanoramaConfig {
         }
     }
 }
+#[doc = "Panorama connectivity information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PanoramaStatus {
+    #[doc = "Connectivity Status for Panorama Server"]
+    #[serde(rename = "panoramaServerStatus", default, skip_serializing_if = "Option::is_none")]
+    pub panorama_server_status: Option<ServerStatus>,
+    #[doc = "Connectivity Status for Panorama Server"]
+    #[serde(rename = "panoramaServer2Status", default, skip_serializing_if = "Option::is_none")]
+    pub panorama_server2_status: Option<ServerStatus>,
+}
+impl PanoramaStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Billing plan information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlanData {
@@ -2337,6 +2461,45 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Provisioning state of the firewall resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ReadOnlyProvisioningState")]
+pub enum ReadOnlyProvisioningState {
+    Succeeded,
+    Failed,
+    Deleted,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ReadOnlyProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ReadOnlyProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ReadOnlyProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("ReadOnlyProvisioningState", 0u32, "Succeeded"),
+            Self::Failed => serializer.serialize_unit_variant("ReadOnlyProvisioningState", 1u32, "Failed"),
+            Self::Deleted => serializer.serialize_unit_variant("ReadOnlyProvisioningState", 2u32, "Deleted"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -2675,6 +2838,45 @@ impl Serialize for SecurityServicesTypeEnum {
             Self::UrlFiltering => serializer.serialize_unit_variant("SecurityServicesTypeEnum", 3u32, "urlFiltering"),
             Self::FileBlocking => serializer.serialize_unit_variant("SecurityServicesTypeEnum", 4u32, "fileBlocking"),
             Self::DnsSubscription => serializer.serialize_unit_variant("SecurityServicesTypeEnum", 5u32, "dnsSubscription"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Connectivity Status for Panorama Server"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ServerStatus")]
+pub enum ServerStatus {
+    #[serde(rename = "UP")]
+    Up,
+    #[serde(rename = "DOWN")]
+    Down,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ServerStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ServerStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ServerStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Up => serializer.serialize_unit_variant("ServerStatus", 0u32, "UP"),
+            Self::Down => serializer.serialize_unit_variant("ServerStatus", 1u32, "DOWN"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

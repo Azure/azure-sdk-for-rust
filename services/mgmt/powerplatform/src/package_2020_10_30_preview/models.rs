@@ -253,6 +253,45 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The health status of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "HealthStatus")]
+pub enum HealthStatus {
+    Undetermined,
+    Healthy,
+    Unhealthy,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for HealthStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for HealthStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for HealthStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Undetermined => serializer.serialize_unit_variant("HealthStatus", 0u32, "Undetermined"),
+            Self::Healthy => serializer.serialize_unit_variant("HealthStatus", 1u32, "Healthy"),
+            Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 2u32, "Unhealthy"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Settings concerning key vault encryption for a configuration store."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
@@ -725,6 +764,9 @@ pub struct Properties {
     #[doc = "Settings concerning network injection."]
     #[serde(rename = "networkInjection", default, skip_serializing_if = "Option::is_none")]
     pub network_injection: Option<properties::NetworkInjection>,
+    #[doc = "The health status of the resource."]
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    pub health_status: Option<HealthStatus>,
 }
 impl Properties {
     pub fn new() -> Self {

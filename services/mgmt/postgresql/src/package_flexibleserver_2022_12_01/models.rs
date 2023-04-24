@@ -1337,11 +1337,7 @@ impl ProxyResource {
 pub enum ReplicationRole {
     None,
     Primary,
-    Secondary,
-    WalReplica,
-    SyncReplica,
     AsyncReplica,
-    GeoSyncReplica,
     GeoAsyncReplica,
     #[serde(skip_deserializing)]
     UnknownValue(String),
@@ -1370,12 +1366,8 @@ impl Serialize for ReplicationRole {
         match self {
             Self::None => serializer.serialize_unit_variant("ReplicationRole", 0u32, "None"),
             Self::Primary => serializer.serialize_unit_variant("ReplicationRole", 1u32, "Primary"),
-            Self::Secondary => serializer.serialize_unit_variant("ReplicationRole", 2u32, "Secondary"),
-            Self::WalReplica => serializer.serialize_unit_variant("ReplicationRole", 3u32, "WalReplica"),
-            Self::SyncReplica => serializer.serialize_unit_variant("ReplicationRole", 4u32, "SyncReplica"),
-            Self::AsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 5u32, "AsyncReplica"),
-            Self::GeoSyncReplica => serializer.serialize_unit_variant("ReplicationRole", 6u32, "GeoSyncReplica"),
-            Self::GeoAsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 7u32, "GeoAsyncReplica"),
+            Self::AsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 2u32, "AsyncReplica"),
+            Self::GeoAsyncReplica => serializer.serialize_unit_variant("ReplicationRole", 3u32, "GeoAsyncReplica"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -2131,7 +2123,6 @@ pub mod user_assigned_identity {
     #[serde(remote = "Type")]
     pub enum Type {
         None,
-        SystemAssigned,
         UserAssigned,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -2159,8 +2150,7 @@ pub mod user_assigned_identity {
         {
             match self {
                 Self::None => serializer.serialize_unit_variant("Type", 0u32, "None"),
-                Self::SystemAssigned => serializer.serialize_unit_variant("Type", 1u32, "SystemAssigned"),
-                Self::UserAssigned => serializer.serialize_unit_variant("Type", 2u32, "UserAssigned"),
+                Self::UserAssigned => serializer.serialize_unit_variant("Type", 1u32, "UserAssigned"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

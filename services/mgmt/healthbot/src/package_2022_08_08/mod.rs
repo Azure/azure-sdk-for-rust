@@ -499,6 +499,7 @@ pub mod bots {
             pub(crate) parameters: models::HealthBotUpdateParameters,
         }
         impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]

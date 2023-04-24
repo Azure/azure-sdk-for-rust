@@ -1427,7 +1427,7 @@ impl NetworkSecurityPerimeter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityPerimeterConfiguration {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of NetworkSecurityPerimeterConfiguration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkSecurityPerimeterConfigurationProperties>,
