@@ -1,4 +1,6 @@
 [tags]
 deny = [
-   "2023-01-01-preview"
+   "2023-01-01-preview",
+   # data did not match any variant of untagged enum ReferenceOr
+   "2023-04-01",
 ]
