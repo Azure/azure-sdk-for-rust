@@ -1,7 +1,17 @@
 [package]
-name = "messaging_eventhubs"
+name = "azeventhubs"
 version = "0.1.0"
 edition = "2021"
+description = "An unofficial AMQP 1.0 rust client for Azure Event Hubs"
+readme = "README.md"
+authors = ["Minghua Wu"]
+license = "MIT"
+repository = "https://github.com/minghuaw/azure-sdk-for-rust/tree/separate_eventhubs_crate/sdk/messaging_eventhubs"
+homepage = "https://github.com/minghuaw/azure-sdk-for-rust/tree/separate_eventhubs_crate/sdk/messaging_eventhubs"
+documentation = "https://docs.rs/azeventhubs"
+
+categories = ["api-bindings"]
+keywords = ["sdk", "azure", "eventhubs", "amqp", "cloud"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -25,7 +35,7 @@ pin-project-lite = "0.2.9"
 serde = "1"
 
 # Azure dependencies
-azure_core = { path = "../core" }
+azure_core = { path = "../core", version = "0.11" }
 
 # AMQP dependencies
 fe2o3-amqp = { version = "0.8.22" }
