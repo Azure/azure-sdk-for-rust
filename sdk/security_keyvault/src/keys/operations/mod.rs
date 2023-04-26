@@ -1,8 +1,10 @@
 mod decrypt;
 mod encrypt;
 mod get_key;
+mod get_random_bytes;
 mod sign;
 pub use decrypt::*;
 pub use encrypt::*;
 pub use get_key::*;
+pub use get_random_bytes::*;
 pub use sign::*;
