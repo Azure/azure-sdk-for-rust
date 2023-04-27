@@ -88,10 +88,10 @@ impl KeyClient {
 
     /// Get the requested number of bytes containing random values from a managed HSM.
     ///
-    /// `count` is limited to 128 bytes.
+    /// The `count` parameter is limited to a range between 1 and 128 inclusive.
     ///
-    /// This operation requires the rng permission to HSM. And this operation is
-    /// valid only for clients built using HSM urls.
+    /// This operation requires the `rng` permission to be granted to the HSM. Furthermore,
+    /// it is only valid for clients that have been built using HSM URLs.
     ///
     /// POST {managedHsmBaseUrl}/rng?api-version=7.4
     pub fn get_random_bytes<N>(&self, hsm_name: N, count: u8) -> GetRandomBytesBuilder
