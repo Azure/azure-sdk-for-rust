@@ -4,15 +4,15 @@ use serde_json::{Map, Value};
 
 operation! {
     GetRandomBytes,
-    client: ManagedHsmClient,
+    client: KeyClient,
     hsm_name: String,
-    count: u32,
+    count: u8,
 }
 
 impl GetRandomBytesBuilder {
     pub fn into_future(mut self) -> GetRandomBytes {
         Box::pin(async move {
-            // POST {HSMBaseUrl}//rng?api-version=7.2
+            // POST {HSMBaseUrl}//rng?api-version=7.4
             let vault_url = format!("https://{}.managedhsm.azure.net/", self.hsm_name);
             let mut uri = url::Url::parse(&vault_url)?;
             let path = "rng".to_string();
