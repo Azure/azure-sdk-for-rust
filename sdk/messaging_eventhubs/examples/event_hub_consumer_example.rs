@@ -1,7 +1,7 @@
-use futures_util::StreamExt;
-use messaging_eventhubs::consumer::{
+use azeventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
+use futures_util::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

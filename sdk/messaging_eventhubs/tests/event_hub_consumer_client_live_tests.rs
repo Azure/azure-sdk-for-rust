@@ -1,12 +1,12 @@
 #![cfg(all(test, feature = "test_e2e"))]
 
-use futures_util::StreamExt;
-use messaging_eventhubs::{
+use azeventhubs::{
     consumer::{
         EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
     },
     EventHubsRetryOptions, MaxRetries,
 };
+use futures_util::StreamExt;
 
 #[macro_use]
 mod cfg;

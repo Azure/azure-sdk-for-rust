@@ -10,7 +10,7 @@
 //! ## Event Hub Producer Example
 //!
 //! ```no_run
-//! use messaging_eventhubs::producer::{
+//! use azeventhubs::producer::{
 //! EventHubProducerClient, EventHubProducerClientOptions, SendEventOptions,
 //! };
 //!
@@ -39,7 +39,7 @@
 //!
 //! ```no_run
 //! use futures_util::StreamExt;
-//! use messaging_eventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
+//! use azeventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {

@@ -1,6 +1,6 @@
 [package]
 name = "azeventhubs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "An unofficial AMQP 1.0 rust client for Azure Event Hubs"
 readme = "README.md"

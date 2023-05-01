@@ -1,4 +1,4 @@
-use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions};
+use azeventhubs::{EventHubConnection, EventHubConnectionOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

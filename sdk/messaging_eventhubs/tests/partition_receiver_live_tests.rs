@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 
-use messaging_eventhubs::{
+use azeventhubs::{
     consumer::{EventHubConsumerClient, EventPosition},
     primitives::PartitionReceiver,
 };

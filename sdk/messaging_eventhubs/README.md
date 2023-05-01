@@ -1,4 +1,4 @@
-# messaging_eventhubs
+# azeventhubs
 
 An unofficial and experimental Azure Event Hubs client library for Rust.
 
@@ -12,7 +12,7 @@ development, and not all features are implemented yet.
 ### Event Hub Producer Example
 
 ```rust
-use messaging_eventhubs::producer::{
+use azeventhubs::producer::{
 EventHubProducerClient, EventHubProducerClientOptions, SendEventOptions,
 };
 
@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```rust
 use futures_util::StreamExt;
-use messaging_eventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
+use azeventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -124,3 +124,5 @@ This crate supports the following feature flags:
 ## WebAssembly Support
 
 WebAssembly is **NOT** supported yet.
+
+License: MIT
