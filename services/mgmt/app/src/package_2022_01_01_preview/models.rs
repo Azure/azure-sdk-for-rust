@@ -2954,7 +2954,7 @@ pub struct VnetConfiguration {
     #[doc = "Resource ID of a subnet for infrastructure components. This subnet must be in the same VNET as the subnet defined in runtimeSubnetId. Must not overlap with any other provided IP ranges."]
     #[serde(rename = "infrastructureSubnetId", default, skip_serializing_if = "Option::is_none")]
     pub infrastructure_subnet_id: Option<String>,
-    #[doc = "Resource ID of a subnet that Container App containers are injected into. This subnet must be in the same VNET as the subnet defined in infrastructureSubnetId. Must not overlap with any other provided IP ranges."]
+    #[doc = "This field is deprecated and not used. If you wish to provide your own subnet that Container App containers are injected into, then you should leverage the infrastructureSubnetId."]
     #[serde(rename = "runtimeSubnetId", default, skip_serializing_if = "Option::is_none")]
     pub runtime_subnet_id: Option<String>,
     #[doc = "CIDR notation IP range assigned to the Docker bridge, network. Must not overlap with any other provided IP ranges."]

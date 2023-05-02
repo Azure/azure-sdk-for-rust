@@ -651,6 +651,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_containerregistry
 
+  azure_mgmt_containerstorage:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_containerstorage
+
   azure_mgmt_cosmosdb:
     if: always()
     runs-on: ubuntu-latest
@@ -1498,6 +1514,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_healthcareapis
+
+  azure_mgmt_help:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_help
 
   azure_mgmt_hybridaks:
     if: always()

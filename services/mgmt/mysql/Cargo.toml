@@ -32,12 +32,12 @@ env_logger = "0.10"
 all-features = true
 
 [features]
-default = ["package-flexibleserver-2021-05-01", "enable_reqwest"]
+default = ["package-flexibleserver-2022-01-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
+"package-flexibleserver-2022-09-30-preview-privatelink" = []
+"package-flexibleserver-2022-09-30-preview" = []
+"package-flexibleserver-2022-01-01" = []
 "package-flexibleserver-2021-12-01-preview" = []
 "package-flexibleserver-2021-05-01-preview" = []
-"package-flexibleserver-2021-05-01" = []
-"package-2020-07-01-privatepreview" = []
-"package-2020-07-01-preview" = []

@@ -33,6 +33,49 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "The details of an error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[doc = "One of a server-defined set of error codes."]
+    pub code: String,
+    #[doc = "A human-readable representation of the error."]
+    pub message: String,
+    #[doc = "An array of details about specific errors that led to this reported error."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "An object containing specific information about an error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<InnerError>,
+}
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+            innererror: None,
+        }
+    }
+}
+#[doc = "An object containing specific information about an error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InnerError {
+    #[doc = "One of a server-defined set of error codes."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "An object containing specific information about an error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<InnerError>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Key {
     #[doc = "The name of the key."]
@@ -174,6 +217,34 @@ impl azure_core::Continuable for LabelListResult {
 impl LabelListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Details of a long running operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDetails {
+    #[doc = "The unique id of the operation."]
+    pub id: String,
+    #[doc = "The current status of the operation"]
+    pub status: operation_details::Status,
+    #[doc = "The details of an error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl OperationDetails {
+    pub fn new(id: String, status: operation_details::Status) -> Self {
+        Self { id, status, error: None }
+    }
+}
+pub mod operation_details {
+    use super::*;
+    #[doc = "The current status of the operation"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        NotStarted,
+        Running,
+        Succeeded,
+        Failed,
+        Canceled,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

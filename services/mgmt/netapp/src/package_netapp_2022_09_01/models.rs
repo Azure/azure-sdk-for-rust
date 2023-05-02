@@ -1034,23 +1034,6 @@ impl BackupPolicy {
         }
     }
 }
-#[doc = "Backup policy properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupPolicyDetails {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[doc = "Backup policy properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupPolicyProperties>,
-}
-impl BackupPolicyDetails {
-    pub fn new(tracked_resource: TrackedResource) -> Self {
-        Self {
-            tracked_resource,
-            properties: None,
-        }
-    }
-}
 #[doc = "Backup policy Details for create and update"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupPolicyPatch {

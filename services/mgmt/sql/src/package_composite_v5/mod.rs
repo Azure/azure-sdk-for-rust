@@ -3692,7 +3692,7 @@ pub mod elastic_pools {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3708,7 +3708,7 @@ pub mod elastic_pools {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                                 if let Some(skip) = &this.skip {
                                     req.url_mut().query_pairs_mut().append_pair("$skip", &skip.to_string());
                                 }
@@ -3805,7 +3805,7 @@ pub mod elastic_pools {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3902,7 +3902,7 @@ pub mod elastic_pools {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -4000,7 +4000,7 @@ pub mod elastic_pools {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -4074,7 +4074,7 @@ pub mod elastic_pools {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4135,7 +4135,7 @@ pub mod elastic_pools {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-08-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -57498,6 +57498,174 @@ pub mod managed_database_restore_details {
         }
     }
 }
+pub mod database_encryption_protectors {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Revalidates an existing encryption protector for a particular database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        pub fn revalidate(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            encryption_protector_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> revalidate::RequestBuilder {
+            revalidate::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                encryption_protector_name: encryption_protector_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        #[doc = "Reverts an existing encryption protector for a particular database."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
+        #[doc = "* `server_name`: The name of the server."]
+        #[doc = "* `database_name`: The name of the database."]
+        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
+        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
+        pub fn revert(
+            &self,
+            resource_group_name: impl Into<String>,
+            server_name: impl Into<String>,
+            database_name: impl Into<String>,
+            encryption_protector_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+        ) -> revert::RequestBuilder {
+            revert::RequestBuilder {
+                client: self.0.clone(),
+                resource_group_name: resource_group_name.into(),
+                server_name: server_name.into(),
+                database_name: database_name.into(),
+                encryption_protector_name: encryption_protector_name.into(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+    }
+    pub mod revalidate {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) encryption_protector_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/encryptionProtector/{}/revalidate" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . encryption_protector_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+    pub mod revert {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) resource_group_name: String,
+            pub(crate) server_name: String,
+            pub(crate) database_name: String,
+            pub(crate) encryption_protector_name: String,
+            pub(crate) subscription_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/encryptionProtector/{}/revert" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . encryption_protector_name)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+    }
+}
 pub mod managed_databases {
     use super::models;
     pub struct Client(pub(crate) super::Client);
@@ -57810,7 +57978,7 @@ pub mod managed_databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -57826,7 +57994,7 @@ pub mod managed_databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -57920,7 +58088,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -58017,7 +58185,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -58115,7 +58283,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -58189,7 +58357,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -58251,7 +58419,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -58314,7 +58482,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -58370,7 +58538,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -58433,7 +58601,7 @@ pub mod managed_databases {
                         );
                         req.url_mut()
                             .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
@@ -58512,7 +58680,7 @@ pub mod managed_databases {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -58528,7 +58696,7 @@ pub mod managed_databases {
                                 );
                                 req.url_mut()
                                     .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                                    .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -58545,174 +58713,6 @@ pub mod managed_databases {
                     }
                 };
                 azure_core::Pageable::new(make_request)
-            }
-        }
-    }
-}
-pub mod database_encryption_protectors {
-    use super::models;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Revalidates an existing encryption protector for a particular database."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
-        #[doc = "* `server_name`: The name of the server."]
-        #[doc = "* `database_name`: The name of the database."]
-        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
-        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
-        pub fn revalidate(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            encryption_protector_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> revalidate::RequestBuilder {
-            revalidate::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                encryption_protector_name: encryption_protector_name.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-        #[doc = "Reverts an existing encryption protector for a particular database."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]
-        #[doc = "* `server_name`: The name of the server."]
-        #[doc = "* `database_name`: The name of the database."]
-        #[doc = "* `encryption_protector_name`: The name of the encryption protector to be updated."]
-        #[doc = "* `subscription_id`: The subscription ID that identifies an Azure subscription."]
-        pub fn revert(
-            &self,
-            resource_group_name: impl Into<String>,
-            server_name: impl Into<String>,
-            database_name: impl Into<String>,
-            encryption_protector_name: impl Into<String>,
-            subscription_id: impl Into<String>,
-        ) -> revert::RequestBuilder {
-            revert::RequestBuilder {
-                client: self.0.clone(),
-                resource_group_name: resource_group_name.into(),
-                server_name: server_name.into(),
-                database_name: database_name.into(),
-                encryption_protector_name: encryption_protector_name.into(),
-                subscription_id: subscription_id.into(),
-            }
-        }
-    }
-    pub mod revalidate {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) encryption_protector_name: String,
-            pub(crate) subscription_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/encryptionProtector/{}/revalidate" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . encryption_protector_name)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-        }
-    }
-    pub mod revert {
-        use super::models;
-        pub struct Response(azure_core::Response);
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) resource_group_name: String,
-            pub(crate) server_name: String,
-            pub(crate) database_name: String,
-            pub(crate) encryption_protector_name: String,
-            pub(crate) subscription_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Sql/servers/{}/databases/{}/encryptionProtector/{}/revert" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . server_name , & this . database_name , & this . encryption_protector_name)) ? ;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-08-01-preview");
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
             }
         }
     }

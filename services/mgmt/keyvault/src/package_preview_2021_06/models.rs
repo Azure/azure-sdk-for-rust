@@ -1196,13 +1196,13 @@ pub struct ManagedHsmProperties {
     #[doc = "The URI of the managed hsm pool for performing operations on keys."]
     #[serde(rename = "hsmUri", default, skip_serializing_if = "Option::is_none")]
     pub hsm_uri: Option<String>,
-    #[doc = "Property to specify whether the 'soft delete' functionality is enabled for this managed HSM pool. If it's not set to any value(true or false) when creating new managed HSM pool, it will be set to true by default. Once set to true, it cannot be reverted to false."]
+    #[doc = "Property to specify whether the 'soft delete' functionality is enabled for this managed HSM pool. Soft delete is enabled by default for all managed HSMs and is immutable."]
     #[serde(rename = "enableSoftDelete", default, skip_serializing_if = "Option::is_none")]
     pub enable_soft_delete: Option<bool>,
-    #[doc = "softDelete data retention days. It accepts >=7 and <=90."]
+    #[doc = "Soft deleted data retention days. When you delete an HSM or a key, it will remain recoverable for the configured retention period or for a default period of 90 days. It accepts values between 7 and 90."]
     #[serde(rename = "softDeleteRetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_retention_in_days: Option<i32>,
-    #[doc = "Property specifying whether protection against purge is enabled for this managed HSM pool. Setting this property to true activates protection against purge for this managed HSM pool and its content - only the Managed HSM service may initiate a hard, irrecoverable deletion. The setting is effective only if soft delete is also enabled. Enabling this functionality is irreversible."]
+    #[doc = "Property specifying whether protection against purge is enabled for this managed HSM pool. Setting this property to true activates protection against purge for this managed HSM pool and its content - only the Managed HSM service may initiate a hard, irrecoverable deletion. Enabling this functionality is irreversible."]
     #[serde(rename = "enablePurgeProtection", default, skip_serializing_if = "Option::is_none")]
     pub enable_purge_protection: Option<bool>,
     #[doc = "The create mode to indicate whether the resource is being created or is being recovered from a deleted resource."]
@@ -1225,7 +1225,7 @@ pub struct ManagedHsmProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<MhsmPrivateEndpointConnectionItem>,
-    #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
+    #[doc = "Control permission to the managed HSM from public networks."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<managed_hsm_properties::PublicNetworkAccess>,
     #[doc = "The scheduled purge date in UTC."]
@@ -1296,7 +1296,7 @@ pub mod managed_hsm_properties {
             }
         }
     }
-    #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
+    #[doc = "Control permission to the managed HSM from public networks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "PublicNetworkAccess")]
     pub enum PublicNetworkAccess {
@@ -1331,6 +1331,11 @@ pub mod managed_hsm_properties {
                 Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
         }
     }
 }
@@ -1421,6 +1426,8 @@ pub mod managed_hsm_sku {
         StandardB1,
         #[serde(rename = "Custom_B32")]
         CustomB32,
+        #[serde(rename = "Custom_B6")]
+        CustomB6,
     }
 }
 #[doc = "Metric specification of operation."]

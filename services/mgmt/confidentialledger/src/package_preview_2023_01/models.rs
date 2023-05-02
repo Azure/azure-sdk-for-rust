@@ -126,11 +126,6 @@ pub mod check_name_availability_response {
 pub struct ConfidentialLedger {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[serde(flatten)]
-    pub tags: Tags,
-    #[doc = "Object representing RunningState for Confidential Ledger."]
-    #[serde(rename = "runningState", default, skip_serializing_if = "Option::is_none")]
-    pub running_state: Option<RunningState>,
     #[doc = "Additional Confidential Ledger properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LedgerProperties>,
@@ -139,8 +134,6 @@ impl ConfidentialLedger {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
-            tags: Tags::default(),
-            running_state: None,
             properties: None,
         }
     }
@@ -344,6 +337,9 @@ pub struct LedgerProperties {
     #[doc = "Internal namespace for the Ledger"]
     #[serde(rename = "ledgerInternalNamespace", default, skip_serializing_if = "Option::is_none")]
     pub ledger_internal_namespace: Option<String>,
+    #[doc = "Object representing RunningState for Confidential Ledger."]
+    #[serde(rename = "runningState", default, skip_serializing_if = "Option::is_none")]
+    pub running_state: Option<RunningState>,
     #[doc = "Type of the ledger. Private means transaction data is encrypted."]
     #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
     pub ledger_type: Option<ConfidentialLedgerType>,
@@ -679,18 +675,6 @@ impl Serialize for RunningState {
             Self::Resuming => serializer.serialize_unit_variant("RunningState", 4u32, "Resuming"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Tags for Confidential Ledger Resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Tags {
-    #[doc = "Additional tags for Confidential Ledger"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-impl Tags {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]

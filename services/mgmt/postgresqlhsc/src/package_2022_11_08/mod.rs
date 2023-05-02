@@ -184,14 +184,14 @@ pub mod clusters {
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `cluster_name`: The name of the cluster."]
         #[doc = "* `parameters`: The required parameters for creating or updating a cluster."]
-        pub fn create_or_update(
+        pub fn create(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             parameters: impl Into<models::Cluster>,
-        ) -> create_or_update::RequestBuilder {
-            create_or_update::RequestBuilder {
+        ) -> create::RequestBuilder {
+            create::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -642,7 +642,7 @@ pub mod clusters {
             }
         }
     }
-    pub mod create_or_update {
+    pub mod create {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -1572,15 +1572,15 @@ pub mod configurations {
         #[doc = "* `cluster_name`: The name of the cluster."]
         #[doc = "* `configuration_name`: The name of the cluster configuration."]
         #[doc = "* `parameters`: The required parameters for updating a cluster configuration."]
-        pub fn create_or_update_coordinator(
+        pub fn update_on_coordinator(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             configuration_name: impl Into<String>,
             parameters: impl Into<models::ServerConfiguration>,
-        ) -> create_or_update_coordinator::RequestBuilder {
-            create_or_update_coordinator::RequestBuilder {
+        ) -> update_on_coordinator::RequestBuilder {
+            update_on_coordinator::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -1619,15 +1619,15 @@ pub mod configurations {
         #[doc = "* `cluster_name`: The name of the cluster."]
         #[doc = "* `configuration_name`: The name of the cluster configuration."]
         #[doc = "* `parameters`: The required parameters for updating a cluster configuration."]
-        pub fn create_or_update_node(
+        pub fn update_on_node(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             configuration_name: impl Into<String>,
             parameters: impl Into<models::ServerConfiguration>,
-        ) -> create_or_update_node::RequestBuilder {
-            create_or_update_node::RequestBuilder {
+        ) -> update_on_node::RequestBuilder {
+            update_on_node::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
@@ -2037,7 +2037,7 @@ pub mod configurations {
             }
         }
     }
-    pub mod create_or_update_coordinator {
+    pub mod update_on_coordinator {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {
@@ -2229,7 +2229,7 @@ pub mod configurations {
             }
         }
     }
-    pub mod create_or_update_node {
+    pub mod update_on_node {
         use super::models;
         pub struct Response(azure_core::Response);
         impl Response {

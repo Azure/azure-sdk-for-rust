@@ -456,6 +456,16 @@ pub struct CopyProgress {
     #[doc = "To indicate if enumeration of data is in progress. \r\nUntil this is true, the TotalBytesToProcess may not be valid."]
     #[serde(rename = "isEnumerationInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_enumeration_in_progress: Option<bool>,
+    #[doc = "Provides additional information about an http error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudError>,
+    #[doc = "Available actions on the job."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub actions: Vec<String>,
 }
 impl CopyProgress {
     pub fn new() -> Self {
@@ -1746,6 +1756,9 @@ pub struct EncryptionPreferences {
     #[doc = "Defines secondary layer of software-based encryption enablement."]
     #[serde(rename = "doubleEncryption", default, skip_serializing_if = "Option::is_none")]
     pub double_encryption: Option<encryption_preferences::DoubleEncryption>,
+    #[doc = "Defines Hardware level encryption (Only for disk)"]
+    #[serde(rename = "hardwareEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub hardware_encryption: Option<encryption_preferences::HardwareEncryption>,
 }
 impl EncryptionPreferences {
     pub fn new() -> Self {
@@ -1764,6 +1777,12 @@ pub mod encryption_preferences {
         fn default() -> Self {
             Self::Disabled
         }
+    }
+    #[doc = "Defines Hardware level encryption (Only for disk)"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HardwareEncryption {
+        Enabled,
+        Disabled,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3445,6 +3464,12 @@ pub struct ShippingAddress {
     #[doc = "Type of address."]
     #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
     pub address_type: Option<shipping_address::AddressType>,
+    #[doc = "Flag to indicate if customer has chosen to skip default address validation"]
+    #[serde(rename = "skipAddressValidation", default, skip_serializing_if = "Option::is_none")]
+    pub skip_address_validation: Option<bool>,
+    #[doc = "Tax Identification Number"]
+    #[serde(rename = "taxIdentificationNumber", default, skip_serializing_if = "Option::is_none")]
+    pub tax_identification_number: Option<String>,
 }
 impl ShippingAddress {
     pub fn new(street_address1: String, country: String) -> Self {
@@ -3459,6 +3484,8 @@ impl ShippingAddress {
             zip_extended_code: None,
             company_name: None,
             address_type: None,
+            skip_address_validation: None,
+            tax_identification_number: None,
         }
     }
 }

@@ -3,6 +3,24 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "Describes the format of Error response with a wrapper object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorObjectResponse {
+    #[doc = "Describes the format of Error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+impl azure_core::Continuable for ErrorObjectResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl ErrorObjectResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -12,12 +30,6 @@ pub struct ErrorResponse {
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
-}
-impl azure_core::Continuable for ErrorResponse {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
 }
 impl ErrorResponse {
     pub fn new() -> Self {

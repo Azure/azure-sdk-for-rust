@@ -4586,6 +4586,9 @@ pub struct ElasticPoolProperties {
     #[doc = "The storage limit for the database elastic pool in bytes."]
     #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_bytes: Option<i64>,
+    #[doc = "Minimal capacity that serverless pool will not shrink below, if not paused"]
+    #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub min_capacity: Option<f64>,
     #[doc = "Per database settings of an elastic pool."]
     #[serde(rename = "perDatabaseSettings", default, skip_serializing_if = "Option::is_none")]
     pub per_database_settings: Option<ElasticPoolPerDatabaseSettings>,
@@ -4598,9 +4601,15 @@ pub struct ElasticPoolProperties {
     #[doc = "Maintenance configuration id assigned to the elastic pool. This configuration defines the period when the maintenance updates will will occur."]
     #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_configuration_id: Option<String>,
-    #[doc = "The number of secondary replicas associated with the elastic pool that are used to provide high availability."]
+    #[doc = "The number of secondary replicas associated with the elastic pool that are used to provide high availability. Applicable only to Hyperscale elastic pools."]
     #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_replica_count: Option<i32>,
+    #[doc = "Type of enclave requested on the elastic pool."]
+    #[serde(rename = "preferredEnclaveType", default, skip_serializing_if = "Option::is_none")]
+    pub preferred_enclave_type: Option<elastic_pool_properties::PreferredEnclaveType>,
+    #[doc = "Specifies the availability zone the pool's primary replica is pinned to."]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<elastic_pool_properties::AvailabilityZone>,
 }
 impl ElasticPoolProperties {
     pub fn new() -> Self {
@@ -4685,6 +4694,88 @@ pub mod elastic_pool_properties {
             }
         }
     }
+    #[doc = "Type of enclave requested on the elastic pool."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PreferredEnclaveType")]
+    pub enum PreferredEnclaveType {
+        Default,
+        #[serde(rename = "VBS")]
+        Vbs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PreferredEnclaveType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PreferredEnclaveType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PreferredEnclaveType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("PreferredEnclaveType", 0u32, "Default"),
+                Self::Vbs => serializer.serialize_unit_variant("PreferredEnclaveType", 1u32, "VBS"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Specifies the availability zone the pool's primary replica is pinned to."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AvailabilityZone")]
+    pub enum AvailabilityZone {
+        NoPreference,
+        #[serde(rename = "1")]
+        N1,
+        #[serde(rename = "2")]
+        N2,
+        #[serde(rename = "3")]
+        N3,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AvailabilityZone {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AvailabilityZone {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AvailabilityZone {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NoPreference => serializer.serialize_unit_variant("AvailabilityZone", 0u32, "NoPreference"),
+                Self::N1 => serializer.serialize_unit_variant("AvailabilityZone", 1u32, "1"),
+                Self::N2 => serializer.serialize_unit_variant("AvailabilityZone", 2u32, "2"),
+                Self::N3 => serializer.serialize_unit_variant("AvailabilityZone", 3u32, "3"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
 }
 #[doc = "An elastic pool update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4710,6 +4801,9 @@ pub struct ElasticPoolUpdateProperties {
     #[doc = "The storage limit for the database elastic pool in bytes."]
     #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_bytes: Option<i64>,
+    #[doc = "Minimal capacity that serverless pool will not shrink below, if not paused"]
+    #[serde(rename = "minCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub min_capacity: Option<f64>,
     #[doc = "Per database settings of an elastic pool."]
     #[serde(rename = "perDatabaseSettings", default, skip_serializing_if = "Option::is_none")]
     pub per_database_settings: Option<ElasticPoolPerDatabaseSettings>,
@@ -4725,6 +4819,12 @@ pub struct ElasticPoolUpdateProperties {
     #[doc = "The number of secondary replicas associated with the elastic pool that are used to provide high availability. Applicable only to Hyperscale elastic pools."]
     #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_replica_count: Option<i32>,
+    #[doc = "Type of enclave requested on the elastic pool."]
+    #[serde(rename = "preferredEnclaveType", default, skip_serializing_if = "Option::is_none")]
+    pub preferred_enclave_type: Option<elastic_pool_update_properties::PreferredEnclaveType>,
+    #[doc = "Specifies the availability zone the pool's primary replica is pinned to."]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<elastic_pool_update_properties::AvailabilityZone>,
 }
 impl ElasticPoolUpdateProperties {
     pub fn new() -> Self {
@@ -4766,6 +4866,88 @@ pub mod elastic_pool_update_properties {
             match self {
                 Self::LicenseIncluded => serializer.serialize_unit_variant("LicenseType", 0u32, "LicenseIncluded"),
                 Self::BasePrice => serializer.serialize_unit_variant("LicenseType", 1u32, "BasePrice"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Type of enclave requested on the elastic pool."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PreferredEnclaveType")]
+    pub enum PreferredEnclaveType {
+        Default,
+        #[serde(rename = "VBS")]
+        Vbs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PreferredEnclaveType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PreferredEnclaveType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PreferredEnclaveType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("PreferredEnclaveType", 0u32, "Default"),
+                Self::Vbs => serializer.serialize_unit_variant("PreferredEnclaveType", 1u32, "VBS"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Specifies the availability zone the pool's primary replica is pinned to."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AvailabilityZone")]
+    pub enum AvailabilityZone {
+        NoPreference,
+        #[serde(rename = "1")]
+        N1,
+        #[serde(rename = "2")]
+        N2,
+        #[serde(rename = "3")]
+        N3,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AvailabilityZone {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AvailabilityZone {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AvailabilityZone {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NoPreference => serializer.serialize_unit_variant("AvailabilityZone", 0u32, "NoPreference"),
+                Self::N1 => serializer.serialize_unit_variant("AvailabilityZone", 1u32, "1"),
+                Self::N2 => serializer.serialize_unit_variant("AvailabilityZone", 2u32, "2"),
+                Self::N3 => serializer.serialize_unit_variant("AvailabilityZone", 3u32, "3"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -8682,6 +8864,9 @@ pub struct ManagedDatabaseProperties {
         skip_serializing_if = "Option::is_none"
     )]
     pub cross_subscription_target_managed_instance_id: Option<String>,
+    #[doc = "Whether or not this database is a ledger database, which means all tables in the database are ledger tables. Note: the value of this property cannot be changed after the database has been created."]
+    #[serde(rename = "isLedgerOn", default, skip_serializing_if = "Option::is_none")]
+    pub is_ledger_on: Option<bool>,
 }
 impl ManagedDatabaseProperties {
     pub fn new() -> Self {
@@ -15454,7 +15639,7 @@ pub struct ServerProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<ServerPrivateEndpointConnection>,
-    #[doc = "Minimal TLS version. Allowed values: '1.0', '1.1', '1.2'"]
+    #[doc = "Minimal TLS version. Allowed values: 'None', '1.0', '1.1', '1.2'"]
     #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<String>,
     #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled' or 'SecuredByPerimeter'"]

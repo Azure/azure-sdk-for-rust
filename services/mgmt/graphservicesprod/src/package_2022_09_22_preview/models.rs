@@ -21,7 +21,7 @@ pub struct AccountResource {
     pub resource: Resource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
+    pub system_data: Option<account_resource::SystemData>,
     #[doc = "Property bag from billing account"]
     pub properties: account_resource::Properties,
 }
@@ -36,6 +36,112 @@ impl AccountResource {
 }
 pub mod account_resource {
     use super::*;
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct SystemData {
+        #[doc = "The type of identity that created the resource."]
+        #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+        pub created_by_type: Option<system_data::CreatedByType>,
+        #[doc = "The timestamp of resource creation (UTC)."]
+        #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
+        pub created_at: Option<time::OffsetDateTime>,
+        #[doc = "The type of identity that last modified the resource."]
+        #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+        pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+        #[doc = "The timestamp of resource last modification (UTC)"]
+        #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
+        pub last_modified_at: Option<time::OffsetDateTime>,
+    }
+    impl SystemData {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod system_data {
+        use super::*;
+        #[doc = "The type of identity that created the resource."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "CreatedByType")]
+        pub enum CreatedByType {
+            User,
+            Application,
+            ManagedIdentity,
+            Key,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for CreatedByType {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for CreatedByType {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for CreatedByType {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
+                    Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
+                    Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
+                    Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+        #[doc = "The type of identity that last modified the resource."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "LastModifiedByType")]
+        pub enum LastModifiedByType {
+            User,
+            Application,
+            ManagedIdentity,
+            Key,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for LastModifiedByType {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for LastModifiedByType {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for LastModifiedByType {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::User => serializer.serialize_unit_variant("LastModifiedByType", 0u32, "User"),
+                    Self::Application => serializer.serialize_unit_variant("LastModifiedByType", 1u32, "Application"),
+                    Self::ManagedIdentity => serializer.serialize_unit_variant("LastModifiedByType", 2u32, "ManagedIdentity"),
+                    Self::Key => serializer.serialize_unit_variant("LastModifiedByType", 3u32, "Key"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
     #[doc = "Property bag from billing account"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
@@ -43,17 +149,17 @@ pub mod account_resource {
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Customer owned application ID"]
-        #[serde(rename = "applicationId")]
-        pub application_id: String,
-        #[doc = "Billing plan Id"]
+        #[serde(rename = "appId")]
+        pub app_id: String,
+        #[doc = "Billing Plan Id"]
         #[serde(rename = "billingPlanId", default, skip_serializing_if = "Option::is_none")]
         pub billing_plan_id: Option<String>,
     }
     impl Properties {
-        pub fn new(application_id: String) -> Self {
+        pub fn new(app_id: String) -> Self {
             Self {
                 provisioning_state: None,
-                application_id,
+                app_id,
                 billing_plan_id: None,
             }
         }
@@ -376,117 +482,5 @@ pub struct TagUpdate {
 impl TagUpdate {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Metadata pertaining to creation and last modification of the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SystemData {
-    #[doc = "The identity that created the resource."]
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
-    #[doc = "The identity that last modified the resource."]
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
-}
-impl SystemData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod system_data {
-    use super::*;
-    #[doc = "The type of identity that created the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CreatedByType")]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CreatedByType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CreatedByType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CreatedByType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
-                Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
-                Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
-                Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The type of identity that last modified the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LastModifiedByType")]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LastModifiedByType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LastModifiedByType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LastModifiedByType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("LastModifiedByType", 0u32, "User"),
-                Self::Application => serializer.serialize_unit_variant("LastModifiedByType", 1u32, "Application"),
-                Self::ManagedIdentity => serializer.serialize_unit_variant("LastModifiedByType", 2u32, "ManagedIdentity"),
-                Self::Key => serializer.serialize_unit_variant("LastModifiedByType", 3u32, "Key"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }

@@ -1524,9 +1524,9 @@ pub struct AzureBlobFsReadSettings {
     #[doc = "Point to a text file that lists each file (relative path to the path configured in the dataset) that you want to copy. Type: string (or Expression with resultType string)."]
     #[serde(rename = "fileListPath", default, skip_serializing_if = "Option::is_none")]
     pub file_list_path: Option<serde_json::Value>,
-    #[doc = "Indicates whether to enable partition discovery."]
+    #[doc = "Indicates whether to enable partition discovery. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "enablePartitionDiscovery", default, skip_serializing_if = "Option::is_none")]
-    pub enable_partition_discovery: Option<bool>,
+    pub enable_partition_discovery: Option<serde_json::Value>,
     #[doc = "Specify the root path where partition discovery starts from. Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionRootPath", default, skip_serializing_if = "Option::is_none")]
     pub partition_root_path: Option<serde_json::Value>,
@@ -1561,7 +1561,7 @@ impl AzureBlobFsReadSettings {
 pub struct AzureBlobFsSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
-    #[doc = "The type of copy behavior for copy sink."]
+    #[doc = "The type of copy behavior for copy sink. Type: string (or Expression with resultType string)."]
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
     #[doc = "Specify the custom metadata to be added to sink data. Type: array of objects (or Expression with resultType array of objects)."]
@@ -2183,9 +2183,9 @@ pub struct AzureDataLakeStoreReadSettings {
     #[doc = "Lists files before the value (inclusive) based on file/folder names’ lexicographical order. Applies under the folderPath in data set, and filter files/sub-folders under the folderPath. Type: string (or Expression with resultType string)."]
     #[serde(rename = "listBefore", default, skip_serializing_if = "Option::is_none")]
     pub list_before: Option<serde_json::Value>,
-    #[doc = "Indicates whether to enable partition discovery."]
+    #[doc = "Indicates whether to enable partition discovery. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "enablePartitionDiscovery", default, skip_serializing_if = "Option::is_none")]
-    pub enable_partition_discovery: Option<bool>,
+    pub enable_partition_discovery: Option<serde_json::Value>,
     #[doc = "Specify the root path where partition discovery starts from. Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionRootPath", default, skip_serializing_if = "Option::is_none")]
     pub partition_root_path: Option<serde_json::Value>,
@@ -2222,7 +2222,7 @@ impl AzureDataLakeStoreReadSettings {
 pub struct AzureDataLakeStoreSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
-    #[doc = "The type of copy behavior for copy sink."]
+    #[doc = "The type of copy behavior for copy sink. Type: string (or Expression with resultType string)."]
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
     #[doc = "Single File Parallel."]
@@ -2260,7 +2260,7 @@ impl AzureDataLakeStoreSource {
 pub struct AzureDataLakeStoreWriteSettings {
     #[serde(flatten)]
     pub store_write_settings: StoreWriteSettings,
-    #[doc = "Specifies the expiry time of the written files. The time is applied to the UTC time zone in the format of \"2018-12-01T05:00:00Z\". Default value is NULL. Type: integer (or Expression with resultType integer)."]
+    #[doc = "Specifies the expiry time of the written files. The time is applied to the UTC time zone in the format of \"2018-12-01T05:00:00Z\". Default value is NULL. Type: string (or Expression with resultType string)."]
     #[serde(rename = "expiryDateTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date_time: Option<serde_json::Value>,
 }
@@ -12523,6 +12523,14 @@ pub struct IntegrationRuntimeDataFlowProperties {
     #[doc = "Cluster will not be recycled and it will be used in next data flow activity run until TTL (time to live) is reached if this is set as false. Default is true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cleanup: Option<bool>,
+    #[doc = "Custom properties are used to tune the data flow runtime performance."]
+    #[serde(
+        rename = "customProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub custom_properties: Vec<serde_json::Value>,
 }
 impl IntegrationRuntimeDataFlowProperties {
     pub fn new() -> Self {
@@ -21656,9 +21664,12 @@ pub struct SetVariableActivityTypeProperties {
     #[doc = "Name of the variable whose value needs to be set."]
     #[serde(rename = "variableName", default, skip_serializing_if = "Option::is_none")]
     pub variable_name: Option<String>,
-    #[doc = "Value to be set. Could be a static value or Expression"]
+    #[doc = "Value to be set. Could be a static value or Expression."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
+    #[doc = "If set to true, it sets the pipeline run return value."]
+    #[serde(rename = "setSystemVariable", default, skip_serializing_if = "Option::is_none")]
+    pub set_system_variable: Option<bool>,
 }
 impl SetVariableActivityTypeProperties {
     pub fn new() -> Self {
