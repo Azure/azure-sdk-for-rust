@@ -406,10 +406,7 @@ pub struct EncryptResult {
 
 #[derive(Debug, Deserialize)]
 pub struct GetRandomBytesResult {
-    #[serde(
-        rename = "value",
-        serialize_with = "ser_base64",
-        deserialize_with = "deser_base64"
-    )]
+    /// `value` is encoded as a base64url string.
+    #[serde(rename = "value", deserialize_with = "deser_base64")]
     pub result: Vec<u8>,
 }
