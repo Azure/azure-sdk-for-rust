@@ -192,3 +192,53 @@ impl SasToken for BlobSharedAccessSignature {
         elements.join("&")
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use time::Duration;
+
+    const MOCK_SECRET_KEY: &str = "RZfi3m1W7eyQ5zD4ymSmGANVdJ2SDQmg4sE89SW104s=";
+    const MOCK_CANONICALIZED_RESOURCE: &str = "/blob/STORAGE_ACCOUNT_NAME/CONTAINER_NAME/";
+
+    #[test]
+    fn test_blob_scoped_sas_token() {
+        let permissions = BlobSasPermissions {
+            read: true,
+            ..Default::default()
+        };
+        let signed_token = BlobSharedAccessSignature::new(
+            String::from(MOCK_SECRET_KEY),
+            String::from(MOCK_CANONICALIZED_RESOURCE),
+            permissions,
+            OffsetDateTime::UNIX_EPOCH + Duration::days(7),
+            BlobSignedResource::Blob,
+        )
+        .token();
+        // BlobSignedResource::Blob
+        assert!(signed_token.contains("sr=b"));
+        // this assert will be a bad idea if we ever add a new field that ends with "sdd"
+        assert!(!signed_token.contains("sdd="));
+    }
+
+    #[test]
+    fn test_directory_scoped_sas_token() {
+        let permissions = BlobSasPermissions {
+            read: true,
+            ..Default::default()
+        };
+        let signed_token = BlobSharedAccessSignature::new(
+            String::from(MOCK_SECRET_KEY),
+            String::from(MOCK_CANONICALIZED_RESOURCE),
+            permissions,
+            OffsetDateTime::UNIX_EPOCH + Duration::days(7),
+            BlobSignedResource::Directory,
+        )
+        .signed_directory_depth(2_u32)
+        .token();
+        // BlobSignedResource::Blob
+        assert!(signed_token.contains("sr=d"));
+        // signed_directory_depth = 2
+        assert!(signed_token.contains("sdd=2"));
+    }
+}
