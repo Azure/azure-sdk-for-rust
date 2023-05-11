@@ -100,6 +100,7 @@ pub struct BlobSharedAccessSignature {
     identifier: Option<String>,
     ip: Option<String>,
     protocol: Option<SasProtocol>,
+    signed_directory_depth: Option<u32>, // sdd
 }
 
 impl BlobSharedAccessSignature {
@@ -120,6 +121,7 @@ impl BlobSharedAccessSignature {
             identifier: None,
             ip: None,
             protocol: None,
+            signed_directory_depth: None,
         }
     }
 
@@ -128,6 +130,7 @@ impl BlobSharedAccessSignature {
         identifier: String => Some(identifier),
         ip: String => Some(ip),
         protocol: SasProtocol => Some(protocol),
+        signed_directory_depth: u32 => Some(signed_directory_depth),
     }
 
     fn sign(&self) -> String {
@@ -177,6 +180,10 @@ impl SasToken for BlobSharedAccessSignature {
 
         if let Some(protocol) = &self.protocol {
             elements.push(format!("spr={protocol}"))
+        }
+
+        if let Some(signed_directory_depth) = &self.signed_directory_depth {
+            elements.push(format!("sdd={signed_directory_depth}"))
         }
 
         let sig = self.sign();
