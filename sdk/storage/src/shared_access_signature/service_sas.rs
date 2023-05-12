@@ -100,7 +100,7 @@ pub struct BlobSharedAccessSignature {
     identifier: Option<String>,
     ip: Option<String>,
     protocol: Option<SasProtocol>,
-    signed_directory_depth: Option<u32>, // sdd
+    signed_directory_depth: Option<usize>, // sdd
 }
 
 impl BlobSharedAccessSignature {
@@ -130,7 +130,7 @@ impl BlobSharedAccessSignature {
         identifier: String => Some(identifier),
         ip: String => Some(ip),
         protocol: SasProtocol => Some(protocol),
-        signed_directory_depth: u32 => Some(signed_directory_depth),
+        signed_directory_depth: usize => Some(signed_directory_depth),
     }
 
     fn sign(&self) -> String {
@@ -234,7 +234,7 @@ mod test {
             OffsetDateTime::UNIX_EPOCH + Duration::days(7),
             BlobSignedResource::Directory,
         )
-        .signed_directory_depth(2_u32)
+        .signed_directory_depth(2_usize)
         .token();
         // BlobSignedResource::Blob
         assert!(signed_token.contains("sr=d"));
