@@ -196,6 +196,7 @@ impl SasToken for BlobSharedAccessSignature {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::collections::HashSet;
     use time::Duration;
 
     const MOCK_SECRET_KEY: &str = "RZfi3m1W7eyQ5zD4ymSmGANVdJ2SDQmg4sE89SW104s=";
@@ -215,10 +216,17 @@ mod test {
             BlobSignedResource::Blob,
         )
         .token();
+
+        // splitting by & is only safe if & is not part of any fields
+        // if that changes in the future we might want to use a proper query string parser
+        let elements = signed_token.split('&').collect::<HashSet<_>>();
+
         // BlobSignedResource::Blob
-        assert!(signed_token.contains("sr=b"));
-        // this assert will be a bad idea if we ever add a new field that ends with "sdd"
-        assert!(!signed_token.contains("sdd="));
+        assert!(elements.contains("sr=b"));
+        // signed_directory_depth NOT set
+        assert!(!elements.iter().any(|element| element.starts_with("sdd=")));
+
+        assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=b&se=1970-01-08T00%3A00%3A00Z&sig=alEGfKjtiLs5LO%2FyrfPkzjQBHbk4Uda9XOezbRyKwEM%3D");
     }
 
     #[test]
@@ -236,9 +244,16 @@ mod test {
         )
         .signed_directory_depth(2_usize)
         .token();
+
+        // splitting by & is only safe if & is not part of any fields
+        // if that changes in the future we might want to use a proper query string parser
+        let elements = signed_token.split('&').collect::<HashSet<_>>();
+
         // BlobSignedResource::Blob
-        assert!(signed_token.contains("sr=d"));
+        assert!(elements.contains("sr=d"));
         // signed_directory_depth = 2
-        assert!(signed_token.contains("sdd=2"));
+        assert!(elements.contains("sdd=2"));
+
+        assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=d&se=1970-01-08T00%3A00%3A00Z&sdd=2&sig=e0eoY169%2Bex4AnI9ZAOiOaX49snoJiuvyJ22XV6qW2k%3D");
     }
 }
