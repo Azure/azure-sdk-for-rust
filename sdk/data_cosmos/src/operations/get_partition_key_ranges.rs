@@ -47,7 +47,7 @@ impl GetPartitionKeyRangesBuilder {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetPartitionKeyRangesResponse {
     pub rid: String,
     pub content_location: Option<String>,
@@ -111,7 +111,7 @@ impl GetPartitionKeyRangesResponse {
     }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, PartialOrd)]
 pub struct PartitionKeyRange {
     #[serde(rename = "_rid")]
     pub rid: String,
