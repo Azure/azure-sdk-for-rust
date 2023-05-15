@@ -7,7 +7,8 @@ operation! {
     BreakLease,
     client: ContainerClient,
     ?lease_break_period: LeaseBreakPeriod,
-    ?lease_id: LeaseId
+    ?lease_id: LeaseId,
+    ?if_modified_since: IfModifiedSinceCondition
 }
 
 impl BreakLeaseBuilder {
@@ -22,6 +23,7 @@ impl BreakLeaseBuilder {
             headers.insert(LEASE_ACTION, "break");
             headers.add(self.lease_id);
             headers.add(self.lease_break_period);
+            headers.add(self.if_modified_since);
 
             let mut request = self
                 .client

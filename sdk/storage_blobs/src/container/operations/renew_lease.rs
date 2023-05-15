@@ -1,12 +1,13 @@
 use crate::{container::operations::AcquireLeaseResponse, prelude::*};
-use azure_core::headers::*;
 use azure_core::Method;
+use azure_core::{headers::*, prelude::*};
 
 pub type RenewLeaseResponse = AcquireLeaseResponse;
 
 operation! {
     RenewLease,
     client: ContainerLeaseClient,
+    ?if_modified_since: IfModifiedSinceCondition
 }
 
 impl RenewLeaseBuilder {
@@ -20,6 +21,7 @@ impl RenewLeaseBuilder {
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "renew");
             headers.add(self.client.lease_id());
+            headers.add(self.if_modified_since);
 
             let mut request = self
                 .client
