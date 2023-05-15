@@ -14,6 +14,7 @@ operation! {
     ?metadata: Metadata,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
+    ?if_tags: IfTags,
     ?lease_id: LeaseId
 }
 
@@ -28,6 +29,7 @@ impl SnapshotBlobBuilder {
             headers.add(self.lease_id);
             headers.add(self.if_modified_since);
             headers.add(self.if_match);
+            headers.add(self.if_tags);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
                     headers.add(m);
