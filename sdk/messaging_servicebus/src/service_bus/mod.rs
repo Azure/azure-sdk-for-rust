@@ -168,14 +168,15 @@ async fn peek_lock_message2(
     let res = http_client.execute_request(&req).await?;
 
     let status = res.status();
-    let lock_location = res
-        .headers()
+    let headers = res.headers().clone();
+    let lock_location = headers
         .get_optional_string(&headers::LOCATION)
         .unwrap_or_default();
     let body = res.into_body().collect_string().await?;
 
     Ok(PeekLockResponse {
         body,
+        headers,
         lock_location,
         status,
         http_client: http_client.clone(),
@@ -187,6 +188,7 @@ async fn peek_lock_message2(
 /// PeekLockResponse object that is returned by `peek_lock_message2`
 pub struct PeekLockResponse {
     body: String,
+    headers: headers::Headers,
     lock_location: String,
     status: StatusCode,
     http_client: Arc<dyn HttpClient>,
@@ -198,6 +200,11 @@ impl PeekLockResponse {
     /// Get the message in the lock
     pub fn body(&self) -> String {
         self.body.clone()
+    }
+
+    /// Get the headers from the message in the lock
+    pub fn headers(&self) -> headers::Headers {
+        self.headers.clone()
     }
 
     /// Get the status of the peek
