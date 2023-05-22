@@ -6,17 +6,20 @@ use std::str::FromStr;
 #[doc = "An single request in a batch."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchQueryRequest {
-    #[doc = "The error details."]
+    #[doc = "Unique ID corresponding to each request in the batch."]
     pub id: String,
+    #[doc = "Headers of the request. Can use prefer header to set server timeout and to query statistics and visualization information."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
     pub body: QueryBody,
+    #[doc = "The query path of a single request in a batch, defaults to /query"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<batch_query_request::Path>,
+    #[doc = "The method of a single request in a batch, defaults to POST"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<batch_query_request::Method>,
-    #[doc = "Workspace Id to be included in the query"]
+    #[doc = "Primary Workspace ID of the query. This is the Workspace ID from the Properties blade in the Azure portal."]
     pub workspace: String,
 }
 impl BatchQueryRequest {
@@ -33,17 +36,20 @@ impl BatchQueryRequest {
 }
 pub mod batch_query_request {
     use super::*;
+    #[doc = "The query path of a single request in a batch, defaults to /query"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Path {
         #[serde(rename = "/query")]
         Query,
     }
+    #[doc = "The method of a single request in a batch, defaults to POST"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Method {
         #[serde(rename = "POST")]
         Post,
     }
 }
+#[doc = "Contains the batch query response and the headers, id, and status of the request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchQueryResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -64,7 +70,7 @@ impl BatchQueryResponse {
 #[doc = "Contains the tables, columns & rows resulting from a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchQueryResults {
-    #[doc = "The list of tables, columns and rows."]
+    #[doc = "The results of the query in tabular format."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -1073,7 +1079,7 @@ pub type QueryParam = String;
 #[doc = "Contains the tables, columns & rows resulting from a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryResults {
-    #[doc = "The list of tables, columns and rows."]
+    #[doc = "The results of the query in tabular format."]
     pub tables: Vec<Table>,
     #[doc = "Statistics represented in JSON format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

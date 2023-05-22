@@ -1373,6 +1373,24 @@ impl CommunityGalleryImage {
         Self::default()
     }
 }
+#[doc = "This is the community gallery image definition identifier."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommunityGalleryImageIdentifier {
+    #[doc = "The name of the gallery image definition publisher."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[doc = "The name of the gallery image definition offer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offer: Option<String>,
+    #[doc = "The name of the gallery image definition SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
+}
+impl CommunityGalleryImageIdentifier {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The List Community Gallery Images operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommunityGalleryImageList {
@@ -1405,8 +1423,8 @@ pub struct CommunityGalleryImageProperties {
     #[doc = "The end of life date of the gallery image definition. This property can be used for decommissioning purposes. This property is updatable."]
     #[serde(rename = "endOfLifeDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_of_life_date: Option<time::OffsetDateTime>,
-    #[doc = "This is the gallery image definition identifier."]
-    pub identifier: GalleryImageIdentifier,
+    #[doc = "This is the community gallery image definition identifier."]
+    pub identifier: CommunityGalleryImageIdentifier,
     #[doc = "The properties describe the recommended machine configuration for this Image Definition. These properties are updatable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommended: Option<RecommendedMachineConfiguration>,
@@ -1440,7 +1458,7 @@ impl CommunityGalleryImageProperties {
     pub fn new(
         os_type: community_gallery_image_properties::OsType,
         os_state: community_gallery_image_properties::OsState,
-        identifier: GalleryImageIdentifier,
+        identifier: CommunityGalleryImageIdentifier,
     ) -> Self {
         Self {
             os_type,

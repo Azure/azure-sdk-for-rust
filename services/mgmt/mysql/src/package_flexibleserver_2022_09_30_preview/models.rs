@@ -1762,6 +1762,9 @@ pub struct ServerPropertiesForUpdate {
     #[doc = "The date encryption for cmk."]
     #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
     pub data_encryption: Option<DataEncryption>,
+    #[doc = "Network related properties of a server"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<Network>,
 }
 impl ServerPropertiesForUpdate {
     pub fn new() -> Self {

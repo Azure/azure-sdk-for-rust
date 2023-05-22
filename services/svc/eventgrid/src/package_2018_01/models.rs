@@ -465,9 +465,12 @@ pub struct AcsEmailDeliveryReportReceivedEventData {
     #[doc = "The Id of the email been sent"]
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
-    #[doc = "The status of the email"]
+    #[doc = "The status of the email. Any value other than Delivered is considered failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<acs_email_delivery_report_received_event_data::Status>,
+    #[doc = "Detailed information about the status if any"]
+    #[serde(rename = "deliveryStatusDetails", default, skip_serializing_if = "Option::is_none")]
+    pub delivery_status_details: Option<AcsEmailDeliveryReportStatusDetails>,
     #[doc = "The time at which the email delivery report received timestamp"]
     #[serde(rename = "deliveryAttemptTimeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub delivery_attempt_time_stamp: Option<time::OffsetDateTime>,
@@ -479,14 +482,16 @@ impl AcsEmailDeliveryReportReceivedEventData {
 }
 pub mod acs_email_delivery_report_received_event_data {
     use super::*;
-    #[doc = "The status of the email"]
+    #[doc = "The status of the email. Any value other than Delivered is considered failed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Status")]
     pub enum Status {
-        Failed,
+        Bounced,
         Delivered,
+        Failed,
         FilteredSpam,
         Quarantined,
+        Suppressed,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -512,13 +517,27 @@ pub mod acs_email_delivery_report_received_event_data {
             S: Serializer,
         {
             match self {
-                Self::Failed => serializer.serialize_unit_variant("Status", 0u32, "Failed"),
+                Self::Bounced => serializer.serialize_unit_variant("Status", 0u32, "Bounced"),
                 Self::Delivered => serializer.serialize_unit_variant("Status", 1u32, "Delivered"),
-                Self::FilteredSpam => serializer.serialize_unit_variant("Status", 2u32, "FilteredSpam"),
-                Self::Quarantined => serializer.serialize_unit_variant("Status", 3u32, "Quarantined"),
+                Self::Failed => serializer.serialize_unit_variant("Status", 2u32, "Failed"),
+                Self::FilteredSpam => serializer.serialize_unit_variant("Status", 3u32, "FilteredSpam"),
+                Self::Quarantined => serializer.serialize_unit_variant("Status", 4u32, "Quarantined"),
+                Self::Suppressed => serializer.serialize_unit_variant("Status", 5u32, "Suppressed"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "Detailed information about the status if any"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsEmailDeliveryReportStatusDetails {
+    #[doc = "Detailed status message"]
+    #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub status_message: Option<String>,
+}
+impl AcsEmailDeliveryReportStatusDetails {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.EmailEngagementTrackingReportReceived event."]
@@ -588,6 +607,51 @@ pub mod acs_email_engagement_tracking_report_received_event_data {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "Custom Context of Incoming Call"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsIncomingCallCustomContext {
+    #[doc = "Sip Headers for incoming call"]
+    #[serde(rename = "sipHeaders", default, skip_serializing_if = "Option::is_none")]
+    pub sip_headers: Option<serde_json::Value>,
+    #[doc = "Voip Headers for incoming call"]
+    #[serde(rename = "voipHeaders", default, skip_serializing_if = "Option::is_none")]
+    pub voip_headers: Option<serde_json::Value>,
+}
+impl AcsIncomingCallCustomContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for an Microsoft.Communication.IncomingCall event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsIncomingCallEventData {
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<CommunicationIdentifierModel>,
+    #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<CommunicationIdentifierModel>,
+    #[doc = "The Id of the server call"]
+    #[serde(rename = "serverCallId", default, skip_serializing_if = "Option::is_none")]
+    pub server_call_id: Option<String>,
+    #[doc = "Display name of caller."]
+    #[serde(rename = "callerDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub caller_display_name: Option<String>,
+    #[doc = "Custom Context of Incoming Call"]
+    #[serde(rename = "customContext", default, skip_serializing_if = "Option::is_none")]
+    pub custom_context: Option<AcsIncomingCallCustomContext>,
+    #[doc = "Signed incoming call context."]
+    #[serde(rename = "incomingCallContext", default, skip_serializing_if = "Option::is_none")]
+    pub incoming_call_context: Option<String>,
+    #[doc = "CorrelationId (CallId)."]
+    #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
+    pub correlation_id: Option<String>,
+}
+impl AcsIncomingCallEventData {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Schema for all properties of  Recording Chunk Information."]
@@ -2153,6 +2217,9 @@ impl EventHubCaptureFileCreatedEventData {
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageCreated event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareDicomImageCreatedEventData {
+    #[doc = "Data partition name"]
+    #[serde(rename = "partitionName", default, skip_serializing_if = "Option::is_none")]
+    pub partition_name: Option<String>,
     #[doc = "Unique identifier for the Study"]
     #[serde(rename = "imageStudyInstanceUid", default, skip_serializing_if = "Option::is_none")]
     pub image_study_instance_uid: Option<String>,
@@ -2177,6 +2244,9 @@ impl HealthcareDicomImageCreatedEventData {
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageDeleted event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareDicomImageDeletedEventData {
+    #[doc = "Data partition name"]
+    #[serde(rename = "partitionName", default, skip_serializing_if = "Option::is_none")]
+    pub partition_name: Option<String>,
     #[doc = "Unique identifier for the Study"]
     #[serde(rename = "imageStudyInstanceUid", default, skip_serializing_if = "Option::is_none")]
     pub image_study_instance_uid: Option<String>,
@@ -2194,6 +2264,33 @@ pub struct HealthcareDicomImageDeletedEventData {
     pub sequence_number: Option<i64>,
 }
 impl HealthcareDicomImageDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.HealthcareApis.DicomImageUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthcareDicomImageUpdatedEventData {
+    #[doc = "Data partition name"]
+    #[serde(rename = "partitionName", default, skip_serializing_if = "Option::is_none")]
+    pub partition_name: Option<String>,
+    #[doc = "Unique identifier for the Study"]
+    #[serde(rename = "imageStudyInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_study_instance_uid: Option<String>,
+    #[doc = "Unique identifier for the Series"]
+    #[serde(rename = "imageSeriesInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_series_instance_uid: Option<String>,
+    #[doc = "Unique identifier for the DICOM Image"]
+    #[serde(rename = "imageSopInstanceUid", default, skip_serializing_if = "Option::is_none")]
+    pub image_sop_instance_uid: Option<String>,
+    #[doc = "Domain name of the DICOM account for this image."]
+    #[serde(rename = "serviceHostName", default, skip_serializing_if = "Option::is_none")]
+    pub service_host_name: Option<String>,
+    #[doc = "Sequence number of the DICOM Service within Azure Health Data Services. It is unique for every image creation, updation and deletion within the service."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<i64>,
+}
+impl HealthcareDicomImageUpdatedEventData {
     pub fn new() -> Self {
         Self::default()
     }

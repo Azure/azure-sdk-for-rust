@@ -364,6 +364,30 @@ impl ElasticTrafficFilterRule {
         Self::default()
     }
 }
+#[doc = "Elastic Version List Format"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ElasticVersionListFormat {
+    #[doc = "Elastic Version Properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ElasticVersionListProperties>,
+}
+impl ElasticVersionListFormat {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Elastic Version Properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ElasticVersionListProperties {
+    #[doc = "Available elastic version of the given region"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl ElasticVersionListProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "List of elastic versions available in a region."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticVersionsListResponse {
@@ -373,10 +397,16 @@ pub struct ElasticVersionsListResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<String>,
+    pub value: Vec<ElasticVersionListFormat>,
     #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ElasticVersionsListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
 }
 impl ElasticVersionsListResponse {
     pub fn new() -> Self {
@@ -1071,11 +1101,21 @@ impl UpgradableVersionsList {
 #[doc = "The User Api Key created for the Organization associated with the User Email Id that was passed in the request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserApiKeyResponse {
-    #[doc = "The User Api Key Generated based on ReturnApiKey flag. This is applicable for non-Portal clients only."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UserApiKeyResponseProperties>,
+}
+impl UserApiKeyResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserApiKeyResponseProperties {
+    #[doc = "The User Api Key Generated based on GenerateApiKey flag. This is applicable for non-Portal clients only."]
     #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
 }
-impl UserApiKeyResponse {
+impl UserApiKeyResponseProperties {
     pub fn new() -> Self {
         Self::default()
     }

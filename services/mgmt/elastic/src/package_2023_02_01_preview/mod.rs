@@ -1031,48 +1031,66 @@ pub mod elastic_versions {
             pub(crate) region: String,
         }
         impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
+            pub fn into_stream(self) -> azure_core::Pageable<models::ElasticVersionsListResponse, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
+                        let mut url = azure_core::Url::parse(&format!(
                             "{}/subscriptions/{}/providers/Microsoft.Elastic/elasticVersions",
                             this.client.endpoint(),
                             &this.subscription_id
                         ))?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2023-02-01-preview");
-                        let region = &this.region;
-                        req.url_mut().query_pairs_mut().append_pair("region", region);
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-02-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                req.url_mut()
+                                    .query_pairs_mut()
+                                    .append_pair(azure_core::query_param::API_VERSION, "2023-02-01-preview");
+                                let region = &this.region;
+                                req.url_mut().query_pairs_mut().append_pair("region", region);
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
                     }
-                })
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ElasticVersionsListResponse>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ElasticVersionsListResponse>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                };
+                azure_core::Pageable::new(make_request)
             }
         }
     }

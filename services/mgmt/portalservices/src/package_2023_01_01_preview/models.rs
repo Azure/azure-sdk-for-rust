@@ -64,18 +64,24 @@ impl ErrorResponse {
     }
 }
 #[doc = "The contents of the file to compile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PortalTenantCompileFile {
     #[doc = "The contents of the file."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub contents: Option<serde_json::Value>,
+    pub contents: serde_json::Value,
     #[doc = "The contents of the string source."]
     #[serde(rename = "stringSource", default, skip_serializing_if = "Option::is_none")]
     pub string_source: Option<serde_json::Value>,
+    #[doc = "The contents of referenced files. The property name is the relative file path and the value is its contents."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files: Option<serde_json::Value>,
 }
 impl PortalTenantCompileFile {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(contents: serde_json::Value) -> Self {
+        Self {
+            contents,
+            string_source: None,
+            files: None,
+        }
     }
 }
 #[doc = "The runtime result of source compilation"]

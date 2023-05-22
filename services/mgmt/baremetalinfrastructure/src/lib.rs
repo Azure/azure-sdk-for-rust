@@ -3,6 +3,10 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#[cfg(feature = "package-2023-04-06")]
+pub mod package_2023_04_06;
+#[cfg(all(feature = "package-2023-04-06", not(feature = "no-default-tag")))]
+pub use package_2023_04_06::*;
 #[cfg(feature = "package-2021-08-09")]
 pub mod package_2021_08_09;
 #[cfg(all(feature = "package-2021-08-09", not(feature = "no-default-tag")))]

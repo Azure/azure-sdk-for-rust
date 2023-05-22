@@ -2398,7 +2398,7 @@ pub mod key_values {
     use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Gets the properties of the specified key-value."]
+        #[doc = "Gets the properties of the specified key-value. NOTE: This operation is intended for use in ARM Template deployments. For all other scenarios involving App Configuration key-values the data plane API should be used instead."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
@@ -2420,7 +2420,7 @@ pub mod key_values {
                 key_value_name: key_value_name.into(),
             }
         }
-        #[doc = "Creates a key-value."]
+        #[doc = "Creates a key-value. NOTE: This operation is intended for use in ARM Template deployments. For all other scenarios involving App Configuration key-values the data plane API should be used instead."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
@@ -2443,7 +2443,7 @@ pub mod key_values {
                 key_value_parameters: None,
             }
         }
-        #[doc = "Deletes a key-value."]
+        #[doc = "Deletes a key-value. NOTE: This operation is intended for use in ARM Template deployments. For all other scenarios involving App Configuration key-values the data plane API should be used instead."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The Microsoft Azure subscription ID."]
