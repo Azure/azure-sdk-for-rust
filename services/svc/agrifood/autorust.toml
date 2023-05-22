@@ -4,4 +4,5 @@ deny = [
     "package-2021-07-31-preview",
     "package-2021-03-31-preview",
     "package-2022-11-01-preview",
+    "package-2023-04-01-preview",
   ]
