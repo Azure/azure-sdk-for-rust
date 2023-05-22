@@ -1,6 +1,6 @@
 [package]
 name = "azure_iot_hub"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Microsoft Corp."]
 edition = "2021"
 description = "Azure IoT Hub"
@@ -12,7 +12,7 @@ rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.11", default_features = false }
+azure_core = { path = "../core", version = "0.12", default_features = false }
 bytes = "1.0"
 time = "0.3.10"
 hmac = "0.12"
