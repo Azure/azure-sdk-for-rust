@@ -285,6 +285,60 @@ pub mod list_credentials_request {
         }
     }
 }
+#[doc = "Represent ListIngressGatewayCredentials Request object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ListIngressGatewayCredentialsRequest {
+    #[doc = "The name of the service."]
+    #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
+    pub service_name: Option<list_ingress_gateway_credentials_request::ServiceName>,
+}
+impl ListIngressGatewayCredentialsRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod list_ingress_gateway_credentials_request {
+    use super::*;
+    #[doc = "The name of the service."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ServiceName")]
+    pub enum ServiceName {
+        #[serde(rename = "SSH")]
+        Ssh,
+        #[serde(rename = "WAC")]
+        Wac,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ServiceName {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ServiceName {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ServiceName {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Ssh => serializer.serialize_unit_variant("ServiceName", 0u32, "SSH"),
+                Self::Wac => serializer.serialize_unit_variant("ServiceName", 1u32, "WAC"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Represent ManageProxy Request object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedProxyRequest {

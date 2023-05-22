@@ -1135,16 +1135,16 @@ impl NameAvailability {
         Self::default()
     }
 }
-#[doc = "Network properties of a server"]
+#[doc = "Network properties of a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[doc = "public network access is enabled or not"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<network::PublicNetworkAccess>,
-    #[doc = "delegated subnet arm resource id."]
+    #[doc = "Delegated subnet arm resource id. This is required to be passed during create, in case we want the server to be VNET injected, i.e. Private access server. During update, pass this only if we want to update the value for Private DNS zone."]
     #[serde(rename = "delegatedSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub delegated_subnet_resource_id: Option<String>,
-    #[doc = "private dns zone arm resource id."]
+    #[doc = "Private dns zone arm resource id. This is required to be passed during create, in case we want the server to be VNET injected, i.e. Private access server. During update, pass this only if we want to update the value for Private DNS zone."]
     #[serde(rename = "privateDnsZoneArmResourceId", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_arm_resource_id: Option<String>,
 }
@@ -1657,7 +1657,7 @@ pub struct ServerProperties {
     #[doc = "Backup properties of a server"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub backup: Option<Backup>,
-    #[doc = "Network properties of a server"]
+    #[doc = "Network properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<Network>,
     #[doc = "High availability properties of a server"]
@@ -1817,6 +1817,9 @@ pub struct ServerPropertiesForUpdate {
     #[doc = "Used to indicate role of the server in replication set."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
+    #[doc = "Network properties of a server."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<Network>,
 }
 impl ServerPropertiesForUpdate {
     pub fn new() -> Self {

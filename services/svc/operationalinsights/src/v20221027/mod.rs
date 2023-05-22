@@ -115,7 +115,7 @@ pub mod query {
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Execute an Analytics query using resource URI"]
-        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://docs.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
+        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://learn.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: The identifier of the resource."]
@@ -129,7 +129,7 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query using resource ID"]
-        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://docs.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
+        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://learn.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: The identifier of the resource."]
@@ -150,7 +150,7 @@ pub mod query {
         #[doc = "Executes an Analytics query for data"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
+        #[doc = "* `workspace_id`: Primary Workspace ID of the query. This is the Workspace ID from the Properties blade in the Azure portal."]
         #[doc = "* `query`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn get(&self, workspace_id: impl Into<String>, query: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
@@ -161,10 +161,10 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query"]
-        #[doc = "Executes an Analytics query for data. [Here](https://dev.loganalytics.io/documentation/Using-the-API) is an example for using POST with an Analytics query."]
+        #[doc = "Executes an Analytics query for data. [Here](https://learn.microsoft.com/azure/azure-monitor/logs/api/request-format) is an example for using POST with an Analytics query."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
+        #[doc = "* `workspace_id`: Primary Workspace ID of the query. This is the Workspace ID from the Properties blade in the Azure portal."]
         #[doc = "* `body`: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
         pub fn execute(&self, workspace_id: impl Into<String>, body: impl Into<models::QueryBody>) -> execute::RequestBuilder {
             execute::RequestBuilder {
@@ -175,7 +175,7 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query using resource URI"]
-        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://docs.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
+        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://learn.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: The identifier of the resource."]
@@ -189,7 +189,7 @@ pub mod query {
             }
         }
         #[doc = "Execute an Analytics query using resource ID"]
-        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://docs.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
+        #[doc = "Executes an Analytics query for data in the context of a resource. [Here](https://learn.microsoft.com/azure/azure-monitor/logs/api/azure-resource-queries) is an example for using POST with an Analytics query."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_id`: The identifier of the resource."]
@@ -207,7 +207,7 @@ pub mod query {
             }
         }
         #[doc = "Execute a batch of Analytics queries"]
-        #[doc = "Executes a batch of Analytics queries for data. [Here](https://dev.loganalytics.io/documentation/Using-the-API) is an example for using POST with an Analytics query."]
+        #[doc = "Executes a batch of Analytics queries for data. [Here](https://learn.microsoft.com/azure/azure-monitor/logs/api/batch-queries) is an example for using POST with an Analytics query."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `body`: The batch request body"]
@@ -879,7 +879,7 @@ pub mod metadata {
         #[doc = "Retrieve the metadata information for the workspace, including its schema, functions, workspace info, categories etc."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
+        #[doc = "* `workspace_id`: Primary Workspace ID of the query. This is the Workspace ID from the Properties blade in the Azure portal."]
         pub fn get(&self, workspace_id: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
                 client: self.0.clone(),
@@ -890,7 +890,7 @@ pub mod metadata {
         #[doc = "Retrieve the metadata information for the workspace, including its schema, functions, workspace info, categories etc."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `workspace_id`: ID of the workspace. This is Workspace ID from the Properties blade in the Azure portal."]
+        #[doc = "* `workspace_id`: Primary Workspace ID of the query. This is the Workspace ID from the Properties blade in the Azure portal."]
         pub fn post(&self, workspace_id: impl Into<String>) -> post::RequestBuilder {
             post::RequestBuilder {
                 client: self.0.clone(),

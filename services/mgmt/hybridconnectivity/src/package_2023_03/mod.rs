@@ -337,6 +337,7 @@ pub mod endpoints {
                 resource_uri: resource_uri.into(),
                 endpoint_name: endpoint_name.into(),
                 expiresin: None,
+                list_ingress_gateway_credentials_request: None,
             }
         }
         #[doc = "Fetches the managed proxy details "]
@@ -956,11 +957,20 @@ pub mod endpoints {
             pub(crate) resource_uri: String,
             pub(crate) endpoint_name: String,
             pub(crate) expiresin: Option<i64>,
+            pub(crate) list_ingress_gateway_credentials_request: Option<models::ListIngressGatewayCredentialsRequest>,
         }
         impl RequestBuilder {
             #[doc = "The is how long the endpoint access token is valid (in seconds)."]
             pub fn expiresin(mut self, expiresin: i64) -> Self {
                 self.expiresin = Some(expiresin);
+                self
+            }
+            #[doc = "Object of type ListIngressGatewayCredentialsRequest"]
+            pub fn list_ingress_gateway_credentials_request(
+                mut self,
+                list_ingress_gateway_credentials_request: impl Into<models::ListIngressGatewayCredentialsRequest>,
+            ) -> Self {
+                self.list_ingress_gateway_credentials_request = Some(list_ingress_gateway_credentials_request.into());
                 self
             }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -990,8 +1000,13 @@ pub mod endpoints {
                         if let Some(expiresin) = &this.expiresin {
                             req.url_mut().query_pairs_mut().append_pair("expiresin", &expiresin.to_string());
                         }
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
+                        let req_body =
+                            if let Some(list_ingress_gateway_credentials_request) = &this.list_ingress_gateway_credentials_request {
+                                req.insert_header("content-type", "application/json");
+                                azure_core::to_json(list_ingress_gateway_credentials_request)?
+                            } else {
+                                azure_core::EMPTY_BODY
+                            };
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }

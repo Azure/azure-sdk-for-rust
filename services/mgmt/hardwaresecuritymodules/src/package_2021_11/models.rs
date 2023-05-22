@@ -87,6 +87,9 @@ pub struct DedicatedHsmOperation {
     #[doc = "Gets or sets a value indicating whether it is a data plane action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "The origin of the operation"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
     #[doc = "The display string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<dedicated_hsm_operation::Display>,

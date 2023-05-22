@@ -6650,6 +6650,7 @@ pub mod schema_registry {
                 top: None,
             }
         }
+        #[doc = "Gets the details of an EventHub schema group."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
@@ -6671,6 +6672,7 @@ pub mod schema_registry {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Creates or Updates an EventHub schema group."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]
@@ -6695,6 +6697,7 @@ pub mod schema_registry {
                 subscription_id: subscription_id.into(),
             }
         }
+        #[doc = "Deletes an EventHub schema group."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: Name of the resource group within the azure subscription."]

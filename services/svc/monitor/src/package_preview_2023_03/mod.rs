@@ -237,22 +237,22 @@ pub mod metrics {
                 self.timespan = Some(timespan.into());
                 self
             }
-            #[doc = "The interval (i.e. timegrain) of the query."]
+            #[doc = "The interval (i.e. timegrain) of the query.\n*Examples: PT15M, PT1H, P1D*"]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self
             }
-            #[doc = "The list of aggregation types (comma separated) to retrieve."]
+            #[doc = "The list of aggregation types (comma separated) to retrieve.\n*Examples: average, minimum, maximum*"]
             pub fn aggregation(mut self, aggregation: impl Into<String>) -> Self {
                 self.aggregation = Some(aggregation.into());
                 self
             }
-            #[doc = "The maximum number of records to retrieve.\nValid only if filter is specified.\nDefaults to 10."]
+            #[doc = "The maximum number of records to retrieve per resource ID in the request.\nValid only if filter is specified.\nDefaults to 10."]
             pub fn top(mut self, top: i32) -> Self {
                 self.top = Some(top);
                 self
             }
-            #[doc = "The aggregation to use for sorting results and the direction of the sort.\nOnly one order can be specified.\nExamples: sum asc."]
+            #[doc = "The aggregation to use for sorting results and the direction of the sort.\nOnly one order can be specified.\n*Examples: sum asc*"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self

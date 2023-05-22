@@ -872,6 +872,9 @@ pub struct ContainerProperties {
     #[doc = "The container probe, for liveness or readiness"]
     #[serde(rename = "readinessProbe", default, skip_serializing_if = "Option::is_none")]
     pub readiness_probe: Option<ContainerProbe>,
+    #[doc = "The security context for the container."]
+    #[serde(rename = "securityContext", default, skip_serializing_if = "Option::is_none")]
+    pub security_context: Option<SecurityContextDefinition>,
 }
 impl ContainerProperties {
     pub fn new(image: String, resources: ResourceRequirements) -> Self {
@@ -885,6 +888,7 @@ impl ContainerProperties {
             volume_mounts: Vec::new(),
             liveness_probe: None,
             readiness_probe: None,
+            security_context: None,
         }
     }
 }
@@ -1251,6 +1255,9 @@ pub struct InitContainerPropertiesDefinition {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub volume_mounts: Vec<VolumeMount>,
+    #[doc = "The security context for the container."]
+    #[serde(rename = "securityContext", default, skip_serializing_if = "Option::is_none")]
+    pub security_context: Option<SecurityContextDefinition>,
 }
 impl InitContainerPropertiesDefinition {
     pub fn new() -> Self {
@@ -1747,6 +1754,56 @@ impl ResourceRequirements {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretVolume {}
 impl SecretVolume {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The capabilities to add or drop from a container."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecurityContextCapabilitiesDefinition {
+    #[doc = "The capabilities to add to the container."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub add: Vec<String>,
+    #[doc = "The capabilities to drop from the container."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub drop: Vec<String>,
+}
+impl SecurityContextCapabilitiesDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The security context for the container."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecurityContextDefinition {
+    #[doc = "The flag to determine if the container permissions is elevated to Privileged."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub privileged: Option<bool>,
+    #[doc = "A boolean value indicating whether the init process can elevate its privileges"]
+    #[serde(rename = "allowPrivilegeEscalation", default, skip_serializing_if = "Option::is_none")]
+    pub allow_privilege_escalation: Option<bool>,
+    #[doc = "The capabilities to add or drop from a container."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<SecurityContextCapabilitiesDefinition>,
+    #[doc = "Sets the User GID for the container."]
+    #[serde(rename = "runAsGroup", default, skip_serializing_if = "Option::is_none")]
+    pub run_as_group: Option<i32>,
+    #[doc = "Sets the User UID for the container."]
+    #[serde(rename = "runAsUser", default, skip_serializing_if = "Option::is_none")]
+    pub run_as_user: Option<i32>,
+    #[doc = "a base64 encoded string containing the contents of the JSON in the seccomp profile"]
+    #[serde(rename = "seccompProfile", default, skip_serializing_if = "Option::is_none")]
+    pub seccomp_profile: Option<String>,
+}
+impl SecurityContextDefinition {
     pub fn new() -> Self {
         Self::default()
     }

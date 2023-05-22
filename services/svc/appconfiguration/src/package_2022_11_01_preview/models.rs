@@ -257,7 +257,7 @@ pub struct Snapshot {
     pub status: Option<snapshot::Status>,
     #[doc = "A list of filters used to filter the key-values included in the snapshot."]
     pub filters: Vec<KeyValueFilter>,
-    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'all' composition type includes all key-values. The 'group_by_key' composition type ensures there are no two key-values containing the same key."]
+    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'key' composition type ensures there are no two key-values containing the same key. The 'key_label' composition type ensures there are no two key-values containing the same key and label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub composition_type: Option<snapshot::CompositionType>,
     #[doc = "The time that the snapshot was created."]
@@ -346,14 +346,14 @@ pub mod snapshot {
             }
         }
     }
-    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'all' composition type includes all key-values. The 'group_by_key' composition type ensures there are no two key-values containing the same key."]
+    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'key' composition type ensures there are no two key-values containing the same key. The 'key_label' composition type ensures there are no two key-values containing the same key and label."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "CompositionType")]
     pub enum CompositionType {
-        #[serde(rename = "all")]
-        All,
-        #[serde(rename = "group_by_key")]
-        GroupByKey,
+        #[serde(rename = "key")]
+        Key,
+        #[serde(rename = "key_label")]
+        KeyLabel,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -379,8 +379,8 @@ pub mod snapshot {
             S: Serializer,
         {
             match self {
-                Self::All => serializer.serialize_unit_variant("CompositionType", 0u32, "all"),
-                Self::GroupByKey => serializer.serialize_unit_variant("CompositionType", 1u32, "group_by_key"),
+                Self::Key => serializer.serialize_unit_variant("CompositionType", 0u32, "key"),
+                Self::KeyLabel => serializer.serialize_unit_variant("CompositionType", 1u32, "key_label"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
