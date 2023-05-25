@@ -177,6 +177,7 @@ impl BlobClient {
         PutBlockBuilder::new(self.clone(), block_id.into(), body.into())
     }
 
+    /// Creates a new block to be committed as part of a block blob, from a URL.
     pub fn put_block_url(
         &self,
         block_id: impl Into<BlockId>,
