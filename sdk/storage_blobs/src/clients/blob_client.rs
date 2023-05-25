@@ -177,6 +177,14 @@ impl BlobClient {
         PutBlockBuilder::new(self.clone(), block_id.into(), body.into())
     }
 
+    pub fn put_block_url(
+        &self,
+        block_id: impl Into<BlockId>,
+        copy_source: Url,
+    ) -> PutBlockUrlBuilder {
+        PutBlockUrlBuilder::new(self.clone(), block_id.into(), copy_source)
+    }
+
     /// Retrieve the list of blocks that have been uploaded as part of a block blob.
     pub fn get_block_list(&self) -> GetBlockListBuilder {
         GetBlockListBuilder::new(self.clone())
