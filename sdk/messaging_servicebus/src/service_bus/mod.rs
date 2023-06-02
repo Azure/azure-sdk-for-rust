@@ -215,6 +215,11 @@ impl PeekLockResponse {
         self.broker_properties.clone()
     }
 
+    /// Get custom message headers from the message in the lock
+    pub fn custom_properties<T: TryFrom<headers::Headers>>(&self) -> Result<T, T::Error> {
+        self.headers.clone().try_into()
+    }
+
     /// Get the status of the peek
     pub fn status(&self) -> &StatusCode {
         &self.status
