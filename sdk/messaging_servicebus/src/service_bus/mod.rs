@@ -2,7 +2,7 @@ use azure_core::{
     base64, error::Error, headers, CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
 };
 use ring::hmac;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::str::FromStr;
 use std::time::Duration;
 use std::{ops::Add, sync::Arc};
@@ -277,13 +277,13 @@ impl PeekLockResponse {
 }
 
 /// `BrokerProperties` object decoded from the message headers
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct BrokerProperties {
     pub delivery_count: i32,
-    pub enqueued_sequence_number: i32,
-    #[serde(with = "time::serde::rfc2822")]
-    pub enqueued_time_utc: OffsetDateTime,
+    pub enqueued_sequence_number: Option<i32>,
+    #[serde(deserialize_with = "BrokerProperties::option_rfc2822")]
+    pub enqueued_time_utc: Option<OffsetDateTime>,
     pub lock_token: String,
     #[serde(with = "time::serde::rfc2822")]
     pub locked_until_utc: OffsetDateTime,
@@ -291,6 +291,15 @@ pub struct BrokerProperties {
     pub sequence_number: i32,
     pub state: String,
     pub time_to_live: i64,
+}
+
+impl BrokerProperties {
+    fn option_rfc2822<'de, D>(value: D) -> Result<Option<OffsetDateTime>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Some(time::serde::rfc2822::deserialize(value)?))
+    }
 }
 
 impl FromStr for BrokerProperties {
