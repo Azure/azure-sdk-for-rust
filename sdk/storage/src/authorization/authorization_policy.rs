@@ -47,7 +47,7 @@ impl Policy for AuthorizationPolicy {
                         ctx.get()
                             .expect("ServiceType must be in the Context at this point"),
                     )?;
-                    request.insert_header(AUTHORIZATION, auth)
+                    request.insert_header(AUTHORIZATION, auth);
                 }
                 request
             }
@@ -201,7 +201,7 @@ fn canonicalized_resource(account: &str, uri: &Url) -> String {
 
             for (i, item) in ret.iter().enumerate() {
                 if i > 0 {
-                    can_res += ","
+                    can_res += ",";
                 }
                 can_res += item;
             }

@@ -49,7 +49,7 @@ impl CertificateCredentialOptions {
     }
     /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
-        self.authority_host = authority_host
+        self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
@@ -60,7 +60,7 @@ impl CertificateCredentialOptions {
 
     /// Enable/disable sending the certificate chain
     pub fn set_send_certificate_chain(&mut self, send_certificate_chain: bool) {
-        self.send_certificate_chain = send_certificate_chain
+        self.send_certificate_chain = send_certificate_chain;
     }
 
     /// Whether certificate chain is sent as part of the request or not. Default is

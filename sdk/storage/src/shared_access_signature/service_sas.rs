@@ -48,43 +48,43 @@ pub struct BlobSasPermissions {
 impl fmt::Display for BlobSasPermissions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.read {
-            write!(f, "r")?
+            write!(f, "r")?;
         };
         if self.add {
-            write!(f, "a")?
+            write!(f, "a")?;
         };
         if self.create {
-            write!(f, "c")?
+            write!(f, "c")?;
         };
         if self.write {
-            write!(f, "w")?
+            write!(f, "w")?;
         };
         if self.delete {
-            write!(f, "d")?
+            write!(f, "d")?;
         };
         if self.delete_version {
-            write!(f, "x")?
+            write!(f, "x")?;
         };
         if self.permanent_delete {
-            write!(f, "y")?
+            write!(f, "y")?;
         };
         if self.list {
-            write!(f, "l")?
+            write!(f, "l")?;
         };
         if self.tags {
-            write!(f, "t")?
+            write!(f, "t")?;
         };
         if self.move_ {
-            write!(f, "m")?
+            write!(f, "m")?;
         };
         if self.execute {
-            write!(f, "e")?
+            write!(f, "e")?;
         };
         if self.ownership {
-            write!(f, "o")?
+            write!(f, "o")?;
         };
         if self.permissions {
-            write!(f, "p")?
+            write!(f, "p")?;
         };
         Ok(())
     }
@@ -171,19 +171,19 @@ impl SasToken for BlobSharedAccessSignature {
         ];
 
         if let Some(start) = &self.start {
-            elements.push(format!("st={}", format_form(format_date(*start))))
+            elements.push(format!("st={}", format_form(format_date(*start))));
         }
 
         if let Some(ip) = &self.ip {
-            elements.push(format!("sip={ip}"))
+            elements.push(format!("sip={ip}"));
         }
 
         if let Some(protocol) = &self.protocol {
-            elements.push(format!("spr={protocol}"))
+            elements.push(format!("spr={protocol}"));
         }
 
         if let Some(signed_directory_depth) = &self.signed_directory_depth {
-            elements.push(format!("sdd={signed_directory_depth}"))
+            elements.push(format!("sdd={signed_directory_depth}"));
         }
 
         let sig = self.sign();

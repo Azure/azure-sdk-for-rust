@@ -48,7 +48,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             if let Some(bytes) = self.bytes {
                 request.insert_headers(&ContentLength::new(bytes.len() as i32));
                 request.insert_headers(&ContentType::new("application/octet-stream"));
-                request.set_body(bytes)
+                request.set_body(bytes);
             } else {
                 request.insert_headers(&ContentLength::new(0));
             }

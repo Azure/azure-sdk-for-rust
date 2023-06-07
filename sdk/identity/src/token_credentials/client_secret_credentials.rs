@@ -30,7 +30,7 @@ impl TokenCredentialOptions {
     }
     /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
-        self.authority_host = authority_host
+        self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
