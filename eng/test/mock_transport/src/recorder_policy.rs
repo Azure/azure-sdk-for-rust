@@ -61,7 +61,7 @@ impl Policy for MockTransportRecorderPolicy {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_bytes())
-                .context(ErrorKind::MockFramework, "cannot write response file")?
+                .context(ErrorKind::MockFramework, "cannot write response file")?;
         }
 
         self.transaction.increment_number();

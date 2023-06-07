@@ -88,7 +88,7 @@ where
     T: AppendToUrlQuery,
 {
     fn append_to_url_query(&self, url: &mut url::Url) {
-        (*self).append_to_url_query(url)
+        (*self).append_to_url_query(url);
     }
 }
 

@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn test_require_send_sync() {
         // this won't compile if Context as a whole is not Send + Sync
-        require_send_sync(&Context::new())
+        require_send_sync(&Context::new());
     }
 
     #[test]

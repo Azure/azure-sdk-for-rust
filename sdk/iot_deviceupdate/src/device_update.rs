@@ -311,7 +311,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -344,7 +344,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -386,7 +386,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -415,7 +415,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -457,7 +457,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -498,7 +498,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }

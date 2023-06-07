@@ -876,7 +876,7 @@ pub struct ServiceOptions {
 impl ServiceOptions {
     /// set timeout duration for requests
     pub fn set_timeout(&mut self, default_timeout: Timeout) {
-        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout))
+        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout));
     }
 }
 
