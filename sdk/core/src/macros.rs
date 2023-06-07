@@ -29,6 +29,7 @@ macro_rules! setters {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
         #[allow(missing_docs)]
+        #[must_use]
         pub fn $name<P: ::std::convert::Into<$typ>>(self, $name: P) -> Self {
             let $name: $typ = $name.into();
             Self  {
