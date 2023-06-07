@@ -24,7 +24,7 @@ const DEFAULT_REFRESH_TIME: i64 = 300;
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CertificateCredentialOptions {
     authority_host: String,
     send_certificate_chain: bool,
@@ -182,7 +182,7 @@ impl TokenCredential for ClientCertificateCredential {
         let uuid = uuid::Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
-        let x5t = base64::encode(&thumbprint);
+        let x5t = base64::encode(thumbprint);
 
         let header = match options.send_certificate_chain {
             true => {
