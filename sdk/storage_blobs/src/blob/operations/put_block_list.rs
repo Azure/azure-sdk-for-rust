@@ -1,5 +1,7 @@
 use crate::prelude::*;
-use azure_core::{base64, headers::*, prelude::*, RequestId};
+#[cfg(feature = "md5")]
+use azure_core::base64;
+use azure_core::{headers::*, prelude::*, RequestId};
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use time::OffsetDateTime;
@@ -34,12 +36,14 @@ impl PutBlockListBuilder {
 
             // calculate the xml MD5. This can be made optional
             // if needed, but i think it's best to calculate it.
+            #[cfg(feature = "md5")]
             let md5 = {
                 let hash = md5::compute(&body_bytes);
                 base64::encode(hash.0)
             };
 
             let mut headers = Headers::new();
+            #[cfg(feature = "md5")]
             headers.insert(CONTENT_MD5, &md5);
             headers.add(self.content_type);
             headers.add(self.content_encoding);

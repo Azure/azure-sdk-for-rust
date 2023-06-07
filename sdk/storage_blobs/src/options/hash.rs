@@ -27,6 +27,13 @@ impl Header for Hash {
     }
 }
 
+impl From<[u8; 16]> for Hash {
+    fn from(md5: [u8; 16]) -> Self {
+        Hash::MD5(md5)
+    }
+}
+
+#[cfg(feature = "md5")]
 impl From<md5::Digest> for Hash {
     fn from(md5: md5::Digest) -> Self {
         Hash::MD5(md5.0)

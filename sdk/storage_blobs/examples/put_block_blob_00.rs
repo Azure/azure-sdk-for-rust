@@ -32,7 +32,7 @@ async fn main() -> azure_core::Result<()> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let hash = md5::compute(&data[..]);
+    let hash = md5::compute(&data[..]).0;
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional
