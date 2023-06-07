@@ -52,7 +52,7 @@ pub struct X509ThumbPrint {
     pub secondary_thumbprint: Option<String>,
 }
 
-/// AuthenticationType of a module or device.
+/// `AuthenticationType` of a module or device.
 #[derive(Serialize, Debug, Deserialize, Clone, PartialEq, Eq)]
 pub enum AuthenticationType {
     /// Authentication using a certificate authority.
@@ -83,7 +83,7 @@ pub struct AuthenticationMechanism {
 }
 
 impl AuthenticationMechanism {
-    /// Create a new AuthenticationMechanism using a symmetric key
+    /// Create a new `AuthenticationMechanism` using a symmetric key
     pub fn new_using_symmetric_key<S, T>(primary_key: S, secondary_key: T) -> Self
     where
         S: Into<String>,
@@ -99,7 +99,7 @@ impl AuthenticationMechanism {
         }
     }
 
-    /// Create a new AuthenticationMechanism using a x509 thumbprint
+    /// Create a new `AuthenticationMechanism` using a x509 thumbprint
     pub fn new_using_x509_thumbprint<S, T>(primary_thumbprint: S, secondary_thumbprint: T) -> Self
     where
         S: Into<String>,
@@ -115,7 +115,7 @@ impl AuthenticationMechanism {
         }
     }
 
-    /// Create a new AuthenticationMechanism using a certificate authority
+    /// Create a new `AuthenticationMechanism` using a certificate authority
     pub fn new_using_certificate_authority() -> Self {
         Self {
             authentication_type: AuthenticationType::Authority,

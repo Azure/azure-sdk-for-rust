@@ -9,7 +9,7 @@ pub trait SasToken {
     fn token(&self) -> String;
 }
 
-/// Converts an OffsetDateTime to an RFC3339 formatted string after truncating
+/// Converts an `OffsetDateTime` to an RFC3339 formatted string after truncating
 /// any partial seconds.
 pub(crate) fn format_date(d: OffsetDateTime) -> String {
     // When validating signatures, Azure Storage server creates a canonicalized

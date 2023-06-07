@@ -49,7 +49,7 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for DeviceIdentity
     }
 }
 
-/// Response of CreateOrUpdateDeviceIdentity
+/// Response of `CreateOrUpdateDeviceIdentity`
 pub type CreateOrUpdateDeviceIdentityResponse = DeviceIdentityResponse;
 
 impl CreateOrUpdateDeviceIdentityResponse {

@@ -8,7 +8,7 @@ const SIGNATURE_PREFIX: &str = "sig=";
 /// The token field of a [`Permission`](super::Permission) object.
 ///
 /// This field is a url encoded string with the type of permission, the signature, and the version (currently only 1.0)
-/// This type is a wrapper around AuthorizationToken.
+/// This type is a wrapper around `AuthorizationToken`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(try_from = "String")]
 pub struct PermissionToken {

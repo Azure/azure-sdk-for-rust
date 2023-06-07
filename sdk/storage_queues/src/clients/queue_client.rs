@@ -32,9 +32,9 @@ impl QueueClient {
     ///
     /// Keep in mind that keys present on Azure but not included in the passed
     /// metadata parameter will be deleted. If you want to keep the preexisting
-    /// key-value pairs, retrieve them with GetMetadata first and then
+    /// key-value pairs, retrieve them with `GetMetadata` first and then
     /// update/add to the received Metadata struct. Then pass the Metadata back
-    /// to SetQueueMetadata.  If you just want to clear the metadata, just pass
+    /// to `SetQueueMetadata`.  If you just want to clear the metadata, just pass
     /// an empty Metadata struct.
     pub fn set_metadata(&self, metadata: Metadata) -> SetQueueMetadataBuilder {
         SetQueueMetadataBuilder::new(self.clone(), metadata)

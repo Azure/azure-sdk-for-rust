@@ -40,7 +40,7 @@ impl Default for CertificateCredentialOptions {
 }
 
 impl CertificateCredentialOptions {
-    /// Create a new TokenCredentialsOptions. default() may also be used.
+    /// Create a new `TokenCredentialsOptions`. default() may also be used.
     pub fn new(authority_host: String, send_certificate_chain: bool) -> Self {
         Self {
             authority_host,
@@ -73,7 +73,7 @@ impl CertificateCredentialOptions {
 /// Enables authentication to Azure Active Directory using a client certificate that
 /// was generated for an App Registration.
 ///
-/// In order to use subject name validation send_cert_chain option must be set to true
+/// In order to use subject name validation `send_cert_chain` option must be set to true
 /// The certificate is expected to be in base64 encoded PKCS12 format
 pub struct ClientCertificateCredential {
     tenant_id: String,
@@ -85,7 +85,7 @@ pub struct ClientCertificateCredential {
 }
 
 impl ClientCertificateCredential {
-    /// Create a new ClientCertificateCredential
+    /// Create a new `ClientCertificateCredential`
     pub fn new(
         tenant_id: String,
         client_id: String,

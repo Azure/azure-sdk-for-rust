@@ -278,7 +278,7 @@ macro_rules! operation {
 
 /// Declare a `Future` with the given name
 ///
-/// `Future::Output` will be set to `azure_core::Result<$NAMEResponse>.
+/// `Future::Output` will be set to `azure_core::Result<$NAMEResponse>`.
 /// The `Future` will be `Send` for all targets but `wasm32`.
 #[macro_export]
 macro_rules! future {

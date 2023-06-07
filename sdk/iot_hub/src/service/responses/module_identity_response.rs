@@ -41,7 +41,7 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for ModuleIdentity
     }
 }
 
-/// Response for CreateOrUpdateModuleIdentity
+/// Response for `CreateOrUpdateModuleIdentity`
 pub type CreateOrUpdateModuleIdentityResponse = ModuleIdentityResponse;
 
 impl CreateOrUpdateModuleIdentityResponse {

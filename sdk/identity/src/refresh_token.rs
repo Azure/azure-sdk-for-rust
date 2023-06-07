@@ -74,7 +74,7 @@ pub struct RefreshTokenResponse {
 }
 
 impl RefreshTokenResponse {
-    /// Returns the token_type. Always `Bearer` for Azure AD.
+    /// Returns the `token_type`. Always `Bearer` for Azure AD.
     pub fn token_type(&self) -> &str {
         &self.token_type
     }
