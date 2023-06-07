@@ -16,7 +16,7 @@ impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
         let method = request.method();
-        let mut req = self.request(try_from_method(*method)?, url.clone());
+        let mut req = self.request(try_from_method(method)?, url.clone());
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
