@@ -34,7 +34,7 @@ async fn put_block_blob_and_snapshot() {
     }
 
     // calculate md5 too!
-    let digest = md5::compute(&data[..]);
+    let digest = md5::compute(&data[..]).0;
 
     blob.put_block_blob(data)
         .content_type("text/plain")
