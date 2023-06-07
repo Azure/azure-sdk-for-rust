@@ -33,7 +33,8 @@ use time::OffsetDateTime;
 fn get_creation_time(h: &Headers) -> azure_core::Result<Option<OffsetDateTime>> {
     if let Some(creation_time) = h.get_optional_str(&headers::CREATION_TIME) {
         // Check that the creation time is valid
-        let creation_time = date::parse_rfc1123(creation_time).unwrap_or(OffsetDateTime::now_utc());
+        let creation_time =
+            date::parse_rfc1123(creation_time).unwrap_or_else(|_| OffsetDateTime::now_utc());
         Ok(Some(creation_time))
     } else {
         // Not having a creation time is ok
