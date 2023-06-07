@@ -50,7 +50,7 @@ impl InvokeMethodBuilder {
     }
 }
 
-/// Body for the InvokeMethod request
+/// Body for the `InvokeMethod` request
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct InvokeMethodBody<'a> {

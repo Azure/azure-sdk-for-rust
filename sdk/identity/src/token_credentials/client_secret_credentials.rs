@@ -24,7 +24,7 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
-    /// Create a new TokenCredentialsOptions. `default()` may also be used.
+    /// Create a new `TokenCredentialsOptions`. `default()` may also be used.
     pub fn new(authority_host: String) -> Self {
         Self { authority_host }
     }
@@ -75,7 +75,7 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
-    /// Create a new ClientSecretCredential
+    /// Create a new `ClientSecretCredential`
     pub fn new(
         http_client: Arc<dyn HttpClient>,
         tenant_id: String,

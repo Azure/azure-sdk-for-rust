@@ -12,7 +12,7 @@ pub(crate) struct Oauth2HttpClient {
 }
 
 impl Oauth2HttpClient {
-    /// Create a new Oauth2HttpClient
+    /// Create a new `Oauth2HttpClient`
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         Self { http_client }
     }

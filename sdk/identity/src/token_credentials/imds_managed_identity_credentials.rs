@@ -48,7 +48,7 @@ impl ImdsManagedIdentityCredential {
 
     /// Specifies the object id associated with a user assigned managed service identity resource that should be used to retrieve the access token.
     ///
-    /// The values of client_id and msi_res_id are discarded, as only one id parameter may be set when getting a token.
+    /// The values of `client_id` and `msi_res_id` are discarded, as only one id parameter may be set when getting a token.
     pub fn with_object_id<A>(mut self, object_id: A) -> Self
     where
         A: Into<String>,
@@ -61,7 +61,7 @@ impl ImdsManagedIdentityCredential {
 
     /// Specifies the application id (client id) associated with a user assigned managed service identity resource that should be used to retrieve the access token.
     ///
-    /// The values of object_id and msi_res_id are discarded, as only one id parameter may be set when getting a token.
+    /// The values of `object_id` and `msi_res_id` are discarded, as only one id parameter may be set when getting a token.
     pub fn with_client_id<A>(mut self, client_id: A) -> Self
     where
         A: Into<String>,
@@ -74,7 +74,7 @@ impl ImdsManagedIdentityCredential {
 
     /// Specifies the ARM resource id of the user assigned managed service identity resource that should be used to retrieve the access token.
     ///
-    /// The values of object_id and client_id are discarded, as only one id parameter may be set when getting a token.
+    /// The values of `object_id` and `client_id` are discarded, as only one id parameter may be set when getting a token.
     pub fn with_identity<A>(mut self, msi_res_id: A) -> Self
     where
         A: Into<String>,

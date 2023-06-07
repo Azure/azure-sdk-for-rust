@@ -7,7 +7,7 @@ use serde_json::{Map, Value};
 use std::fmt::{Debug, Display};
 use time::OffsetDateTime;
 
-/// A KeyBundle consisting of a WebKey plus its attributes.
+/// A `KeyBundle` consisting of a `WebKey` plus its attributes.
 #[derive(Debug, Deserialize)]
 pub struct KeyVaultKey {
     /// The key management properties.
