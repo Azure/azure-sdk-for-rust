@@ -20,7 +20,7 @@ bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"
 log = "0.4"
-md5 = "0.7"
+md5 = {version="0.7", optional=true}
 RustyXML = "0.3"
 serde = { version = "1.0" }
 serde_derive = "1.0"
@@ -46,3 +46,4 @@ enable_reqwest_rustls = [
   "azure_storage/enable_reqwest_rustls",
 ]
 into_future = []
+md5 = ["dep:md5"]
