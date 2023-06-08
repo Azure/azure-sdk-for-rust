@@ -35,6 +35,7 @@ azure_identity = { path = "../identity", default_features = false }
 reqwest = "0.11"
 mock_transport = { path = "../../eng/test/mock_transport" }
 md5 = "0.7"
+async-trait = "0.1"
 
 [features]
 default = ["enable_reqwest"]
