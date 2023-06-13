@@ -75,7 +75,9 @@ impl KeyvaultClient {
         let dt = OffsetDateTime::now_utc();
         let time = date::to_rfc1123(&dt);
 
-        url.set_query(Some(API_VERSION_PARAM));
+        if url.query().is_some() && !url.query().unwrap().contains(API_VERSION_PARAM) {
+            url.set_query(Some(API_VERSION_PARAM));
+        }
 
         let mut request = Request::new(url, method);
         for (k, v) in headers {
