@@ -145,6 +145,16 @@ impl Headers {
         }
     }
 
+    /// Add headers to the headers collection
+    pub fn add_ref<H>(&mut self, header: &H)
+    where
+        H: AsHeaders,
+    {
+        for (key, value) in header.as_headers() {
+            self.insert(key, value);
+        }
+    }
+
     /// Iterate over all the header name/value pairs
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
@@ -361,3 +371,6 @@ pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static("www-authenticate");
+pub const ENCRYPTION_ALGORITHM: HeaderName = HeaderName::from_static("x-ms-encryption-algorithm");
+pub const ENCRYPTION_KEY: HeaderName = HeaderName::from_static("x-ms-encryption-key");
+pub const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");

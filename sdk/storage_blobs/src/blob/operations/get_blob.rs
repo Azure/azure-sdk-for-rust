@@ -15,6 +15,7 @@ operation! {
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId,
     ?chunk_size: u64,
+    ?encryption_key: CPKInfo,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
     ?if_tags: IfTags,
@@ -43,6 +44,9 @@ impl GetBlobBuilder {
                 }
 
                 headers.add(this.lease_id);
+                if let Some(cpk_info) = &this.encryption_key {
+                    headers.add_ref(cpk_info);
+                }
                 headers.add(this.if_modified_since);
                 headers.add(this.if_match.clone());
                 headers.add(this.if_tags.clone());
