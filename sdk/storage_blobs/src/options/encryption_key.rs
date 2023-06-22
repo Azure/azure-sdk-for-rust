@@ -57,3 +57,11 @@ impl AsHeaders for CPKInfo {
         headers.into_iter()
     }
 }
+
+impl AsHeaders for &CPKInfo {
+    type Iter = <CPKInfo as AsHeaders>::Iter;
+
+    fn as_headers(&self) -> Self::Iter {
+        (*self).as_headers()
+    }
+}

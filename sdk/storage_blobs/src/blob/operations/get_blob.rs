@@ -44,9 +44,7 @@ impl GetBlobBuilder {
                 }
 
                 headers.add(this.lease_id);
-                if let Some(cpk_info) = &this.encryption_key {
-                    headers.add_ref(cpk_info);
-                }
+                headers.add(this.encryption_key.as_ref());
                 headers.add(this.if_modified_since);
                 headers.add(this.if_match.clone());
                 headers.add(this.if_tags.clone());

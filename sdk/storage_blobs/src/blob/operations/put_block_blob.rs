@@ -43,9 +43,7 @@ impl PutBlockBlobBuilder {
             }
             headers.add(self.access_tier);
             headers.add(self.lease_id);
-            if let Some(cpk_info) = &self.encryption_key {
-                headers.add_ref(cpk_info);
-            }
+            headers.add(self.encryption_key);
             headers.add(self.encryption_scope);
             headers.add(self.if_modified_since);
             headers.add(self.if_match);

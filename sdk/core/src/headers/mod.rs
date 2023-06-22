@@ -15,23 +15,23 @@ impl<T> AsHeaders for T
 where
     T: Header,
 {
-    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Self::Iter {
-        Some((self.name(), self.value())).into_iter()
+        vec![(self.name(), self.value())].into_iter()
     }
 }
 
 impl<T> AsHeaders for Option<T>
 where
-    T: Header,
+    T: AsHeaders<Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>>,
 {
-    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    type Iter = T::Iter;
 
     fn as_headers(&self) -> Self::Iter {
         match self {
             Some(h) => h.as_headers(),
-            None => None.into_iter(),
+            None => vec![].into_iter(),
         }
     }
 }
@@ -137,16 +137,6 @@ impl Headers {
 
     /// Add headers to the headers collection
     pub fn add<H>(&mut self, header: H)
-    where
-        H: AsHeaders,
-    {
-        for (key, value) in header.as_headers() {
-            self.insert(key, value);
-        }
-    }
-
-    /// Add headers to the headers collection
-    pub fn add_ref<H>(&mut self, header: &H)
     where
         H: AsHeaders,
     {
