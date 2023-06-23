@@ -15,23 +15,23 @@ impl<T> AsHeaders for T
 where
     T: Header,
 {
-    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Self::Iter {
-        Some((self.name(), self.value())).into_iter()
+        vec![(self.name(), self.value())].into_iter()
     }
 }
 
 impl<T> AsHeaders for Option<T>
 where
-    T: Header,
+    T: AsHeaders<Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>>,
 {
-    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    type Iter = T::Iter;
 
     fn as_headers(&self) -> Self::Iter {
         match self {
             Some(h) => h.as_headers(),
-            None => None.into_iter(),
+            None => vec![].into_iter(),
         }
     }
 }
@@ -361,3 +361,6 @@ pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static("www-authenticate");
+pub const ENCRYPTION_ALGORITHM: HeaderName = HeaderName::from_static("x-ms-encryption-algorithm");
+pub const ENCRYPTION_KEY: HeaderName = HeaderName::from_static("x-ms-encryption-key");
+pub const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");
