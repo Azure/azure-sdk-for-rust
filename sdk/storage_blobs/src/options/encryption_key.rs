@@ -1,6 +1,6 @@
 use azure_core::headers::{self, AsHeaders, HeaderName, HeaderValue};
 
-const DEFAULT_ENCRYPTION_ALGORITHM: &'str = "AES256";
+const DEFAULT_ENCRYPTION_ALGORITHM: &str = "AES256";
 
 #[derive(Clone, Debug)]
 pub struct CPKInfo {
