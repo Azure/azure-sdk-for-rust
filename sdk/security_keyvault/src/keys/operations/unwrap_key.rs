@@ -23,13 +23,12 @@ impl UnwrapKeyBuilder {
             let mut request_body = Map::new();
             request_body.insert(
                 "value".to_owned(),
-                Value::String(String::from_utf8(self.unwrap_key_parameters.ciphertext).unwrap()),
+                Value::String(String::from_utf8(self.unwrap_key_parameters.ciphertext)?),
             );
 
             let algorithm = match self.unwrap_key_parameters.decrypt_parameters_encryption {
                 CryptographParamtersEncryption::Rsa(RsaEncryptionParameters { algorithm }) => {
-                    request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
                     algorithm
                 }
                 CryptographParamtersEncryption::AesGcm(AesGcmEncryptionParameters {
@@ -38,15 +37,12 @@ impl UnwrapKeyBuilder {
                     authentication_tag,
                     additional_authenticated_data,
                 }) => {
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
+                    request_body.insert("iv".to_owned(), serde_json::to_value(iv)?);
                     request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
-                    request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
-                    request_body.insert(
-                        "tag".to_owned(),
-                        serde_json::to_value(authentication_tag).unwrap(),
-                    );
+                        .insert("tag".to_owned(), serde_json::to_value(authentication_tag)?);
                     if let Some(aad) = additional_authenticated_data {
-                        request_body.insert("aad".to_owned(), serde_json::to_value(aad).unwrap());
+                        request_body.insert("aad".to_owned(), serde_json::to_value(aad)?);
                     };
                     algorithm
                 }
@@ -54,9 +50,8 @@ impl UnwrapKeyBuilder {
                     algorithm,
                     iv,
                 }) => {
-                    request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
-                    request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
+                    request_body.insert("iv".to_owned(), serde_json::to_value(iv)?);
                     algorithm
                 }
             };
