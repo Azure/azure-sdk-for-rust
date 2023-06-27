@@ -139,6 +139,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_analysisservices
 
+  azure_mgmt_apicenter:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v1
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_apicenter
+
   azure_mgmt_apimanagement:
     if: always()
     runs-on: ubuntu-latest
@@ -3002,22 +3018,6 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_search
-
-  azure_mgmt_security:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v1
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_security
 
   azure_mgmt_securityandcompliance:
     if: always()

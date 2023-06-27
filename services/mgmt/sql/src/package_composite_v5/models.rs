@@ -5897,7 +5897,7 @@ pub struct IPv6ServerFirewallRuleProperties {
     #[doc = "The start IP address of the firewall rule. Must be IPv6 format."]
     #[serde(rename = "startIPv6Address", default, skip_serializing_if = "Option::is_none")]
     pub start_i_pv6_address: Option<String>,
-    #[doc = "The end IP address of the firewall rule. Must be IPv6 format. Must be greater than or equal to startIpAddress."]
+    #[doc = "The end IP address of the firewall rule. Must be IPv6 format. Must be greater than or equal to startIpv6Address."]
     #[serde(rename = "endIPv6Address", default, skip_serializing_if = "Option::is_none")]
     pub end_i_pv6_address: Option<String>,
 }

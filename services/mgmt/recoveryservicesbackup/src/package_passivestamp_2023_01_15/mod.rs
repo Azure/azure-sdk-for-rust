@@ -1401,6 +1401,37 @@ pub mod recovery_points_crr {
                 filter: None,
             }
         }
+        #[doc = "Provides the information of the backed up data identified using RecoveryPointID."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `vault_name`: The name of the recovery services vault."]
+        #[doc = "* `resource_group_name`: The name of the resource group where the recovery services vault is present."]
+        #[doc = "* `subscription_id`: The subscription Id."]
+        #[doc = "* `fabric_name`: Fabric name associated with backed up item."]
+        #[doc = "* `container_name`: Container name associated with backed up item."]
+        #[doc = "* `protected_item_name`: Backed up item name whose backup data needs to be fetched."]
+        #[doc = "* `recovery_point_id`: RecoveryPointID represents the backed up data to be fetched."]
+        pub fn get(
+            &self,
+            vault_name: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            subscription_id: impl Into<String>,
+            fabric_name: impl Into<String>,
+            container_name: impl Into<String>,
+            protected_item_name: impl Into<String>,
+            recovery_point_id: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                vault_name: vault_name.into(),
+                resource_group_name: resource_group_name.into(),
+                subscription_id: subscription_id.into(),
+                fabric_name: fabric_name.into(),
+                container_name: container_name.into(),
+                protected_item_name: protected_item_name.into(),
+                recovery_point_id: recovery_point_id.into(),
+            }
+        }
     }
     pub mod list {
         use super::models;
@@ -1516,6 +1547,97 @@ pub mod recovery_points_crr {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::RecoveryPointResource> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::RecoveryPointResource = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
+        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
+        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
+        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
+        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) vault_name: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) subscription_id: String,
+            pub(crate) fabric_name: String,
+            pub(crate) container_name: String,
+            pub(crate) protected_item_name: String,
+            pub(crate) recovery_point_id: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.RecoveryServices/vaults/{}/backupFabrics/{}/protectionContainers/{}/protectedItems/{}/recoveryPoints/{}" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . vault_name , & this . fabric_name , & this . container_name , & this . protected_item_name , & this . recovery_point_id)) ? ;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair(azure_core::query_param::API_VERSION, "2023-01-15");
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::RecoveryPointResource>;
+            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::RecoveryPointResource>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }

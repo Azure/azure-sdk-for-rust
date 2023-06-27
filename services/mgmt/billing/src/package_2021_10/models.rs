@@ -133,6 +133,9 @@ pub struct BillingSubscriptionProperties {
     #[doc = "The name of the customer for whom the subscription was created. The field is applicable only for Microsoft Partner Agreement billing accounts."]
     #[serde(rename = "customerDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub customer_display_name: Option<String>,
+    #[doc = "The name of the customer for whom the subscription was created. The field is applicable only for Microsoft Partner Agreement billing accounts."]
+    #[serde(rename = "customerName", default, skip_serializing_if = "Option::is_none")]
+    pub customer_name: Option<String>,
     #[doc = "The name of the subscription."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,

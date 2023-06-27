@@ -1406,7 +1406,7 @@ impl DownloadUrl {
 pub struct ErrorDetails {
     #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<i32>,
+    pub code: Option<String>,
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -1475,6 +1475,12 @@ impl ErrorResponseWithNestedDetails {
 pub struct Export {
     #[serde(flatten)]
     pub cost_management_proxy_resource: CostManagementProxyResource,
+    #[doc = "Managed service identity (either system assigned, or none)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<SystemAssignedServiceIdentity>,
+    #[doc = "The location of the Export's managed identity. Only required when utilizing managed identity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     #[doc = "The properties of the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportProperties>,
@@ -4955,6 +4961,65 @@ pub mod status {
                 Self::TimedOut => serializer.serialize_unit_variant("Status", 6u32, "TimedOut"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "Managed service identity (either system assigned, or none)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemAssignedServiceIdentity {
+    #[doc = "The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity (either system assigned, or none)."]
+    #[serde(rename = "type")]
+    pub type_: SystemAssignedServiceIdentityType,
+}
+impl SystemAssignedServiceIdentity {
+    pub fn new(type_: SystemAssignedServiceIdentityType) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+        }
+    }
+}
+#[doc = "Type of managed service identity (either system assigned, or none)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SystemAssignedServiceIdentityType")]
+pub enum SystemAssignedServiceIdentityType {
+    None,
+    SystemAssigned,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SystemAssignedServiceIdentityType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SystemAssignedServiceIdentityType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SystemAssignedServiceIdentityType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("SystemAssignedServiceIdentityType", 0u32, "None"),
+            Self::SystemAssigned => serializer.serialize_unit_variant("SystemAssignedServiceIdentityType", 1u32, "SystemAssigned"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }

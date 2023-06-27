@@ -46,10 +46,10 @@ impl AllowedPrincipals {
 #[doc = "Configuration of application logs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppLogsConfiguration {
-    #[doc = "Logs destination"]
+    #[doc = "Logs destination, can be 'log-analytics', 'azure-monitor' or 'none'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<String>,
-    #[doc = "Log analytics configuration"]
+    #[doc = "Log Analytics configuration, must only be provided when destination is configured as 'log-analytics'"]
     #[serde(rename = "logAnalyticsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_configuration: Option<LogAnalyticsConfiguration>,
 }
@@ -3254,7 +3254,7 @@ pub mod job_configuration {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "TriggerType")]
     pub enum TriggerType {
-        Scheduled,
+        Schedule,
         Event,
         Manual,
         #[serde(skip_deserializing)]
@@ -3282,7 +3282,7 @@ pub mod job_configuration {
             S: Serializer,
         {
             match self {
-                Self::Scheduled => serializer.serialize_unit_variant("TriggerType", 0u32, "Scheduled"),
+                Self::Schedule => serializer.serialize_unit_variant("TriggerType", 0u32, "Schedule"),
                 Self::Event => serializer.serialize_unit_variant("TriggerType", 1u32, "Event"),
                 Self::Manual => serializer.serialize_unit_variant("TriggerType", 2u32, "Manual"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
@@ -3350,7 +3350,7 @@ pub struct JobExecution {
     #[doc = "Job execution start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
-    #[doc = "Job execution start time."]
+    #[doc = "Job execution end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Job's execution template, containing container configuration for a job's execution"]
@@ -3648,7 +3648,7 @@ impl KedaConfiguration {
         Self::default()
     }
 }
-#[doc = "Log analytics configuration"]
+#[doc = "Log Analytics configuration, must only be provided when destination is configured as 'log-analytics'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsConfiguration {
     #[doc = "Log analytics customer id"]
