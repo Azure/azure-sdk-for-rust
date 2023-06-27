@@ -83,6 +83,44 @@ impl AvroSerializationProperties {
         Self::default()
     }
 }
+#[doc = "Describes an Azure Data Explorer output data source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureDataExplorerOutputDataSource {
+    #[serde(flatten)]
+    pub output_data_source: OutputDataSource,
+    #[doc = "The properties that are associated with an Azure Data Explorer output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AzureDataExplorerOutputDataSourceProperties>,
+}
+impl AzureDataExplorerOutputDataSource {
+    pub fn new(output_data_source: OutputDataSource) -> Self {
+        Self {
+            output_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with an Azure Data Explorer output."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDataExplorerOutputDataSourceProperties {
+    #[doc = "The name of the Azure Data Explorer cluster. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cluster: Option<String>,
+    #[doc = "The name of the Azure Data Explorer database. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<String>,
+    #[doc = "The name of the Azure Table. Required on PUT (CreateOrReplace) requests."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
+}
+impl AzureDataExplorerOutputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Describes an Azure Data Lake Store output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDataLakeStoreOutputDataSource {

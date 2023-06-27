@@ -4973,6 +4973,9 @@ pub struct BackupResourceVaultConfig {
     #[doc = "Soft Delete feature state"]
     #[serde(rename = "softDeleteFeatureState", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_feature_state: Option<backup_resource_vault_config::SoftDeleteFeatureState>,
+    #[doc = "Soft delete retention period in days"]
+    #[serde(rename = "softDeleteRetentionPeriodInDays", default, skip_serializing_if = "Option::is_none")]
+    pub soft_delete_retention_period_in_days: Option<i32>,
     #[doc = "ResourceGuard Operation Requests"]
     #[serde(
         rename = "resourceGuardOperationRequests",
@@ -5165,6 +5168,8 @@ pub mod backup_resource_vault_config {
         Invalid,
         Enabled,
         Disabled,
+        #[serde(rename = "AlwaysON")]
+        AlwaysOn,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -5193,6 +5198,7 @@ pub mod backup_resource_vault_config {
                 Self::Invalid => serializer.serialize_unit_variant("SoftDeleteFeatureState", 0u32, "Invalid"),
                 Self::Enabled => serializer.serialize_unit_variant("SoftDeleteFeatureState", 1u32, "Enabled"),
                 Self::Disabled => serializer.serialize_unit_variant("SoftDeleteFeatureState", 2u32, "Disabled"),
+                Self::AlwaysOn => serializer.serialize_unit_variant("SoftDeleteFeatureState", 3u32, "AlwaysON"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -6885,6 +6891,9 @@ pub struct InquiryValidation {
     #[doc = "Error Additional Detail in case the status is non-success."]
     #[serde(rename = "additionalDetail", default, skip_serializing_if = "Option::is_none")]
     pub additional_detail: Option<String>,
+    #[doc = "Dictionary to store the count of ProtectableItems with key POType."]
+    #[serde(rename = "protectableItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub protectable_item_count: Option<serde_json::Value>,
 }
 impl InquiryValidation {
     pub fn new() -> Self {
@@ -9125,8 +9134,8 @@ pub struct ProtectedItem {
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
     #[doc = "Soft delete retention period in days"]
-    #[serde(rename = "softDeleteRetentionPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub soft_delete_retention_period: Option<i32>,
+    #[serde(rename = "softDeleteRetentionPeriodInDays", default, skip_serializing_if = "Option::is_none")]
+    pub soft_delete_retention_period_in_days: Option<i32>,
 }
 impl ProtectedItem {
     pub fn new(protected_item_type: String) -> Self {
@@ -9148,7 +9157,7 @@ impl ProtectedItem {
             resource_guard_operation_requests: Vec::new(),
             is_archive_enabled: None,
             policy_name: None,
-            soft_delete_retention_period: None,
+            soft_delete_retention_period_in_days: None,
         }
     }
 }

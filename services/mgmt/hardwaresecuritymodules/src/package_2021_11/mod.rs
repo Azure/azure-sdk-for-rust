@@ -205,7 +205,7 @@ pub mod dedicated_hsm {
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated hsm belongs."]
         #[doc = "* `name`: The name of the dedicated HSM."]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn get(
             &self,
             resource_group_name: impl Into<String>,
@@ -225,7 +225,7 @@ pub mod dedicated_hsm {
         #[doc = "* `resource_group_name`: The name of the Resource Group to which the resource belongs."]
         #[doc = "* `name`: Name of the dedicated Hsm"]
         #[doc = "* `parameters`: Parameters to create or update the dedicated hsm"]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn create_or_update(
             &self,
             resource_group_name: impl Into<String>,
@@ -247,7 +247,7 @@ pub mod dedicated_hsm {
         #[doc = "* `resource_group_name`: The name of the Resource Group to which the server belongs."]
         #[doc = "* `name`: Name of the dedicated HSM"]
         #[doc = "* `parameters`: Parameters to patch the dedicated HSM"]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn update(
             &self,
             resource_group_name: impl Into<String>,
@@ -268,7 +268,7 @@ pub mod dedicated_hsm {
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated HSM belongs."]
         #[doc = "* `name`: The name of the dedicated HSM to delete"]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn delete(
             &self,
             resource_group_name: impl Into<String>,
@@ -286,7 +286,7 @@ pub mod dedicated_hsm {
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated HSM belongs."]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_resource_group(
             &self,
             resource_group_name: impl Into<String>,
@@ -302,7 +302,7 @@ pub mod dedicated_hsm {
         #[doc = "The List operation gets information about the dedicated HSMs associated with the subscription."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_by_subscription(&self, subscription_id: impl Into<String>) -> list_by_subscription::RequestBuilder {
             list_by_subscription::RequestBuilder {
                 client: self.0.clone(),
@@ -316,7 +316,7 @@ pub mod dedicated_hsm {
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the Resource Group to which the dedicated hsm belongs."]
         #[doc = "* `name`: The name of the dedicated HSM."]
-        #[doc = "* `subscription_id`: Subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call."]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
         pub fn list_outbound_network_dependencies_endpoints(
             &self,
             resource_group_name: impl Into<String>,

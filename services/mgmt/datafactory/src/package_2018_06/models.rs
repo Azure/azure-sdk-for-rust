@@ -3165,6 +3165,9 @@ pub struct AzureMlServiceLinkedServiceTypeProperties {
     #[doc = "Azure ML Service workspace name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "mlWorkspaceName")]
     pub ml_workspace_name: serde_json::Value,
+    #[doc = "Type of authentication (Required to specify MSI) used to connect to AzureML. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authentication: Option<serde_json::Value>,
     #[doc = "The ID of the service principal used to authenticate against the endpoint of a published Azure ML Service pipeline. Type: string (or Expression with resultType string)."]
     #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_id: Option<serde_json::Value>,
@@ -3184,6 +3187,7 @@ impl AzureMlServiceLinkedServiceTypeProperties {
             subscription_id,
             resource_group_name,
             ml_workspace_name,
+            authentication: None,
             service_principal_id: None,
             service_principal_key: None,
             tenant: None,
@@ -4725,6 +4729,99 @@ pub mod chaining_trigger {
         }
     }
 }
+#[doc = "A Azure Data Factory object which automatically detects data changes at the source and then sends the updated data to the destination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeDataCapture {
+    #[doc = "The folder that this CDC is in. If not specified, CDC will appear at the root level."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub folder: Option<change_data_capture::Folder>,
+    #[doc = "The description of the change data capture."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "List of sources connections that can be used as sources in the CDC."]
+    #[serde(rename = "sourceConnectionsInfo")]
+    pub source_connections_info: Vec<MapperSourceConnectionsInfo>,
+    #[doc = "List of target connections that can be used as sources in the CDC."]
+    #[serde(rename = "targetConnectionsInfo")]
+    pub target_connections_info: Vec<MapperTargetConnectionsInfo>,
+    #[doc = "CDC Policy."]
+    pub policy: MapperPolicy,
+    #[doc = "A boolean to determine if the vnet configuration needs to be overwritten."]
+    #[serde(rename = "allowVNetOverride", default, skip_serializing_if = "Option::is_none")]
+    pub allow_v_net_override: Option<bool>,
+    #[doc = "Status of the CDC as to if it is running or stopped."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+impl ChangeDataCapture {
+    pub fn new(
+        source_connections_info: Vec<MapperSourceConnectionsInfo>,
+        target_connections_info: Vec<MapperTargetConnectionsInfo>,
+        policy: MapperPolicy,
+    ) -> Self {
+        Self {
+            folder: None,
+            description: None,
+            source_connections_info,
+            target_connections_info,
+            policy,
+            allow_v_net_override: None,
+            status: None,
+        }
+    }
+}
+pub mod change_data_capture {
+    use super::*;
+    #[doc = "The folder that this CDC is in. If not specified, CDC will appear at the root level."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Folder {
+        #[doc = "The name of the folder that this CDC is in."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+    }
+    impl Folder {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "A list of change data capture resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeDataCaptureListResponse {
+    #[doc = "Lists all resources of type change data capture."]
+    pub value: Vec<ChangeDataCaptureResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ChangeDataCaptureListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ChangeDataCaptureListResponse {
+    pub fn new(value: Vec<ChangeDataCaptureResource>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Change data capture resource type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeDataCaptureResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[doc = "A Azure Data Factory object which automatically detects data changes at the source and then sends the updated data to the destination."]
+    pub properties: ChangeDataCapture,
+}
+impl ChangeDataCaptureResource {
+    pub fn new(properties: ChangeDataCapture) -> Self {
+        Self {
+            sub_resource: SubResource::default(),
+            properties,
+        }
+    }
+}
+pub type ChangeDataCaptureStatusResponse = String;
 #[doc = "The object that defines the structure of an Azure Data Factory error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
@@ -6734,6 +6831,30 @@ impl DataLakeAnalyticsUsqlActivityTypeProperties {
             runtime_version: None,
             compilation_mode: None,
         }
+    }
+}
+#[doc = "Source and target table mapping details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataMapperMapping {
+    #[doc = "Name of the target table"]
+    #[serde(rename = "targetEntityName", default, skip_serializing_if = "Option::is_none")]
+    pub target_entity_name: Option<String>,
+    #[doc = "Name of the source table"]
+    #[serde(rename = "sourceEntityName", default, skip_serializing_if = "Option::is_none")]
+    pub source_entity_name: Option<String>,
+    #[doc = "Source or target connection reference details."]
+    #[serde(rename = "sourceConnectionReference", default, skip_serializing_if = "Option::is_none")]
+    pub source_connection_reference: Option<MapperConnectionReference>,
+    #[doc = "Attribute mapping details."]
+    #[serde(rename = "attributeMappingInfo", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_mapping_info: Option<MapperAttributeMappings>,
+    #[doc = "This holds the source denormalization information used while joining multiple sources."]
+    #[serde(rename = "sourceDenormalizeInfo", default, skip_serializing_if = "Option::is_none")]
+    pub source_denormalize_info: Option<serde_json::Value>,
+}
+impl DataMapperMapping {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "DatabricksNotebook activity."]
@@ -14440,6 +14561,439 @@ impl ManagedVirtualNetworkResource {
         }
     }
 }
+#[doc = "Source and target column mapping details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperAttributeMapping {
+    #[doc = "Name of the target column."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Type of the CDC attribute mapping. Note: 'Advanced' mapping type is also saved as 'Derived'."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<mapper_attribute_mapping::Type>,
+    #[doc = "Name of the function used for 'Aggregate' and 'Derived' (except 'Advanced') type mapping."]
+    #[serde(rename = "functionName", default, skip_serializing_if = "Option::is_none")]
+    pub function_name: Option<String>,
+    #[doc = "Expression used for 'Aggregate' and 'Derived' type mapping."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expression: Option<String>,
+    #[doc = "Attribute reference details for the referred column."]
+    #[serde(rename = "attributeReference", default, skip_serializing_if = "Option::is_none")]
+    pub attribute_reference: Option<MapperAttributeReference>,
+    #[doc = "List of references for source columns. It is used for 'Derived' and 'Aggregate' type mappings only."]
+    #[serde(
+        rename = "attributeReferences",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub attribute_references: Vec<MapperAttributeReference>,
+}
+impl MapperAttributeMapping {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod mapper_attribute_mapping {
+    use super::*;
+    #[doc = "Type of the CDC attribute mapping. Note: 'Advanced' mapping type is also saved as 'Derived'."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        Direct,
+        Derived,
+        Aggregate,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Direct => serializer.serialize_unit_variant("Type", 0u32, "Direct"),
+                Self::Derived => serializer.serialize_unit_variant("Type", 1u32, "Derived"),
+                Self::Aggregate => serializer.serialize_unit_variant("Type", 2u32, "Aggregate"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Attribute mapping details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperAttributeMappings {
+    #[doc = "List of attribute mappings."]
+    #[serde(
+        rename = "attributeMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub attribute_mappings: Vec<MapperAttributeMapping>,
+}
+impl MapperAttributeMappings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Attribute reference details for the referred column."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperAttributeReference {
+    #[doc = "Name of the column."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Name of the table."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity: Option<String>,
+    #[doc = "Source or target connection reference details."]
+    #[serde(rename = "entityConnectionReference", default, skip_serializing_if = "Option::is_none")]
+    pub entity_connection_reference: Option<MapperConnectionReference>,
+}
+impl MapperAttributeReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Source connection details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MapperConnection {
+    #[doc = "Linked service reference type."]
+    #[serde(rename = "linkedService", default, skip_serializing_if = "Option::is_none")]
+    pub linked_service: Option<LinkedServiceReference>,
+    #[doc = "Type of the linked service e.g.: AzureBlobFS."]
+    #[serde(rename = "linkedServiceType", default, skip_serializing_if = "Option::is_none")]
+    pub linked_service_type: Option<String>,
+    #[doc = "Type of connection via linked service or dataset."]
+    #[serde(rename = "type")]
+    pub type_: mapper_connection::Type,
+    #[doc = "A boolean indicating whether linked service is of type inline dataset. Currently only inline datasets are supported."]
+    #[serde(rename = "isInlineDataset", default, skip_serializing_if = "Option::is_none")]
+    pub is_inline_dataset: Option<bool>,
+    #[doc = "List of name/value pairs for connection properties."]
+    #[serde(
+        rename = "commonDslConnectorProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub common_dsl_connector_properties: Vec<MapperDslConnectorProperties>,
+}
+impl MapperConnection {
+    pub fn new(type_: mapper_connection::Type) -> Self {
+        Self {
+            linked_service: None,
+            linked_service_type: None,
+            type_,
+            is_inline_dataset: None,
+            common_dsl_connector_properties: Vec::new(),
+        }
+    }
+}
+pub mod mapper_connection {
+    use super::*;
+    #[doc = "Type of connection via linked service or dataset."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        #[serde(rename = "linkedservicetype")]
+        Linkedservicetype,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Linkedservicetype => serializer.serialize_unit_variant("Type", 0u32, "linkedservicetype"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Source or target connection reference details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperConnectionReference {
+    #[doc = "Name of the connection"]
+    #[serde(rename = "connectionName", default, skip_serializing_if = "Option::is_none")]
+    pub connection_name: Option<String>,
+    #[doc = "Type of connection via linked service or dataset."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<mapper_connection_reference::Type>,
+}
+impl MapperConnectionReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod mapper_connection_reference {
+    use super::*;
+    #[doc = "Type of connection via linked service or dataset."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        #[serde(rename = "linkedservicetype")]
+        Linkedservicetype,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Linkedservicetype => serializer.serialize_unit_variant("Type", 0u32, "linkedservicetype"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Connector properties of a CDC table in terms of name / value pairs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperDslConnectorProperties {
+    #[doc = "Name of the property."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Value of the property."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+}
+impl MapperDslConnectorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "CDC Policy."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperPolicy {
+    #[doc = "Mode of running the CDC: batch vs continuous."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[doc = "CDC policy recurrence details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recurrence: Option<MapperPolicyRecurrence>,
+}
+impl MapperPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "CDC policy recurrence details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperPolicyRecurrence {
+    #[doc = "Frequency of period in terms of 'Hour', 'Minute' or 'Second'."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<mapper_policy_recurrence::Frequency>,
+    #[doc = "Actual interval value as per chosen frequency."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i32>,
+}
+impl MapperPolicyRecurrence {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod mapper_policy_recurrence {
+    use super::*;
+    #[doc = "Frequency of period in terms of 'Hour', 'Minute' or 'Second'."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Frequency")]
+    pub enum Frequency {
+        Hour,
+        Minute,
+        Second,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Frequency {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Frequency {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Frequency {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Hour => serializer.serialize_unit_variant("Frequency", 0u32, "Hour"),
+                Self::Minute => serializer.serialize_unit_variant("Frequency", 1u32, "Minute"),
+                Self::Second => serializer.serialize_unit_variant("Frequency", 2u32, "Second"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "A object which contains list of tables and connection details for a source connection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperSourceConnectionsInfo {
+    #[doc = "List of source tables for a source connection."]
+    #[serde(
+        rename = "sourceEntities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub source_entities: Vec<MapperTable>,
+    #[doc = "Source connection details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connection: Option<MapperConnection>,
+}
+impl MapperSourceConnectionsInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "CDC table details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperTable {
+    #[doc = "Name of the table."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Properties for a CDC table."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MapperTableProperties>,
+}
+impl MapperTable {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties for a CDC table."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperTableProperties {
+    #[doc = "List of columns for the source table."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub schema: Vec<MapperTableSchema>,
+    #[doc = "List of name/value pairs for connection properties."]
+    #[serde(
+        rename = "dslConnectorProperties",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub dsl_connector_properties: Vec<MapperDslConnectorProperties>,
+}
+impl MapperTableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of a CDC table in terms of column names and their corresponding data types."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperTableSchema {
+    #[doc = "Name of the column."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Data type of the column."]
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<String>,
+}
+impl MapperTableSchema {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A object which contains list of tables and connection details for a target connection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MapperTargetConnectionsInfo {
+    #[doc = "List of source tables for a target connection."]
+    #[serde(
+        rename = "targetEntities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub target_entities: Vec<MapperTable>,
+    #[doc = "Source connection details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connection: Option<MapperConnection>,
+    #[doc = "List of table mappings."]
+    #[serde(
+        rename = "dataMapperMappings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub data_mapper_mappings: Vec<DataMapperMapping>,
+    #[doc = "List of relationship info among the tables."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub relationships: Vec<serde_json::Value>,
+}
+impl MapperTargetConnectionsInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Mapping data flow."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MappingDataFlow {
@@ -19641,9 +20195,9 @@ pub struct SalesforceServiceCloudSource {
     #[doc = "Database query. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<serde_json::Value>,
-    #[doc = "The read behavior for the operation. Default is Query."]
+    #[doc = "The read behavior for the operation. Default is Query. Allowed values: Query/QueryAll. Type: string (or Expression with resultType string)."]
     #[serde(rename = "readBehavior", default, skip_serializing_if = "Option::is_none")]
-    pub read_behavior: Option<salesforce_service_cloud_source::ReadBehavior>,
+    pub read_behavior: Option<serde_json::Value>,
     #[doc = "Specifies the additional columns to be added to source data. Type: array of objects(AdditionalColumns) (or Expression with resultType array of objects)."]
     #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
     pub additional_columns: Option<serde_json::Value>,
@@ -19655,46 +20209,6 @@ impl SalesforceServiceCloudSource {
             query: None,
             read_behavior: None,
             additional_columns: None,
-        }
-    }
-}
-pub mod salesforce_service_cloud_source {
-    use super::*;
-    #[doc = "The read behavior for the operation. Default is Query."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ReadBehavior")]
-    pub enum ReadBehavior {
-        Query,
-        QueryAll,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ReadBehavior {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ReadBehavior {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ReadBehavior {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Query => serializer.serialize_unit_variant("ReadBehavior", 0u32, "Query"),
-                Self::QueryAll => serializer.serialize_unit_variant("ReadBehavior", 1u32, "QueryAll"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
         }
     }
 }
@@ -19771,9 +20285,9 @@ pub struct SalesforceSource {
     #[doc = "Database query. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<serde_json::Value>,
-    #[doc = "The read behavior for the operation. Default is Query."]
+    #[doc = "The read behavior for the operation. Default is Query. Allowed values: Query/QueryAll. Type: string (or Expression with resultType string)."]
     #[serde(rename = "readBehavior", default, skip_serializing_if = "Option::is_none")]
-    pub read_behavior: Option<salesforce_source::ReadBehavior>,
+    pub read_behavior: Option<serde_json::Value>,
 }
 impl SalesforceSource {
     pub fn new(tabular_source: TabularSource) -> Self {
@@ -19784,43 +20298,40 @@ impl SalesforceSource {
         }
     }
 }
-pub mod salesforce_source {
-    use super::*;
-    #[doc = "The read behavior for the operation. Default is Query."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ReadBehavior")]
-    pub enum ReadBehavior {
-        Query,
-        QueryAll,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "The Salesforce read behavior for the operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SalesforceSourceReadBehavior")]
+pub enum SalesforceSourceReadBehavior {
+    Query,
+    QueryAll,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SalesforceSourceReadBehavior {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl FromStr for ReadBehavior {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+impl<'de> Deserialize<'de> for SalesforceSourceReadBehavior {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl<'de> Deserialize<'de> for ReadBehavior {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ReadBehavior {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Query => serializer.serialize_unit_variant("ReadBehavior", 0u32, "Query"),
-                Self::QueryAll => serializer.serialize_unit_variant("ReadBehavior", 1u32, "QueryAll"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for SalesforceSourceReadBehavior {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Query => serializer.serialize_unit_variant("SalesforceSourceReadBehavior", 0u32, "Query"),
+            Self::QueryAll => serializer.serialize_unit_variant("SalesforceSourceReadBehavior", 1u32, "QueryAll"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -21196,6 +21707,21 @@ impl SecretBase {
         Self { type_ }
     }
 }
+#[doc = "Execution policy for an activity that supports secure input and output."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecureInputOutputPolicy {
+    #[doc = "When set to true, Input from activity is considered as secure and will not be logged to monitoring."]
+    #[serde(rename = "secureInput", default, skip_serializing_if = "Option::is_none")]
+    pub secure_input: Option<bool>,
+    #[doc = "When set to true, Output from activity is considered as secure and will not be logged to monitoring."]
+    #[serde(rename = "secureOutput", default, skip_serializing_if = "Option::is_none")]
+    pub secure_output: Option<bool>,
+}
+impl SecureInputOutputPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
@@ -21727,12 +22253,16 @@ pub struct SetVariableActivity {
     #[doc = "SetVariable activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: SetVariableActivityTypeProperties,
+    #[doc = "Execution policy for an activity that supports secure input and output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<SecureInputOutputPolicy>,
 }
 impl SetVariableActivity {
     pub fn new(control_activity: ControlActivity, type_properties: SetVariableActivityTypeProperties) -> Self {
         Self {
             control_activity,
             type_properties,
+            policy: None,
         }
     }
 }
