@@ -28,8 +28,7 @@ impl DecryptBuilder {
 
             let algorithm = match self.decrypt_parameters.decrypt_parameters_encryption {
                 CryptographParamtersEncryption::Rsa(RsaEncryptionParameters { algorithm }) => {
-                    request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
                     algorithm
                 }
                 CryptographParamtersEncryption::AesGcm(AesGcmEncryptionParameters {
@@ -38,15 +37,12 @@ impl DecryptBuilder {
                     authentication_tag,
                     additional_authenticated_data,
                 }) => {
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
+                    request_body.insert("iv".to_owned(), serde_json::to_value(iv)?);
                     request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
-                    request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
-                    request_body.insert(
-                        "tag".to_owned(),
-                        serde_json::to_value(authentication_tag).unwrap(),
-                    );
+                        .insert("tag".to_owned(), serde_json::to_value(authentication_tag)?);
                     if let Some(aad) = additional_authenticated_data {
-                        request_body.insert("aad".to_owned(), serde_json::to_value(aad).unwrap());
+                        request_body.insert("aad".to_owned(), serde_json::to_value(aad)?);
                     };
                     algorithm
                 }
@@ -54,9 +50,8 @@ impl DecryptBuilder {
                     algorithm,
                     iv,
                 }) => {
-                    request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
-                    request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
+                    request_body.insert("iv".to_owned(), serde_json::to_value(iv)?);
                     algorithm
                 }
             };
