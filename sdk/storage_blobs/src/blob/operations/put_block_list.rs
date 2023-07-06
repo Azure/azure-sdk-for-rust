@@ -2,6 +2,7 @@ use crate::prelude::*;
 #[cfg(feature = "md5")]
 use azure_core::base64;
 use azure_core::{headers::*, prelude::*, RequestId};
+#[cfg(feature = "md5")]
 use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
 use bytes::Bytes;
 use time::OffsetDateTime;
@@ -79,6 +80,7 @@ impl PutBlockListBuilder {
 pub struct PutBlockListResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,
+    #[cfg(feature = "md5")]
     pub content_md5: ConsistencyMD5,
     pub request_id: RequestId,
     pub date: OffsetDateTime,
@@ -89,6 +91,7 @@ impl PutBlockListResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockListResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
+        #[cfg(feature = "md5")]
         let content_md5 = content_md5_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
@@ -97,6 +100,7 @@ impl PutBlockListResponse {
         Ok(PutBlockListResponse {
             etag,
             last_modified,
+            #[cfg(feature = "md5")]
             content_md5,
             request_id,
             date,
