@@ -51,7 +51,7 @@ impl TokenCredential for WorkloadIdentityCredential {
             self.http_client.clone(),
             &self.client_id,
             &self.token,
-            &[resource],
+            &[&format!("{resource}/.default")],
             &self.tenant_id,
             self.options.authority_host(),
         )
