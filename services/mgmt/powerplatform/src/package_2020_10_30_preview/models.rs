@@ -259,6 +259,7 @@ impl ErrorResponse {
 pub enum HealthStatus {
     Undetermined,
     Healthy,
+    Warning,
     Unhealthy,
     #[serde(skip_deserializing)]
     UnknownValue(String),
@@ -287,7 +288,8 @@ impl Serialize for HealthStatus {
         match self {
             Self::Undetermined => serializer.serialize_unit_variant("HealthStatus", 0u32, "Undetermined"),
             Self::Healthy => serializer.serialize_unit_variant("HealthStatus", 1u32, "Healthy"),
-            Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 2u32, "Unhealthy"),
+            Self::Warning => serializer.serialize_unit_variant("HealthStatus", 2u32, "Warning"),
+            Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 3u32, "Unhealthy"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

@@ -500,7 +500,7 @@ pub struct CapabilityTypeProperties {
     pub kind: Option<String>,
     #[doc = "Control plane actions necessary to execute capability type."]
     #[serde(
-        rename = "azureRBACActions",
+        rename = "azureRbacActions",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
@@ -508,7 +508,7 @@ pub struct CapabilityTypeProperties {
     pub azure_rbac_actions: Vec<String>,
     #[doc = "Data plane actions necessary to execute capability type."]
     #[serde(
-        rename = "azureRBACDataActions",
+        rename = "azureRbacDataActions",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"

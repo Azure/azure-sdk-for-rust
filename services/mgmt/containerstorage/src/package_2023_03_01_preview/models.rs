@@ -3,6 +3,7 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "Access mode"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AccessMode")]
 pub enum AccessMode {
@@ -43,6 +44,7 @@ impl Serialize for AccessMode {
         }
     }
 }
+#[doc = "Account Tier"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AccountTier")]
 pub enum AccountTier {
@@ -83,6 +85,7 @@ impl Serialize for AccountTier {
         }
     }
 }
+#[doc = "Action Enum"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "Action")]
 pub enum Action {
@@ -119,22 +122,6 @@ impl Serialize for Action {
         }
     }
 }
-#[doc = "The location uri of the operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomLocationHeader {}
-impl CustomLocationHeader {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The retry-after envelope."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomRetryAfterHeaderCustom {}
-impl CustomRetryAfterHeaderCustom {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Disk Pool Properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolProperties {
@@ -168,6 +155,7 @@ pub struct DiskProperties {
     #[doc = "Capacity of disk in GiB"]
     #[serde(rename = "capacityGiB")]
     pub capacity_gi_b: i64,
+    #[doc = "Disk Type"]
     #[serde(rename = "diskType")]
     pub disk_type: DiskType,
     #[doc = "SKU or Manufacturer type/name"]
@@ -201,6 +189,7 @@ impl DiskProperties {
         }
     }
 }
+#[doc = "Disk Type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "DiskType")]
 pub enum DiskType {
@@ -277,6 +266,7 @@ impl ElasticSanPoolPropertiesUpdate {
         Self::default()
     }
 }
+#[doc = "Encryption Type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "EncryptionType")]
 pub enum EncryptionType {
@@ -438,6 +428,7 @@ impl ManagedPoolProperties {
 #[doc = "Network Rule Set definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSet {
+    #[doc = "Action Enum"]
     #[serde(rename = "defaultAction")]
     pub default_action: Action,
     #[doc = "Virtual network rules"]
@@ -611,6 +602,7 @@ pub struct PlacementProperties {
     #[doc = "Anti affinity label selector"]
     #[serde(rename = "antiAffinityLabelSelector")]
     pub anti_affinity_label_selector: String,
+    #[doc = "When request unsatisfiable"]
     #[serde(rename = "whenUnsatisfiable")]
     pub when_unsatisfiable: WhenUnsatisfiable,
 }
@@ -666,6 +658,7 @@ pub struct PoolProperties {
     #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Pool Type"]
     #[serde(rename = "poolType")]
     pub pool_type: PoolType,
     #[doc = "List of availability zones that resources can be created in."]
@@ -705,6 +698,7 @@ impl PoolProperties {
         }
     }
 }
+#[doc = "Pool Type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "PoolType")]
 pub enum PoolType {
@@ -755,6 +749,7 @@ impl PoolUpdate {
 #[doc = "The updatable properties of the Pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolUpdateProperties {
+    #[doc = "Pool Type"]
     #[serde(rename = "poolType", default, skip_serializing_if = "Option::is_none")]
     pub pool_type: Option<PoolType>,
     #[doc = "List of availability zones that resources can be created in."]
@@ -789,6 +784,7 @@ impl PoolUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Protocol Type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProtocolType")]
 pub enum ProtocolType {
@@ -884,6 +880,7 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Reclaim Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ReclaimPolicy")]
 pub enum ReclaimPolicy {
@@ -944,7 +941,9 @@ impl Resource {
 #[doc = "Sku definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Sku Name enum type"]
     pub name: SkuName,
+    #[doc = "Account Tier"]
     pub tier: AccountTier,
 }
 impl Sku {
@@ -952,6 +951,7 @@ impl Sku {
         Self { name, tier }
     }
 }
+#[doc = "Sku Name enum type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "SkuName")]
 pub enum SkuName {
@@ -1015,6 +1015,7 @@ impl TrackedResource {
 #[doc = "Virtual Network Rule definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
+    #[doc = "Action Enum"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<Action>,
     #[doc = "Id of rule"]
@@ -1039,6 +1040,7 @@ impl Volume {
         Self::default()
     }
 }
+#[doc = "Volume binding mode"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "VolumeBindingMode")]
 pub enum VolumeBindingMode {
@@ -1095,6 +1097,7 @@ impl VolumeListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Storage volume mode"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "VolumeMode")]
 pub enum VolumeMode {
@@ -1142,8 +1145,10 @@ pub struct VolumeProperties {
     #[doc = "Requested capacity in GiB"]
     #[serde(rename = "capacityGiB")]
     pub capacity_gi_b: i64,
+    #[doc = "Storage volume mode"]
     #[serde(rename = "volumeMode")]
     pub volume_mode: VolumeMode,
+    #[doc = "Reclaim Policy"]
     #[serde(rename = "reclaimPolicy")]
     pub reclaim_policy: ReclaimPolicy,
     #[doc = "List of string mount options"]
@@ -1210,8 +1215,10 @@ pub struct VolumeSnapshotProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Reference to the source volume"]
     pub source: String,
+    #[doc = "Storage volume mode"]
     #[serde(rename = "volumeMode")]
     pub volume_mode: VolumeMode,
+    #[doc = "Reclaim Policy"]
     #[serde(rename = "reclaimPolicy")]
     pub reclaim_policy: ReclaimPolicy,
     #[doc = "List of string mount options"]
@@ -1247,8 +1254,10 @@ pub struct VolumeSnapshotUpdateProperties {
     #[doc = "Reference to the source volume"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[doc = "Storage volume mode"]
     #[serde(rename = "volumeMode", default, skip_serializing_if = "Option::is_none")]
     pub volume_mode: Option<VolumeMode>,
+    #[doc = "Reclaim Policy"]
     #[serde(rename = "reclaimPolicy", default, skip_serializing_if = "Option::is_none")]
     pub reclaim_policy: Option<ReclaimPolicy>,
     #[doc = "List of string mount options"]
@@ -1286,8 +1295,10 @@ pub struct VolumeUpdateProperties {
     #[doc = "Requested capacity in GiB"]
     #[serde(rename = "capacityGiB", default, skip_serializing_if = "Option::is_none")]
     pub capacity_gi_b: Option<i64>,
+    #[doc = "Storage volume mode"]
     #[serde(rename = "volumeMode", default, skip_serializing_if = "Option::is_none")]
     pub volume_mode: Option<VolumeMode>,
+    #[doc = "Reclaim Policy"]
     #[serde(rename = "reclaimPolicy", default, skip_serializing_if = "Option::is_none")]
     pub reclaim_policy: Option<ReclaimPolicy>,
     #[doc = "List of string mount options"]
@@ -1304,6 +1315,7 @@ impl VolumeUpdateProperties {
         Self::default()
     }
 }
+#[doc = "When request unsatisfiable"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "WhenUnsatisfiable")]
 pub enum WhenUnsatisfiable {

@@ -117,6 +117,7 @@ impl CatalogListResult {
 #[doc = "Catalog properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CatalogProperties {
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -204,6 +205,7 @@ pub struct CertificateProperties {
     #[doc = "The certificate not before date."]
     #[serde(rename = "notBeforeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub not_before_utc: Option<time::OffsetDateTime>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -287,38 +289,6 @@ impl CountElementsResponse {
         Self { value }
     }
 }
-#[doc = "Provides the custom '$filter' query parameter for list operations"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomFilterQueryParameter {}
-impl CustomFilterQueryParameter {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Provides the custom '$maxpagesize' query parameter for list operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomMaxPageSizeQueryParameter {}
-impl CustomMaxPageSizeQueryParameter {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Provides the custom '$skip' query parameter for list operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomSkipQueryParameter {}
-impl CustomSkipQueryParameter {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Provides the custom '$top' query parameter for list operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct CustomTopQueryParameter {}
-impl CustomTopQueryParameter {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "An deployment resource belonging to a device group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deployment {
@@ -370,6 +340,7 @@ pub struct DeploymentProperties {
     #[doc = "Deployment date UTC"]
     #[serde(rename = "deploymentDateUtc", default, with = "azure_core::date::rfc3339::option")]
     pub deployment_date_utc: Option<time::OffsetDateTime>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -447,6 +418,7 @@ pub struct DeviceGroupProperties {
     #[doc = "Deployment status for the device group."]
     #[serde(rename = "hasDeployment", default, skip_serializing_if = "Option::is_none")]
     pub has_deployment: Option<bool>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -594,6 +566,7 @@ pub struct DeviceProperties {
     #[doc = "Time when update was last requested"]
     #[serde(rename = "lastUpdateRequestUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_request_utc: Option<time::OffsetDateTime>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -764,6 +737,7 @@ pub struct ImageProperties {
     #[doc = "Image type values."]
     #[serde(rename = "imageType", default, skip_serializing_if = "Option::is_none")]
     pub image_type: Option<ImageType>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -872,14 +846,6 @@ pub struct ListDeviceGroupsRequest {
     pub device_group_name: Option<String>,
 }
 impl ListDeviceGroupsRequest {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Parameters for paginated APIs"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ListQueryParameters {}
-impl ListQueryParameters {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1130,6 +1096,7 @@ impl ProductListResult {
 pub struct ProductProperties {
     #[doc = "Description of the product"]
     pub description: String,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -1188,6 +1155,7 @@ impl ProofOfPossessionNonceResponse {
         Self::default()
     }
 }
+#[doc = "Provisioning state of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningState")]
 pub enum ProvisioningState {
@@ -1312,14 +1280,6 @@ pub struct SignedCapabilityImageResponse {
     pub image: Option<String>,
 }
 impl SignedCapabilityImageResponse {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Provides the most common query parameters for list operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct StandardListQueryParametersWithCorrectNames {}
-impl StandardListQueryParametersWithCorrectNames {
     pub fn new() -> Self {
         Self::default()
     }

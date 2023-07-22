@@ -1839,6 +1839,40 @@ impl ContainerRegistryImagePushedEventData {
         Self::default()
     }
 }
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.ClusterSupportEnded event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceClusterSupportEndedEventData {
+    #[serde(flatten)]
+    pub container_service_cluster_support_event_data: ContainerServiceClusterSupportEventData,
+}
+impl ContainerServiceClusterSupportEndedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.ClusterSupportEnding event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceClusterSupportEndingEventData {
+    #[serde(flatten)]
+    pub container_service_cluster_support_event_data: ContainerServiceClusterSupportEventData,
+}
+impl ContainerServiceClusterSupportEndingEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of cluster support events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceClusterSupportEventData {
+    #[doc = "The Kubernetes version of the ManagedCluster resource"]
+    #[serde(rename = "kubernetesVersion", default, skip_serializing_if = "Option::is_none")]
+    pub kubernetes_version: Option<String>,
+}
+impl ContainerServiceClusterSupportEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NewKubernetesVersionAvailable event"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceNewKubernetesVersionAvailableEventData {
@@ -1856,6 +1890,51 @@ pub struct ContainerServiceNewKubernetesVersionAvailableEventData {
     pub latest_preview_kubernetes_version: Option<String>,
 }
 impl ContainerServiceNewKubernetesVersionAvailableEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of node pool rolling events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceNodePoolRollingEventData {
+    #[doc = "The name of the node pool in the ManagedCluster resource"]
+    #[serde(rename = "nodePoolName", default, skip_serializing_if = "Option::is_none")]
+    pub node_pool_name: Option<String>,
+}
+impl ContainerServiceNodePoolRollingEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NodePoolRollingFailed event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceNodePoolRollingFailedEventData {
+    #[serde(flatten)]
+    pub container_service_node_pool_rolling_event_data: ContainerServiceNodePoolRollingEventData,
+}
+impl ContainerServiceNodePoolRollingFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NodePoolRollingStarted event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceNodePoolRollingStartedEventData {
+    #[serde(flatten)]
+    pub container_service_node_pool_rolling_event_data: ContainerServiceNodePoolRollingEventData,
+}
+impl ContainerServiceNodePoolRollingStartedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ContainerService.NodePoolRollingSucceeded event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ContainerServiceNodePoolRollingSucceededEventData {
+    #[serde(flatten)]
+    pub container_service_node_pool_rolling_event_data: ContainerServiceNodePoolRollingEventData,
+}
+impl ContainerServiceNodePoolRollingSucceededEventData {
     pub fn new() -> Self {
         Self::default()
     }

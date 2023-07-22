@@ -2,6 +2,8 @@ use azure_core::{
     base64, error::Error, headers, CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
 };
 use ring::hmac;
+use serde::Deserialize;
+use std::str::FromStr;
 use std::time::Duration;
 use std::{ops::Add, sync::Arc};
 use time::OffsetDateTime;
@@ -168,14 +170,19 @@ async fn peek_lock_message2(
     let res = http_client.execute_request(&req).await?;
 
     let status = res.status();
-    let lock_location = res
+    let headers = res.headers().clone();
+    let broker_properties = res
         .headers()
+        .get_optional_as(&headers::HeaderName::from("brokerproperties"))?;
+    let lock_location = headers
         .get_optional_string(&headers::LOCATION)
         .unwrap_or_default();
     let body = res.into_body().collect_string().await?;
 
     Ok(PeekLockResponse {
         body,
+        headers,
+        broker_properties,
         lock_location,
         status,
         http_client: http_client.clone(),
@@ -187,6 +194,8 @@ async fn peek_lock_message2(
 /// `PeekLockResponse` object that is returned by `peek_lock_message2`
 pub struct PeekLockResponse {
     body: String,
+    headers: headers::Headers,
+    broker_properties: Option<BrokerProperties>,
     lock_location: String,
     status: StatusCode,
     http_client: Arc<dyn HttpClient>,
@@ -198,6 +207,17 @@ impl PeekLockResponse {
     /// Get the message in the lock
     pub fn body(&self) -> String {
         self.body.clone()
+    }
+
+    /// Get the broker properties from the message in the lock
+    #[must_use]
+    pub fn broker_properties(&self) -> Option<BrokerProperties> {
+        self.broker_properties.clone()
+    }
+
+    /// Get custom message headers from the message in the lock
+    pub fn custom_properties<T: TryFrom<headers::Headers>>(&self) -> Result<T, T::Error> {
+        self.headers.clone().try_into()
     }
 
     /// Get the status of the peek
@@ -253,5 +273,39 @@ impl PeekLockResponse {
             .execute_request_check_status(&req)
             .await?;
         Ok(())
+    }
+}
+
+/// `BrokerProperties` object decoded from the message headers
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub struct BrokerProperties {
+    pub delivery_count: i32,
+    pub enqueued_sequence_number: Option<i32>,
+    #[serde(deserialize_with = "BrokerProperties::option_rfc2822")]
+    pub enqueued_time_utc: Option<OffsetDateTime>,
+    pub lock_token: String,
+    #[serde(with = "time::serde::rfc2822")]
+    pub locked_until_utc: OffsetDateTime,
+    pub message_id: String,
+    pub sequence_number: i32,
+    pub state: String,
+    pub time_to_live: i64,
+}
+
+impl BrokerProperties {
+    fn option_rfc2822<'de, D>(value: D) -> Result<Option<OffsetDateTime>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Ok(Some(time::serde::rfc2822::deserialize(value)?))
+    }
+}
+
+impl FromStr for BrokerProperties {
+    type Err = serde_json::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s)
     }
 }

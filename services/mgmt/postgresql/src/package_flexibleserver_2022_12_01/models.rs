@@ -1666,7 +1666,7 @@ pub struct ServerProperties {
     #[doc = "Maintenance window properties of a server."]
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
-    #[doc = "The source server resource ID to restore from. It's required when 'createMode' is 'PointInTimeRestore' or 'GeoRestore' or 'Replica'."]
+    #[doc = "The source server resource ID to restore from. It's required when 'createMode' is 'PointInTimeRestore' or 'GeoRestore' or 'Replica'. This property is returned only for Replica server"]
     #[serde(rename = "sourceServerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_server_resource_id: Option<String>,
     #[doc = "Restore point creation time (ISO8601 format), specifying the time to restore from. It's required when 'createMode' is 'PointInTimeRestore' or 'GeoRestore'."]
@@ -2107,21 +2107,25 @@ pub struct UserAssignedIdentity {
     #[doc = "Defines a map that contains user assigned identities."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentityMap>,
-    #[doc = "the types of identities associated with this resource; currently restricted to 'SystemAssigned and UserAssigned'"]
+    #[doc = "the types of identities associated with this resource; currently restricted to 'None and UserAssigned'"]
     #[serde(rename = "type")]
     pub type_: user_assigned_identity::Type,
+    #[doc = "Tenant id of the server."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 }
 impl UserAssignedIdentity {
     pub fn new(type_: user_assigned_identity::Type) -> Self {
         Self {
             user_assigned_identities: None,
             type_,
+            tenant_id: None,
         }
     }
 }
 pub mod user_assigned_identity {
     use super::*;
-    #[doc = "the types of identities associated with this resource; currently restricted to 'SystemAssigned and UserAssigned'"]
+    #[doc = "the types of identities associated with this resource; currently restricted to 'None and UserAssigned'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Type")]
     pub enum Type {

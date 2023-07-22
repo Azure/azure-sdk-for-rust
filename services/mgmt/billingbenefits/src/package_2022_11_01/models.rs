@@ -1252,6 +1252,9 @@ pub struct SavingsPlanOrderAliasProperties {
     #[doc = "Commitment towards the benefit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commitment: Option<Commitment>,
+    #[doc = "Setting this to true will automatically purchase a new benefit on the expiration date time."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renew: Option<Renew>,
 }
 impl SavingsPlanOrderAliasProperties {
     pub fn new() -> Self {
