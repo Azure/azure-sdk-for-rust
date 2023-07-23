@@ -23,8 +23,8 @@ time = { version = "0.3.10", features = ["local-offset"] }
 serde_json = "1.0"
 log = "0.4"
 async-trait = "0.1"
-openssl = { version = "0.10.46",  optional=true }
-uuid = { version = "1.0",  features = ["v4"] }
+openssl = { version = "0.10.46", optional = true }
+uuid = { version = "1.0", features = ["v4"] }
 # work around https://github.com/rust-lang/rust/issues/63033
 fix-hidden-lifetime-bug = "0.2"
 pin-project = "1.0"
@@ -34,21 +34,16 @@ reqwest = { version = "0.11", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.10"
 serde_test = "1"
-azure_security_keyvault = { path = "../security_keyvault", default_features = false }
 
 [features]
 default = ["development", "enable_reqwest"]
-enable_reqwest = [
-  "azure_core/enable_reqwest",
-]
-enable_reqwest_rustls = [
-  "azure_core/enable_reqwest_rustls",
-]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 development = []
 test_e2e = []
 client_certificate = ["openssl"]
 vendored_openssl = ["openssl/vendored"]
 
 [[example]]
-name="client_certificate_credentials"
+name = "client_certificate_credentials"
 required-features = ["client_certificate"]
