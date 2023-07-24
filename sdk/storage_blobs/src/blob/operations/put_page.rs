@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Body, RequestId};
-use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
+use azure_storage::{headers::content_md5_from_headers_optional, ConsistencyMD5};
 use time::OffsetDateTime;
 
 operation! {
