@@ -51,7 +51,7 @@ impl PutPageBuilder {
 pub struct PutPageResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,
-    pub content_md5: ConsistencyMD5,
+    pub content_md5: Option<ConsistencyMD5>,
     pub sequence_number: u64,
     pub request_id: RequestId,
     pub date: OffsetDateTime,
