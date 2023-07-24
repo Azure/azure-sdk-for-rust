@@ -62,7 +62,7 @@ impl PutPageResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<Self> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
-        let content_md5 = content_md5_from_headers(headers)?;
+        let content_md5 = content_md5_from_headers_optional(headers)?;
         let sequence_number = sequence_number_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
