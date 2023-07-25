@@ -364,3 +364,5 @@ pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static("www-authentica
 pub const ENCRYPTION_ALGORITHM: HeaderName = HeaderName::from_static("x-ms-encryption-algorithm");
 pub const ENCRYPTION_KEY: HeaderName = HeaderName::from_static("x-ms-encryption-key");
 pub const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");
+pub const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
+    HeaderName::from_static("x-ms-blob-committed-block-count");
