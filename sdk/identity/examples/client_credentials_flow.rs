@@ -10,8 +10,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client_secret =
         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let subscription_id =
-        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
+    let scope =
+        env::var("SCOPE").expect("Missing SCOPE environment variable.");
 
     let http_client = azure_core::new_http_client();
     // This will give you the final token to use in authorization.
@@ -19,11 +19,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         http_client.clone(),
         &client_id,
         &client_secret,
-        &["https://management.azure.com/"],
+        &[&scope],
         &tenant_id,
     )
     .await?;
     println!("Non interactive authorization == {token:?}");
+
+    let subscription_id =
+        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
     // Let's enumerate the Azure SQL Databases instances
     // in the subscription. Note: this way of calling the REST API
