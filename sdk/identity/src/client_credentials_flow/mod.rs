@@ -35,7 +35,7 @@
 //!
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-client-creds-grant-flow).
 
-mod login_response;
+pub mod login_response;
 
 use azure_core::Method;
 use azure_core::{
