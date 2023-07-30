@@ -1,7 +1,6 @@
 mod certificate_client;
 mod key_client;
 mod keyvault_client;
-mod keyvault_client2;
 mod pipeline;
 mod policy;
 mod secret_client;
