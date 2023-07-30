@@ -32,30 +32,8 @@ impl KeyvaultClient {
     pub async fn create_key(
         &self,
         key_name: impl Into<String>,
-        key_type: impl Into<Kty>,
-        key_size: Option<i32>,
-        public_exponent: Option<i32>,
-        key_ops: Vec<String>,
-        attributes: Option<KeyAttributes>,
-        tags: Option<serde_json::Value>,
-        crv: Option<Crv>,
-        release_policy: Option<KeyReleasePolicy>,
+        params: impl Into<KeyCreateParameters>,
     ) -> azure_core::Result<Response> {
-        self.client
-            .create_key(
-                key_name,
-                KeyCreateParameters {
-                    kty: key_type.into(),
-                    key_size,
-                    public_exponent,
-                    key_ops,
-                    attributes,
-                    tags,
-                    crv,
-                    release_policy,
-                },
-            )
-            .send()
-            .await
+        self.client.create_key(key_name, params).send().await
     }
 }
