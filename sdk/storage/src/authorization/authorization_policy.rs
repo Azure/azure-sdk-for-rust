@@ -52,11 +52,12 @@ impl Policy for AuthorizationPolicy {
                 request
             }
             StorageCredentials::SASToken(query_pairs) => {
-                request
-                    .url_mut()
-                    .query_pairs_mut()
-                    .extend_pairs(query_pairs);
-
+                if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
+                    request
+                        .url_mut()
+                        .query_pairs_mut()
+                        .extend_pairs(query_pairs);
+                }
                 request
             }
             StorageCredentials::BearerToken(token) => {
