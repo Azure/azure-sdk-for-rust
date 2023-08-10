@@ -162,4 +162,7 @@ cfg_not_wasm32! {
     pub use crate::event_hubs_retry_policy::*;
     pub use crate::event_hubs_transport_type::*;
     pub use crate::partition_properties::*;
+
+    pub use util::IntoAzureCoreError;
 }
+
