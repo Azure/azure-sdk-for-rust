@@ -33,6 +33,49 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "The details of an error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[doc = "One of a server-defined set of error codes."]
+    pub code: String,
+    #[doc = "A human-readable representation of the error."]
+    pub message: String,
+    #[doc = "An array of details about specific errors that led to this reported error."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "An object containing specific information about an error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<InnerError>,
+}
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+            innererror: None,
+        }
+    }
+}
+#[doc = "An object containing specific information about an error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InnerError {
+    #[doc = "One of a server-defined set of error codes."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "An object containing specific information about an error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<InnerError>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Key {
     #[doc = "The name of the key."]
@@ -176,6 +219,34 @@ impl LabelListResult {
         Self::default()
     }
 }
+#[doc = "Details of a long running operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDetails {
+    #[doc = "The unique id of the operation."]
+    pub id: String,
+    #[doc = "The current status of the operation"]
+    pub status: operation_details::Status,
+    #[doc = "The details of an error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl OperationDetails {
+    pub fn new(id: String, status: operation_details::Status) -> Self {
+        Self { id, status, error: None }
+    }
+}
+pub mod operation_details {
+    use super::*;
+    #[doc = "The current status of the operation"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        NotStarted,
+        Running,
+        Succeeded,
+        Failed,
+        Canceled,
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
     #[doc = "The name of the snapshot."]
@@ -186,7 +257,7 @@ pub struct Snapshot {
     pub status: Option<snapshot::Status>,
     #[doc = "A list of filters used to filter the key-values included in the snapshot."]
     pub filters: Vec<KeyValueFilter>,
-    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'all' composition type includes all key-values. The 'group_by_key' composition type ensures there are no two key-values containing the same key."]
+    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'key' composition type ensures there are no two key-values containing the same key. The 'key_label' composition type ensures there are no two key-values containing the same key and label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub composition_type: Option<snapshot::CompositionType>,
     #[doc = "The time that the snapshot was created."]
@@ -275,14 +346,14 @@ pub mod snapshot {
             }
         }
     }
-    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'all' composition type includes all key-values. The 'group_by_key' composition type ensures there are no two key-values containing the same key."]
+    #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'key' composition type ensures there are no two key-values containing the same key. The 'key_label' composition type ensures there are no two key-values containing the same key and label."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "CompositionType")]
     pub enum CompositionType {
-        #[serde(rename = "all")]
-        All,
-        #[serde(rename = "group_by_key")]
-        GroupByKey,
+        #[serde(rename = "key")]
+        Key,
+        #[serde(rename = "key_label")]
+        KeyLabel,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -308,8 +379,8 @@ pub mod snapshot {
             S: Serializer,
         {
             match self {
-                Self::All => serializer.serialize_unit_variant("CompositionType", 0u32, "all"),
-                Self::GroupByKey => serializer.serialize_unit_variant("CompositionType", 1u32, "group_by_key"),
+                Self::Key => serializer.serialize_unit_variant("CompositionType", 0u32, "key"),
+                Self::KeyLabel => serializer.serialize_unit_variant("CompositionType", 1u32, "key_label"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

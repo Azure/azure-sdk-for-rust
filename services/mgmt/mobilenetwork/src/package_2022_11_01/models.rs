@@ -238,8 +238,6 @@ pub enum BillingSku {
     G0,
     G1,
     G2,
-    G3,
-    G4,
     G5,
     G10,
     #[serde(skip_deserializing)]
@@ -270,10 +268,8 @@ impl Serialize for BillingSku {
             Self::G0 => serializer.serialize_unit_variant("BillingSku", 0u32, "G0"),
             Self::G1 => serializer.serialize_unit_variant("BillingSku", 1u32, "G1"),
             Self::G2 => serializer.serialize_unit_variant("BillingSku", 2u32, "G2"),
-            Self::G3 => serializer.serialize_unit_variant("BillingSku", 3u32, "G3"),
-            Self::G4 => serializer.serialize_unit_variant("BillingSku", 4u32, "G4"),
-            Self::G5 => serializer.serialize_unit_variant("BillingSku", 5u32, "G5"),
-            Self::G10 => serializer.serialize_unit_variant("BillingSku", 6u32, "G10"),
+            Self::G5 => serializer.serialize_unit_variant("BillingSku", 3u32, "G5"),
+            Self::G10 => serializer.serialize_unit_variant("BillingSku", 4u32, "G10"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

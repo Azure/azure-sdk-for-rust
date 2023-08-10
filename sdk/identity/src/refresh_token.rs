@@ -30,7 +30,7 @@ pub async fn exchange(
             .append_pair("refresh_token", refresh_token.secret());
         // optionally add the client secret
         if let Some(client_secret) = client_secret {
-            encoded = encoded.append_pair("client_secret", client_secret)
+            encoded = encoded.append_pair("client_secret", client_secret);
         };
         encoded.finish()
     };
@@ -74,7 +74,7 @@ pub struct RefreshTokenResponse {
 }
 
 impl RefreshTokenResponse {
-    /// Returns the token_type. Always `Bearer` for Azure AD.
+    /// Returns the `token_type`. Always `Bearer` for Azure AD.
     pub fn token_type(&self) -> &str {
         &self.token_type
     }

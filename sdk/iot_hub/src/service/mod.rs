@@ -11,11 +11,11 @@ use std::sync::Arc;
 use std::time::Duration;
 use time::OffsetDateTime;
 
-/// Contains any operation that the IoT Hub service client can perform.
+/// Contains any operation that the `IoT` Hub service client can perform.
 pub mod operations;
 /// Contains various types that some of the requests or responses use.
 pub mod resources;
-/// Contains responses for the requests that the IoT Hub service client can perform.
+/// Contains responses for the requests that the `IoT` Hub service client can perform.
 pub mod responses;
 
 use crate::service::operations::{
@@ -32,7 +32,7 @@ use self::resources::{AuthenticationMechanism, Status};
 /// The API version to use for any requests
 pub const API_VERSION: &str = "2020-05-31-preview";
 
-/// Credential for authorizing requests against IoT Hub
+/// Credential for authorizing requests against `IoT` Hub
 #[derive(Clone)]
 pub enum IoTHubCredentials {
     /// Authorize via SAS token
@@ -62,13 +62,13 @@ impl std::fmt::Debug for IoTHubCredentials {
     }
 }
 
-/// The ServiceClient is the main entry point for communicating with the IoT Hub.
+/// The `ServiceClient` is the main entry point for communicating with the `IoT` Hub.
 ///
-/// There are several ways to construct the IoTHub Service object. Either by:
-/// - providing the IoT Hub name and the private key.
+/// There are several ways to construct the `IoTHub` Service object. Either by:
+/// - providing the `IoT` Hub name and the private key.
 /// - providing the connection string.
-/// The IoTHubService then uses the provided information to create a SAS token that it will
-/// use to communicate with the IoT Hub.
+/// The `IoTHubService` then uses the provided information to create a SAS token that it will
+/// use to communicate with the `IoT` Hub.
 #[derive(Clone, Debug)]
 pub struct ServiceClient {
     /// The name of the IoT Hub.
@@ -77,7 +77,7 @@ pub struct ServiceClient {
 }
 
 impl ServiceClient {
-    /// Return a new IoTHub struct
+    /// Return a new `IoTHub` struct
     ///
     /// # Example
     /// ```
@@ -104,7 +104,7 @@ impl ServiceClient {
         }
     }
 
-    /// Generate a new SAS token to use for authentication with IoT Hub
+    /// Generate a new SAS token to use for authentication with `IoT` Hub
     fn generate_sas_token(
         iot_hub_name: &str,
         key_name: &str,
@@ -140,7 +140,7 @@ impl ServiceClient {
         Ok(format!("SharedAccessSignature {encoded}"))
     }
 
-    /// Create a new IoTHubService struct based on a given IoT Hub name and a private key
+    /// Create a new `IoTHubService` struct based on a given `IoT` Hub name and a private key
     ///
     /// The private key should preferably be of a user / group that has the rights to make service requests.
     /// ```
@@ -185,7 +185,7 @@ impl ServiceClient {
         })
     }
 
-    /// Create a new IoTHubService struct based on a given connection string
+    /// Create a new `IoTHubService` struct based on a given connection string
     ///
     /// The connection string should preferably be from a user / group that has the rights to make service requests.
     /// ```
@@ -275,7 +275,7 @@ impl ServiceClient {
         })
     }
 
-    /// Create a new IoTHubService struct with a TokenCredential
+    /// Create a new `IoTHubService` struct with a `TokenCredential`
     pub fn new_token_credential<A>(
         iot_hub_name: A,
         token_credential: Arc<dyn TokenCredential>,
@@ -292,7 +292,7 @@ impl ServiceClient {
         }
     }
 
-    /// Create a new IoTHubService struct with a BearerToken
+    /// Create a new `IoTHubService` struct with a `BearerToken`
     pub fn new_bearer_token<A, BT>(iot_hub_name: A, bearer_token: BT) -> Self
     where
         A: Into<String>,
@@ -845,7 +845,7 @@ impl ServiceClient {
     }
 }
 
-/// Create a Pipeline from ServiceOptions
+/// Create a Pipeline from `ServiceOptions`
 fn new_pipeline_from_options(options: ServiceOptions, credentials: IoTHubCredentials) -> Pipeline {
     let auth_policy: Arc<dyn azure_core::Policy> = Arc::new(AuthorizationPolicy::new(credentials));
 
@@ -866,7 +866,7 @@ fn new_pipeline_from_options(options: ServiceOptions, credentials: IoTHubCredent
     )
 }
 
-/// Options to cufigure the ServiceClient
+/// Options to cufigure the `ServiceClient`
 #[derive(Debug, Clone, Default)]
 pub struct ServiceOptions {
     options: ClientOptions,
@@ -876,7 +876,7 @@ pub struct ServiceOptions {
 impl ServiceOptions {
     /// set timeout duration for requests
     pub fn set_timeout(&mut self, default_timeout: Timeout) {
-        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout))
+        self.timeout_policy = TimeoutPolicy::new(Some(default_timeout));
     }
 }
 

@@ -43,7 +43,7 @@ impl Stream for BytesStream {
         self: Pin<&mut Self>,
         _cx: &mut std::task::Context<'_>,
     ) -> Poll<Option<Self::Item>> {
-        let mut self_mut = self.get_mut();
+        let self_mut = self.get_mut();
 
         // we return all the available bytes in one call.
         if self_mut.bytes_read < self_mut.bytes.len() {
@@ -75,7 +75,7 @@ impl AsyncRead for BytesStream {
         _cx: &mut std::task::Context<'_>,
         buf: &mut [u8],
     ) -> Poll<std::io::Result<usize>> {
-        let mut self_mut = self.get_mut();
+        let self_mut = self.get_mut();
 
         if self_mut.bytes_read < self_mut.bytes.len() {
             let bytes_read = self_mut.bytes_read;

@@ -85,7 +85,7 @@ mod tests {
             assert!(
                 a == e || a + 1 == e || a == e + 1,
                 "actual != expected\nActual: {actual:?}\nExpected: {expected:?}"
-            )
+            );
         }
     }
 }

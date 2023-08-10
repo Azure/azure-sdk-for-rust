@@ -16817,9 +16817,9 @@ pub mod workflow_envelope {
         #[doc = "Gets or sets the files."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub files: Option<WorkflowFiles>,
-        #[doc = "Gets or sets the state of the workflow."]
+        #[doc = "The workflow state."]
         #[serde(rename = "flowState", default, skip_serializing_if = "Option::is_none")]
-        pub flow_state: Option<properties::FlowState>,
+        pub flow_state: Option<WorkflowState>,
         #[doc = "Represents the workflow health."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub health: Option<WorkflowHealth>,
@@ -16827,19 +16827,6 @@ pub mod workflow_envelope {
     impl Properties {
         pub fn new() -> Self {
             Self::default()
-        }
-    }
-    pub mod properties {
-        use super::*;
-        #[doc = "Gets or sets the state of the workflow."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum FlowState {
-            NotSpecified,
-            Completed,
-            Enabled,
-            Disabled,
-            Deleted,
-            Suspended,
         }
     }
 }

@@ -287,6 +287,28 @@ impl Serialize for CspState {
         }
     }
 }
+#[doc = "The search error response details object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetails {
+    #[doc = "The error code description. Such as code=InternalError"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message. Such as message=Internal server error"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "List of error response details"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorDetails>,
+}
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The Catalog API error response object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -309,6 +331,42 @@ pub struct ErrorResponseDetails {
 impl ErrorResponseDetails {
     pub fn new(code: String, message: String) -> Self {
         Self { code, message }
+    }
+}
+#[doc = "The facet value"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FacetValue {
+    #[doc = "The facet count"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+}
+impl FacetValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The facets item"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FacetsItem {
+    #[doc = "The facet values"]
+    #[serde(rename = "facetValues", default, skip_serializing_if = "Option::is_none")]
+    pub facet_values: Option<serde_json::Value>,
+}
+impl FacetsItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The facets response"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FacetsResponse {
+    #[doc = "The facet items results"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+}
+impl FacetsResponse {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Image item"]
@@ -361,6 +419,45 @@ pub struct IncludedQuantityProperty {
 impl IncludedQuantityProperty {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Industry Cloud"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "IndustryCloud")]
+pub enum IndustryCloud {
+    NotApplicable,
+    True,
+    False,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for IndustryCloud {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for IndustryCloud {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for IndustryCloud {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::NotApplicable => serializer.serialize_unit_variant("IndustryCloud", 0u32, "NotApplicable"),
+            Self::True => serializer.serialize_unit_variant("IndustryCloud", 1u32, "True"),
+            Self::False => serializer.serialize_unit_variant("IndustryCloud", 2u32, "False"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Supported legal terms type"]
@@ -1691,6 +1788,126 @@ impl RelatedSku {
         Self::default()
     }
 }
+#[doc = "The search field name"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SearchFieldName")]
+pub enum SearchFieldName {
+    All,
+    LastModifiedDateTime,
+    Market,
+    SupportedProducts,
+    HideKeys,
+    PublisherId,
+    DisplayName,
+    AzureBenefit,
+    Badges,
+    SmallIconUri,
+    IndustryCloud,
+    PublisherType,
+    PublishingState,
+    Language,
+    UniqueProductId,
+    ProductType,
+    Plans,
+    OperatingSystems,
+    PricingTypes,
+    PublisherDisplayName,
+    Summary,
+    LongSummary,
+    VmImageGenerations,
+    VmSecurityTypes,
+    VmArchitectureTypes,
+    Description,
+    RatingBuckets,
+    RatingAverage,
+    RatingCount,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SearchFieldName {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SearchFieldName {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SearchFieldName {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::All => serializer.serialize_unit_variant("SearchFieldName", 0u32, "All"),
+            Self::LastModifiedDateTime => serializer.serialize_unit_variant("SearchFieldName", 1u32, "LastModifiedDateTime"),
+            Self::Market => serializer.serialize_unit_variant("SearchFieldName", 2u32, "Market"),
+            Self::SupportedProducts => serializer.serialize_unit_variant("SearchFieldName", 3u32, "SupportedProducts"),
+            Self::HideKeys => serializer.serialize_unit_variant("SearchFieldName", 4u32, "HideKeys"),
+            Self::PublisherId => serializer.serialize_unit_variant("SearchFieldName", 5u32, "PublisherId"),
+            Self::DisplayName => serializer.serialize_unit_variant("SearchFieldName", 6u32, "DisplayName"),
+            Self::AzureBenefit => serializer.serialize_unit_variant("SearchFieldName", 7u32, "AzureBenefit"),
+            Self::Badges => serializer.serialize_unit_variant("SearchFieldName", 8u32, "Badges"),
+            Self::SmallIconUri => serializer.serialize_unit_variant("SearchFieldName", 9u32, "SmallIconUri"),
+            Self::IndustryCloud => serializer.serialize_unit_variant("SearchFieldName", 10u32, "IndustryCloud"),
+            Self::PublisherType => serializer.serialize_unit_variant("SearchFieldName", 11u32, "PublisherType"),
+            Self::PublishingState => serializer.serialize_unit_variant("SearchFieldName", 12u32, "PublishingState"),
+            Self::Language => serializer.serialize_unit_variant("SearchFieldName", 13u32, "Language"),
+            Self::UniqueProductId => serializer.serialize_unit_variant("SearchFieldName", 14u32, "UniqueProductId"),
+            Self::ProductType => serializer.serialize_unit_variant("SearchFieldName", 15u32, "ProductType"),
+            Self::Plans => serializer.serialize_unit_variant("SearchFieldName", 16u32, "Plans"),
+            Self::OperatingSystems => serializer.serialize_unit_variant("SearchFieldName", 17u32, "OperatingSystems"),
+            Self::PricingTypes => serializer.serialize_unit_variant("SearchFieldName", 18u32, "PricingTypes"),
+            Self::PublisherDisplayName => serializer.serialize_unit_variant("SearchFieldName", 19u32, "PublisherDisplayName"),
+            Self::Summary => serializer.serialize_unit_variant("SearchFieldName", 20u32, "Summary"),
+            Self::LongSummary => serializer.serialize_unit_variant("SearchFieldName", 21u32, "LongSummary"),
+            Self::VmImageGenerations => serializer.serialize_unit_variant("SearchFieldName", 22u32, "VmImageGenerations"),
+            Self::VmSecurityTypes => serializer.serialize_unit_variant("SearchFieldName", 23u32, "VmSecurityTypes"),
+            Self::VmArchitectureTypes => serializer.serialize_unit_variant("SearchFieldName", 24u32, "VmArchitectureTypes"),
+            Self::Description => serializer.serialize_unit_variant("SearchFieldName", 25u32, "Description"),
+            Self::RatingBuckets => serializer.serialize_unit_variant("SearchFieldName", 26u32, "RatingBuckets"),
+            Self::RatingAverage => serializer.serialize_unit_variant("SearchFieldName", 27u32, "RatingAverage"),
+            Self::RatingCount => serializer.serialize_unit_variant("SearchFieldName", 28u32, "RatingCount"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Search response object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SearchResponse {
+    #[doc = "The search facets"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facets: Option<serde_json::Value>,
+    #[doc = "The results"]
+    pub results: Vec<ProductSummary>,
+    #[doc = "The total count"]
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<i64>,
+    #[doc = "The showing results for"]
+    #[serde(rename = "showingResultsFor", default, skip_serializing_if = "Option::is_none")]
+    pub showing_results_for: Option<String>,
+    #[doc = "URL to get the next page of API search"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl SearchResponse {
+    pub fn new(results: Vec<ProductSummary>) -> Self {
+        Self {
+            facets: None,
+            results,
+            total_count: None,
+            showing_results_for: None,
+            next_link: None,
+        }
+    }
+}
 #[doc = "Represents a model for stop sell related information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StopSellInfo {
@@ -1749,6 +1966,134 @@ impl Serialize for StopSellReason {
             Self::Other => serializer.serialize_unit_variant("StopSellReason", 2u32, "Other"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "The type of the suggestion"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SuggestionType")]
+pub enum SuggestionType {
+    WordSearch,
+    Entity,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SuggestionType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SuggestionType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SuggestionType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::WordSearch => serializer.serialize_unit_variant("SuggestionType", 0u32, "WordSearch"),
+            Self::Entity => serializer.serialize_unit_variant("SuggestionType", 1u32, "Entity"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The suggestions field name"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SuggestionsFieldName")]
+pub enum SuggestionsFieldName {
+    DisplayText,
+    Id,
+    IconUrl,
+    ProductType,
+    LinkedAddInsTypes,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SuggestionsFieldName {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SuggestionsFieldName {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SuggestionsFieldName {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::DisplayText => serializer.serialize_unit_variant("SuggestionsFieldName", 0u32, "DisplayText"),
+            Self::Id => serializer.serialize_unit_variant("SuggestionsFieldName", 1u32, "Id"),
+            Self::IconUrl => serializer.serialize_unit_variant("SuggestionsFieldName", 2u32, "IconUrl"),
+            Self::ProductType => serializer.serialize_unit_variant("SuggestionsFieldName", 3u32, "ProductType"),
+            Self::LinkedAddInsTypes => serializer.serialize_unit_variant("SuggestionsFieldName", 4u32, "LinkedAddInsTypes"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The suggestion item"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SuggestionsItem {
+    #[doc = "The suggestion type"]
+    #[serde(rename = "suggestionType", default, skip_serializing_if = "Option::is_none")]
+    pub suggestion_type: Option<serde_json::Value>,
+    #[doc = "The suggestion display text"]
+    #[serde(rename = "displayText")]
+    pub display_text: String,
+    #[doc = "The suggestion item id"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The suggestion icon url"]
+    #[serde(rename = "iconUrl", default, skip_serializing_if = "Option::is_none")]
+    pub icon_url: Option<String>,
+    #[doc = "The suggestion supported product types"]
+    #[serde(rename = "productType", default, skip_serializing_if = "Option::is_none")]
+    pub product_type: Option<serde_json::Value>,
+    #[doc = "The suggestion linked add-in types"]
+    #[serde(rename = "linkedAddInsTypes", default, skip_serializing_if = "Option::is_none")]
+    pub linked_add_ins_types: Option<serde_json::Value>,
+}
+impl SuggestionsItem {
+    pub fn new(display_text: String) -> Self {
+        Self {
+            suggestion_type: None,
+            display_text,
+            id: None,
+            icon_url: None,
+            product_type: None,
+            linked_add_ins_types: None,
+        }
+    }
+}
+#[doc = "The suggestion response"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SuggestionsResponse {
+    #[doc = "The suggestion items results"]
+    pub value: Vec<SuggestionsItem>,
+    #[doc = "The suggestion count"]
+    #[serde(rename = "totalCount")]
+    pub total_count: i64,
+}
+impl SuggestionsResponse {
+    pub fn new(value: Vec<SuggestionsItem>, total_count: i64) -> Self {
+        Self { value, total_count }
     }
 }
 #[doc = "Applicable term"]

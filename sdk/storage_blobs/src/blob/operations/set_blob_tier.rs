@@ -7,7 +7,8 @@ operation! {
     client: BlobClient,
     access_tier: AccessTier,
     ?rehydrate_priority: RehydratePriority,
-    ?blob_versioning: BlobVersioning
+    ?blob_versioning: BlobVersioning,
+    ?if_tags: IfTags
 }
 
 impl SetBlobTierBuilder {
@@ -23,6 +24,7 @@ impl SetBlobTierBuilder {
                 self.rehydrate_priority
                     .unwrap_or(RehydratePriority::Standard),
             );
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

@@ -1,7 +1,7 @@
 /// An example showcasing how to use a certificate for AAD app authentication.
 /// This example fetches a certificate from Azure Keyvault and then uses it to
 /// authenticate the app. If you are using subject name validation for the app
-/// please make sure to set the send_certificate_chain option to true otherwise
+/// please make sure to set the `send_certificate_chain` option to true otherwise
 /// the authentication will fail.
 use azure_core::{auth::TokenCredential, base64};
 use azure_identity::{

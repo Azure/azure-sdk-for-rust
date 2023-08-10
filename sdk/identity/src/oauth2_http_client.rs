@@ -12,7 +12,7 @@ pub(crate) struct Oauth2HttpClient {
 }
 
 impl Oauth2HttpClient {
-    /// Create a new Oauth2HttpClient
+    /// Create a new `Oauth2HttpClient`
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         Self { http_client }
     }
@@ -24,7 +24,7 @@ impl Oauth2HttpClient {
         let method = try_from_method(&oauth2_request.method)?;
         let mut request = Request::new(oauth2_request.url, method);
         for (name, value) in to_headers(&oauth2_request.headers) {
-            request.insert_header(name, value)
+            request.insert_header(name, value);
         }
         request.set_body(oauth2_request.body);
         let response = self.http_client.execute_request(&request).await?;

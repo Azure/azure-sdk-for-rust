@@ -77,7 +77,7 @@ impl StorageCredentials {
         Self::BearerToken(token.into())
     }
 
-    /// Create a TokenCredential based credential
+    /// Create a `TokenCredential` based credential
     ///
     /// Azure Storage accepts OAuth 2.0 access tokens from the Azure AD tenant
     /// associated with the subscription that contains the storage account.

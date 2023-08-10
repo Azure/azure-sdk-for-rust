@@ -41,7 +41,7 @@ async fn main() -> azure_core::Result<()> {
 
         let block_id = Bytes::from(format!("{i}"));
         block_ids.push(block_id.clone());
-        let hash = md5::compute(slice.clone());
+        let hash = md5::compute(slice.clone()).0;
 
         let put_block_response = blob_client.put_block(block_id, slice).hash(hash).await?;
 
@@ -55,7 +55,7 @@ async fn main() -> azure_core::Result<()> {
 
     let res = blob_client
         .put_block_list(block_list)
-        .content_md5(md5::compute(data))
+        .content_md5(md5::compute(data).0)
         .await?;
     println!("PutBlockList == {res:?}");
 

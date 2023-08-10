@@ -532,6 +532,12 @@ impl ConnectionSettingParameter {
 #[doc = "Properties for a Connection Setting Item"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingProperties {
+    #[doc = "Id of the Connection Setting."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Name of the Connection Setting."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[doc = "Client Id associated with the Connection Setting."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
@@ -1522,9 +1528,16 @@ pub struct Resource {
     #[doc = "Indicates the type of bot service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<Kind>,
-    #[doc = "Entity Tag"]
+    #[doc = "Entity Tag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Entity zones"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub zones: Vec<String>,
 }
 impl Resource {
     pub fn new() -> Self {

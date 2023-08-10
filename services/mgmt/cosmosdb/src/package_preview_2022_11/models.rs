@@ -4711,10 +4711,7 @@ pub mod mongo_role_definition_resource {
     use super::*;
     #[doc = "Indicates whether the Role Definition was built-in or user created."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        BuiltInRole,
-        CustomRole,
-    }
+    pub enum Type {}
 }
 #[doc = "Parameters to create and update an Azure Cosmos DB Mongo User Definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -10,7 +10,7 @@ fn is_expired(token: &TokenResponse) -> bool {
 }
 
 #[derive(Clone)]
-/// Wraps a TokenCredential and handles token refresh on token expiry.
+/// Wraps a `TokenCredential` and handles token refresh on token expiry.
 pub struct AutoRefreshingTokenCredential {
     credential: Arc<dyn TokenCredential>,
     // Tokens are specific to a resource, so we cache tokens by resource.

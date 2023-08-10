@@ -2088,13 +2088,13 @@ impl AzureVmWorkloadSapHanaDatabaseWorkloadItem {
         Self { azure_vm_workload_item }
     }
 }
-#[doc = "Azure VM workload-specific protectable item representing SAP HANA Dbinstance."]
+#[doc = "Azure VM workload-specific protectable item representing HANA HSR."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapHanaHsr {
+pub struct AzureVmWorkloadSapHanaHsrProtectableItem {
     #[serde(flatten)]
     pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
 }
-impl AzureVmWorkloadSapHanaHsr {
+impl AzureVmWorkloadSapHanaHsrProtectableItem {
     pub fn new(azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem) -> Self {
         Self {
             azure_vm_workload_protectable_item,
@@ -8735,6 +8735,14 @@ pub struct PrivateEndpointConnection {
     #[doc = "The Private Endpoint network resource that is linked to the Private Endpoint connection"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "Group Ids for the Private Endpoint"]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub group_ids: Vec<String>,
     #[doc = "Private Link Service Connection State"]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
@@ -8812,8 +8820,8 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Gets or sets actions required"]
-    #[serde(rename = "actionRequired", default, skip_serializing_if = "Option::is_none")]
-    pub action_required: Option<String>,
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
 }
 impl PrivateLinkServiceConnectionState {
     pub fn new() -> Self {

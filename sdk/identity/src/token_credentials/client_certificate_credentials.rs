@@ -24,7 +24,7 @@ const DEFAULT_REFRESH_TIME: i64 = 300;
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CertificateCredentialOptions {
     authority_host: String,
     send_certificate_chain: bool,
@@ -40,7 +40,7 @@ impl Default for CertificateCredentialOptions {
 }
 
 impl CertificateCredentialOptions {
-    /// Create a new TokenCredentialsOptions. default() may also be used.
+    /// Create a new `TokenCredentialsOptions`. default() may also be used.
     pub fn new(authority_host: String, send_certificate_chain: bool) -> Self {
         Self {
             authority_host,
@@ -49,7 +49,7 @@ impl CertificateCredentialOptions {
     }
     /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
-        self.authority_host = authority_host
+        self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
@@ -60,7 +60,7 @@ impl CertificateCredentialOptions {
 
     /// Enable/disable sending the certificate chain
     pub fn set_send_certificate_chain(&mut self, send_certificate_chain: bool) {
-        self.send_certificate_chain = send_certificate_chain
+        self.send_certificate_chain = send_certificate_chain;
     }
 
     /// Whether certificate chain is sent as part of the request or not. Default is
@@ -73,7 +73,7 @@ impl CertificateCredentialOptions {
 /// Enables authentication to Azure Active Directory using a client certificate that
 /// was generated for an App Registration.
 ///
-/// In order to use subject name validation send_cert_chain option must be set to true
+/// In order to use subject name validation `send_cert_chain` option must be set to true
 /// The certificate is expected to be in base64 encoded PKCS12 format
 pub struct ClientCertificateCredential {
     tenant_id: String,
@@ -85,7 +85,7 @@ pub struct ClientCertificateCredential {
 }
 
 impl ClientCertificateCredential {
-    /// Create a new ClientCertificateCredential
+    /// Create a new `ClientCertificateCredential`
     pub fn new(
         tenant_id: String,
         client_id: String,
@@ -182,7 +182,7 @@ impl TokenCredential for ClientCertificateCredential {
         let uuid = uuid::Uuid::new_v4();
         let current_time = OffsetDateTime::now_utc().unix_timestamp();
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
-        let x5t = base64::encode(&thumbprint);
+        let x5t = base64::encode(thumbprint);
 
         let header = match options.send_certificate_chain {
             true => {

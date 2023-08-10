@@ -160,9 +160,6 @@ pub struct ElasticMonitorResource {
     #[doc = "Identity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityProperties>,
-    #[doc = "Flag to determine if User API Key has to be generated and shared."]
-    #[serde(rename = "generateApiKey", default, skip_serializing_if = "Option::is_none")]
-    pub generate_api_key: Option<bool>,
     #[doc = "The tags of the monitor resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -181,7 +178,6 @@ impl ElasticMonitorResource {
             sku: None,
             properties: None,
             identity: None,
-            generate_api_key: None,
             tags: None,
             location,
             system_data: None,
@@ -364,6 +360,55 @@ pub struct ElasticTrafficFilterRule {
     pub id: Option<String>,
 }
 impl ElasticTrafficFilterRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Elastic Version List Format"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ElasticVersionListFormat {
+    #[doc = "Elastic Version Properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ElasticVersionListProperties>,
+}
+impl ElasticVersionListFormat {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Elastic Version Properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ElasticVersionListProperties {
+    #[doc = "Available elastic version of the given region"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+impl ElasticVersionListProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of elastic versions available in a region."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ElasticVersionsListResponse {
+    #[doc = "Results of a list operation."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ElasticVersionListFormat>,
+    #[doc = "Link to the next set of results, if any."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ElasticVersionsListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ElasticVersionsListResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -569,13 +614,13 @@ impl Serialize for ManagedIdentityTypes {
 #[doc = "Marketplace SAAS Info of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketplaceSaaSInfo {
-    #[doc = "Marketplace Subscription Id"]
+    #[doc = "Marketplace Subscription"]
     #[serde(rename = "marketplaceSubscription", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_subscription: Option<marketplace_saa_s_info::MarketplaceSubscription>,
-    #[doc = "Subscription Details: Marketplace SAAS Name"]
+    #[doc = "Marketplace Subscription Details: SAAS Name"]
     #[serde(rename = "marketplaceName", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_name: Option<String>,
-    #[doc = "Subscription Details: Marketplace Resource URI"]
+    #[doc = "Marketplace Subscription Details: Resource URI"]
     #[serde(rename = "marketplaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_resource_id: Option<String>,
 }
@@ -586,7 +631,7 @@ impl MarketplaceSaaSInfo {
 }
 pub mod marketplace_saa_s_info {
     use super::*;
-    #[doc = "Marketplace Subscription Id"]
+    #[doc = "Marketplace Subscription"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct MarketplaceSubscription {
         #[doc = "Marketplace Subscription Id. This is a GUID-formatted string."]
@@ -622,6 +667,9 @@ pub struct MonitorProperties {
     #[doc = "The priority of the resource."]
     #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_preference: Option<i32>,
+    #[doc = "Flag to determine if User API Key has to be generated and shared."]
+    #[serde(rename = "generateApiKey", default, skip_serializing_if = "Option::is_none")]
+    pub generate_api_key: Option<bool>,
 }
 impl MonitorProperties {
     pub fn new() -> Self {
@@ -1053,11 +1101,21 @@ impl UpgradableVersionsList {
 #[doc = "The User Api Key created for the Organization associated with the User Email Id that was passed in the request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserApiKeyResponse {
-    #[doc = "The User Api Key Generated based on ReturnApiKey flag. This is applicable for non-Portal clients only."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UserApiKeyResponseProperties>,
+}
+impl UserApiKeyResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserApiKeyResponseProperties {
+    #[doc = "The User Api Key Generated based on GenerateApiKey flag. This is applicable for non-Portal clients only."]
     #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<String>,
 }
-impl UserApiKeyResponse {
+impl UserApiKeyResponseProperties {
     pub fn new() -> Self {
         Self::default()
     }

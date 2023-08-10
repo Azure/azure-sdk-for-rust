@@ -24,13 +24,13 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
-    /// Create a new TokenCredentialsOptions. `default()` may also be used.
+    /// Create a new `TokenCredentialsOptions`. `default()` may also be used.
     pub fn new(authority_host: String) -> Self {
         Self { authority_host }
     }
     /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
-        self.authority_host = authority_host
+        self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
@@ -75,7 +75,7 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
-    /// Create a new ClientSecretCredential
+    /// Create a new `ClientSecretCredential`
     pub fn new(
         http_client: Arc<dyn HttpClient>,
         tenant_id: String,

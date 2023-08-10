@@ -1,7 +1,7 @@
 use serde::Deserialize;
 
-/// The DirectMethodResponse struct contains the response
-/// from the IoT Hub when a direct method was invoked.
+/// The `DirectMethodResponse` struct contains the response
+/// from the `IoT` Hub when a direct method was invoked.
 #[derive(Deserialize)]
 pub struct InvokeMethodResponse {
     /// The status of the direct method invocation.

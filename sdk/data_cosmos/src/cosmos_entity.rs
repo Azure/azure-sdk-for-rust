@@ -2,7 +2,7 @@ use crate::headers;
 use azure_core::{headers::HeaderValue, Request as HttpRequest};
 use serde::Serialize;
 
-/// CosmosDB partition key. Every CosmosDB entity must implement it.
+/// `CosmosDB` partition key. Every `CosmosDB` entity must implement it.
 ///
 /// If you want to treat a Rust type as a document to be added to a Cosmos collection,
 /// you just need to implement this trait for your type. This specifies what you use as
@@ -41,7 +41,7 @@ impl CosmosEntity for serde_json::Value {
     }
 }
 
-/// Serialize the partition key in the format CosmosDB expects.
+/// Serialize the partition key in the format `CosmosDB` expects.
 pub(crate) fn serialize_partition_key<PK: Serialize>(pk: &PK) -> azure_core::Result<String> {
     use azure_core::error::ResultExt;
     // this must be serialized as an array even tough CosmosDB supports only a single partition key.

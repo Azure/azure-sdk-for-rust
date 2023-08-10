@@ -46,10 +46,10 @@ impl AllowedPrincipals {
 #[doc = "Configuration of application logs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppLogsConfiguration {
-    #[doc = "Logs destination"]
+    #[doc = "Logs destination, can be 'log-analytics', 'azure-monitor' or 'none'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<String>,
-    #[doc = "Log analytics configuration"]
+    #[doc = "Log Analytics configuration, must only be provided when destination is configured as 'log-analytics'"]
     #[serde(rename = "logAnalyticsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_configuration: Option<LogAnalyticsConfiguration>,
 }
@@ -1958,7 +1958,7 @@ impl JwtClaimChecks {
         Self::default()
     }
 }
-#[doc = "Log analytics configuration"]
+#[doc = "Log Analytics configuration, must only be provided when destination is configured as 'log-analytics'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsConfiguration {
     #[doc = "Log analytics customer id"]
@@ -3065,7 +3065,7 @@ pub struct VnetConfiguration {
     #[doc = "Resource ID of a subnet for infrastructure components. This subnet must be in the same VNET as the subnet defined in runtimeSubnetId. Must not overlap with any other provided IP ranges."]
     #[serde(rename = "infrastructureSubnetId", default, skip_serializing_if = "Option::is_none")]
     pub infrastructure_subnet_id: Option<String>,
-    #[doc = "Resource ID of a subnet that Container App containers are injected into. This subnet must be in the same VNET as the subnet defined in infrastructureSubnetId. Must not overlap with any other provided IP ranges."]
+    #[doc = "This field is deprecated and not used. If you wish to provide your own subnet that Container App containers are injected into, then you should leverage the infrastructureSubnetId."]
     #[serde(rename = "runtimeSubnetId", default, skip_serializing_if = "Option::is_none")]
     pub runtime_subnet_id: Option<String>,
     #[doc = "CIDR notation IP range assigned to the Docker bridge, network. Must not overlap with any other provided IP ranges."]

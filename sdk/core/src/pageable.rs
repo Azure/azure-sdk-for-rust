@@ -14,7 +14,7 @@ macro_rules! r#try {
     };
 }
 
-/// Helper macro for declaring the `Pageable` and `Continuable types which easily allows
+/// Helper macro for declaring the `Pageable` and `Continuable` types which easily allows
 /// for conditionally compiling with a `Send` constraint or not.
 macro_rules! declare {
     ($($extra:tt)*) => {

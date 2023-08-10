@@ -167,7 +167,7 @@ pub struct UpdateList {
 
 impl DeviceUpdateClient {
     /// Import new update version.
-    /// POST https://{endpoint}/deviceupdate/{instanceId}/updates?action=import&api-version=2021-06-01-preview
+    /// `POST https://{endpoint}/deviceupdate/{instanceId}/updates?action=import&api-version=2021-06-01-preview`
     pub async fn import_update(
         &self,
         instance_id: &str,
@@ -217,7 +217,7 @@ impl DeviceUpdateClient {
     }
 
     /// Delete a specific update version.
-    /// DELETE https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview
+    /// `DELETE https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview`
     pub async fn delete_update(
         &self,
         instance_id: &str,
@@ -234,7 +234,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a specific update file from the version.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files/{fileId}?api-version=2021-06-01-previe
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files/{fileId}?api-version=2021-06-01-previe`
     pub async fn get_file(
         &self,
         instance_id: &str,
@@ -252,7 +252,7 @@ impl DeviceUpdateClient {
     }
 
     /// Retrieve operation status.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations/{operationId}?api-version=2021-06-01-preview
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations/{operationId}?api-version=2021-06-01-preview`
     pub async fn get_operation(
         &self,
         instance_id: &str,
@@ -267,7 +267,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a specific update version.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview`
     pub async fn get_update(
         &self,
         instance_id: &str,
@@ -284,7 +284,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update file identifiers for the specified version.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files?api-version=2021-06-01-preview
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files?api-version=2021-06-01-preview`
     pub async fn list_files(
         &self,
         instance_id: &str,
@@ -311,7 +311,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -319,7 +319,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update names that match the specified provider.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names?api-version=2021-06-01-preview
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names?api-version=2021-06-01-preview`
     pub async fn list_names(
         &self,
         instance_id: &str,
@@ -344,7 +344,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -353,7 +353,7 @@ impl DeviceUpdateClient {
 
     /// Get a list of all import update operations.
     /// Completed operations are kept for 7 days before auto-deleted. Delete operations are not returned by this API version.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations?$filter={$filter}&$top={$top}&api-version=2021-06-01-preview
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations?$filter={$filter}&$top={$top}&api-version=2021-06-01-preview`
     pub async fn list_operations(
         &self,
         instance_id: &str,
@@ -386,15 +386,15 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
         Ok(all_results)
     }
 
-    /// Get a list of all update providers that have been imported to Device Update for IoT Hub.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers?api-version=2021-06-01-preview
+    /// Get a list of all update providers that have been imported to Device Update for `IoT` Hub.
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers?api-version=2021-06-01-preview`
     pub async fn list_providers(&self, instance_id: &str) -> azure_core::Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers");
@@ -415,15 +415,15 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
         Ok(all_results)
     }
 
-    /// Get a list of all updates that have been imported to Device Update for IoT Hub.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates?api-version=2021-06-01-preview&$search={$search}&$filter={$filter}
+    /// Get a list of all updates that have been imported to Device Update for `IoT` Hub.
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates?api-version=2021-06-01-preview&$search={$search}&$filter={$filter}`
     pub async fn list_updates(
         &self,
         instance_id: &str,
@@ -457,7 +457,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }
@@ -465,7 +465,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update versions that match the specified provider and name.
-    /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions?api-version=2021-06-01-preview&$filter={$filter}
+    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions?api-version=2021-06-01-preview&$filter={$filter}`
     pub async fn list_versions(
         &self,
         instance_id: &str,
@@ -498,7 +498,7 @@ impl DeviceUpdateClient {
                     uri.set_query(None);
                     uri = uri.join(&url).with_context(ErrorKind::DataConversion, || {
                         format!("failed to parse url. url: {url}")
-                    })?
+                    })?;
                 }
             }
         }

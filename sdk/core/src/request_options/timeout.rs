@@ -12,6 +12,10 @@ impl Timeout {
 
 impl AppendToUrlQuery for Timeout {
     fn append_to_url_query(&self, url: &mut url::Url) {
+        if url.query_pairs().any(|(k, _)| k == "timeout") {
+            return;
+        }
+
         url.query_pairs_mut()
             .append_pair("timeout", &format!("{}", self.0.as_secs()));
     }

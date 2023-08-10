@@ -1263,7 +1263,7 @@ pub mod app_service_plan_patch_resource {
         #[doc = "Resource group of the App Service plan."]
         #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
         pub resource_group: Option<String>,
-        #[doc = "If Linux app service plan <code>true</code>, <code>false</code> otherwise."]
+        #[doc = "If Linux app service plan <code>true</code>, <code>false</code> otherwise. This property is required for Linux app service plans."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub reserved: Option<bool>,
         #[doc = "Obsolete: If Hyper-V container app service plan <code>true</code>, <code>false</code> otherwise."]

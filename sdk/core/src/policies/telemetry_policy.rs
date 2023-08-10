@@ -110,6 +110,6 @@ mod test {
         assert_eq!(
             policy.header,
             format!("azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})")
-        )
+        );
     }
 }
