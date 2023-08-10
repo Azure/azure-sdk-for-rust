@@ -4,7 +4,8 @@
 
 - Fixed a bug where `EventStream` is not `Send` because `ClosingBoxedFuture` misses `Send` in its
   trait bounds
-- Changed visibility of `EventStream` to public
+- Changed visibility of struct `EventStream` to public
+- Changed visibility of trait `IntoAzureCoreError` to public
 
 ## 0.1.1
 
