@@ -6,6 +6,9 @@
   trait bounds
 - Changed visibility of struct `EventStream` to public
 - Changed visibility of trait `IntoAzureCoreError` to public
+- Updated dependency `azure_core` to `"0.13"`
+- Updated dependency `time`'s version to `"<=0.3.23"`, which is the latest version that supports
+  rust version 1.65
 
 ## 0.1.1
 
