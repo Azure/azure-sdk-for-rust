@@ -257,7 +257,7 @@ async fn close_consumer<RP>(
     value.consumer.close().await
 }
 
-pub struct EventStreamStateValue<'a, C> {
+pub(crate) struct EventStreamStateValue<'a, C> {
     pub(crate) client: &'a mut Sharable<AmqpClient>,
     pub(crate) consumer: C,
     pub(crate) buffer: VecDeque<ReceivedEventData>,
@@ -291,7 +291,8 @@ type StreamBoxedFuture<'a, C> = Pin<
             + 'a,
     >,
 >;
-type ClosingBoxedFuture<'a> = Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + 'a>>;
+type ClosingBoxedFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<(), DisposeConsumerError>> + Send + 'a>>;
 
 pin_project_lite::pin_project! {
     #[project = EventStreamStateProj]
@@ -381,6 +382,7 @@ where
 }
 
 pin_project_lite::pin_project! {
+    /// A stream of event.
     pub struct EventStream<'a, C> {
         #[pin]
         state: EventStreamState<'a, C>,
@@ -390,6 +392,7 @@ pin_project_lite::pin_project! {
 impl<'a, RP> EventStream<'a, AmqpConsumer<RP>>
 where
     RP: Send + 'a,
+    AmqpConsumer<RP>: Send + 'a,
 {
     pub(crate) fn with_consumer(
         client: &'a mut Sharable<AmqpClient>,
@@ -403,6 +406,7 @@ where
         Self { state }
     }
 
+    /// Closes the stream
     pub async fn close(self) -> Result<(), DisposeConsumerError> {
         self.state.close().await
     }
@@ -411,6 +415,7 @@ where
 impl<'a, RP> Stream for EventStream<'a, AmqpConsumer<RP>>
 where
     RP: EventHubsRetryPolicy + Send + 'a,
+    AmqpConsumer<RP>: Send + 'a,
 {
     type Item = Result<ReceivedEventData, RecoverAndReceiveError>;
 

@@ -10,6 +10,7 @@ mod read_event_options;
 
 pub mod error;
 
+pub use crate::amqp::amqp_consumer::EventStream;
 pub use event_hub_consumer_client::*;
 pub use event_hub_consumer_client_options::*;
 pub use event_position::*;
