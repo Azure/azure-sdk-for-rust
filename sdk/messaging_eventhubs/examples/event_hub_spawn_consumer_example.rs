@@ -4,10 +4,10 @@ use std::sync::Arc;
 
 use futures_util::lock::Mutex;
 use futures_util::StreamExt;
-use messaging_eventhubs::consumer::{
+use azeventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
-use messaging_eventhubs::IntoAzureCoreError;
+use azeventhubs::IntoAzureCoreError;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
