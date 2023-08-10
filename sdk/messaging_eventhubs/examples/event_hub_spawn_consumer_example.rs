@@ -1,7 +1,9 @@
-use std::sync::{Arc};
+//! This example shows how to spawn a consumer client to read events from an Event Hub.
 
-use futures_util::StreamExt;
+use std::sync::Arc;
+
 use futures_util::lock::Mutex;
+use futures_util::StreamExt;
 use messaging_eventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
@@ -9,10 +11,9 @@ use messaging_eventhubs::IntoAzureCoreError;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = dotenv::from_filename("./sdk/messaging_eventhubs/.env");
-
-    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING")?;
-    let event_hub_name = std::env::var("EVENT_HUB_NAME")?;
+    let connection_string = "ENTER YOUR CONNECTION STRING HERE";
+    // You can leave event_hub_name as None if your connection string contains the EntityPath
+    let event_hub_name = Some(String::from("ENTER YOUR EVENT HUB NAME HERE"));
     let options = EventHubConsumerClientOptions::default();
 
     // Create a consumer client
@@ -28,8 +29,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let starting_position = EventPosition::earliest();
     let options = ReadEventOptions::default();
 
+    // You may also move the consumer client into the spawned task and return it from the task at
+    // the end.
     let arc = Arc::new(Mutex::new(consumer_client));
-
     let arc_clone = arc.clone();
     let handle = tokio::spawn(async move {
         // Get a stream of events from the first partition
@@ -64,7 +66,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     handle.await??;
-    // consumer_client.close().await?;
+
+    // Take ownership of the consumer client out of the Arc and Mutex
     let consumer_client = Arc::try_unwrap(arc).unwrap().into_inner();
     consumer_client.close().await?;
 
