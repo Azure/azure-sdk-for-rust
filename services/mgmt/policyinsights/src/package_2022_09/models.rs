@@ -1558,7 +1558,7 @@ pub struct RemediationProperties {
     #[doc = "The way resources to remediate are discovered. Defaults to ExistingNonCompliant if not specified."]
     #[serde(rename = "resourceDiscoveryMode", default, skip_serializing_if = "Option::is_none")]
     pub resource_discovery_mode: Option<remediation_properties::ResourceDiscoveryMode>,
-    #[doc = "The status of the remediation."]
+    #[doc = "The status of the remediation. This refers to the entire remediation task, not individual deployments. Allowed values are Evaluating, Canceled, Cancelling, Failed, Complete, or Succeeded."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The time at which the remediation was created."]

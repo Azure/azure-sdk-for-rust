@@ -4,6 +4,8 @@
 //! information on the project, and an overview of other crates, please refer to
 //! [our GitHub repository](https://github.com/azure/azure-sdk-for-rust).
 
+#![deny(clippy::unwrap_used, clippy::expect_used)]
+
 #[macro_use]
 extern crate azure_core;
 

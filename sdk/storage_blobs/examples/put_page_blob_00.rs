@@ -38,7 +38,7 @@ async fn main() -> azure_core::Result<()> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(slice.clone());
+    let digest = md5::compute(slice.clone()).0;
 
     // The required parameters are container_name_name, blob_name.
     // The builder supports many more optional

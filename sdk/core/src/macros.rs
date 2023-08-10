@@ -29,6 +29,7 @@ macro_rules! setters {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
         #[allow(missing_docs)]
+        #[must_use]
         pub fn $name<P: ::std::convert::Into<$typ>>(self, $name: P) -> Self {
             let $name: $typ = $name.into();
             Self  {
@@ -278,7 +279,7 @@ macro_rules! operation {
 
 /// Declare a `Future` with the given name
 ///
-/// `Future::Output` will be set to `azure_core::Result<$NAMEResponse>.
+/// `Future::Output` will be set to `azure_core::Result<$NAMEResponse>`.
 /// The `Future` will be `Send` for all targets but `wasm32`.
 #[macro_export]
 macro_rules! future {

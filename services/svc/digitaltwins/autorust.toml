@@ -35,4 +35,14 @@ boxed = [
         "InnerError",
         "innererror"
     ],
+    [
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/stable/2023-06-30/digitaltwins.json",
+        "Error",
+        "innererror"
+    ],
+    [
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/stable/2023-06-30/digitaltwins.json",
+        "InnerError",
+        "innererror"
+    ],
 ]

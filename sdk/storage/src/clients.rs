@@ -86,7 +86,7 @@ pub fn finalize_request(
     Ok(request)
 }
 
-/// Create a Pipeline from ClientOptions
+/// Create a Pipeline from `ClientOptions`
 pub fn new_pipeline_from_options(
     options: ClientOptions,
     credentials: StorageCredentials,

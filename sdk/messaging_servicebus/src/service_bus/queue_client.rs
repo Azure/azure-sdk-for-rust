@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use azure_core::{error::Error, HttpClient};
 
-/// Client object that allows interaction with the ServiceBus API
+/// Client object that allows interaction with the `ServiceBus` API
 #[derive(Debug, Clone)]
 pub struct QueueClient {
     http_client: Arc<dyn HttpClient>,

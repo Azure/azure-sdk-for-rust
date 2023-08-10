@@ -11,4 +11,5 @@ boxed = [
     ["../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-04-01/dataprotection.json", "InnerError", "embeddedInnerError"],
     ["../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-05-01/dataprotection.json", "InnerError", "embeddedInnerError"],
     ["../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2023-01-01/dataprotection.json", "InnerError", "embeddedInnerError"],
+    ["../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2023-05-01/dataprotection.json", "InnerError", "embeddedInnerError"],
 ]

@@ -34,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
     blob_client
         .set_properties()
         .set_from_blob_properties(properties)
-        .content_md5(md5::compute("howdy"))
+        .content_md5(md5::compute("howdy").0)
         .await?;
 
     Ok(())

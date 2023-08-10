@@ -3,36 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "The information about each failover group replica."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgReplicas {
-    #[doc = "The health state of the replica."]
-    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
-    pub health_state: Option<String>,
-    #[doc = "The replica name."]
-    #[serde(rename = "replicaName", default, skip_serializing_if = "Option::is_none")]
-    pub replica_name: Option<String>,
-    #[doc = "The role of the replica."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
-    #[doc = "The connected state of the replica."]
-    #[serde(rename = "connectedState", default, skip_serializing_if = "Option::is_none")]
-    pub connected_state: Option<String>,
-    #[doc = "The synchronization state of the availability group replicas."]
-    #[serde(rename = "synchronizationState", default, skip_serializing_if = "Option::is_none")]
-    pub synchronization_state: Option<String>,
-    #[doc = "The availability mode of the replica."]
-    #[serde(rename = "availabilityMode", default, skip_serializing_if = "Option::is_none")]
-    pub availability_mode: Option<String>,
-    #[doc = "The secondary role allowed connections."]
-    #[serde(rename = "secondaryRoleAllowConnections", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_role_allow_connections: Option<String>,
-}
-impl AgReplicas {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "DNS server details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectoryConnectorDnsDetails {
@@ -577,9 +547,9 @@ pub struct FailoverGroupProperties {
     pub partner_managed_instance_id: String,
     #[doc = "The specifications of the failover group resource."]
     pub spec: FailoverGroupSpec,
-    #[doc = "The status of the Kubernetes custom resource."]
+    #[doc = "The status of the failover group custom resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<FailoverGroupStatus>,
+    pub status: Option<serde_json::Value>,
 }
 impl FailoverGroupProperties {
     pub fn new(partner_managed_instance_id: String, spec: FailoverGroupSpec) -> Self {
@@ -785,122 +755,64 @@ pub mod failover_group_spec {
         }
     }
 }
-#[doc = "The status of the Kubernetes custom resource."]
+#[doc = "The kubernetes active directory information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct FailoverGroupStatus {
-    #[doc = "The time that the custom resource was last updated."]
-    #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_update_time: Option<time::OffsetDateTime>,
-    #[doc = "The version of the replicaSet associated with the failover group custom resource."]
-    #[serde(rename = "observedGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub observed_generation: Option<i64>,
-    #[doc = "The state of the failover group custom resource."]
+pub struct K8sActiveDirectory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<failover_group_status::State>,
-    #[doc = "The message in case of a failure in the failover group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub results: Option<String>,
-    #[doc = "The role of the managed instance in the failover group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<failover_group_status::Role>,
-    #[doc = "A list of failover group replicas."]
+    pub connector: Option<k8s_active_directory::Connector>,
+    #[doc = "Account name for AAD"]
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
+    #[doc = "Keytab secret used to authenticate with Active Directory."]
+    #[serde(rename = "keytabSecret", default, skip_serializing_if = "Option::is_none")]
+    pub keytab_secret: Option<String>,
+    #[doc = "An array of encryption types"]
     #[serde(
+        rename = "encryptionTypes",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub replicas: Vec<AgReplicas>,
+    pub encryption_types: Vec<String>,
 }
-impl FailoverGroupStatus {
+impl K8sActiveDirectory {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod failover_group_status {
+pub mod k8s_active_directory {
     use super::*;
-    #[doc = "The state of the failover group custom resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "State")]
-    pub enum State {
-        Waiting,
-        Succeeded,
-        Failed,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Connector {
+        #[doc = "Name of the connector"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+        #[doc = "Name space of the connector"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub namespace: Option<String>,
     }
-    impl FromStr for State {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
+    impl Connector {
+        pub fn new() -> Self {
+            Self::default()
         }
     }
-    impl<'de> Deserialize<'de> for State {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for State {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Waiting => serializer.serialize_unit_variant("State", 0u32, "Waiting"),
-                Self::Succeeded => serializer.serialize_unit_variant("State", 1u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("State", 2u32, "Failed"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The role of the managed instance in the failover group."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Role")]
-    pub enum Role {
-        #[serde(rename = "primary")]
-        Primary,
-        #[serde(rename = "secondary")]
-        Secondary,
-        #[serde(rename = "force-primary-allow-data-loss")]
-        ForcePrimaryAllowDataLoss,
-        #[serde(rename = "force-secondary")]
-        ForceSecondary,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Role {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Role {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Role {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Primary => serializer.serialize_unit_variant("Role", 0u32, "primary"),
-                Self::Secondary => serializer.serialize_unit_variant("Role", 1u32, "secondary"),
-                Self::ForcePrimaryAllowDataLoss => serializer.serialize_unit_variant("Role", 2u32, "force-primary-allow-data-loss"),
-                Self::ForceSecondary => serializer.serialize_unit_variant("Role", 3u32, "force-secondary"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+}
+#[doc = "The kubernetes network settings information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sNetworkSettings {
+    #[doc = "If 1, then SQL Server forces all connections to be encrypted. By default, this option is 0"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub forceencryption: Option<i32>,
+    #[doc = "Specifies which ciphers are allowed by SQL Server for TLS"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tlsciphers: Option<String>,
+    #[doc = "A comma-separated list of which TLS protocols are allowed by SQL Server"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tlsprotocols: Option<String>,
+}
+impl K8sNetworkSettings {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The kubernetes resource limits and requests used to restrict or reserve resource usage."]
@@ -938,6 +850,39 @@ pub struct K8sSchedulingOptions {
     pub resources: Option<K8sResourceRequirements>,
 }
 impl K8sSchedulingOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The kubernetes security information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sSecurity {
+    #[doc = "Admin login secret key"]
+    #[serde(rename = "adminLoginSecret", default, skip_serializing_if = "Option::is_none")]
+    pub admin_login_secret: Option<String>,
+    #[doc = "Service certificate secret used"]
+    #[serde(rename = "serviceCertificateSecret", default, skip_serializing_if = "Option::is_none")]
+    pub service_certificate_secret: Option<String>,
+    #[doc = "The kubernetes active directory information."]
+    #[serde(rename = "activeDirectory", default, skip_serializing_if = "Option::is_none")]
+    pub active_directory: Option<K8sActiveDirectory>,
+    #[doc = "Transparent data encryption information."]
+    #[serde(rename = "transparentDataEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub transparent_data_encryption: Option<K8stransparentDataEncryption>,
+}
+impl K8sSecurity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The kubernetes settings information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sSettings {
+    #[doc = "The kubernetes network settings information."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<K8sNetworkSettings>,
+}
+impl K8sSettings {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1327,6 +1272,12 @@ pub struct SqlManagedInstanceK8sSpec {
     #[doc = "This option specifies the number of SQL Managed Instance replicas that will be deployed in your Kubernetes cluster for high availability purposes. If sku.tier is BusinessCritical, allowed values are '2' or '3' with default of '3'. If sku.tier is GeneralPurpose, replicas must be '1'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replicas: Option<i32>,
+    #[doc = "The kubernetes security information."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub security: Option<K8sSecurity>,
+    #[doc = "The kubernetes settings information."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<K8sSettings>,
 }
 impl SqlManagedInstanceK8sSpec {
     pub fn new() -> Self {
@@ -2218,6 +2169,21 @@ pub struct UploadWatermark {
     pub usages: Option<time::OffsetDateTime>,
 }
 impl UploadWatermark {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Transparent data encryption information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8stransparentDataEncryption {
+    #[doc = "Transparent data encryption mode. Can be Service Managed, Customer managed or disabled"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[doc = "Protector secret for customer managed Transparent data encryption mode"]
+    #[serde(rename = "protectorSecret", default, skip_serializing_if = "Option::is_none")]
+    pub protector_secret: Option<String>,
+}
+impl K8stransparentDataEncryption {
     pub fn new() -> Self {
         Self::default()
     }

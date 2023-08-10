@@ -64,7 +64,7 @@ impl DefaultAzureCredentialBuilder {
         if self.include_managed_identity_credential {
             sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
                 ImdsManagedIdentityCredential::default(),
-            ))
+            ));
         }
         if self.include_azure_cli_credential {
             sources.push(DefaultAzureCredentialEnum::AzureCli(
@@ -75,7 +75,7 @@ impl DefaultAzureCredentialBuilder {
     }
 }
 
-/// Types of TokenCredential supported by DefaultAzureCredential
+/// Types of `TokenCredential` supported by `DefaultAzureCredential`
 pub enum DefaultAzureCredentialEnum {
     /// `TokenCredential` from environment variable.
     Environment(super::EnvironmentCredential),
@@ -124,9 +124,9 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
 ///
 /// The following credential types if enabled will be tried, in order:
-/// - EnvironmentCredential
-/// - ManagedIdentityCredential
-/// - AzureCliCredential
+/// - `EnvironmentCredential`
+/// - `ManagedIdentityCredential`
+/// - `AzureCliCredential`
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialEnum>,

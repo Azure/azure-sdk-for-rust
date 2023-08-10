@@ -71,6 +71,9 @@ pub struct AttestationServiceCreationSpecificParams {
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[serde(rename = "policySigningCertificates", default, skip_serializing_if = "Option::is_none")]
     pub policy_signing_certificates: Option<JsonWebKeySet>,
+    #[doc = "The type for specifying the requirement of authentication for TPM Attestation REST APIs."]
+    #[serde(rename = "tpmAttestationAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub tpm_attestation_authentication: Option<TpmAttestationAuthenticationType>,
 }
 impl AttestationServiceCreationSpecificParams {
     pub fn new() -> Self {
@@ -98,6 +101,9 @@ pub struct AttestationServicePatchSpecificParams {
     #[doc = "The public network access type for API calls to the Attestation Provider."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccessType>,
+    #[doc = "The type for specifying the requirement of authentication for TPM Attestation REST APIs."]
+    #[serde(rename = "tpmAttestationAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub tpm_attestation_authentication: Option<TpmAttestationAuthenticationType>,
 }
 impl AttestationServicePatchSpecificParams {
     pub fn new() -> Self {
@@ -232,6 +238,21 @@ impl JsonWebKeySet {
         Self::default()
     }
 }
+#[doc = "Specifications of the Log for Microsoft Azure Attestation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LogSpecification {
+    #[doc = "Name of the log"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Localized friendly display name of the log"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+impl LogSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "List of supported operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
@@ -251,6 +272,18 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Extra Operation properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationProperties {
+    #[doc = "Service specification payload"]
+    #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
+    pub service_specification: Option<ServiceSpecification>,
+}
+impl OperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Definition object with the name and properties of an operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDefinition {
@@ -260,6 +293,9 @@ pub struct OperationsDefinition {
     #[doc = "Display object with properties of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationsDisplayDefinition>,
+    #[doc = "Extra Operation properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
 }
 impl OperationsDefinition {
     pub fn new() -> Self {
@@ -573,6 +609,23 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Service specification payload"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServiceSpecification {
+    #[doc = "Specifications of the Log for Microsoft Azure Attestation"]
+    #[serde(
+        rename = "logSpecifications",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub log_specifications: Vec<LogSpecification>,
+}
+impl ServiceSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Status of attestation service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusResult {
@@ -596,6 +649,9 @@ pub struct StatusResult {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "The type for specifying the requirement of authentication for TPM Attestation REST APIs."]
+    #[serde(rename = "tpmAttestationAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub tpm_attestation_authentication: Option<TpmAttestationAuthenticationType>,
 }
 impl StatusResult {
     pub fn new() -> Self {
@@ -642,6 +698,48 @@ pub mod status_result {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "The type for specifying the requirement of authentication for TPM Attestation REST APIs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "TpmAttestationAuthenticationType")]
+pub enum TpmAttestationAuthenticationType {
+    Enabled,
+    Disabled,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for TpmAttestationAuthenticationType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for TpmAttestationAuthenticationType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for TpmAttestationAuthenticationType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Enabled => serializer.serialize_unit_variant("TpmAttestationAuthenticationType", 0u32, "Enabled"),
+            Self::Disabled => serializer.serialize_unit_variant("TpmAttestationAuthenticationType", 1u32, "Disabled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+impl Default for TpmAttestationAuthenticationType {
+    fn default() -> Self {
+        Self::Enabled
     }
 }
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]

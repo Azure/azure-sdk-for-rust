@@ -89,6 +89,7 @@ impl Error {
 
     /// Create a new `Error` based on a specific error kind and an underlying error cause
     /// along with a message
+    #[must_use]
     pub fn full<E, C>(kind: ErrorKind, error: E, message: C) -> Self
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
@@ -106,6 +107,7 @@ impl Error {
     }
 
     /// Create an `Error` based on an error kind and some sort of message
+    #[must_use]
     pub fn message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
@@ -119,6 +121,7 @@ impl Error {
     }
 
     /// Creates an `Error` based on an error kind and formatted message
+    #[must_use]
     pub fn with_message<F, C>(kind: ErrorKind, message: F) -> Self
     where
         Self: Sized,
@@ -134,6 +137,7 @@ impl Error {
     }
 
     /// Wrap this error in additional `message`
+    #[must_use]
     pub fn context<C>(self, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
@@ -142,6 +146,7 @@ impl Error {
     }
 
     /// Wrap this error in additional message
+    #[must_use]
     pub fn with_context<F, C>(self, f: F) -> Self
     where
         F: FnOnce() -> C,

@@ -1526,140 +1526,77 @@ impl Serialize for ResourceState {
 #[doc = "SKU parameters supplied to the create RedisEnterprise operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
-    #[doc = "The type of RedisEnterprise cluster to deploy. Possible values: (Enterprise_E10, EnterpriseFlash_F300 etc.)"]
-    pub name: sku::Name,
+    pub name: SkuName,
     #[doc = "The size of the RedisEnterprise cluster. Defaults to 2 or 3 depending on SKU. Valid values are (2, 4, 6, ...) for Enterprise SKUs and (3, 9, 15, ...) for Flash SKUs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
 impl Sku {
-    pub fn new(name: sku::Name) -> Self {
+    pub fn new(name: SkuName) -> Self {
         Self { name, capacity: None }
-    }
-}
-pub mod sku {
-    use super::*;
-    #[doc = "The type of RedisEnterprise cluster to deploy. Possible values: (Enterprise_E10, EnterpriseFlash_F300 etc.)"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        #[serde(rename = "Enterprise_E10")]
-        EnterpriseE10,
-        #[serde(rename = "Enterprise_E20")]
-        EnterpriseE20,
-        #[serde(rename = "Enterprise_E50")]
-        EnterpriseE50,
-        #[serde(rename = "Enterprise_E100")]
-        EnterpriseE100,
-        #[serde(rename = "EnterpriseFlash_F300")]
-        EnterpriseFlashF300,
-        #[serde(rename = "EnterpriseFlash_F700")]
-        EnterpriseFlashF700,
-        #[serde(rename = "EnterpriseFlash_F1500")]
-        EnterpriseFlashF1500,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EnterpriseE10 => serializer.serialize_unit_variant("Name", 0u32, "Enterprise_E10"),
-                Self::EnterpriseE20 => serializer.serialize_unit_variant("Name", 1u32, "Enterprise_E20"),
-                Self::EnterpriseE50 => serializer.serialize_unit_variant("Name", 2u32, "Enterprise_E50"),
-                Self::EnterpriseE100 => serializer.serialize_unit_variant("Name", 3u32, "Enterprise_E100"),
-                Self::EnterpriseFlashF300 => serializer.serialize_unit_variant("Name", 4u32, "EnterpriseFlash_F300"),
-                Self::EnterpriseFlashF700 => serializer.serialize_unit_variant("Name", 5u32, "EnterpriseFlash_F700"),
-                Self::EnterpriseFlashF1500 => serializer.serialize_unit_variant("Name", 6u32, "EnterpriseFlash_F1500"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Information about Sku"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuDetail {
-    #[doc = "The type of RedisEnterprise cluster to deploy. Possible values: (Enterprise_E10, EnterpriseFlash_F300 etc.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku_detail::Name>,
+    pub name: Option<SkuName>,
 }
 impl SkuDetail {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod sku_detail {
-    use super::*;
-    #[doc = "The type of RedisEnterprise cluster to deploy. Possible values: (Enterprise_E10, EnterpriseFlash_F300 etc.)"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        #[serde(rename = "Enterprise_E10")]
-        EnterpriseE10,
-        #[serde(rename = "Enterprise_E20")]
-        EnterpriseE20,
-        #[serde(rename = "Enterprise_E50")]
-        EnterpriseE50,
-        #[serde(rename = "Enterprise_E100")]
-        EnterpriseE100,
-        #[serde(rename = "EnterpriseFlash_F300")]
-        EnterpriseFlashF300,
-        #[serde(rename = "EnterpriseFlash_F700")]
-        EnterpriseFlashF700,
-        #[serde(rename = "EnterpriseFlash_F1500")]
-        EnterpriseFlashF1500,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SkuName")]
+pub enum SkuName {
+    #[serde(rename = "Enterprise_E10")]
+    EnterpriseE10,
+    #[serde(rename = "Enterprise_E20")]
+    EnterpriseE20,
+    #[serde(rename = "Enterprise_E50")]
+    EnterpriseE50,
+    #[serde(rename = "Enterprise_E100")]
+    EnterpriseE100,
+    #[serde(rename = "EnterpriseFlash_F300")]
+    EnterpriseFlashF300,
+    #[serde(rename = "EnterpriseFlash_F700")]
+    EnterpriseFlashF700,
+    #[serde(rename = "EnterpriseFlash_F1500")]
+    EnterpriseFlashF1500,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SkuName {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+impl<'de> Deserialize<'de> for SkuName {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EnterpriseE10 => serializer.serialize_unit_variant("Name", 0u32, "Enterprise_E10"),
-                Self::EnterpriseE20 => serializer.serialize_unit_variant("Name", 1u32, "Enterprise_E20"),
-                Self::EnterpriseE50 => serializer.serialize_unit_variant("Name", 2u32, "Enterprise_E50"),
-                Self::EnterpriseE100 => serializer.serialize_unit_variant("Name", 3u32, "Enterprise_E100"),
-                Self::EnterpriseFlashF300 => serializer.serialize_unit_variant("Name", 4u32, "EnterpriseFlash_F300"),
-                Self::EnterpriseFlashF700 => serializer.serialize_unit_variant("Name", 5u32, "EnterpriseFlash_F700"),
-                Self::EnterpriseFlashF1500 => serializer.serialize_unit_variant("Name", 6u32, "EnterpriseFlash_F1500"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for SkuName {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::EnterpriseE10 => serializer.serialize_unit_variant("SkuName", 0u32, "Enterprise_E10"),
+            Self::EnterpriseE20 => serializer.serialize_unit_variant("SkuName", 1u32, "Enterprise_E20"),
+            Self::EnterpriseE50 => serializer.serialize_unit_variant("SkuName", 2u32, "Enterprise_E50"),
+            Self::EnterpriseE100 => serializer.serialize_unit_variant("SkuName", 3u32, "Enterprise_E100"),
+            Self::EnterpriseFlashF300 => serializer.serialize_unit_variant("SkuName", 4u32, "EnterpriseFlash_F300"),
+            Self::EnterpriseFlashF700 => serializer.serialize_unit_variant("SkuName", 5u32, "EnterpriseFlash_F700"),
+            Self::EnterpriseFlashF1500 => serializer.serialize_unit_variant("SkuName", 6u32, "EnterpriseFlash_F1500"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }

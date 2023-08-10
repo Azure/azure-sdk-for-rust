@@ -429,9 +429,9 @@ impl WorkspacePatchResource {
 pub struct WorkspaceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "Resource base properties."]
+    #[doc = "Workspace properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ResourceBaseProperties>,
+    pub properties: Option<WorkspaceResourceProperties>,
 }
 impl WorkspaceResource {
     pub fn new(tracked_resource: TrackedResource) -> Self {
@@ -462,6 +462,20 @@ impl azure_core::Continuable for WorkspaceResourceList {
     }
 }
 impl WorkspaceResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Workspace properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct WorkspaceResourceProperties {
+    #[serde(flatten)]
+    pub resource_base_properties: ResourceBaseProperties,
+    #[doc = "Data plane endpoint."]
+    #[serde(rename = "dataPlaneEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub data_plane_endpoint: Option<String>,
+}
+impl WorkspaceResourceProperties {
     pub fn new() -> Self {
         Self::default()
     }

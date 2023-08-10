@@ -47,7 +47,7 @@ impl GetPartitionKeyRangesBuilder {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GetPartitionKeyRangesResponse {
     pub rid: String,
     pub content_location: Option<String>,
@@ -111,7 +111,7 @@ impl GetPartitionKeyRangesResponse {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, PartialEq, PartialOrd)]
 pub struct PartitionKeyRange {
     #[serde(rename = "_rid")]
     pub rid: String,
@@ -126,7 +126,7 @@ pub struct PartitionKeyRange {
     pub rid_prefix: u64,
     pub _self: String,
     #[serde(rename = "throughputFraction")]
-    pub throughput_fraction: u64,
+    pub throughput_fraction: f32,
     pub status: String,
     // TODO: parents
     #[serde(rename = "_ts")]

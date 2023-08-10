@@ -1427,7 +1427,7 @@ impl NetworkSecurityPerimeter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityPerimeterConfiguration {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of NetworkSecurityPerimeterConfiguration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkSecurityPerimeterConfigurationProperties>,
@@ -2122,10 +2122,10 @@ pub struct RetentionDescription {
     #[doc = "Enumerates the possible values for cleanup policy"]
     #[serde(rename = "cleanupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub cleanup_policy: Option<retention_description::CleanupPolicy>,
-    #[doc = "Number of hours to retain the events for this Event Hub. This value is only used when cleanupPolicy is Delete. If cleanupPolicy is Compaction the returned value of this property is Long.MaxValue "]
+    #[doc = "Number of hours to retain the events for this Event Hub. This value is only used when cleanupPolicy is Delete. If cleanupPolicy is Compact the returned value of this property is Long.MaxValue "]
     #[serde(rename = "retentionTimeInHours", default, skip_serializing_if = "Option::is_none")]
     pub retention_time_in_hours: Option<i64>,
-    #[doc = "Number of hours to retain the tombstone markers of a compacted Event Hub. This value is only used when cleanupPolicy is Compaction. Consumer must complete reading the tombstone marker within this specified amount of time if consumer begins from starting offset to ensure they get a valid snapshot for the specific key described by the tombstone marker within the compacted Event Hub"]
+    #[doc = "Number of hours to retain the tombstone markers of a compacted Event Hub. This value is only used when cleanupPolicy is Compact. Consumer must complete reading the tombstone marker within this specified amount of time if consumer begins from starting offset to ensure they get a valid snapshot for the specific key described by the tombstone marker within the compacted Event Hub"]
     #[serde(rename = "tombstoneRetentionTimeInHours", default, skip_serializing_if = "Option::is_none")]
     pub tombstone_retention_time_in_hours: Option<i32>,
 }
@@ -2141,7 +2141,7 @@ pub mod retention_description {
     #[serde(remote = "CleanupPolicy")]
     pub enum CleanupPolicy {
         Delete,
-        Compaction,
+        Compact,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2168,7 +2168,7 @@ pub mod retention_description {
         {
             match self {
                 Self::Delete => serializer.serialize_unit_variant("CleanupPolicy", 0u32, "Delete"),
-                Self::Compaction => serializer.serialize_unit_variant("CleanupPolicy", 1u32, "Compaction"),
+                Self::Compact => serializer.serialize_unit_variant("CleanupPolicy", 1u32, "Compact"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

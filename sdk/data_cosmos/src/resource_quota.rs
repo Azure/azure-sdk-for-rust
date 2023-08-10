@@ -80,12 +80,6 @@ pub(crate) fn resource_quotas_from_str(
             v.push(ResourceQuota::InteropUsers(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
             v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
-        } else {
-            return Err(Error::with_message(ErrorKind::DataConversion, || {
-                format!(
-                    "resource quota has an unrecognized part - part: \"{token}\" full string: \"{full_string}\""
-                )
-            }));
         }
 
         trace!("v == {:#?}", v);

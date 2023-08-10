@@ -103,6 +103,15 @@ pub mod availability_status {
         #[doc = "When the resource's availabilityState is Unavailable, it describes where the health impacting event was originated. Examples are planned, unplanned, user initiated or an outage etc."]
         #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
         pub reason_type: Option<String>,
+        #[doc = "When an event is created, it can either be triggered by a customer or the platform of the resource and this field will illustrate that. This field is connected to the category field in this object."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub context: Option<String>,
+        #[doc = "When a context field is set to Platform, this field will reflect if the event was planned or unplanned. If the context field does not have a value of Platform, then this field will be ignored."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub category: Option<String>,
+        #[doc = "The Article Id"]
+        #[serde(rename = "articleId", default, skip_serializing_if = "Option::is_none")]
+        pub article_id: Option<String>,
         #[doc = "When the resource's availabilityState is Unavailable, it provides the Timestamp for when the health impacting event was received."]
         #[serde(rename = "rootCauseAttributionTime", default, with = "azure_core::date::rfc3339::option")]
         pub root_cause_attribution_time: Option<time::OffsetDateTime>,
@@ -321,6 +330,9 @@ pub mod event {
         #[doc = "The id of the Incident"]
         #[serde(rename = "externalIncidentId", default, skip_serializing_if = "Option::is_none")]
         pub external_incident_id: Option<String>,
+        #[doc = "The reason for the Incident"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub reason: Option<String>,
         #[doc = "Article of event."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub article: Option<properties::Article>,
@@ -599,6 +611,12 @@ pub mod event {
             #[doc = "Article content of event."]
             #[serde(rename = "articleContent", default, skip_serializing_if = "Option::is_none")]
             pub article_content: Option<String>,
+            #[doc = "Article Id"]
+            #[serde(rename = "articleId", default, skip_serializing_if = "Option::is_none")]
+            pub article_id: Option<String>,
+            #[doc = "It provides a map of parameter name and value"]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub parameters: Option<serde_json::Value>,
         }
         impl Article {
             pub fn new() -> Self {
@@ -1134,6 +1152,9 @@ pub struct RecommendedAction {
     #[doc = "Link to the action"]
     #[serde(rename = "actionUrl", default, skip_serializing_if = "Option::is_none")]
     pub action_url: Option<String>,
+    #[doc = "the comment for the Action"]
+    #[serde(rename = "_ActionUrl.Comment", default, skip_serializing_if = "Option::is_none")]
+    pub action_url_comment: Option<String>,
     #[doc = "Substring of action, it describes which text should host the action url."]
     #[serde(rename = "actionUrlText", default, skip_serializing_if = "Option::is_none")]
     pub action_url_text: Option<String>,

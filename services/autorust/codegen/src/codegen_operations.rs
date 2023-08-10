@@ -706,6 +706,7 @@ impl HeaderCode {
             ("string", Some("byte")) => Ok(TypeName::String), // base64-encoded
             ("string", Some("duration")) => Ok(TypeName::String),
             ("string", Some("uuid")) => Ok(TypeName::String),
+            ("string", Some("uri")) => Ok(TypeName::String),
             ("string", Some("date-time-rfc1123")) => Ok(TypeName::DateTimeRfc1123),
             ("integer", None) => Ok(TypeName::Int32),
             ("integer", Some("int32")) => Ok(TypeName::Int32),
