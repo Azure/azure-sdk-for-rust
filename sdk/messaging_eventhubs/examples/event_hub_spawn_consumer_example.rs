@@ -7,7 +7,6 @@ use futures_util::StreamExt;
 use azeventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
-use azeventhubs::IntoAzureCoreError;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -58,8 +57,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Close the stream
         stream
             .close()
-            .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+            .await?;
 
         // Close the consumer client
         Ok::<_, azure_core::error::Error>(())

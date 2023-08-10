@@ -15,7 +15,7 @@ use crate::{
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::PartitionPublishingOptions,
-    util::{self, sharable::Sharable, IntoAzureCoreError},
+    util::{self, sharable::Sharable},
     PartitionProperties,
 };
 
@@ -175,7 +175,7 @@ impl TransportClient for AmqpClient {
                     util::time::sleep(delay).await;
                     try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
                 }
-                None => return Err(error.into_azure_core_error()),
+                None => return Err(error.into()),
             }
         }
     }
@@ -218,7 +218,7 @@ impl TransportClient for AmqpClient {
                     util::time::sleep(delay).await;
                     try_timeout = retry_policy.calculate_try_timeout(failed_attempt);
                 }
-                None => return Err(error.into_azure_core_error()),
+                None => return Err(error.into()),
             }
         }
     }

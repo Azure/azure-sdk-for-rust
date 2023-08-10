@@ -2,8 +2,6 @@
 
 use azure_core::Url;
 
-use crate::util::IntoAzureCoreError;
-
 /// Error with parsing the connection string.
 #[derive(Debug, thiserror::Error, Clone, PartialEq, Eq)]
 pub enum FormatError {
@@ -16,11 +14,11 @@ pub enum FormatError {
     InvalidConnectionString,
 }
 
-impl IntoAzureCoreError for FormatError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<FormatError> for azure_core::Error {
+    fn from(err: FormatError) -> Self {
         use azure_core::error::ErrorKind;
 
-        azure_core::Error::new(ErrorKind::Other, self)
+        azure_core::Error::new(ErrorKind::Other, err)
     }
 }
 
@@ -40,11 +38,11 @@ pub enum ToConnectionStringError {
     OnlyOneSharedAccessAuthorizationMayBeUsed,
 }
 
-impl IntoAzureCoreError for ToConnectionStringError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<ToConnectionStringError> for azure_core::Error {
+    fn from(err: ToConnectionStringError) -> Self {
         use azure_core::error::ErrorKind;
 
-        azure_core::Error::new(ErrorKind::Other, self)
+        azure_core::Error::new(ErrorKind::Other, err)
     }
 }
 

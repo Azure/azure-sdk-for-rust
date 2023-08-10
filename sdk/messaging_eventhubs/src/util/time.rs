@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use timer_kit::error::Elapsed;
 
+use super::IntoAzureCoreError;
+
 impl IntoAzureCoreError for Elapsed {
     fn into_azure_core_error(self) -> azure_core::Error {
         azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
@@ -31,7 +33,6 @@ cfg_wasm32! {
 
 pub(crate) use timer_kit::Key;
 
-use super::IntoAzureCoreError;
 pub(crate) type DelayQueue<T> = timer_kit::DelayQueue<Delay, T>;
 
 pub(crate) async fn sleep(duration: Duration) -> <Delay as timer_kit::Delay>::Value {
