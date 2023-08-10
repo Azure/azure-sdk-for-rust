@@ -152,6 +152,7 @@ cfg_not_wasm32! {
     pub mod primitives;
     pub mod producer;
 
+    pub use crate::core::BasicRetryPolicy;
     pub use crate::event_data::*;
     pub use crate::event_hubs_connection::*;
     pub use crate::event_hubs_connection_option::*;

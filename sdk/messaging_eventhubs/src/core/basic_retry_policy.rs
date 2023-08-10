@@ -11,6 +11,7 @@ const DEFAULT_JITTER_FACTOR: f64 = 0.08;
 // const DEFAULT_MINIMUM_THROTTLE_SECONDS: u32 = 4;
 // const DEFAULT_MAXIMUM_THROTTLE_SECONDS: u32 = 8;
 
+/// Default retry policy used by the client.
 #[derive(Debug, Clone)]
 pub struct BasicRetryPolicy {
     options: EventHubsRetryOptions,
