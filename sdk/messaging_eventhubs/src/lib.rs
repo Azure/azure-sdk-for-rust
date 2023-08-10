@@ -163,4 +163,3 @@ cfg_not_wasm32! {
     pub use crate::event_hubs_transport_type::*;
     pub use crate::partition_properties::*;
 }
-

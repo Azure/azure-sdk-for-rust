@@ -2,11 +2,11 @@
 
 use std::sync::Arc;
 
-use futures_util::lock::Mutex;
-use futures_util::StreamExt;
 use azeventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
+use futures_util::lock::Mutex;
+use futures_util::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -42,9 +42,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Receive 30 events
         let mut counter = 0;
         while let Some(event) = stream.next().await {
-            let event = event.unwrap();
-            let body = event.body().unwrap();
-            let value = std::str::from_utf8(body).unwrap();
+            let event = event?;
+            let body = event.body()?;
+            let value = std::str::from_utf8(body)?;
             log::info!("{:?}", value);
 
             log::info!("counter: {}", counter);
@@ -55,9 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Close the stream
-        stream
-            .close()
-            .await?;
+        stream.close().await?;
 
         // Close the consumer client
         Ok::<_, azure_core::error::Error>(())

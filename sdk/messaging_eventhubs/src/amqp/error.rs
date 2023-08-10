@@ -81,6 +81,12 @@ impl std::fmt::Display for RawAmqpMessageError {
     }
 }
 
+impl From<RawAmqpMessageError> for azure_core::Error {
+    fn from(error: RawAmqpMessageError) -> Self {
+        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, error)
+    }
+}
+
 impl std::error::Error for RawAmqpMessageError {}
 
 #[derive(Debug, thiserror::Error)]
