@@ -1,11 +1,13 @@
 # Change log
 
-## 0.1.2-beta
+## 0.1.2
+
+### 0.1.2-beta
 
 - Changed visibility of `IntoAzureCoreError` to `pub(crate)` and restricted its impl to only foreign
   error types. All other error type natively implements `Into<azure_core::error::Error>`
 
-## 0.1.2-alpha
+### 0.1.2-alpha
 
 - Fixed a bug where `EventStream` is not `Send` because `ClosingBoxedFuture` misses `Send` in its
   trait bounds
