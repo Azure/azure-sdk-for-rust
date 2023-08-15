@@ -9,15 +9,12 @@ pub struct ApiKeyAuthCredentials {
     #[serde(flatten)]
     pub auth_credentials: AuthCredentials,
     #[doc = "Properties of the key vault."]
-    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
-    pub api_key: Option<KeyVaultProperties>,
+    #[serde(rename = "apiKey")]
+    pub api_key: KeyVaultProperties,
 }
 impl ApiKeyAuthCredentials {
-    pub fn new(auth_credentials: AuthCredentials) -> Self {
-        Self {
-            auth_credentials,
-            api_key: None,
-        }
+    pub fn new(auth_credentials: AuthCredentials, api_key: KeyVaultProperties) -> Self {
+        Self { auth_credentials, api_key }
     }
 }
 #[doc = "Api properties."]
@@ -856,18 +853,18 @@ pub struct OAuthClientCredentials {
     #[serde(flatten)]
     pub auth_credentials: AuthCredentials,
     #[doc = "ClientId associated with the provider."]
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
+    #[serde(rename = "clientId")]
+    pub client_id: String,
     #[doc = "Properties of the key vault."]
-    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
-    pub client_secret: Option<KeyVaultProperties>,
+    #[serde(rename = "clientSecret")]
+    pub client_secret: KeyVaultProperties,
 }
 impl OAuthClientCredentials {
-    pub fn new(auth_credentials: AuthCredentials) -> Self {
+    pub fn new(auth_credentials: AuthCredentials, client_id: String, client_secret: KeyVaultProperties) -> Self {
         Self {
             auth_credentials,
-            client_id: None,
-            client_secret: None,
+            client_id,
+            client_secret,
         }
     }
 }

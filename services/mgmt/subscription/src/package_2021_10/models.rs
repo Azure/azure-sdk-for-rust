@@ -703,6 +703,18 @@ pub mod subscription_alias_response_properties {
         }
     }
 }
+#[doc = "The created subscription object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionCreationResult {
+    #[doc = "The link to the new subscription. Use this link to check the status of subscription creation operation."]
+    #[serde(rename = "subscriptionLink", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_link: Option<String>,
+}
+impl SubscriptionCreationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Subscription list operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionListResult {

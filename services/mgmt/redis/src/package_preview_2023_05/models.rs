@@ -1494,6 +1494,8 @@ pub mod redis_properties {
         Unlinking,
         Unprovisioning,
         Updating,
+        #[serde(rename = "ConfiguringAAD")]
+        ConfiguringAad,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1531,6 +1533,7 @@ pub mod redis_properties {
                 Self::Unlinking => serializer.serialize_unit_variant("ProvisioningState", 9u32, "Unlinking"),
                 Self::Unprovisioning => serializer.serialize_unit_variant("ProvisioningState", 10u32, "Unprovisioning"),
                 Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 11u32, "Updating"),
+                Self::ConfiguringAad => serializer.serialize_unit_variant("ProvisioningState", 12u32, "ConfiguringAAD"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
