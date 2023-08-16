@@ -17,8 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
-        MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
-        echo ::set-output name=msrv::${MSRV}
+          MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
+          echo ::set-output name=msrv::${MSRV}
 
   code-style:
     name: Code Style
