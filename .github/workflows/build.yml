@@ -101,7 +101,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/e2e_tests.sh ${{ matrix.build }}}
+      - run: eng/scripts/e2e_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
