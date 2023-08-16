@@ -13,12 +13,14 @@ jobs:
     name: Get minimum supported rust version
     runs-on: ubuntu-20.04
     outputs:
-      msrv: ${{ steps.msrv.outputs.msrv }}
+      msrv: ${{ steps.get_msrv.outputs.msrv }}
     steps:
       - uses: actions/checkout@v3
-      - run: |
+      - id: get_msrv
+        run: |
           MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
-          echo ::set-output name=msrv::${MSRV}
+          echo setting msrv to ${MSRV}
+          echo msrv=${MSRV} >> "$GITHUB_OUTPUT"
 
   code-style:
     name: Code Style
