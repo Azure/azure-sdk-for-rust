@@ -30,7 +30,6 @@ jobs:
         # we don't care about code style from nightly
         build:
           - stable
-          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -46,7 +45,6 @@ jobs:
         build:
           - stable
           - nightly
-          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -62,7 +60,6 @@ jobs:
         build:
           - stable
           - nightly
-          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -81,7 +78,6 @@ jobs:
         build:
           - stable
           - nightly
-          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -100,7 +96,6 @@ jobs:
         build:
           - stable
           - nightly
-          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
