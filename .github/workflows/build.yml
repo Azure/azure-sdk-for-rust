@@ -9,22 +9,44 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
+  msrv:
+    name: Get minimum supported rust version
+    runs-on: ubuntu-20.04
+    outputs:
+      msrv: ${{ steps.msrv.outputs.msrv }}
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+        MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
+        echo ::set-output name=msrv::${MSRV}
+
   code-style:
     name: Code Style
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    strategy:
+      matrix:
+        # we don't care about code style from nightly
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/code_style.sh
+      - run: eng/scripts/code_style.sh ${{ matrix.build }}
 
   test-sdk:
     name: SDK Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
     strategy:
       matrix:
         build:
           - stable
           - nightly
+          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -33,10 +55,18 @@ jobs:
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    strategy:
+      matrix:
+        build:
+          - stable
+          - nightly
+          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/services_tests.sh
+      - run: eng/scripts/services_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -44,17 +74,18 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    strategy:
+      matrix:
+        build:
+          - stable
+          - nightly
+          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update --no-self-update stable
       - uses: Swatinem/rust-cache@v2
-
-      - name: emulator integration tests
-        run: |
-          npm install azurite@3.13.1
-          npx azurite &
-          cargo test --features test_integration
-
+      - run: eng/scripts/emulator_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -62,10 +93,18 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    strategy:
+      matrix:
+        build:
+          - stable
+          - nightly
+          - ${{ needs.msrv.outputs.msrv }}}
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/e2e_tests.sh
+      - run: eng/scripts/e2e_tests.sh ${{ matrix.build }}}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
