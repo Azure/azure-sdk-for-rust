@@ -6,6 +6,7 @@ cd $(dirname ${BASH_SOURCE[0]})/../../
 BUILD=${1:-stable}
 
 rustup update --no-self-update ${BUILD}
+rustup component add clippy --toolchain ${BUILD}
 export RUSTFLAGS="-Dwarnings -Aunreachable-code -Aunused-assignments -Adead-code -Aclippy::new-without-default -Aclippy::unnecessary_to_owned"
 cargo +${BUILD} check --manifest-path services/Cargo.toml --all
 cargo +${BUILD} check --manifest-path services/Cargo.toml --examples
