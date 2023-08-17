@@ -5006,7 +5006,7 @@ pub struct BackupResourceVaultConfig {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub resource_guard_operation_requests: Vec<String>,
-    #[doc = "Is soft delete feature state editable"]
+    #[doc = "This flag is no longer in use. Please use 'softDeleteFeatureState' to set the soft delete state for the vault"]
     #[serde(rename = "isSoftDeleteFeatureStateEditable", default, skip_serializing_if = "Option::is_none")]
     pub is_soft_delete_feature_state_editable: Option<bool>,
 }

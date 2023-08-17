@@ -1546,7 +1546,7 @@ pub struct ClusterResourceProperties {
     #[doc = "Version of the Service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
-    #[doc = "ServiceInstanceEntity GUID which uniquely identifies a created resource"]
+    #[doc = "ServiceInstanceEntity Id which uniquely identifies a created resource"]
     #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
     pub service_id: Option<String>,
     #[doc = "Power state of the Service"]

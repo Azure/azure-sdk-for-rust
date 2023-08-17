@@ -15392,16 +15392,16 @@ pub struct MongoDbAtlasLinkedServiceTypeProperties {
     pub connection_string: serde_json::Value,
     #[doc = "The name of the MongoDB Atlas database that you want to access. Type: string (or Expression with resultType string)."]
     pub database: serde_json::Value,
-    #[doc = "The MongoDB Atlas Driver version that you want to choose. Allowed value are 2.10.4 and 2.19.0. Type: string (or Expression with resultType string)."]
-    #[serde(rename = "mongoDbAtlasDriverVersion", default, skip_serializing_if = "Option::is_none")]
-    pub mongo_db_atlas_driver_version: Option<serde_json::Value>,
+    #[doc = "The driver version that you want to choose. Allowed value are v1 and v2. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "driverVersion", default, skip_serializing_if = "Option::is_none")]
+    pub driver_version: Option<serde_json::Value>,
 }
 impl MongoDbAtlasLinkedServiceTypeProperties {
     pub fn new(connection_string: serde_json::Value, database: serde_json::Value) -> Self {
         Self {
             connection_string,
             database,
-            mongo_db_atlas_driver_version: None,
+            driver_version: None,
         }
     }
 }

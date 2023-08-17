@@ -1529,18 +1529,23 @@ pub struct AzureCoreFoundationsError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "An array of details about specific errors that led to this reported error."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
     pub details: Vec<AzureCoreFoundationsError>,
     #[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<AzureCoreFoundationsInnerError>,
 }
 impl AzureCoreFoundationsError {
-    pub fn new(code: String, message: String, details: Vec<AzureCoreFoundationsError>) -> Self {
+    pub fn new(code: String, message: String) -> Self {
         Self {
             code,
             message,
             target: None,
-            details,
+            details: Vec::new(),
             innererror: None,
         }
     }
@@ -1557,17 +1562,18 @@ impl AzureCoreFoundationsErrorResponse {
     }
 }
 #[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureCoreFoundationsInnerError {
     #[doc = "One of a server-defined set of error codes."]
-    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<AzureCoreFoundationsInnerError>,
 }
 impl AzureCoreFoundationsInnerError {
-    pub fn new(code: String) -> Self {
-        Self { code, innererror: None }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Properties of the Event Broker operation."]
