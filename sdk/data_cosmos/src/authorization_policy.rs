@@ -26,7 +26,7 @@ const VERSION_NUMBER: &str = "1.0";
 ///
 /// This struct implements `Debug` but secrets are encrypted by `AuthorizationToken` so there is no risk of
 /// leaks in debug logs (secrets are stored in cleartext in memory: dumps are still leaky).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct AuthorizationPolicy {
     authorization_token: AuthorizationToken,
 }
@@ -67,6 +67,7 @@ impl Policy for AuthorizationPolicy {
                 &resource_link,
                 time_nonce,
             )
+            .await?
         };
 
         trace!(
@@ -136,17 +137,23 @@ fn generate_resource_link(request: &Request) -> String {
     }
 }
 
-/// The `CosmosDB` authorization can either be "primary" (i.e., one of the two service-level tokens) or
-/// "resource" (i.e., a single database). In the first case the signature must be constructed by
-/// signing the HTTP method, resource type, resource link (the relative URI) and the current time.
-/// In the second case, the signature is just the resource key.
-fn generate_authorization(
+/// The `CosmosDB` authorization can either be:
+/// - "primary": one of the two service-level tokens
+/// - "resource: e.g. a single database
+/// - "aad": Azure Active Directory token
+/// In the "primary" case the signature must be constructed by signing the HTTP method,
+/// resource type, resource link (the relative URI) and the current time.
+///
+/// In the "resource" case, the signature is just the resource key.
+///
+/// In the "aad" case, the signature is the AAD token.
+async fn generate_authorization(
     auth_token: &AuthorizationToken,
     http_method: &azure_core::Method,
     resource_type: &ResourceType,
     resource_link: &str,
     time_nonce: OffsetDateTime,
-) -> String {
+) -> azure_core::Result<String> {
     let (authorization_type, signature) = match auth_token {
         AuthorizationToken::Primary(key) => {
             let string_to_sign =
@@ -157,6 +164,17 @@ fn generate_authorization(
             )
         }
         AuthorizationToken::Resource(key) => ("resource", Cow::Borrowed(key)),
+        AuthorizationToken::TokenCredential(token_credential) => (
+            "aad",
+            Cow::Owned(
+                token_credential
+                    .get_token(resource_link)
+                    .await?
+                    .token
+                    .secret()
+                    .to_string(),
+            ),
+        ),
     };
 
     let str_unencoded = format!("type={authorization_type}&ver={VERSION_NUMBER}&sig={signature}");
@@ -165,7 +183,7 @@ fn generate_authorization(
         str_unencoded
     );
 
-    form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>()
+    Ok(form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>())
 }
 
 /// This function generates a valid authorization string, according to the documentation.
@@ -255,8 +273,8 @@ mon, 01 jan 1900 01:00:00 gmt
         );
     }
 
-    #[test]
-    fn generate_authorization_00() {
+    #[tokio::test]
+    async fn generate_authorization_00() {
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let auth_token = AuthorizationToken::primary_from_base64(
@@ -270,15 +288,18 @@ mon, 01 jan 1900 01:00:00 gmt
             &ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             time,
-        );
+        )
+        .await
+        .unwrap();
+
         assert_eq!(
             ret,
             "type%3Dmaster%26ver%3D1.0%26sig%3DQkz%2Fr%2B1N2%2BPEnNijxGbGB%2FADvLsLBQmZ7uBBMuIwf4I%3D"
         );
     }
 
-    #[test]
-    fn generate_authorization_01() {
+    #[tokio::test]
+    async fn generate_authorization_01() {
         let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
         let auth_token = AuthorizationToken::primary_from_base64(
@@ -292,7 +313,9 @@ mon, 01 jan 1900 01:00:00 gmt
             &ResourceType::Databases,
             "dbs/ToDoList",
             time,
-        );
+        )
+        .await
+        .unwrap();
 
         // This is the result shown in the MSDN page. It's clearly wrong :)
         // below is the correct one.

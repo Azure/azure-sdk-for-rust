@@ -30,6 +30,11 @@ impl std::fmt::Display for PermissionToken {
         let (permission_type, signature) = match &self.token {
             AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
             AuthorizationToken::Primary(s) => ("master", Cow::Owned(base64::encode(s))),
+            // @@@TODO: Do we need to support TokenCredential for PermissionToken?
+            // It is painful to implement because we can't easily get the
+            // token string from the TokenCredential (the function is async and fallible,
+            // and fmt() is neither!).
+            AuthorizationToken::TokenCredential(_s) => ("aad", Cow::Owned("xxx".to_string())),
         };
         write!(
             f,

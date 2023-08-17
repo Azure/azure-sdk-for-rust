@@ -1,20 +1,39 @@
 use super::PermissionToken;
+use azure_core::auth::TokenCredential;
 use azure_core::{
     base64,
     error::{Error, ErrorKind},
 };
 use std::fmt;
+use std::sync::Arc;
 
 /// Authorization tokens for accessing Cosmos.
 ///
 /// Learn more about the different types of tokens [here](https://docs.microsoft.com/azure/cosmos-db/secure-access-to-data).
-#[derive(PartialEq, Clone, Eq)]
+#[derive(Clone)]
 pub enum AuthorizationToken {
     /// Used for administrative resources: database accounts, databases, users, and permissions
     Primary(Vec<u8>),
     /// Used for application resources: containers, documents, attachments, stored procedures, triggers, and UDFs
     Resource(String),
+    /// AAD token credential
+    TokenCredential(Arc<dyn TokenCredential>),
 }
+
+impl PartialEq for AuthorizationToken {
+    fn eq(&self, other: &Self) -> bool {
+        use AuthorizationToken::*;
+        match (self, other) {
+            (Primary(a), Primary(b)) => a == b,
+            (Resource(a), Resource(b)) => a == b,
+            // Consider two token credentials equal if they point to the same object.
+            (TokenCredential(a), TokenCredential(b)) => Arc::ptr_eq(a, b),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for AuthorizationToken {}
 
 impl AuthorizationToken {
     /// Create a primary `AuthorizationToken` from base64 encoded data
@@ -32,6 +51,11 @@ impl AuthorizationToken {
     pub fn new_resource(resource: String) -> AuthorizationToken {
         AuthorizationToken::Resource(resource)
     }
+
+    /// Create an `AuthorizationToken` from a `TokenCredential`.
+    pub fn from_token_credential(token_credential: Arc<dyn TokenCredential>) -> AuthorizationToken {
+        AuthorizationToken::TokenCredential(token_credential)
+    }
 }
 
 impl fmt::Debug for AuthorizationToken {
@@ -43,6 +67,7 @@ impl fmt::Debug for AuthorizationToken {
             match self {
                 AuthorizationToken::Primary(_) => "Master",
                 AuthorizationToken::Resource(_) => "Resource",
+                AuthorizationToken::TokenCredential(_) => "TokenCredential",
             }
         )
     }
