@@ -1,3 +1,16 @@
+[properties]
+boxed = [
+    [
+        "../../../azure-rest-api-specs/specification/agrifood/data-plane/Microsoft.AgFoodPlatform/preview/2023-07-01-preview/agfood.json",        "InnerError", 
+        "innererror" 
+    ],
+    [
+        "../../../azure-rest-api-specs/specification/agrifood/data-plane/Microsoft.AgFoodPlatform/preview/2023-06-01-preview/agfood.json",
+        "InnerError", 
+        "innererror"
+    ]
+]
+
 [tags]
 deny = [
     # duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
@@ -5,5 +18,6 @@ deny = [
     "package-2021-03-31-preview",
     "package-2022-11-01-preview",
     "package-2023-04-01-preview",
-    "package-2023-06-01-preview",
+    # "package-2023-06-01-preview",
+    # "package-2023-07-01-preview",
   ]

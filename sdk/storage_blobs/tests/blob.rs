@@ -1,4 +1,4 @@
-#![cfg(all(test, feature = "test_e2e"))]
+#![cfg(all(test, feature = "test_e2e", feature = "md5"))]
 #[macro_use]
 extern crate log;
 
