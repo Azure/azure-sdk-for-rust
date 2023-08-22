@@ -36,12 +36,14 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - msrv
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
-        build:
-          - stable
-          - nightly
-          - ${{ needs.msrv.outputs.msrv }}
+        build: [stable, ${{ needs.msrv.outputs.msrv }}]
+        experimental: [false]
+        include:
+          - build: nightly
+          - experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -52,12 +54,14 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - msrv
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
-        build:
-          - stable
-          - nightly
-          - ${{ needs.msrv.outputs.msrv }}
+        build: [stable, ${{ needs.msrv.outputs.msrv }}]
+        experimental: [false]
+        include:
+          - build: nightly
+          - experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -73,12 +77,14 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - msrv
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
-        build:
-          - stable
-          - nightly
-          - ${{ needs.msrv.outputs.msrv }}
+        build: [stable, ${{ needs.msrv.outputs.msrv }}]
+        experimental: [false]
+        include:
+          - build: nightly
+          - experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -92,12 +98,14 @@ jobs:
     runs-on: ubuntu-20.04
     needs:
       - msrv
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
-        build:
-          - stable
-          - nightly
-          - ${{ needs.msrv.outputs.msrv }}
+        build: [stable, ${{ needs.msrv.outputs.msrv }}]
+        experimental: [false]
+        include:
+          - build: nightly
+          - experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
