@@ -42,10 +42,11 @@ jobs:
         build:
           - stable
           - ${{ needs.msrv.outputs.msrv }}
-        experimental: [false]
+        experimental:
+          - false
         include:
           - build: nightly
-          - experimental: true
+            experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -62,10 +63,11 @@ jobs:
         build:
           - stable
           - ${{ needs.msrv.outputs.msrv }}
-        experimental: [false]
+        experimental:
+          - false
         include:
           - build: nightly
-          - experimental: true
+            experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -87,10 +89,11 @@ jobs:
         build:
           - stable
           - ${{ needs.msrv.outputs.msrv }}
-        experimental: [false]
+        experimental:
+          - false
         include:
           - build: nightly
-          - experimental: true
+            experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
@@ -110,10 +113,11 @@ jobs:
         build:
           - stable
           - ${{ needs.msrv.outputs.msrv }}
-        experimental: [false]
+        experimental:
+          - false
         include:
           - build: nightly
-          - experimental: true
+            experimental: true
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
