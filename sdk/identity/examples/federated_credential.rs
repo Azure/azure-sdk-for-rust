@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &token,
         &["https://vault.azure.net/.default"],
         &tenant_id,
-        authority_hosts::AZURE_PUBLIC_CLOUD.clone(),
+        authority_hosts::AZURE_PUBLIC_CLOUD,
     )
     .await
     .expect("federated_credentials_flow failed");
