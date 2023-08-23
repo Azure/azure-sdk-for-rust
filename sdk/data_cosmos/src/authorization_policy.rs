@@ -2,7 +2,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use azure_core::base64;
 use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
-use azure_core::{date, Context, Policy, PolicyResult, Request};
+use azure_core::{date, Context, Policy, PolicyResult, Request, Url};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::borrow::Cow;
@@ -62,6 +62,7 @@ impl Policy for AuthorizationPolicy {
             generate_authorization(
                 &self.authorization_token,
                 request.method(),
+                request.url(),
                 ctx.get()
                     .expect("ResourceType must be in the Context at this point"),
                 &resource_link,
@@ -150,6 +151,7 @@ fn generate_resource_link(request: &Request) -> String {
 async fn generate_authorization(
     auth_token: &AuthorizationToken,
     http_method: &azure_core::Method,
+    url: &Url,
     resource_type: &ResourceType,
     resource_link: &str,
     time_nonce: OffsetDateTime,
@@ -168,7 +170,7 @@ async fn generate_authorization(
             "aad",
             Cow::Owned(
                 token_credential
-                    .get_token(resource_link)
+                    .get_token(&scope_from_url(url))
                     .await?
                     .token
                     .secret()
@@ -184,6 +186,14 @@ async fn generate_authorization(
     );
 
     Ok(form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>())
+}
+
+/// This function generates the scope string from the passed url. The scope string is used to
+/// request the AAD token.
+fn scope_from_url(url: &Url) -> String {
+    let scheme = url.scheme();
+    let hostname = url.host_str().unwrap();
+    return format!("{scheme}://{hostname}/.default");
 }
 
 /// This function generates a valid authorization string, according to the documentation.
@@ -282,9 +292,12 @@ mon, 01 jan 1900 01:00:00 gmt
         )
         .unwrap();
 
+        let url = azure_core::Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+
         let ret = generate_authorization(
             &auth_token,
             &azure_core::Method::Get,
+            &url,
             &ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             time,
@@ -307,9 +320,12 @@ mon, 01 jan 1900 01:00:00 gmt
         )
         .unwrap();
 
+        let url = azure_core::Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+
         let ret = generate_authorization(
             &auth_token,
             &azure_core::Method::Get,
+            &url,
             &ResourceType::Databases,
             "dbs/ToDoList",
             time,
@@ -362,5 +378,13 @@ mon, 01 jan 1900 01:00:00 gmt
             azure_core::Method::Get,
         );
         assert_eq!(&generate_resource_link(&request), "dbs/test_db");
+    }
+
+    #[test]
+    fn scope_from_url_01() {
+        let scope = scope_from_url(
+            &azure_core::Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
+        );
+        assert_eq!(scope, "https://.documents.azure.com/.default");
     }
 }
