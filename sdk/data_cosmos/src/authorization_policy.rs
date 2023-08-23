@@ -193,7 +193,9 @@ async fn generate_authorization(
 fn scope_from_url(url: &Url) -> String {
     let scheme = url.scheme();
     let hostname = url.host_str().unwrap();
-    return format!("{scheme}://{hostname}/.default");
+    // TODO: Investigate why this did not work in testing...
+    //return format!("{scheme}://{hostname}/.default");
+    return format!("{scheme}://{hostname}");
 }
 
 /// This function generates a valid authorization string, according to the documentation.
@@ -385,6 +387,6 @@ mon, 01 jan 1900 01:00:00 gmt
         let scope = scope_from_url(
             &azure_core::Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
         );
-        assert_eq!(scope, "https://.documents.azure.com/.default");
+        assert_eq!(scope, "https://.documents.azure.com");
     }
 }
