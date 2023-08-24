@@ -15,7 +15,7 @@ pub struct DirectoryClient {
 impl PathClient for DirectoryClient {
     fn url(&self) -> azure_core::Result<Url> {
         let fs_url = self.file_system_client.url()?;
-        let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
+        let dir_path = [fs_url.path(), &self.dir_path].join("/");
         Ok(self.file_system_client.url()?.join(&dir_path)?)
     }
 
@@ -39,7 +39,7 @@ impl DirectoryClient {
     pub fn list_paths(&self) -> ListPathsBuilder {
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
-        let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
+        let dir_path = [fs_url.path(), &self.dir_path].join("/");
         ListPathsBuilder::new(self.file_system_client.clone())
             .directory(dir_path)
             .recursive(true)
@@ -63,7 +63,7 @@ impl DirectoryClient {
             .get_directory_client(destination_path);
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
-        let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
+        let dir_path = [fs_url.path(), &self.dir_path].join("/");
         RenamePathBuilder::new(destination_client)
             .mode(PathRenameMode::Legacy)
             .rename_source(dir_path)
