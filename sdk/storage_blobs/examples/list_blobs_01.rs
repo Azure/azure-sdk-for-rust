@@ -157,7 +157,7 @@ async fn main() -> azure_core::Result<()> {
         println!("\treceived {len} blobs");
         match cnt {
             // we added 21 blobs so 5x4 + 1
-            0 | 1 | 2 | 3 => assert_eq!(len, 5),
+            0..=3 => assert_eq!(len, 5),
             4 => assert_eq!(len, 1),
             _ => panic!("more than entries than expected!"),
         }

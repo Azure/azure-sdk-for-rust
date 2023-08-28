@@ -418,7 +418,7 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
-    let _ = requires_send_future(blob.get_properties().into_future());
+    requires_send_future(blob.get_properties().into_future()).await?;
     container.delete().await?;
     Ok(())
 }
@@ -550,7 +550,7 @@ async fn set_blobtier() {
     println!("container {} deleted!", container_name);
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, clippy::let_underscore_future)]
 fn send_check() {
     let client = initialize();
     let blob = client.container_client("a").blob_client("b");
