@@ -140,7 +140,7 @@ fn generate_resource_link(request: &Request) -> String {
 
 /// The `CosmosDB` authorization can either be:
 /// - "primary": one of the two service-level tokens
-/// - "resource: e.g. a single database
+/// - "resource": e.g. a single database
 /// - "aad": Azure Active Directory token
 /// In the "primary" case the signature must be constructed by signing the HTTP method,
 /// resource type, resource link (the relative URI) and the current time.
@@ -193,9 +193,7 @@ async fn generate_authorization(
 fn scope_from_url(url: &Url) -> String {
     let scheme = url.scheme();
     let hostname = url.host_str().unwrap();
-    // TODO: Investigate why this did not work in testing...
-    //return format!("{scheme}://{hostname}/.default");
-    return format!("{scheme}://{hostname}");
+    format!("{scheme}://{hostname}")
 }
 
 /// This function generates a valid authorization string, according to the documentation.

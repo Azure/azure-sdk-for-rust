@@ -20,21 +20,6 @@ pub enum AuthorizationToken {
     TokenCredential(Arc<dyn TokenCredential>),
 }
 
-impl PartialEq for AuthorizationToken {
-    fn eq(&self, other: &Self) -> bool {
-        use AuthorizationToken::*;
-        match (self, other) {
-            (Primary(a), Primary(b)) => a == b,
-            (Resource(a), Resource(b)) => a == b,
-            // Consider two token credentials equal if they point to the same object.
-            (TokenCredential(a), TokenCredential(b)) => Arc::ptr_eq(a, b),
-            _ => false,
-        }
-    }
-}
-
-impl Eq for AuthorizationToken {}
-
 impl AuthorizationToken {
     /// Create a primary `AuthorizationToken` from base64 encoded data
     ///
