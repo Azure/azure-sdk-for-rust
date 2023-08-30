@@ -5,9 +5,13 @@
 
 pub use azure_named_key_credential::AzureNamedKeyCredential;
 pub use azure_sas_credential::AzureSasCredential;
+pub use event_hub_token_credential::EventHubTokenCredential;
+pub use shared_access_credential::SharedAccessCredential;
+pub use signautre_authorization_resource::*;
 
 mod azure_named_key_credential;
 mod azure_sas_credential;
+mod signautre_authorization_resource;
 pub(crate) mod event_hub_claim;
 pub(crate) mod event_hub_token_credential;
 pub(crate) mod shared_access_credential;

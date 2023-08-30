@@ -2,8 +2,9 @@ use azure_core::auth::{TokenCredential, TokenResponse};
 
 use super::shared_access_credential::SharedAccessCredential;
 
-/// FIXME: This is an exact copy from the Event Hubs crate. This should probably moved
-/// to a common crate.
+// FIXME: This is an exact copy from the Service Bus crate. This should probably moved
+// to a common crate.
+/// Provides a generic token-based credential for a given Event Hub instance.
 pub enum EventHubTokenCredential {
     /// Shared Access Signature credential.
     ///
@@ -41,6 +42,8 @@ where
 }
 
 impl EventHubTokenCredential {
+    /// Creates a new instance of [`EventHubTokenCredential`]. This is simply an alias for
+    /// [`From::from`]
     pub fn new(source: impl Into<Self>) -> Self {
         source.into()
     }

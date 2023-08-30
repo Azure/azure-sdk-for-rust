@@ -146,7 +146,7 @@ impl EventHubConnection<AmqpClient> {
     pub async fn from_namespace_and_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
-        credential: impl Into<EventHubTokenCredential>,
+        credential: EventHubTokenCredential,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();

@@ -132,7 +132,6 @@ mod cfg;
 // TODO: support wasm32 target
 cfg_not_wasm32! {
     pub(crate) mod amqp;
-    pub(crate) mod authorization;
     pub(crate) mod constants;
     pub(crate) mod core;
     pub(crate) mod diagnostics;
@@ -148,6 +147,7 @@ cfg_not_wasm32! {
     pub(crate) mod partition_properties;
     pub(crate) mod util;
 
+    pub mod authorization;
     pub mod consumer;
     pub mod primitives;
     pub mod producer;
