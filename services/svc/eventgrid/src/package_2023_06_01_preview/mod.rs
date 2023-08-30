@@ -445,12 +445,7 @@ pub mod publish_cloud_events {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/topics/{}:publish?api-version={}",
-                        this.client.endpoint(),
-                        &this.topic_name,
-                        &this.api_version
-                    ))?;
+                    let url = azure_core::Url::parse(&format!("{}/topics/{}:publish", this.client.endpoint(), &this.topic_name))?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -666,7 +661,7 @@ pub mod acknowledge_cloud_events {
                     req.url_mut()
                         .query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2023-06-01-preview");
-                    req.insert_header("content-type", "application/json; charset=utf-8");
+                    req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.lock_tokens)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
@@ -759,7 +754,7 @@ pub mod release_cloud_events {
                     req.url_mut()
                         .query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2023-06-01-preview");
-                    req.insert_header("content-type", "application/json; charset=utf-8");
+                    req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.lock_tokens)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
@@ -852,7 +847,7 @@ pub mod reject_cloud_events {
                     req.url_mut()
                         .query_pairs_mut()
                         .append_pair(azure_core::query_param::API_VERSION, "2023-06-01-preview");
-                    req.insert_header("content-type", "application/json; charset=utf-8");
+                    req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.lock_tokens)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))

@@ -24,7 +24,7 @@ fn list_dirs_in(dir: impl AsRef<Utf8Path>) -> Result<Vec<Utf8PathBuf>> {
 
 pub fn list_dirs() -> Result<Vec<Utf8PathBuf>> {
     let mut names: Vec<_> = list_dirs_in("../mgmt")?.into_iter().collect();
-    names.extend(list_dirs_in("../svc")?.into_iter());
+    names.extend(list_dirs_in("../svc")?);
     names.sort();
     Ok(names)
 }

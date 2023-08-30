@@ -4534,17 +4534,6 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Contains the information necessary to perform a resource move (rename)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceMoveDefinition {
-    #[doc = "The target ID for the resource"]
-    pub id: String,
-}
-impl ResourceMoveDefinition {
-    pub fn new(id: String) -> Self {
-        Self { id }
-    }
-}
 #[doc = "A restorable dropped Sql pool"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedSqlPool {

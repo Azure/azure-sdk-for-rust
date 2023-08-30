@@ -60,7 +60,7 @@ async fn main() -> azure_core::Result<()> {
         let len = value?.blobs.blobs().count();
         println!("received {len} blobs");
         match cnt {
-            0 | 1 | 2 => assert_eq!(len, 3),
+            0..=2 => assert_eq!(len, 3),
             3 => assert_eq!(len, 1),
             _ => panic!("more than 10 entries??"),
         }
