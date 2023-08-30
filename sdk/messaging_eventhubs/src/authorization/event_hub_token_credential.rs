@@ -5,15 +5,24 @@ use super::shared_access_credential::SharedAccessCredential;
 // FIXME: This is an exact copy from the Service Bus crate. This should probably moved
 // to a common crate.
 /// Provides a generic token-based credential for a given Event Hub instance.
+///
+/// This supports [`SharedAccessCredential`] and any other credential type that implements
+/// [`TokenCredential`], eg. [`azure_identity::DefaultAzureCredential`].
+///
+/// # Example
+///
+/// ```rust
+/// use azure_identity::DefaultAzureCredential;
+///
+/// let credential = EventHubTokenCredential::from(DefaultAzureCredential::default());
+/// ```
 pub enum EventHubTokenCredential {
+    // FIXME: This is a temporary workaround until specialization is stablized.
     /// Shared Access Signature credential.
-    ///
-    /// FIXME: This is a temporary workaround until specialization is stablized.
     SharedAccessCredential(SharedAccessCredential),
 
+    // TODO: Is the use of trait object here justified?
     /// Other credential types.
-    ///
-    /// TODO: Is the use of trait object here justified?
     Other(Box<dyn TokenCredential>),
 }
 
@@ -67,6 +76,10 @@ impl EventHubTokenCredential {
             EventHubTokenCredential::Other(credential) => credential.get_token(resource).await,
         }
     }
+
+    pub(crate) async fn get_token_using_default_scope(&self) -> azure_core::Result<TokenResponse> {
+        self.get_token(Self::DEFAULT_SCOPE).await
+    }
 }
 
 cfg_not_wasm32! {
@@ -101,8 +114,8 @@ cfg_not_wasm32! {
             assert_eq!(token_result.unwrap().token.secret(), token_value);
         }
 
-        #[tokio::test]
-        async fn is_shared_access_credential_recognized_as_sas_credentials() {
+        #[test]
+        fn is_shared_access_credential_recognized_as_sas_credentials() {
             let signature = SharedAccessSignature::try_from_parts(
                 "sb-name",
                 "keyName",
@@ -113,6 +126,14 @@ cfg_not_wasm32! {
             let sas_credential = SharedAccessCredential::from(signature);
             let credential = EventHubTokenCredential::new(sas_credential);
             assert!(credential.is_shared_access_credential());
+        }
+
+        #[tokio::test]
+        async fn create_credential_with_azure_identity() {
+            use azure_identity::DefaultAzureCredential;
+
+            let default_credential = DefaultAzureCredential::default();
+            let _event_hub_token_credential = EventHubTokenCredential::from(default_credential);
         }
     }
 }
