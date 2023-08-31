@@ -4,7 +4,7 @@ use std::sync::{atomic::AtomicBool, Arc};
 use url::Url;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, error::AmqpConnectionScopeError},
+    amqp::{amqp_client::AmqpClient, error::{AmqpConnectionScopeError, AmqpClientError}},
     authorization::{
         event_hub_token_credential::EventHubTokenCredential,
         shared_access_credential::SharedAccessCredential,
@@ -18,7 +18,7 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
-    util::{sharable::Sharable, IntoAzureCoreError},
+    util::sharable::Sharable,
     PartitionProperties,
 };
 
@@ -30,11 +30,11 @@ pub enum EventHubConnectionError {
     EventHubNameIsNotSpecified,
 }
 
-impl IntoAzureCoreError for EventHubConnectionError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<EventHubConnectionError> for azure_core::error::Error {
+    fn from(error: EventHubConnectionError) -> Self {
         use azure_core::error::ErrorKind;
 
-        azure_core::Error::new(ErrorKind::Other, self)
+        azure_core::Error::new(ErrorKind::Other, error)
     }
 }
 
@@ -58,8 +58,7 @@ impl EventHubConnection<AmqpClient> {
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
         let connection_string_properties =
-            EventHubsConnectionStringProperties::parse(connection_string.as_ref())
-                .map_err(IntoAzureCoreError::into_azure_core_error)?;
+            EventHubsConnectionStringProperties::parse(connection_string.as_ref())?;
 
         let event_hub_name =
             match event_hub_name
@@ -69,8 +68,7 @@ impl EventHubConnection<AmqpClient> {
                 None => connection_string_properties
                     .event_hub_name
                     .map(|s| s.to_string())
-                    .ok_or(EventHubConnectionError::EventHubNameIsNotSpecified)
-                    .map_err(IntoAzureCoreError::into_azure_core_error)?,
+                    .ok_or(EventHubConnectionError::EventHubNameIsNotSpecified)?,
                 Some(s) => s,
             };
 
@@ -102,8 +100,7 @@ impl EventHubConnection<AmqpClient> {
         let shared_access_signature = if let Some(shared_access_signature) =
             connection_string_properties.shared_access_signature
         {
-            SharedAccessSignature::try_from_signature(shared_access_signature)
-                .map_err(IntoAzureCoreError::into_azure_core_error)?
+            SharedAccessSignature::try_from_signature(shared_access_signature)?
         } else {
             let resource = build_connection_signature_authorization_resource(
                 options.transport_type,
@@ -123,8 +120,7 @@ impl EventHubConnection<AmqpClient> {
                 shared_access_key_name,
                 shared_access_key,
                 None,
-            )
-            .map_err(IntoAzureCoreError::into_azure_core_error)?
+            )?
         };
 
         let shared_access_credential =
@@ -161,7 +157,7 @@ impl EventHubConnection<AmqpClient> {
             options,
         )
         .await
-        .map_err(IntoAzureCoreError::into_azure_core_error)?;
+        .map_err(<AmqpClientError as Into<azure_core::Error>>::into)?;
         let is_closed = inner_client.connection_scope.is_disposed.clone();
         let inner = Sharable::Owned(inner_client);
 
@@ -213,7 +209,7 @@ impl EventHubConnection<AmqpClient> {
 impl<C> EventHubConnection<C>
 where
     C: TransportClient,
-    C::DisposeError: IntoAzureCoreError,
+    C::DisposeError: Into<azure_core::error::Error>,
 {
     pub(crate) async fn get_properties<RP>(
         &mut self,
@@ -276,7 +272,7 @@ where
     ) -> Result<C::Producer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
-        C::OpenProducerError: IntoAzureCoreError,
+        C::OpenProducerError: Into<azure_core::error::Error>,
     {
         match &mut self.inner {
             Sharable::Owned(c) => c
@@ -288,7 +284,7 @@ where
                     retry_policy,
                 )
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::Shared(c) => c
                 .lock()
                 .await
@@ -300,7 +296,7 @@ where
                     retry_policy,
                 )
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::None => Err(azure_core::Error::new(
                 azure_core::error::ErrorKind::Io,
                 AmqpConnectionScopeError::ScopeDisposed,
@@ -322,7 +318,7 @@ where
     ) -> Result<C::Consumer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
-        C::OpenConsumerError: IntoAzureCoreError,
+        C::OpenConsumerError: Into<azure_core::error::Error>,
     {
         match &mut self.inner {
             Sharable::Owned(c) => c
@@ -337,7 +333,7 @@ where
                     prefetch_count,
                 )
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::Shared(c) => c
                 .lock()
                 .await
@@ -352,7 +348,7 @@ where
                     prefetch_count,
                 )
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::None => Err(azure_core::Error::new(
                 azure_core::error::ErrorKind::Io,
                 AmqpConnectionScopeError::ScopeDisposed,
@@ -366,13 +362,13 @@ where
             Sharable::Owned(mut c) => c
                 .close()
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::Shared(c) => c
                 .lock()
                 .await
                 .close()
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::None => Ok(()),
         }
     }
@@ -384,7 +380,7 @@ where
             Sharable::Owned(mut client) => client
                 .close()
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error),
+                .map_err(Into::into),
             Sharable::Shared(client) => match Arc::try_unwrap(client) {
                 Ok(mut client) => {
                     // This is the last reference to the client, so we can dispose it.
@@ -392,7 +388,7 @@ where
                         .get_mut()
                         .close()
                         .await
-                        .map_err(IntoAzureCoreError::into_azure_core_error)
+                        .map_err(Into::into)
                 }
                 Err(_) => {
                     // This is not the last reference to the client, so we cannot dispose it.
@@ -466,7 +462,7 @@ fn build_connection_signature_authorization_resource(
     // resource is empty.
 
     if fully_qualified_namespace.is_empty() {
-        return Err(FormatError::ConnectionStringIsEmpty.into_azure_core_error());
+        return Err(FormatError::ConnectionStringIsEmpty.into());
     }
 
     // Form a normalized URI to identify the resource.
@@ -509,7 +505,7 @@ impl<C> RecoverableTransport for EventHubConnection<C>
 where
     C: Send,
     Sharable<C>: RecoverableTransport,
-    <Sharable<C> as RecoverableTransport>::RecoverError: IntoAzureCoreError,
+    <Sharable<C> as RecoverableTransport>::RecoverError: Into<azure_core::Error>,
 {
     type RecoverError = azure_core::Error;
 
@@ -517,6 +513,6 @@ where
         self.inner
             .recover()
             .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)
+            .map_err(Into::into)
     }
 }

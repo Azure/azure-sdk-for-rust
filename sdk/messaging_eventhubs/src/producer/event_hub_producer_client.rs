@@ -9,7 +9,6 @@ use crate::{
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util::IntoAzureCoreError,
     EventData, EventHubConnection, EventHubsRetryOptions, PartitionProperties,
 };
 
@@ -351,8 +350,7 @@ where
         let inner = self
             .get_or_create_gateway_producer_mut()
             .await?
-            .create_batch(options)
-            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+            .create_batch(options)?;
         Ok(EventDataBatch { inner })
     }
 
@@ -381,7 +379,7 @@ where
         producer
             .send(events.into_iter(), options)
             .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)
+            .map_err(Into::into)
     }
 
     /// Sends a batch of events to the Event Hub.
@@ -395,7 +393,7 @@ where
         producer
             .send_batch(batch.inner, options)
             .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)
+            .map_err(Into::into)
     }
 
     /// Retrieves information about the Event Hub that the connection is associated with, including
@@ -437,7 +435,7 @@ where
             let res = producer
                 .close()
                 .await
-                .map_err(IntoAzureCoreError::into_azure_core_error);
+                .map_err(Into::into);
             result = result.and(res);
         }
 

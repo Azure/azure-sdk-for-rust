@@ -383,6 +383,8 @@ where
 
 pin_project_lite::pin_project! {
     /// A stream of event.
+    ///
+    /// This is created by a ConsumerClient
     pub struct EventStream<'a, C> {
         #[pin]
         state: EventStreamState<'a, C>,
@@ -406,7 +408,7 @@ where
         Self { state }
     }
 
-    /// Closes the stream
+    /// Closes the [`EventStream`].
     pub async fn close(self) -> Result<(), DisposeConsumerError> {
         self.state.close().await
     }

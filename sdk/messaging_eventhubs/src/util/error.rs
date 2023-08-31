@@ -11,6 +11,7 @@ use fe2o3_amqp::{
     },
     session::BeginError,
 };
+use fe2o3_amqp_management::error::Error as ManagementError;
 
 impl IntoAzureCoreError for BeginError {
     fn into_azure_core_error(self) -> azure_core::Error {
@@ -212,5 +213,18 @@ impl IntoAzureCoreError for RecvError {
 impl IntoAzureCoreError for serde_amqp::Error {
     fn into_azure_core_error(self) -> azure_core::Error {
         azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, self)
+    }
+}
+
+impl IntoAzureCoreError for ManagementError {
+    fn into_azure_core_error(self) -> azure_core::Error {
+        use azure_core::error::ErrorKind;
+
+        match self {
+            ManagementError::Send(_) | ManagementError::Recv(_) => {
+                azure_core::Error::new(ErrorKind::Io, self)
+            }
+            _ => azure_core::Error::new(ErrorKind::Other, self),
+        }
     }
 }

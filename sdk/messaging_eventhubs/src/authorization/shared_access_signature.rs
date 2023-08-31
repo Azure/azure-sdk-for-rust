@@ -5,7 +5,7 @@ use hmac::Hmac;
 use sha2::Sha256;
 use time::OffsetDateTime;
 
-use crate::{constants::DEFAULT_OFFSET_DATE_TIME, util::IntoAzureCoreError};
+use crate::constants::DEFAULT_OFFSET_DATE_TIME;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SasSignatureError {
@@ -28,15 +28,9 @@ pub enum SasSignatureError {
     SharedAccessKeyIsRequired,
 }
 
-impl IntoAzureCoreError for SasSignatureError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        azure_core::Error::new(azure_core::error::ErrorKind::Credential, self)
-    }
-}
-
 impl From<SasSignatureError> for azure_core::Error {
     fn from(error: SasSignatureError) -> Self {
-        Self::new(azure_core::error::ErrorKind::Other, error.to_string())
+        azure_core::Error::new(azure_core::error::ErrorKind::Credential, error)
     }
 }
 

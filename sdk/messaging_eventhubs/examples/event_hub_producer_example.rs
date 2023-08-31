@@ -1,4 +1,4 @@
-use messaging_eventhubs::producer::{
+use azeventhubs::producer::{
     EventHubProducerClient, EventHubProducerClientOptions, SendEventOptions,
 };
 

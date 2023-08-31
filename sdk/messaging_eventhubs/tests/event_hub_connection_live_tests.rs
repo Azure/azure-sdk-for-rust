@@ -2,7 +2,7 @@
 
 use std::cfg;
 
-use messaging_eventhubs::{EventHubConnection, EventHubConnectionOptions, EventHubsTransportType};
+use azeventhubs::{EventHubConnection, EventHubConnectionOptions, EventHubsTransportType};
 
 #[macro_use]
 mod cfg;

@@ -2,18 +2,18 @@
 
 use std::sync::Arc;
 
-use futures_util::lock::Mutex;
-use futures_util::StreamExt;
-use messaging_eventhubs::consumer::{
+use azeventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
-use messaging_eventhubs::IntoAzureCoreError;
+use futures_util::lock::Mutex;
+use futures_util::StreamExt;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let connection_string = "ENTER YOUR CONNECTION STRING HERE";
-    // You can leave event_hub_name as None if your connection string contains the EntityPath
-    let event_hub_name = Some(String::from("ENTER YOUR EVENT HUB NAME HERE"));
+    let _ = dotenv::from_filename("./sdk/messaging_eventhubs/.env");
+
+    let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING")?;
+    let event_hub_name = std::env::var("EVENT_HUB_NAME")?;
     let options = EventHubConsumerClientOptions::default();
 
     // Create a consumer client
@@ -43,9 +43,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Receive 30 events
         let mut counter = 0;
         while let Some(event) = stream.next().await {
-            let event = event.unwrap();
-            let body = event.body().unwrap();
-            let value = std::str::from_utf8(body).unwrap();
+            let event = event?;
+            let body = event.body()?;
+            let value = std::str::from_utf8(body)?;
             log::info!("{:?}", value);
 
             log::info!("counter: {}", counter);
@@ -56,10 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Close the stream
-        stream
-            .close()
-            .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+        stream.close().await?;
 
         // Close the consumer client
         Ok::<_, azure_core::error::Error>(())

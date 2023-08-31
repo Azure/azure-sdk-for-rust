@@ -17,19 +17,6 @@ use crate::{
     consumer::error::OffsetIsEmpty, core::RecoverableError, util::IntoAzureCoreError, EventData,
 };
 
-impl IntoAzureCoreError for ManagementError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        use azure_core::error::ErrorKind;
-
-        match self {
-            ManagementError::Send(_) | ManagementError::Recv(_) => {
-                azure_core::Error::new(ErrorKind::Io, self)
-            }
-            _ => azure_core::Error::new(ErrorKind::Other, self),
-        }
-    }
-}
-
 /// The value exceeds the maximum length allowed
 #[derive(Debug)]
 pub struct MaxLengthExceededError {
@@ -94,6 +81,12 @@ impl std::fmt::Display for RawAmqpMessageError {
     }
 }
 
+impl From<RawAmqpMessageError> for azure_core::Error {
+    fn from(error: RawAmqpMessageError) -> Self {
+        azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, error)
+    }
+}
+
 impl std::error::Error for RawAmqpMessageError {}
 
 #[derive(Debug, thiserror::Error)]
@@ -120,17 +113,17 @@ pub enum AmqpConnectionScopeError {
     ScopeDisposed,
 }
 
-impl IntoAzureCoreError for AmqpConnectionScopeError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<AmqpConnectionScopeError> for azure_core::Error {
+    fn from(err: AmqpConnectionScopeError) -> Self {
         use azure_core::error::ErrorKind;
 
-        match self {
+        match err {
             AmqpConnectionScopeError::Open(err) => err.into_azure_core_error(),
             AmqpConnectionScopeError::WebSocket(err) => err.into_azure_core_error(),
             AmqpConnectionScopeError::Begin(err) => err.into_azure_core_error(),
             AmqpConnectionScopeError::SenderAttach(err) => err.into_azure_core_error(),
             AmqpConnectionScopeError::ReceiverAttach(err) => err.into_azure_core_error(),
-            AmqpConnectionScopeError::ScopeDisposed => azure_core::Error::new(ErrorKind::Io, self),
+            AmqpConnectionScopeError::ScopeDisposed => azure_core::Error::new(ErrorKind::Io, err),
             AmqpConnectionScopeError::Parse(err) => err.into(),
         }
     }
@@ -179,9 +172,9 @@ pub enum CbsAuthError {
     Cbs(#[from] ManagementError),
 }
 
-impl IntoAzureCoreError for CbsAuthError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<CbsAuthError> for azure_core::Error {
+    fn from(err: CbsAuthError) -> Self {
+        match err {
             CbsAuthError::TokenCredential(err) => err,
             CbsAuthError::Cbs(err) => err.into_azure_core_error(),
         }
@@ -214,16 +207,16 @@ impl RecoverableError for OpenMgmtLinkError {
     }
 }
 
-impl IntoAzureCoreError for OpenMgmtLinkError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<OpenMgmtLinkError> for azure_core::Error {
+    fn from(err: OpenMgmtLinkError) -> Self {
         use azure_core::error::ErrorKind;
 
-        match self {
+        match err {
             OpenMgmtLinkError::ConnectionScopeDisposed => {
-                azure_core::Error::new(ErrorKind::Io, self)
+                azure_core::Error::new(ErrorKind::Io, err)
             }
-            OpenMgmtLinkError::Session(_) => azure_core::Error::new(ErrorKind::Other, self),
-            OpenMgmtLinkError::Link(_) => azure_core::Error::new(ErrorKind::Other, self),
+            OpenMgmtLinkError::Session(_) => azure_core::Error::new(ErrorKind::Other, err),
+            OpenMgmtLinkError::Link(_) => azure_core::Error::new(ErrorKind::Other, err),
         }
     }
 }
@@ -243,15 +236,15 @@ pub enum AmqpClientError {
     ManagementLink(#[from] OpenMgmtLinkError),
 }
 
-impl IntoAzureCoreError for AmqpClientError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<AmqpClientError> for azure_core::Error {
+    fn from(err: AmqpClientError) -> Self {
         use azure_core::error::ErrorKind;
 
-        match self {
+        match err {
             AmqpClientError::ParseUrl(err) => err.into(),
-            AmqpClientError::ConnectionScope(err) => err.into_azure_core_error(),
-            AmqpClientError::ManagementLink(err) => err.into_azure_core_error(),
-            AmqpClientError::SetUrlScheme => azure_core::Error::new(ErrorKind::Other, self),
+            AmqpClientError::ConnectionScope(err) => err.into(),
+            AmqpClientError::ManagementLink(err) => err.into(),
+            AmqpClientError::SetUrlScheme => azure_core::Error::new(ErrorKind::Other, err),
         }
     }
 }
@@ -298,16 +291,14 @@ pub enum OpenProducerError {
     Elapsed(#[from] Elapsed),
 }
 
-impl IntoAzureCoreError for OpenProducerError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<OpenProducerError> for azure_core::Error {
+    fn from(err: OpenProducerError) -> Self {
         use azure_core::error::ErrorKind;
 
-        match self {
+        match err {
             OpenProducerError::ParseEndpoint(err) => err.into(),
-            OpenProducerError::ConnectionScopeDisposed => {
-                azure_core::Error::new(ErrorKind::Io, self)
-            }
-            OpenProducerError::CbsAuth(err) => err.into_azure_core_error(),
+            OpenProducerError::ConnectionScopeDisposed => azure_core::Error::new(ErrorKind::Io, err),
+            OpenProducerError::CbsAuth(err) => err.into(),
             OpenProducerError::Session(err) => err.into_azure_core_error(),
             OpenProducerError::SenderLink(err) => err.into_azure_core_error(),
             OpenProducerError::Elapsed(err) => err.into_azure_core_error(),
@@ -340,19 +331,17 @@ pub enum OpenConsumerError {
     Elapsed(#[from] Elapsed),
 }
 
-impl IntoAzureCoreError for OpenConsumerError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<OpenConsumerError> for azure_core::Error {
+    fn from(err: OpenConsumerError) -> Self {
         use azure_core::error::ErrorKind;
 
-        match self {
+        match err {
             OpenConsumerError::ParseEndpoint(err) => err.into(),
-            OpenConsumerError::ConnectionScopeDisposed => {
-                azure_core::Error::new(ErrorKind::Io, self)
-            }
-            OpenConsumerError::CbsAuth(err) => err.into_azure_core_error(),
+            OpenConsumerError::ConnectionScopeDisposed => azure_core::Error::new(ErrorKind::Io, err),
+            OpenConsumerError::CbsAuth(err) => err.into(),
             OpenConsumerError::Session(err) => err.into_azure_core_error(),
             OpenConsumerError::ReceiverLink(err) => err.into_azure_core_error(),
-            OpenConsumerError::ConsumerFilter(err) => err.into_azure_core_error(),
+            OpenConsumerError::ConsumerFilter(err) => err.into(),
             OpenConsumerError::Elapsed(err) => err.into_azure_core_error(),
         }
     }
@@ -370,9 +359,9 @@ pub enum DisposeError {
     ConnectionCloseError(#[from] connection::Error),
 }
 
-impl IntoAzureCoreError for DisposeError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<DisposeError> for azure_core::Error {
+    fn from(err: DisposeError) -> Self {
+        match err {
             DisposeError::SessionCloseError(err) => err.into_azure_core_error(),
             DisposeError::ConnectionCloseError(err) => err.into_azure_core_error(),
         }
@@ -388,9 +377,9 @@ pub enum DisposeProducerError {
     Session(#[from] fe2o3_amqp::session::Error),
 }
 
-impl IntoAzureCoreError for DisposeProducerError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<DisposeProducerError> for azure_core::Error {
+    fn from(err: DisposeProducerError) -> Self {
+        match err {
             DisposeProducerError::Sender(err) => err.into_azure_core_error(),
             DisposeProducerError::Session(err) => err.into_azure_core_error(),
         }
@@ -406,9 +395,9 @@ pub enum DisposeConsumerError {
     Session(#[from] fe2o3_amqp::session::Error),
 }
 
-impl IntoAzureCoreError for DisposeConsumerError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<DisposeConsumerError> for azure_core::Error {
+    fn from(err: DisposeConsumerError) -> Self {
+        match err {
             DisposeConsumerError::Receiver(err) => err.into_azure_core_error(),
             DisposeConsumerError::Session(err) => err.into_azure_core_error(),
         }
@@ -432,6 +421,17 @@ pub enum TryAddError {
     },
 }
 
+impl From<TryAddError> for azure_core::Error {
+    fn from(err: TryAddError) -> Self {
+        match err {
+            TryAddError::BatchFull(_) => {
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, err)
+            }
+            TryAddError::Codec { source, .. } => source.into_azure_core_error(),
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum CreateBatchError {
     /// The requested message batch size is out of range
@@ -443,11 +443,11 @@ pub enum CreateBatchError {
     Codec(#[from] serde_amqp::Error),
 }
 
-impl IntoAzureCoreError for CreateBatchError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<CreateBatchError> for azure_core::Error {
+    fn from(err: CreateBatchError) -> Self {
+        match err {
             CreateBatchError::RequestedSizeOutOfRange => {
-                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, err)
             }
             CreateBatchError::Codec(err) => err.into_azure_core_error(),
         }
@@ -470,11 +470,11 @@ pub enum NotAcceptedError {
     Modified(Modified),
 }
 
-impl IntoAzureCoreError for NotAcceptedError {
-    fn into_azure_core_error(self) -> azure_core::Error {
+impl From<NotAcceptedError> for azure_core::Error {
+    fn from(err: NotAcceptedError) -> Self {
         use azure_core::error::ErrorKind;
 
-        azure_core::Error::new(ErrorKind::Other, self)
+        azure_core::Error::new(ErrorKind::Other, err)
     }
 }
 
@@ -494,11 +494,11 @@ pub enum AmqpSendError {
     Elapsed(#[from] Elapsed),
 }
 
-impl IntoAzureCoreError for AmqpSendError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<AmqpSendError> for azure_core::Error {
+    fn from(err: AmqpSendError) -> azure_core::Error {
+        match err {
             AmqpSendError::Send(err) => err.into_azure_core_error(),
-            AmqpSendError::NotAccepted(err) => err.into_azure_core_error(),
+            AmqpSendError::NotAccepted(err) => err.into(),
             AmqpSendError::Elapsed(err) => err.into_azure_core_error(),
         }
     }
@@ -673,20 +673,20 @@ impl RecoverableError for RecoverAndSendError {
     }
 }
 
-impl IntoAzureCoreError for RecoverAndSendError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<RecoverAndSendError> for azure_core::Error {
+    fn from(value: RecoverAndSendError) -> Self {
+        match value {
             RecoverAndSendError::SessionBegin(err) => err.into_azure_core_error(),
             RecoverAndSendError::SenderDetach(err) => err.into_azure_core_error(),
             RecoverAndSendError::SenderResume(err) => err.into_azure_core_error(),
             RecoverAndSendError::ConnectionScopeDisposed => {
-                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, value)
             }
             RecoverAndSendError::Send(err) => err.into_azure_core_error(),
-            RecoverAndSendError::NotAccepted(err) => err.into_azure_core_error(),
+            RecoverAndSendError::NotAccepted(err) => err.into(),
             RecoverAndSendError::Elapsed(err) => err.into_azure_core_error(),
             RecoverAndSendError::ParseEndpoint(err) => err.into(),
-            RecoverAndSendError::CbsAuth(err) => err.into_azure_core_error(),
+            RecoverAndSendError::CbsAuth(err) => err.into(),
             RecoverAndSendError::SenderAttach(err) => err.into_azure_core_error(),
         }
     }
@@ -847,9 +847,9 @@ impl RecoverableError for RecoverTransportClientError {
     }
 }
 
-impl IntoAzureCoreError for RecoverTransportClientError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
+impl From<RecoverTransportClientError> for azure_core::Error {
+    fn from(err: RecoverTransportClientError) -> Self {
+        match err {
             RecoverTransportClientError::Parse(err) => err.into(),
             RecoverTransportClientError::Open(err) => err.into_azure_core_error(),
             RecoverTransportClientError::WebSocket(err) => err.into_azure_core_error(),
@@ -858,7 +858,7 @@ impl IntoAzureCoreError for RecoverTransportClientError {
             RecoverTransportClientError::SenderResume(err) => err.into_azure_core_error(),
             RecoverTransportClientError::ReceiverResume(err) => err.into_azure_core_error(),
             RecoverTransportClientError::ConnectionScopeDisposed => {
-                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, err)
             }
         }
     }
@@ -895,10 +895,10 @@ pub enum RecoverAndCallError {
     Elapsed(#[from] Elapsed),
 }
 
-impl IntoAzureCoreError for RecoverAndCallError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
-            RecoverAndCallError::RecoverClient(err) => err.into_azure_core_error(),
+impl From<RecoverAndCallError> for azure_core::Error {
+    fn from(err: RecoverAndCallError) -> Self {
+        match err {
+            RecoverAndCallError::RecoverClient(err) => err.into(),
             RecoverAndCallError::Management(err) => err.into_azure_core_error(),
             RecoverAndCallError::Elapsed(err) => err.into_azure_core_error(),
         }
@@ -1007,15 +1007,15 @@ impl From<DisposeConsumerError> for RecoverAndReceiveError {
     }
 }
 
-impl IntoAzureCoreError for RecoverAndReceiveError {
-    fn into_azure_core_error(self) -> azure_core::Error {
-        match self {
-            RecoverAndReceiveError::CbsAuth(err) => err.into_azure_core_error(),
+impl From<RecoverAndReceiveError> for azure_core::Error {
+    fn from(value: RecoverAndReceiveError) -> Self {
+        match value {
+            RecoverAndReceiveError::CbsAuth(err) => err.into(),
             RecoverAndReceiveError::Receive(err) => err.into_azure_core_error(),
             RecoverAndReceiveError::SessionBegin(err) => err.into_azure_core_error(),
             RecoverAndReceiveError::ReceiverResume(err) => err.into_azure_core_error(),
             RecoverAndReceiveError::ConnectionScopeDisposed => {
-                azure_core::Error::new(azure_core::error::ErrorKind::Other, self)
+                azure_core::Error::new(azure_core::error::ErrorKind::Other, value)
             }
             RecoverAndReceiveError::Parse(err) => err.into(),
             RecoverAndReceiveError::Open(err) => err.into_azure_core_error(),

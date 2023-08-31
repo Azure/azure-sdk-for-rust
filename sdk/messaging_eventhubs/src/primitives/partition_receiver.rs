@@ -9,7 +9,6 @@ use crate::{
     consumer::EventPosition,
     core::BasicRetryPolicy,
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util::IntoAzureCoreError,
     EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
 };
 
@@ -222,7 +221,7 @@ where
         .await
         {
             Some(result) => {
-                result.map_err(IntoAzureCoreError::into_azure_core_error)?;
+                result?;
                 Ok(buffer.into_iter())
             }
             None => {
@@ -238,8 +237,7 @@ impl<RP> PartitionReceiver<RP> {
     pub async fn close(self) -> Result<(), azure_core::Error> {
         self.inner_consumer
             .close()
-            .await
-            .map_err(IntoAzureCoreError::into_azure_core_error)?;
+            .await?;
         self.connection.close_if_owned().await?;
         Ok(())
     }

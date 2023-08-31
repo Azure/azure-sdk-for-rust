@@ -1,12 +1,12 @@
 #![cfg(all(test, feature = "test_e2e"))]
 
-use futures_util::StreamExt;
-use messaging_eventhubs::{
+use azeventhubs::{
     consumer::{
         EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
     },
     EventHubsRetryOptions, MaxRetries,
 };
+use futures_util::StreamExt;
 
 #[macro_use]
 mod cfg;
@@ -14,11 +14,43 @@ mod cfg;
 mod common;
 
 cfg_not_wasm32! {
+    /// Send `num` events to the event hub to make sure that there are enough events to test the
+    /// consumer client.
+    ///
+    /// The testing event hub is configured with a retention period of only 1 hour, so this is
+    /// necessary to make sure that there are events to read.
+    async fn prepare_events_on_eventhubs(num: usize, partition: Option<&str>) {
+        use azeventhubs::producer::{SendEventOptions, EventHubProducerClientOptions, EventHubProducerClient};
+
+        common::setup_dotenv();
+
+        let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
+        let options = EventHubProducerClientOptions::default();
+        let mut producer_client =
+            EventHubProducerClient::from_connection_string(connection_string, None, options)
+                .await
+                .unwrap();
+
+        for i in 0..num {
+            let event = format!("Events {} prepared for consumer client tests", i);
+            let options = match partition {
+                Some(p) => SendEventOptions::new().with_partition_id(p),
+                None => SendEventOptions::default(),
+            };
+            producer_client
+                .send_event(event, options)
+                .await
+                .unwrap();
+        }
+
+        producer_client.close().await.unwrap();
+    }
+
     #[tokio::test]
     async fn event_consumer_can_receive_events_from_partition() {
         common::setup_dotenv();
 
-        // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+        prepare_events_on_eventhubs(30, Some("0")).await;
 
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
         let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
@@ -71,7 +103,7 @@ cfg_not_wasm32! {
     async fn event_consumer_can_receive_events_from_all_partitions() {
         common::setup_dotenv();
 
-        // env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+        prepare_events_on_eventhubs(30, None).await;
 
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
         let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
@@ -114,5 +146,58 @@ cfg_not_wasm32! {
         stream.close().await.unwrap();
 
         consumer.close().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn spawn_event_consumer_and_receive_events() {
+        common::setup_dotenv();
+
+        prepare_events_on_eventhubs(30, None).await;
+
+        let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
+        let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+        let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
+
+        let mut retry_options = EventHubsRetryOptions::default();
+        retry_options.max_retries = MaxRetries(3);
+        retry_options.try_timeout = std::time::Duration::from_secs(5);
+        let mut options = EventHubConsumerClientOptions::default();
+        options.retry_options = retry_options;
+
+        let handle = tokio::spawn(async move {
+            let mut consumer = EventHubConsumerClient::from_connection_string(
+                consumer_group,
+                connection_string,
+                event_hub_name,
+                options,
+            )
+            .await
+            .unwrap();
+
+            let mut options = ReadEventOptions::default();
+            options.cache_event_count = 3;
+            let mut stream = consumer
+                .read_events(true, Default::default())
+                .await
+                .unwrap();
+
+            let mut counter = 0;
+            while let Some(Ok(event)) = stream.next().await {
+                let body = event.body().unwrap();
+                let value = std::str::from_utf8(body).unwrap();
+                log::info!("{:?}", value);
+
+                log::info!("counter: {}", counter);
+                counter += 1;
+                if counter > 30 {
+                    break;
+                }
+            }
+            stream.close().await.unwrap();
+
+            consumer.close().await.unwrap();
+        });
+
+        handle.await.unwrap();
     }
 }

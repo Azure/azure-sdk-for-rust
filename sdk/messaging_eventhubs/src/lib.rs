@@ -10,7 +10,7 @@
 //! ## Event Hub Producer Example
 //!
 //! ```no_run
-//! use messaging_eventhubs::producer::{
+//! use azeventhubs::producer::{
 //! EventHubProducerClient, EventHubProducerClientOptions, SendEventOptions,
 //! };
 //!
@@ -39,7 +39,7 @@
 //!
 //! ```no_run
 //! use futures_util::StreamExt;
-//! use messaging_eventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
+//! use azeventhubs::consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -152,6 +152,7 @@ cfg_not_wasm32! {
     pub mod primitives;
     pub mod producer;
 
+    pub use crate::core::BasicRetryPolicy;
     pub use crate::event_data::*;
     pub use crate::event_hubs_connection::*;
     pub use crate::event_hubs_connection_option::*;
@@ -162,7 +163,4 @@ cfg_not_wasm32! {
     pub use crate::event_hubs_retry_policy::*;
     pub use crate::event_hubs_transport_type::*;
     pub use crate::partition_properties::*;
-
-    pub use util::IntoAzureCoreError;
 }
-

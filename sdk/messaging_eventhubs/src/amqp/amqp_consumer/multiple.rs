@@ -502,7 +502,7 @@ where
         Self { state }
     }
 
-    /// Closes the EventStream.
+    /// Closes the [`EventStream`].
     pub async fn close(self) -> Result<(), DisposeConsumerError> {
         log::debug!("Closing EventStream");
         self.state.close().await
