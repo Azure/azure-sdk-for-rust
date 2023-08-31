@@ -8,7 +8,8 @@ use super::{
     AzureSasCredential,
 };
 
-/// TODO: visibility?
+/// Provides a credential based on a shared access signature for a given
+/// Event Hub instance.
 #[derive(Debug)]
 pub struct SharedAccessCredential {
     source_key_credential: Option<AzureNamedKeyCredential>,
@@ -60,7 +61,13 @@ impl SharedAccessCredential {
     /// Initializes a new instance of the [`SharedAccessCredential`] class.
     ///
     /// - `source_credential` - The [`AzureNamedKeyCredential`] to base signatures on.
-    /// - `signature_resource` - The fully-qualified identifier for the resource to which this credential is intended to serve as authorization for.  This is also known as the "token audience" in some contexts.
+    /// - `signature_resource` - The fully-qualified identifier for the resource to which this
+    ///   credential is intended to serve as authorization for.  This is also known as the "token
+    ///   audience" in some contexts.
+    ///
+    /// A helper function
+    /// [`crate::authorization::build_connection_signature_authorization_resource`] can be used to
+    /// build the `signature_resource` value.
     pub fn try_from_named_key_credential(
         source_credential: AzureNamedKeyCredential,
         signature_resource: impl Into<String>,

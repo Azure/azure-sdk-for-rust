@@ -52,4 +52,31 @@ cfg_not_wasm32! {
                 .unwrap();
         connection.close().await.unwrap();
     }
+
+    #[tokio::test]
+    async fn connection_can_connect_with_named_key_credential() {
+        common::setup_dotenv();
+        use messaging_eventhubs::authorization::{
+            SharedAccessCredential, AzureNamedKeyCredential,
+            build_connection_signature_authorization_resource,
+        };
+
+        let options = EventHubConnectionOptions::default();
+
+        let namespace = std::env::var("EVENT_HUBS_NAMESPACE").unwrap();
+        let fqn = format!("{}.servicebus.windows.net", namespace);
+        let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+        let key_name = std::env::var("EVENT_HUBS_SHARED_ACCESS_KEY_NAME").unwrap();
+        let key = std::env::var("EVENT_HUBS_SHARED_ACCESS_KEY").unwrap();
+
+        let named_key_credential = AzureNamedKeyCredential::new(key_name, key);
+
+        let connection = EventHubConnection::from_namespace_and_named_key_credential(
+            fqn,
+            event_hub_name,
+            named_key_credential,
+            options,
+        ).await.unwrap();
+        connection.close().await.unwrap();
+    }
 }

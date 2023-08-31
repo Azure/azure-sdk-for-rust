@@ -1,4 +1,6 @@
-/// TODO: move to azure_core?
+// TODO: move to azure_core?
+/// Credential type used for working with any service needing a named key that follows patterns
+/// established by the other credential types.
 #[derive(Debug)]
 pub struct AzureNamedKeyCredential {
     name: String,

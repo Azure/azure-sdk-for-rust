@@ -5,7 +5,7 @@ use crate::{
         amqp_client::AmqpClient,
         amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
     },
-    authorization::event_hub_token_credential::EventHubTokenCredential,
+    authorization::{event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential, AzureSasCredential},
     core::BasicRetryPolicy,
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -58,6 +58,63 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
                 consumer_group,
                 connection_string,
                 event_hub_name,
+                client_options,
+            )
+            .await
+    }
+
+    /// Creates a new [`EventHubConsumerClient`] from a namespace and a credential.
+    pub async fn from_namespace_and_credential(
+        consumer_group: impl Into<String>,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        client_options: EventHubConsumerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .from_namespace_and_credential(
+                consumer_group,
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                client_options,
+            )
+            .await
+    }
+
+    /// Creates a new [`EventHubConsumerClient`] from a namespace and a [`AzureNamedKeyCredential`].
+    pub async fn from_namespace_and_named_key_credential(
+        consumer_group: impl Into<String>,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        client_options: EventHubConsumerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .from_namespace_and_named_key_credential(
+                consumer_group,
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                client_options,
+            )
+            .await
+    }
+
+    /// Creates a new [`EventHubConsumerClient`] from a namespace and a [`AzureSasCredential`].
+    pub async fn from_namespace_and_sas_credential(
+        consumer_group: impl Into<String>,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        client_options: EventHubConsumerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .from_namespace_and_sas_credential(
+                consumer_group,
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
                 client_options,
             )
             .await
@@ -118,6 +175,60 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
         RP: EventHubsRetryPolicy + Send,
     {
         let connection = EventHubConnection::from_namespace_and_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential.into(),
+            client_options.connection_options.clone(),
+        )
+        .await?;
+        Ok(EventHubConsumerClient {
+            connection,
+            retry_policy_marker: PhantomData,
+            options: client_options,
+            consumer_group: consumer_group.into(),
+        })
+    }
+
+    /// Creates a new [`EventHubConsumerClient`] from a namespace and a [`AzureNamedKeyCredential`].
+    pub async fn from_namespace_and_named_key_credential(
+        self,
+        consumer_group: impl Into<String>,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        client_options: EventHubConsumerClientOptions,
+    ) -> Result<EventHubConsumerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let connection = EventHubConnection::from_namespace_and_named_key_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential.into(),
+            client_options.connection_options.clone(),
+        )
+        .await?;
+        Ok(EventHubConsumerClient {
+            connection,
+            retry_policy_marker: PhantomData,
+            options: client_options,
+            consumer_group: consumer_group.into(),
+        })
+    }
+
+    /// Creates a new [`EventHubConsumerClient`] from a namespace and a [`AzureSasCredential`].
+    pub async fn from_namespace_and_sas_credential(
+        self,
+        consumer_group: impl Into<String>,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        client_options: EventHubConsumerClientOptions,
+    ) -> Result<EventHubConsumerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let connection = EventHubConnection::from_namespace_and_sas_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential.into(),

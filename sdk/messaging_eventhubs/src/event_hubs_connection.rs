@@ -8,7 +8,7 @@ use crate::{
     authorization::{
         event_hub_token_credential::EventHubTokenCredential,
         shared_access_credential::SharedAccessCredential,
-        shared_access_signature::SharedAccessSignature,
+        shared_access_signature::SharedAccessSignature, AzureNamedKeyCredential, AzureSasCredential,
     },
     consumer::EventPosition,
     core::{RecoverableTransport, TransportClient, TransportProducerFeatures},
@@ -167,6 +167,42 @@ impl EventHubConnection<AmqpClient> {
             is_closed,
             inner,
         })
+    }
+
+    /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
+    pub async fn from_namespace_and_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        let fully_qualified_namespace = fully_qualified_namespace.into();
+        let event_hub_name = event_hub_name.into();
+        let resource = build_connection_signature_authorization_resource(options.transport_type, &fully_qualified_namespace, &event_hub_name)?;
+        let shared_access_credential = SharedAccessCredential::try_from_named_key_credential(credential, resource)?;
+
+        Self::from_namespace_and_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            shared_access_credential,
+            options,
+        ).await
+    }
+
+    /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
+    pub async fn from_namespace_and_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
+        Self::from_namespace_and_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            shared_access_credential,
+            options,
+        ).await
     }
 }
 

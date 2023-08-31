@@ -27,6 +27,34 @@ cfg_not_wasm32! {
     }
 
     #[tokio::test]
+    async fn producer_client_can_connect_using_named_key_credential() {
+        use messaging_eventhubs::authorization::{AzureNamedKeyCredential};
+
+        common::setup_dotenv();
+
+        let namespace = std::env::var("EVENT_HUBS_NAMESPACE").unwrap();
+        let fqn = format!("{}.servicebus.windows.net", namespace);
+        let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+        let key_name = std::env::var("EVENT_HUBS_SHARED_ACCESS_KEY_NAME").unwrap();
+        let key = std::env::var("EVENT_HUBS_SHARED_ACCESS_KEY").unwrap();
+        let options = EventHubProducerClientOptions::default();
+        let named_key_credential = AzureNamedKeyCredential::new(key_name, key);
+
+        let mut producer_client = EventHubProducerClient::from_namespace_and_named_key_credential(
+            fqn,
+            event_hub_name,
+            named_key_credential,
+            options,
+        ).await.unwrap();
+
+        let event = "Hello, world to partition 0";
+        let options = SendEventOptions::new().with_partition_id("0");
+        producer_client.send_event(event, options).await.unwrap();
+
+        producer_client.close().await.unwrap();
+    }
+
+    #[tokio::test]
     async fn close_producer_client_does_not_close_shared_connection() {
         common::setup_dotenv();
 

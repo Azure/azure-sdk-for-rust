@@ -64,7 +64,7 @@ impl<'a> Future for CbsTokenFut<'a> {
         let entity_type = self.provider.token_type.entity_type().to_string(); // TODO: reduce clone/to_string
         let result = match &mut self.provider.token_type {
             TokenType::SharedAccessToken { credential } => {
-                let fut = credential.get_token("");
+                let fut = credential.get_token_using_default_scope();
                 pin_mut!(fut);
                 ready!(fut.poll(cx))
             }
@@ -80,7 +80,7 @@ impl<'a> Future for CbsTokenFut<'a> {
                         azure_core::error::Error::new(azure_core::error::ErrorKind::Credential, e)
                     })?;
                     if is_nearing_expiration(cached, expiration_buffer) {
-                        let fut = credential.get_token("");
+                        let fut = credential.get_token_using_default_scope();
                         pin_mut!(fut);
                         let token = ready!(fut.poll(cx))?;
                         *cached = token;
@@ -95,7 +95,7 @@ impl<'a> Future for CbsTokenFut<'a> {
                     })?;
 
                     // GetTokenUsingDefaultScopeAsync
-                    let fut = credential.get_token("");
+                    let fut = credential.get_token_using_default_scope();
                     pin_mut!(fut);
                     let token = ready!(fut.poll(cx))?;
                     *cached_token = Some(token.clone());

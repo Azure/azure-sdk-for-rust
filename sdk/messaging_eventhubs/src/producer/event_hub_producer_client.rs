@@ -5,7 +5,7 @@ use crate::{
         amqp_client::AmqpClient,
         amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
     },
-    authorization::event_hub_token_credential::EventHubTokenCredential,
+    authorization::{event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential, AzureSasCredential},
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -78,6 +78,40 @@ impl EventHubProducerClient<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureNamedKeyCredential`].
+    pub async fn from_namespace_and_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .from_namespace_and_named_key_credential(
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                client_options,
+            )
+            .await
+    }
+
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureSasCredential`].
+    pub async fn from_namespace_and_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .from_namespace_and_sas_credential(
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                client_options,
+            )
+            .await
+    }
+
     /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
         connection: &mut EventHubConnection<AmqpClient>,
@@ -137,6 +171,62 @@ impl<RP> EventHubProducerClientBuilder<RP> {
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential.into(),
+            client_options.connection_options.clone(),
+        )
+        .await?;
+
+        Ok(EventHubProducerClient {
+            connection,
+            gateway_producer: None,
+            producer_pool: HashMap::new(),
+            options: client_options,
+            retry_policy_marker: PhantomData,
+        })
+    }
+
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureNamedKeyCredential`].
+    pub async fn from_namespace_and_named_key_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<EventHubProducerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let connection = EventHubConnection::from_namespace_and_named_key_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential,
+            client_options.connection_options.clone(),
+        )
+        .await?;
+
+        Ok(EventHubProducerClient {
+            connection,
+            gateway_producer: None,
+            producer_pool: HashMap::new(),
+            options: client_options,
+            retry_policy_marker: PhantomData,
+        })
+    }
+
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureSasCredential`].
+    pub async fn from_namespace_and_sas_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<EventHubProducerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        let connection = EventHubConnection::from_namespace_and_sas_credential(
+            fully_qualified_namespace.into(),
+            event_hub_name.into(),
+            credential,
             client_options.connection_options.clone(),
         )
         .await?;
