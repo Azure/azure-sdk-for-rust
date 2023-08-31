@@ -329,7 +329,6 @@ where
                             retry_policy,
                         )
                         .await?;
-                    println!("created producer");
                     self.producer_pool
                         .insert(partition_id.to_string(), producer);
                 }
