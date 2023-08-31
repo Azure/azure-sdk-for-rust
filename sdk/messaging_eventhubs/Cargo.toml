@@ -16,7 +16,7 @@ keywords = ["sdk", "azure", "eventhubs", "amqp", "cloud"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-time = { version = "<=0.3.23", features = ["macros"] }
+time = { version = "0.3", features = ["macros"] }
 url = "2"
 uuid = { version = "1", features = ["v4"] }
 const_format = "0.2"
@@ -35,7 +35,7 @@ pin-project-lite = "0.2.9"
 serde = "1"
 
 # Azure dependencies
-azure_core = { path = "../core", version = "0.13" }
+azure_core = { path = "../core" }
 
 # AMQP dependencies
 fe2o3-amqp = { version = "0.8.22" }

@@ -65,7 +65,10 @@ impl EventHubTokenCredential {
 }
 
 impl EventHubTokenCredential {
-    pub(crate) const DEFAULT_SCOPE: &str = "https://eventhubs.azure.net/.default";
+    // pub(crate) const DEFAULT_SCOPE: &str = "https://eventhubs.azure.net/.default";
+
+    // `azure_identity` appends "/.default" to the resource internally.
+    pub(crate) const DEFAULT_RESOURCE: &str = "https://eventhubs.azure.net/";
 
     /// Gets a `TokenResponse` for the specified resource
     pub(crate) async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
@@ -77,8 +80,12 @@ impl EventHubTokenCredential {
         }
     }
 
-    pub(crate) async fn get_token_using_default_scope(&self) -> azure_core::Result<TokenResponse> {
-        self.get_token(Self::DEFAULT_SCOPE).await
+    // pub(crate) async fn get_token_using_default_scope(&self) -> azure_core::Result<TokenResponse> {
+    //     self.get_token(Self::DEFAULT_SCOPE).await
+    // }
+
+    pub(crate) async fn get_token_using_default_resource(&self) -> azure_core::Result<TokenResponse> {
+        self.get_token(Self::DEFAULT_RESOURCE).await
     }
 }
 
@@ -133,7 +140,12 @@ cfg_not_wasm32! {
             use azure_identity::DefaultAzureCredential;
 
             let default_credential = DefaultAzureCredential::default();
-            let _event_hub_token_credential = EventHubTokenCredential::from(default_credential);
+            let event_hub_token_credential = EventHubTokenCredential::from(default_credential);
+            let token = event_hub_token_credential
+                .get_token_using_default_resource()
+                .await
+                .unwrap();
+            assert!(!token.token.secret().is_empty())
         }
     }
 }
