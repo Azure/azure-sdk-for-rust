@@ -1,5 +1,10 @@
 # Change log
 
+## 0.14.0
+
+- Fixed problem with `azure_identity` credentials
+- Added example showcasing how to work with `azure_identity` credentials
+
 ## 0.14.0-alpha
 
 - Changed version number to follow that of `azure_core`
