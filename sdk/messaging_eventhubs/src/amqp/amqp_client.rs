@@ -155,7 +155,7 @@ impl TransportClient for AmqpClient {
         let access_token = self
             .connection_scope
             .credential
-            .get_token_using_default_scope()
+            .get_token_using_default_resource()
             .await?;
         let token_value = access_token.token.secret();
         loop {
@@ -195,7 +195,7 @@ impl TransportClient for AmqpClient {
         let access_token = self
             .connection_scope
             .credential
-            .get_token_using_default_scope()
+            .get_token_using_default_resource()
             .await?;
         let token_value = access_token.token.secret();
         loop {

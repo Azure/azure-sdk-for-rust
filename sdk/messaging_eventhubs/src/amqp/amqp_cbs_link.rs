@@ -82,6 +82,7 @@ impl AmqpCbsLinkHandle {
             .send(command)
             .await
             .map_err(|_| AmqpCbsEventLoopStopped {})?;
+
         result.await.map_err(|_| AmqpCbsEventLoopStopped {})
     }
 

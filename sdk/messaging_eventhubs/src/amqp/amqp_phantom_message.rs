@@ -321,17 +321,14 @@ mod tests {
         let message_iter = std::iter::once(event.amqp_message);
 
         let batch = build_amqp_batch_from_messages(message_iter.clone(), None).unwrap();
-        let serialized_value = serialized_value_of_sendable(batch.sendable);
-        println!("serialized_value: {:?}", serialized_value);
+        let _serialized_value = serialized_value_of_sendable(batch.sendable);
 
         let batch = build_amqp_batch_from_messages(message_iter.clone(), None).unwrap();
-        let serialized_bytes = serialized_bytes_of_sendable(batch.sendable);
-        println!("serialized_bytes: {:?}", serialized_bytes);
+        let _serialized_bytes = serialized_bytes_of_sendable(batch.sendable);
 
         let batch = build_amqp_batch_from_messages(message_iter, None).unwrap();
         let (phantom_size, ssize) =
             phantom_size_and_serialized_size_of_sendable_envelope(batch.sendable);
-        println!("serialized_size: {}", ssize);
         assert_eq!(phantom_size, ssize)
     }
 
