@@ -204,7 +204,7 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
         let connection = EventHubConnection::from_namespace_and_named_key_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
-            credential.into(),
+            credential,
             client_options.connection_options.clone(),
         )
         .await?;
@@ -231,7 +231,7 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
         let connection = EventHubConnection::from_namespace_and_sas_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
-            credential.into(),
+            credential,
             client_options.connection_options.clone(),
         )
         .await?;
