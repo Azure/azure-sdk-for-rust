@@ -56,7 +56,7 @@ cfg_not_wasm32! {
     #[tokio::test]
     async fn connection_can_connect_with_named_key_credential() {
         common::setup_dotenv();
-        use messaging_eventhubs::authorization::{
+        use azeventhubs::authorization::{
             SharedAccessCredential, AzureNamedKeyCredential,
             build_connection_signature_authorization_resource,
         };
@@ -78,5 +78,26 @@ cfg_not_wasm32! {
             options,
         ).await.unwrap();
         connection.close().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn connection_can_connect_with_azure_identity_credential() {
+        common::setup_dotenv();
+
+        use azure_identity::DefaultAzureCredential;
+
+        let namespace = std::env::var("EVENT_HUBS_NAMESPACE").unwrap();
+        let fqn = format!("{}.servicebus.windows.net", namespace);
+        let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+
+        let options = EventHubConnectionOptions::default();
+        let credential = DefaultAzureCredential::default();
+
+        let connection = EventHubConnection::from_namespace_and_credential(
+            fqn,
+            event_hub_name,
+            credential,
+            options,
+        ).await.unwrap();
     }
 }

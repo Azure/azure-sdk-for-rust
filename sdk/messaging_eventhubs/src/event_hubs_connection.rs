@@ -274,6 +274,7 @@ where
         RP: EventHubsRetryPolicy + Send,
         C::OpenProducerError: Into<azure_core::error::Error>,
     {
+        println!("create_transport_producer");
         match &mut self.inner {
             Sharable::Owned(c) => c
                 .create_producer(

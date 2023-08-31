@@ -28,7 +28,7 @@ cfg_not_wasm32! {
 
     #[tokio::test]
     async fn producer_client_can_connect_using_named_key_credential() {
-        use messaging_eventhubs::authorization::{AzureNamedKeyCredential};
+        use azeventhubs::authorization::{AzureNamedKeyCredential};
 
         common::setup_dotenv();
 
@@ -48,6 +48,32 @@ cfg_not_wasm32! {
         ).await.unwrap();
 
         let event = "Hello, world to partition 0";
+        let options = SendEventOptions::new().with_partition_id("0");
+        producer_client.send_event(event, options).await.unwrap();
+
+        producer_client.close().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn producer_client_can_connect_using_azure_identity_credential() {
+        use azure_identity::DefaultAzureCredential;
+
+        common::setup_dotenv();
+
+        let namespace = std::env::var("EVENT_HUBS_NAMESPACE").unwrap();
+        let fqn = format!("{}.servicebus.windows.net", namespace);
+        let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
+        let options = EventHubProducerClientOptions::default();
+        let default_credential = DefaultAzureCredential::default();
+
+        let mut producer_client = EventHubProducerClient::from_namespace_and_credential(
+            fqn,
+            event_hub_name,
+            default_credential,
+            options,
+        ).await.unwrap();
+
+        let event = "test connect using azure identity";
         let options = SendEventOptions::new().with_partition_id("0");
         producer_client.send_event(event, options).await.unwrap();
 

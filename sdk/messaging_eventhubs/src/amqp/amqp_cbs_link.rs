@@ -82,6 +82,9 @@ impl AmqpCbsLinkHandle {
             .send(command)
             .await
             .map_err(|_| AmqpCbsEventLoopStopped {})?;
+
+        println!("request_refreshable_authorization: waiting for result");
+
         result.await.map_err(|_| AmqpCbsEventLoopStopped {})
     }
 
@@ -170,11 +173,15 @@ impl AmqpCbsLink {
         resource: impl AsRef<str>,
         required_claims: impl IntoIterator<Item = impl AsRef<str>>,
     ) -> Result<Option<crate::util::time::Instant>, CbsAuthError> {
+        println!("request_authorization_using_cbs");
+
         let resource = resource.as_ref();
         let token = self
             .cbs_token_provider
             .get_token_async(endpoint, resource, required_claims)
             .await?;
+
+        println!("request_authorization_using_cbs: got token");
 
         // find the smallest timeout
         let expires_at_utc = token.expires_at_utc().clone().map(OffsetDateTime::from);

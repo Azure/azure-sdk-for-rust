@@ -267,6 +267,8 @@ impl AmqpConnectionScope {
     ) -> Result<AmqpProducer<RP>, OpenProducerError> {
         use std::borrow::Cow;
 
+        println!("open_producer_link");
+
         let path: Cow<str> = match &partition_id {
             None => Cow::Borrowed(&self.event_hub_name),
             Some(partition_id) if partition_id.is_empty() => Cow::Borrowed(&self.event_hub_name),
@@ -315,6 +317,8 @@ impl AmqpConnectionScope {
             return Err(OpenProducerError::ConnectionScopeDisposed);
         }
 
+        println!("create_sending_session_and_link");
+
         // Perform the initial authorization for the link.
         let auth_claims = vec![event_hub_claim::SEND.to_string()];
         let resource = endpoint.to_string();
@@ -325,6 +329,8 @@ impl AmqpConnectionScope {
             auth_claims,
         )
         .await?;
+
+        println!("requested refreshable authorization using cbs");
 
         // Create and open the AMQP session associated with the link.
         let mut session_handle = Session::begin(&mut self.connection.handle).await?;
