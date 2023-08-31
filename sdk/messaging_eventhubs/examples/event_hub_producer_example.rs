@@ -15,9 +15,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let partition_ids = producer_client.get_partition_ids().await?;
 
-    let event = "Hello, world to first partition!";
-    let options = SendEventOptions::new().with_partition_id(&partition_ids[0]);
-    producer_client.send_event(event, options).await?;
+    for i in 0..300 {
+        let event = format!("Hello, world {}!", i);
+        let options = SendEventOptions::new().with_partition_id(&partition_ids[0]);
+        producer_client.send_event(event, options).await?;
+    }
 
     producer_client.close().await?;
 
