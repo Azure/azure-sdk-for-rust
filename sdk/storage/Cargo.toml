@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage"
-version = "0.13.0"
+version = "0.14.0"
 description = "Azure Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -11,11 +11,10 @@ documentation = "https://docs.rs/azure_storage"
 keywords = ["sdk", "azure", "storage"]
 categories = ["api-bindings"]
 edition = "2021"
-rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.13", features = ["xml"] }
+azure_core = { path = "../core", version = "0.14", features = ["xml"] }
 time = "0.3.10"
 futures = "0.3"
 log = "0.4"

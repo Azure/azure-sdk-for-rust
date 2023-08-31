@@ -12360,6 +12360,14 @@ impl PrivateEndpointConnectionListResult {
 pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpointProperty>,
+    #[doc = "Group IDs."]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub group_ids: Vec<String>,
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionStateProperty>,
     #[doc = "State of the private endpoint connection."]
@@ -16787,6 +16795,9 @@ pub struct SqlVulnerabilityAssessmentScanRecordProperties {
     #[doc = "Baseline created for this database, and has one or more rules."]
     #[serde(rename = "isBaselineApplied", default, skip_serializing_if = "Option::is_none")]
     pub is_baseline_applied: Option<bool>,
+    #[doc = "The last scan time."]
+    #[serde(rename = "lastScanTime", default, with = "azure_core::date::rfc3339::option")]
+    pub last_scan_time: Option<time::OffsetDateTime>,
 }
 impl SqlVulnerabilityAssessmentScanRecordProperties {
     pub fn new() -> Self {

@@ -390,7 +390,11 @@ mod tests {
     use super::*;
     use std::io;
 
-    #[allow(dead_code, unconditional_recursion)]
+    #[allow(
+        dead_code,
+        unconditional_recursion,
+        clippy::extra_unused_type_parameters
+    )]
     fn ensure_send<T: Send>() {
         ensure_send::<Error>();
     }
