@@ -1,5 +1,20 @@
 # Change log
 
+## 0.14.0-alpha
+
+- Changed version number to follow that of `azure_core`
+- Changing visibility of the following to public
+  - `BasicRetryPolicy`,
+  - `mod authorization`,
+  - `EventHubTokenCredential`
+  - `SharedAccessCredential`
+  - `AzureNamedKeyCredential`
+  - `AzureSasCredential`
+- Added helper function `crate::authorization::build_connection_signature_authorization_resource()`
+- Added following convenience constructor methods to `EventHubConnection`, `EventHubProducerClient`, and `EventHubConsumerClient`
+  - `from_namespace_and_named_key_credential()`
+  - `from_namespace_and_sas_credential()`
+
 ## 0.1.2
 
 ### 0.1.2-beta
