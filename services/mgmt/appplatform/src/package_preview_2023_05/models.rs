@@ -2154,7 +2154,7 @@ pub struct ClusterResourceProperties {
     #[doc = "Version of the Service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
-    #[doc = "ServiceInstanceEntity GUID which uniquely identifies a created resource"]
+    #[doc = "ServiceInstanceEntity Id which uniquely identifies a created resource"]
     #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
     pub service_id: Option<String>,
     #[doc = "The resource Id of the Managed Environment that the Spring Apps instance builds on"]
@@ -3707,6 +3707,26 @@ impl DeploymentSettings {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DevToolPortalComponent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource quantity for required CPU and Memory of Dev Tool Portal"]
+    #[serde(rename = "resourceRequests", default, skip_serializing_if = "Option::is_none")]
+    pub resource_requests: Option<DevToolPortalResourceRequests>,
+    #[doc = "Collection of instances belong to Dev Tool Portal."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub instances: Vec<DevToolPortalInstance>,
+}
+impl DevToolPortalComponent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Detail settings for Dev Tool Portal feature"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevToolPortalFeatureDetail {
@@ -3803,16 +3823,13 @@ pub struct DevToolPortalProperties {
     #[doc = "State of the Dev Tool Portal."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dev_tool_portal_properties::ProvisioningState>,
-    #[doc = "The resource quantity for required CPU and Memory of Dev Tool Portal"]
-    #[serde(rename = "resourceRequests", default, skip_serializing_if = "Option::is_none")]
-    pub resource_requests: Option<DevToolPortalResourceRequests>,
-    #[doc = "Collection of instances belong to Dev Tool Portal."]
+    #[doc = "Collection of components belong to Dev Tool Portal."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub instances: Vec<DevToolPortalInstance>,
+    pub components: Vec<DevToolPortalComponent>,
     #[doc = "Indicates whether the resource exposes public endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub public: Option<bool>,

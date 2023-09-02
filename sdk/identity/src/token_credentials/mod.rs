@@ -13,6 +13,7 @@ mod client_secret_credentials;
 mod default_credentials;
 mod environment_credentials;
 mod imds_managed_identity_credentials;
+mod workload_identity_credentials;
 
 pub use auto_refreshing_credentials::*;
 pub use azure_cli_credentials::*;
@@ -22,3 +23,4 @@ pub use client_secret_credentials::*;
 pub use default_credentials::*;
 pub use environment_credentials::*;
 pub use imds_managed_identity_credentials::*;
+pub use workload_identity_credentials::*;

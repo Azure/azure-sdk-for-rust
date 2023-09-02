@@ -9,6 +9,7 @@ pub struct NoopClient;
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl crate::HttpClient for NoopClient {
+    #[allow(clippy::diverging_sub_expression)]
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         panic!(
             "A request was called on the default http client `NoopClient`.\
