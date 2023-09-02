@@ -10,8 +10,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let client_secret =
         env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
     let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let scope =
-        env::var("SCOPE").expect("Missing SCOPE environment variable.");
+    let scope = env::var("SCOPE").expect("Missing SCOPE environment variable.");
 
     let http_client = azure_core::new_http_client();
     // This will give you the final token to use in authorization.
