@@ -22,7 +22,7 @@ azure_core::operation! {
 
 impl QueryBuilder {
     /// Invoke a qiven query on the `IoT` Hub
-    pub fn into_future(mut self) -> Query {
+    pub fn into_future(self) -> Query {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/query?api-version={}",
@@ -37,7 +37,7 @@ impl QueryBuilder {
             request.add_mandatory_header(&self.max_item_count.unwrap_or_default());
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             QueryResponse::try_from(response).await
         })

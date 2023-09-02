@@ -9,7 +9,7 @@ operation! {
 }
 
 impl GetCertificateBuilder {
-    pub fn into_future(mut self) -> GetCertificate {
+    pub fn into_future(self) -> GetCertificate {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             let version = self.version.unwrap_or_default();
@@ -24,7 +24,7 @@ impl GetCertificateBuilder {
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

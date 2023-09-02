@@ -15,7 +15,7 @@ operation! {
 
 impl ApplyOnEdgeDeviceBuilder {
     /// Performs the apply on edge device request
-    pub fn into_future(mut self) -> ApplyOnEdgeDevice {
+    pub fn into_future(self) -> ApplyOnEdgeDevice {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/{}/applyConfigurationContent?api-version={}",
@@ -32,7 +32,7 @@ impl ApplyOnEdgeDeviceBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            self.client.send(&mut self.context, &mut request).await?;
+            self.client.send(&self.context, &mut request).await?;
 
             Ok(())
         })

@@ -8,7 +8,7 @@ operation! {
 }
 
 impl DeleteCertificateOperationBuilder {
-    pub fn into_future(mut self) -> DeleteCertificateOperation {
+    pub fn into_future(self) -> DeleteCertificateOperation {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("certificates/{}/pending", self.name));
@@ -22,7 +22,7 @@ impl DeleteCertificateOperationBuilder {
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

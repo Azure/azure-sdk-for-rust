@@ -21,7 +21,7 @@ azure_core::operation! {
 
 impl CreateOrUpdateModuleIdentityBuilder {
     /// Performs the create or update request on the device identity
-    pub fn into_future(mut self) -> CreateOrUpdateModuleIdentity {
+    pub fn into_future(self) -> CreateOrUpdateModuleIdentity {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
@@ -50,7 +50,7 @@ impl CreateOrUpdateModuleIdentityBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             CreateOrUpdateModuleIdentityResponse::try_from(response).await
         })
