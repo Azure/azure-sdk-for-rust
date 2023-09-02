@@ -92,6 +92,8 @@ pub enum ArchiveStatus {
     RehydratePendingToHot,
     #[serde(rename = "rehydrate-pending-to-cool")]
     RehydratePendingToCool,
+    #[serde(rename = "rehydrate-pending-to-cold")]
+    RehydratePendingToCold,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -119,6 +121,7 @@ impl Serialize for ArchiveStatus {
         match self {
             Self::RehydratePendingToHot => serializer.serialize_unit_variant("ArchiveStatus", 0u32, "rehydrate-pending-to-hot"),
             Self::RehydratePendingToCool => serializer.serialize_unit_variant("ArchiveStatus", 1u32, "rehydrate-pending-to-cool"),
+            Self::RehydratePendingToCold => serializer.serialize_unit_variant("ArchiveStatus", 2u32, "rehydrate-pending-to-cold"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

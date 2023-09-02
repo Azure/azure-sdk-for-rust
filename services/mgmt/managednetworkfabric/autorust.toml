@@ -1,0 +1,5 @@
+[tags]
+deny = [
+   # "parameter not found RefKey { file_path: \"../../../azure-rest-api-specs/specification/managednetworkfabric/resource-manager/Microsoft.ManagedNetworkFabric/stable/2023-06-15/NetworkRacks.json\", name: \"NetworkRackPatch\" }"
+   "package-2023-06-15"
+]

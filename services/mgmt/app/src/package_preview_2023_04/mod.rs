@@ -8713,20 +8713,18 @@ pub mod jobs {
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `job_name`: Job Name"]
-        #[doc = "* `template`: Properties used to start a job instance."]
         pub fn start(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             job_name: impl Into<String>,
-            template: impl Into<models::JobExecutionTemplate>,
         ) -> start::RequestBuilder {
             start::RequestBuilder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 job_name: job_name.into(),
-                template: template.into(),
+                template: None,
             }
         }
         #[doc = "Terminates execution of a running container apps job"]
@@ -9414,9 +9412,14 @@ pub mod jobs {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) job_name: String,
-            pub(crate) template: models::JobExecutionTemplate,
+            pub(crate) template: Option<models::JobExecutionTemplate>,
         }
         impl RequestBuilder {
+            #[doc = "Properties used to start a job execution."]
+            pub fn template(mut self, template: impl Into<models::JobExecutionTemplate>) -> Self {
+                self.template = Some(template.into());
+                self
+            }
             #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
@@ -9443,8 +9446,12 @@ pub mod jobs {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.template)?;
+                        let req_body = if let Some(template) = &this.template {
+                            req.insert_header("content-type", "application/json");
+                            azure_core::to_json(template)?
+                        } else {
+                            azure_core::EMPTY_BODY
+                        };
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }

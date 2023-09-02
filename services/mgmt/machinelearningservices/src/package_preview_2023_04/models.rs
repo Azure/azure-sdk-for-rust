@@ -14388,12 +14388,12 @@ pub struct Registry {
     pub ml_flow_registry_uri: Option<String>,
     #[doc = "Private endpoint connections info used for pending connections in private link portal"]
     #[serde(
-        rename = "registryPrivateEndpointConnections",
+        rename = "privateEndpointConnections",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub registry_private_endpoint_connections: Vec<RegistryPrivateEndpointConnection>,
+    pub private_endpoint_connections: Vec<RegistryPrivateEndpointConnection>,
     #[doc = "Is the Registry accessible from the internet?\r\nPossible values: \"Enabled\" or \"Disabled\""]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<String>,
@@ -14443,7 +14443,7 @@ impl RegistryPartialManagedServiceIdentity {
 #[doc = "Private endpoint connection definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPrivateEndpointConnection {
-    #[doc = "This is the private endpoint connection name created on SRP\r\nFull resource id: /subscriptions/{subId}/resourceGroups/{rgName}/providers/Microsoft.MachineLearningServices/{resourceType}/{resourceName}/registryPrivateEndpointConnections/{peConnectionName}"]
+    #[doc = "This is the private endpoint connection name created on SRP\r\nFull resource id: /subscriptions/{subId}/resourceGroups/{rgName}/providers/Microsoft.MachineLearningServices/{resourceType}/{resourceName}/privateEndpointConnections/{peConnectionName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Same as workspace location."]
@@ -14473,12 +14473,8 @@ pub struct RegistryPrivateEndpointConnectionProperties {
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpointResource>,
     #[doc = "The connection state."]
-    #[serde(
-        rename = "registryPrivateLinkServiceConnectionState",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub registry_private_link_service_connection_state: Option<RegistryPrivateLinkServiceConnectionState>,
+    #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
+    pub private_link_service_connection_state: Option<RegistryPrivateLinkServiceConnectionState>,
     #[doc = "One of null, \"Succeeded\", \"Provisioning\", \"Failed\". While not approved, it's null."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,

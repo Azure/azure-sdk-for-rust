@@ -2766,6 +2766,9 @@ pub struct PriceSheetProperties {
     #[doc = "Offer Id"]
     #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
     pub offer_id: Option<String>,
+    #[doc = "The properties of the SavingsPlan."]
+    #[serde(rename = "savingsPlan", default, skip_serializing_if = "Option::is_none")]
+    pub savings_plan: Option<SavingsPlan>,
 }
 impl PriceSheetProperties {
     pub fn new() -> Self {
@@ -3369,6 +3372,24 @@ pub struct ResourceAttributes {
     pub sku: Option<String>,
 }
 impl ResourceAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of the SavingsPlan."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SavingsPlan {
+    #[doc = "SavingsPlan term"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub term: Option<String>,
+    #[doc = "SavingsPlan Market Price"]
+    #[serde(rename = "marketPrice", default, skip_serializing_if = "Option::is_none")]
+    pub market_price: Option<f64>,
+    #[doc = "SavingsPlan Effective Price"]
+    #[serde(rename = "effectivePrice", default, skip_serializing_if = "Option::is_none")]
+    pub effective_price: Option<f64>,
+}
+impl SavingsPlan {
     pub fn new() -> Self {
         Self::default()
     }
