@@ -1,10 +1,8 @@
-use ::futures::future::ready;
-use ::futures::StreamExt;
 use azure_core::new_http_client;
 use azure_identity::device_code_flow::start;
+use futures::{future::ready, StreamExt};
 use oauth2::ClientId;
-use std::env;
-use std::error::Error;
+use std::{env, error::Error};
 
 const SCOPES: &[&str; 2] = &[".default", "offline_access"];
 
