@@ -650,6 +650,24 @@ pub mod patch_user_settings_with_location {
 pub mod delete_user_settings_with_location {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -888,6 +906,24 @@ pub mod put_console_with_location {
 pub mod delete_console_with_location {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -944,6 +980,35 @@ pub mod delete_console_with_location {
 pub mod keep_alive_with_location {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Remaining time left in session, in seconds."]
+        pub fn x_ms_console_remaining_seconds(&self) -> azure_core::Result<i32> {
+            self.0
+                .get_as(&azure_core::headers::HeaderName::from_static("x-ms-console-remaining-seconds"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -1285,6 +1350,24 @@ pub mod patch_user_settings {
 pub mod delete_user_settings {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -1519,6 +1602,24 @@ pub mod put_console {
 pub mod delete_console {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -1573,6 +1674,35 @@ pub mod delete_console {
 pub mod keep_alive {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Remaining time left in session, in seconds."]
+        pub fn x_ms_console_remaining_seconds(&self) -> azure_core::Result<i32> {
+            self.0
+                .get_as(&azure_core::headers::HeaderName::from_static("x-ms-console-remaining-seconds"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
