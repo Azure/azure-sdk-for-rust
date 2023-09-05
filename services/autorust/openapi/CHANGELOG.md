@@ -1,3 +1,6 @@
+# 0.2.1
+* public Response internals when no response type
+
 # 0.2
 * forked as autorust_openapi
 * removed OpenAPI v3 support. Use openapiv3 crate
