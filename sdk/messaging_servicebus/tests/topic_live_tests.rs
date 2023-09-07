@@ -309,7 +309,7 @@ cfg_not_wasm32! {
         let topic_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_TOPIC")?;
         let subscription_name = std::env::var("SERVICE_BUS_RULE_FILTER_TEST_SUBSCRIPTION")?;
 
-        let mut client = ServiceBusClient::new(connection_string, Default::default()).await?;
+        let mut client = ServiceBusClient::new_from_connection_string(connection_string, Default::default()).await?;
         let mut rule_manager = client
             .create_rule_manager(topic_name, subscription_name)
             .await?;

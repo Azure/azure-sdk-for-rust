@@ -74,6 +74,7 @@ dotenv = "0.15"
 futures = "0.3"
 tokio = {version = "1.0", features = ["macros", "rt", "rt-multi-thread"]}
 env_logger = "0.10"
+azure_identity = { path = "../identity", version = "0.14" }
 
 [features]
 default = ["native-tls"]

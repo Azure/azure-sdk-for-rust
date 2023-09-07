@@ -253,7 +253,7 @@ impl ServiceBusClient<BasicRetryPolicy> {
     /// #[tokio::main]
     /// async fn main() {
     ///     let mut client = ServiceBusClient::with_custom_retry_policy::<MyRetryPolicy>()
-    ///         .create_client("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///         .new_from_connection_string("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
     ///         .await
     ///         .unwrap();
     /// }
@@ -264,8 +264,8 @@ impl ServiceBusClient<BasicRetryPolicy> {
         }
     }
 
-    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
-    /// connection string and [`ServiceBusClientOptions`].
+    /// Creates a new instance of the [`ServiceBusClient`] class using the specified connection
+    /// string and [`ServiceBusClientOptions`].
     ///
     /// # Example
     ///
@@ -276,7 +276,10 @@ impl ServiceBusClient<BasicRetryPolicy> {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let mut client = ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", ServiceBusClientOptions::default())
+    ///     let mut client = ServiceBusClient::new_from_connection_string(
+    ///             "<NAMESPACE-CONNECTION-STRING>",
+    ///             ServiceBusClientOptions::default()
+    ///         )
     ///         .await
     ///         .unwrap();
     ///     client.dispose().await.unwrap();

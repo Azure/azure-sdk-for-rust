@@ -70,7 +70,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING").unwrap();
         let queue_name = std::env::var("SERVICE_BUS_QUEUE").unwrap();
 
-        let mut client = ServiceBusClient::new(
+        let mut client = ServiceBusClient::new_from_connection_string(
             &connection_string,
             Default::default(),
         )

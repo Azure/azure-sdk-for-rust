@@ -26,7 +26,7 @@ async fn local_set_main() -> Result<(), Box<dyn std::error::Error>> {
 
     // This must be called within a `LocalSet` to work.
     let mut client =
-        ServiceBusClient::new("<NAMESPACE-CONNECTION-STRING>", Default::default()).await?;
+        ServiceBusClient::new_from_connection_string("<NAMESPACE-CONNECTION-STRING>", Default::default()).await?;
     console::log_1(&"Client created".into());
 
     // This must be called within a `LocalSet` to work.

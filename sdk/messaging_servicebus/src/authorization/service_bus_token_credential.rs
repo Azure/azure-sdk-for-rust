@@ -9,8 +9,9 @@ use super::shared_access_credential::SharedAccessCredential;
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,no_run
 /// use azure_identity::DefaultAzureCredential;
+/// use azure_messaging_servicebus::authorization::ServiceBusTokenCredential;
 ///
 /// let credential = ServiceBusTokenCredential::from(DefaultAzureCredential::default());
 /// ```

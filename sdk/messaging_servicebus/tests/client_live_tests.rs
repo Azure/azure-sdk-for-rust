@@ -52,7 +52,7 @@ cfg_not_wasm32! {
         let mut option = ServiceBusClientOptions::default();
         option.transport_type = ServiceBusTransportType::AmqpTcp;
 
-        let mut client = ServiceBusClient::new(&connection_string, option)
+        let mut client = ServiceBusClient::new_from_connection_string(&connection_string, option)
             .await
             .unwrap();
 
@@ -76,7 +76,7 @@ cfg_not_wasm32! {
         let mut option = ServiceBusClientOptions::default();
         option.transport_type = ServiceBusTransportType::AmqpWebSocket;
 
-        let mut client = ServiceBusClient::new(&connection_string, option)
+        let mut client = ServiceBusClient::new_from_connection_string(&connection_string, option)
             .await
             .unwrap();
 
@@ -103,7 +103,7 @@ cfg_not_wasm32! {
 
         let credential = AzureNamedKeyCredential::new(key_name, key);
         let mut client =
-            ServiceBusClient::new_with_named_key_credential(namespace, credential, Default::default())
+            ServiceBusClient::new_from_named_key_credential(namespace, credential, Default::default())
                 .await
                 .unwrap();
 
