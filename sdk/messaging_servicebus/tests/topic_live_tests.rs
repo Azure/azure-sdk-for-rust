@@ -35,7 +35,7 @@
 mod macros;
 
 cfg_not_wasm32! {
-    use azure_messaging_servicebus::{ServiceBusMessage, ServiceBusReceiverOptions};
+    use azservicebus::{ServiceBusMessage, ServiceBusReceiverOptions};
 
     mod common;
     use common::setup_dotenv;
@@ -301,8 +301,8 @@ cfg_not_wasm32! {
     }
 
     async fn get_delete_then_create_rules() -> Result<(), anyhow::Error> {
-        use azure_messaging_servicebus::administration::*;
-        use azure_messaging_servicebus::prelude::*;
+        use azservicebus::administration::*;
+        use azservicebus::prelude::*;
 
         setup_dotenv();
         let connection_string = std::env::var("SERVICE_BUS_CONNECTION_STRING")?;

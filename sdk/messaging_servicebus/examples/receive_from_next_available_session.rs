@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage};
+use azservicebus::{ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {

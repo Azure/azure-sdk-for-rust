@@ -1,7 +1,7 @@
-use azure_messaging_servicebus::administration::{
+use azservicebus::administration::{
     CorrelationRuleFilter, FalseRuleFilter, SqlRuleAction, SqlRuleFilter, TrueRuleFilter,
 };
-use azure_messaging_servicebus::ServiceBusClient;
+use azservicebus::ServiceBusClient;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {

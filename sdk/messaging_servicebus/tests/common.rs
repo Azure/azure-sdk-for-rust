@@ -2,7 +2,7 @@
 
 use std::time::Duration as StdDuration;
 
-use azure_messaging_servicebus::{
+use azservicebus::{
     ServiceBusClient, ServiceBusClientOptions, ServiceBusMessage, ServiceBusPeekedMessage,
     ServiceBusReceivedMessage, ServiceBusReceiverOptions, ServiceBusRetryOptions, ServiceBusSender,
     ServiceBusSenderOptions, ServiceBusSessionReceiverOptions,
