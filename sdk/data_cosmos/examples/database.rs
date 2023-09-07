@@ -32,7 +32,7 @@ async fn main() -> azure_core::Result<()> {
         .unwrap()?;
 
     for db in dbs.databases {
-        println!("Database: {:?}", db);
+        println!("Database: {db:?}");
         let database = client.database_client(db.name().to_owned());
 
         // List all the collections
@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
             .await
             .unwrap()?;
         for collection in collections.collections {
-            println!("Collection: {:?}", collection);
+            println!("Collection: {collection:?}");
             let mut indexing_policy_new = collection.indexing_policy.clone();
             let collection = database.collection_client(collection.id);
 
@@ -68,7 +68,7 @@ async fn main() -> azure_core::Result<()> {
                     .partition_key(&43u32)?
                     .await?;
 
-                println!("`create_document` response: {:?}", create_document);
+                println!("`create_document` response: {create_document:?}");
 
                 // Alternatively, we can just fetch a specific collection directly
                 let _ = database.collection_client("cnt").get_collection().await?;
@@ -83,10 +83,7 @@ async fn main() -> azure_core::Result<()> {
                     .replace_collection("/age")
                     .indexing_policy(indexing_policy_new)
                     .await?;
-                println!(
-                    "`replace_collection` response: {:#?}",
-                    replace_collection_response
-                );
+                println!("`replace_collection` response: {replace_collection_response:#?}");
             }
 
             // Fetch all the documents as json
@@ -96,7 +93,7 @@ async fn main() -> azure_core::Result<()> {
                 .next()
                 .await
                 .unwrap()?;
-            println!("\n`list_documents` as json: {:?}", documents);
+            println!("\n`list_documents` as json: {documents:?}");
         }
     }
 

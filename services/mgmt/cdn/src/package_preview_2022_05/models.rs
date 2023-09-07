@@ -1005,10 +1005,41 @@ impl AzureFirstPartyManagedCertificate {
 pub struct AzureFirstPartyManagedCertificateParameters {
     #[serde(flatten)]
     pub secret_parameters: SecretParameters,
+    #[doc = "Reference to another resource."]
+    #[serde(rename = "secretSource", default, skip_serializing_if = "Option::is_none")]
+    pub secret_source: Option<ResourceReference>,
+    #[doc = "Subject name in the certificate."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subject: Option<String>,
+    #[doc = "Certificate expiration date."]
+    #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
+    pub expiration_date: Option<String>,
+    #[doc = "Certificate issuing authority."]
+    #[serde(rename = "certificateAuthority", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_authority: Option<String>,
+    #[doc = "The list of SANs."]
+    #[serde(
+        rename = "subjectAlternativeNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub subject_alternative_names: Vec<String>,
+    #[doc = "Certificate thumbprint."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbprint: Option<String>,
 }
 impl AzureFirstPartyManagedCertificateParameters {
     pub fn new(secret_parameters: SecretParameters) -> Self {
-        Self { secret_parameters }
+        Self {
+            secret_parameters,
+            secret_source: None,
+            subject: None,
+            expiration_date: None,
+            certificate_authority: None,
+            subject_alternative_names: Vec::new(),
+            thumbprint: None,
+        }
     }
 }
 #[doc = "Caching settings for a caching-type route. To disable caching, do not provide a cacheConfiguration object."]
@@ -7196,6 +7227,11 @@ pub mod route_update_properties_parameters {
             }
         }
     }
+    impl Default for ForwardingProtocol {
+        fn default() -> Self {
+            Self::MatchRequest
+        }
+    }
     #[doc = "whether this route will be linked to the default endpoint domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "LinkToDefaultDomain")]
@@ -7233,6 +7269,11 @@ pub mod route_update_properties_parameters {
             }
         }
     }
+    impl Default for LinkToDefaultDomain {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
     #[doc = "Whether to automatically redirect HTTP traffic to HTTPS traffic. Note that this is a easy way to set up this rule and it will be the first rule that gets executed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "HttpsRedirect")]
@@ -7268,6 +7309,11 @@ pub mod route_update_properties_parameters {
                 Self::Disabled => serializer.serialize_unit_variant("HttpsRedirect", 1u32, "Disabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for HttpsRedirect {
+        fn default() -> Self {
+            Self::Disabled
         }
     }
     #[doc = "Whether to enable use of this rule. Permitted values are 'Enabled' or 'Disabled'"]
@@ -7497,6 +7543,11 @@ pub mod rule_update_properties_parameters {
                 Self::Stop => serializer.serialize_unit_variant("MatchProcessingBehavior", 1u32, "Stop"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for MatchProcessingBehavior {
+        fn default() -> Self {
+            Self::Continue
         }
     }
 }

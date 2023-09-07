@@ -60,7 +60,7 @@ impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
                 .stored_procedure_request(azure_core::Method::Post);
 
             if let Some(pk) = self.partition_key.as_ref() {
-                crate::cosmos_entity::add_as_partition_key_header_serialized(pk, &mut request)
+                crate::cosmos_entity::add_as_partition_key_header_serialized(pk, &mut request);
             }
 
             if let Some(cl) = &self.consistency_level {

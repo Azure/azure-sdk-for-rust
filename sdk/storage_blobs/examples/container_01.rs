@@ -36,7 +36,7 @@ async fn main() -> azure_core::Result<()> {
 
     // get acl without stored access policy list
     let result = container_client.get_acl().await?;
-    println!("\nget_acl() == {:?}", result);
+    println!("\nget_acl() == {result:?}");
 
     // set stored access policy list
     let dt_start = OffsetDateTime::now_utc();
@@ -54,9 +54,9 @@ async fn main() -> azure_core::Result<()> {
     // now we get back the acess policy list and compare to the one created
     let result = container_client.get_acl().await?;
 
-    println!("\nget_acl() == {:?}", result);
+    println!("\nget_acl() == {result:?}");
 
-    println!("\n\nsapl() == {:?}", sapl);
+    println!("\n\nsapl() == {sapl:?}");
     println!(
         "\nresult.stored_access_policy_list  == {:?}",
         result.stored_access_policy_list
@@ -77,12 +77,12 @@ async fn main() -> azure_core::Result<()> {
     }
 
     let res = container_client.get_properties().await?;
-    println!("\nget_properties() == {:?}", res);
+    println!("\nget_properties() == {res:?}");
 
     let res = container_client
         .acquire_lease(Duration::from_secs(15))
         .await?;
-    println!("\nacquire_lease() == {:?}", res);
+    println!("\nacquire_lease() == {res:?}");
 
     container_client
         .delete()

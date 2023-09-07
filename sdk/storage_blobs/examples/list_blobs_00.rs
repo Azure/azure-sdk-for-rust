@@ -44,16 +44,16 @@ async fn main() -> azure_core::Result<()> {
         .public_access(PublicAccess::None)
         .context(context)
         .await?;
-    println!("Container {} created", container_name);
+    println!("Container {container_name} created");
 
     // create 10 blobs
     for i in 0..10u8 {
         container_client
-            .blob_client(format!("blob{}.txt", i))
+            .blob_client(format!("blob{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
-        println!("\tAdded blob {}", i);
+        println!("\tAdded blob {i}");
     }
 
     let page = container_client
@@ -77,9 +77,9 @@ async fn main() -> azure_core::Result<()> {
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
         let len = value?.blobs.blobs().count();
-        println!("received {} blobs", len);
+        println!("received {len} blobs");
         match cnt {
-            0 | 1 | 2 => assert_eq!(len, 3),
+            0..=2 => assert_eq!(len, 3),
             3 => assert_eq!(len, 1),
             _ => panic!("more than 10 entries??"),
         }
@@ -87,7 +87,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     container_client.delete().await?;
-    println!("Container {} deleted", container_name);
+    println!("Container {container_name} deleted");
 
     Ok(())
 }

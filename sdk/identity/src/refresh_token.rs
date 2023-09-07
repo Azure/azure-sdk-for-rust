@@ -30,14 +30,13 @@ pub async fn exchange(
             .append_pair("refresh_token", refresh_token.secret());
         // optionally add the client secret
         if let Some(client_secret) = client_secret {
-            encoded = encoded.append_pair("client_secret", client_secret)
+            encoded = encoded.append_pair("client_secret", client_secret);
         };
         encoded.finish()
     };
 
     let url = Url::parse(&format!(
-        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-        tenant_id
+        "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     ))?;
 
     let mut req = Request::new(url, Method::Post);
@@ -75,7 +74,7 @@ pub struct RefreshTokenResponse {
 }
 
 impl RefreshTokenResponse {
-    /// Returns the token_type. Always `Bearer` for Azure AD.
+    /// Returns the `token_type`. Always `Bearer` for Azure AD.
     pub fn token_type(&self) -> &str {
         &self.token_type
     }
@@ -132,7 +131,7 @@ impl fmt::Display for RefreshTokenError {
     fn fmt(&self, f: &mut fmt::Formatter) -> std::result::Result<(), fmt::Error> {
         writeln!(f, "error: {}", self.error)?;
         if let Some(suberror) = &self.suberror {
-            writeln!(f, "suberror: {}", suberror)?;
+            writeln!(f, "suberror: {suberror}")?;
         }
         writeln!(f, "description: {}", self.error_description)
     }

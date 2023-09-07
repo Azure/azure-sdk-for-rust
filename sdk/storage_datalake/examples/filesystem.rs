@@ -22,7 +22,7 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .properties(fs_properties.clone())
         .await?;
-    println!("create file system response == {:?}\n", create_fs_response);
+    println!("create file system response == {create_fs_response:?}\n");
 
     println!("listing file systems...");
     let mut stream = data_lake_client
@@ -30,34 +30,25 @@ async fn main() -> azure_core::Result<()> {
         .max_results(NonZeroU32::new(3).unwrap())
         .into_stream();
     while let Some(list_fs_response) = stream.next().await {
-        println!("list file system response == {:?}\n", list_fs_response);
+        println!("list file system response == {list_fs_response:?}\n");
     }
 
     println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().await?;
-    println!(
-        "get file system properties response == {:?}\n",
-        get_fs_props_response
-    );
+    println!("get file system properties response == {get_fs_props_response:?}\n");
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
     let set_fs_props_response = file_system_client.set_properties(fs_properties).await?;
-    println!(
-        "set file system properties response == {:?}\n",
-        set_fs_props_response
-    );
+    println!("set file system properties response == {set_fs_props_response:?}\n");
 
     println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().await?;
-    println!(
-        "get file system properties response == {:?}\n",
-        get_fs_props_response
-    );
+    println!("get file system properties response == {get_fs_props_response:?}\n");
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    println!("delete file system response == {delete_fs_response:?}\n");
 
     Ok(())
 }

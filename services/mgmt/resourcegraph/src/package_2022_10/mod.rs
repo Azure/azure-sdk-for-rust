@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
@@ -242,9 +242,9 @@ pub mod resources_history {
     use super::models;
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<serde_json::Value> {
+        pub async fn into_body(self) -> azure_core::Result<models::ResourcesHistoryResult> {
             let bytes = self.0.into_body().collect().await?;
-            let body: serde_json::Value = serde_json::from_slice(&bytes)?;
+            let body: models::ResourcesHistoryResult = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -315,8 +315,8 @@ pub mod resources_history {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<serde_json::Value>;
-        type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<serde_json::Value>>;
+        type Output = azure_core::Result<models::ResourcesHistoryResult>;
+        type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ResourcesHistoryResult>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

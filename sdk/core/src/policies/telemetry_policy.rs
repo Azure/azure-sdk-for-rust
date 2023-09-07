@@ -35,21 +35,17 @@ impl<'a> TelemetryPolicy {
         let mut crate_name = crate_name.unwrap_or(UNKNOWN);
         let crate_version = crate_version.unwrap_or(UNKNOWN);
         let rustc_version = rustc_version.unwrap_or(UNKNOWN);
-        let platform_info = format!("({}; {}; {})", rustc_version, OS, ARCH,);
+        let platform_info = format!("({rustc_version}; {OS}; {ARCH})",);
 
         if let Some(name) = crate_name.strip_prefix("azure_") {
             crate_name = name;
         }
 
         let header = match &options.application_id {
-            Some(application_id) => format!(
-                "{} azsdk-rust-{}/{} {}",
-                application_id, crate_name, crate_version, platform_info
-            ),
-            None => format!(
-                "azsdk-rust-{}/{} {}",
-                crate_name, crate_version, platform_info
-            ),
+            Some(application_id) => {
+                format!("{application_id} azsdk-rust-{crate_name}/{crate_version} {platform_info}")
+            }
+            None => format!("azsdk-rust-{crate_name}/{crate_version} {platform_info}"),
         };
 
         TelemetryPolicy { header }
@@ -85,7 +81,7 @@ mod test {
         );
         assert_eq!(
             policy.header,
-            format!("azsdk-rust-test/1.2.3 (4.5.6; {}; {})", OS, ARCH)
+            format!("azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
 
@@ -102,7 +98,7 @@ mod test {
         );
         assert_eq!(
             policy.header,
-            format!("my_app azsdk-rust-test/1.2.3 (4.5.6; {}; {})", OS, ARCH)
+            format!("my_app azsdk-rust-test/1.2.3 (4.5.6; {OS}; {ARCH})")
         );
     }
 
@@ -113,7 +109,7 @@ mod test {
             TelemetryPolicy::new_with_rustc_version(None, None, None, &TelemetryOptions::default());
         assert_eq!(
             policy.header,
-            format!("azsdk-rust-unknown/unknown (unknown; {}; {})", OS, ARCH)
-        )
+            format!("azsdk-rust-unknown/unknown (unknown; {OS}; {ARCH})")
+        );
     }
 }

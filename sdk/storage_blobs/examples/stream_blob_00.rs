@@ -34,7 +34,7 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .await?;
 
-    println!("{}/{} blob created!", container_name, file_name);
+    println!("{container_name}/{file_name} blob created!");
 
     // this is how you stream data from azure blob. Notice that you have
     // to specify the range requested. Also make sure to specify how big
@@ -73,13 +73,11 @@ async fn main() -> azure_core::Result<()> {
     //let result = reactor.run(fut)?;
     //let returned_string = String::from_utf8(result)?;
 
-    println!("{}", returned_string);
+    println!("{returned_string}");
 
     assert!(
         string == returned_string,
-        "string = {}, returned_string = {}",
-        string,
-        returned_string
+        "string = {string}, returned_string = {returned_string}"
     );
 
     blob_client

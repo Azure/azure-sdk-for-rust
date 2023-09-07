@@ -79,6 +79,35 @@ impl CertificateClient {
         GetCertificateVersionsBuilder::new(self.clone(), name.into())
     }
 
+    /// Gets the creation operation of a certificate.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     let certificate = client.get_operation("NAME").await.unwrap();
+    ///     dbg!(&certificate);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn get_operation<N>(&self, name: N) -> GetCertificateOperationBuilder
+    where
+        N: Into<String>,
+    {
+        GetCertificateOperationBuilder::new(self.clone(), name.into())
+    }
+
     /// Creates a new certificate.
     /// If this is the first version, the certificate resource is created.
     /// This operation requires the certificates/create permission.
@@ -118,7 +147,7 @@ impl CertificateClient {
     }
 
     /// Merges a certificate or a certificate chain with a key pair existing on the server.
-    /// The MergeCertificate operation performs the merging of a certificate or certificate chain with a key
+    /// The `MergeCertificate` operation performs the merging of a certificate or certificate chain with a key
     /// pair currently available in the service. This operation requires the certificates/create permission.
     //
     /// # Example
@@ -248,6 +277,38 @@ impl CertificateClient {
         N: Into<String>,
     {
         DeleteCertificateBuilder::new(self.clone(), name.into())
+    }
+
+    /// Deletes the creation operation for a specific certificate.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - Name of the certificate
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_security_keyvault::KeyvaultClient;
+    /// use azure_identity::DefaultAzureCredential;
+    /// use tokio::runtime::Runtime;
+    /// use std::sync::Arc;
+    ///
+    /// async fn example() {
+    ///     let creds = DefaultAzureCredential::default();
+    ///     let mut client = KeyvaultClient::new(
+    ///         &"KEYVAULT_URL",
+    ///         Arc::new(creds),
+    ///     ).unwrap().certificate_client();
+    ///     client.delete_operation("NAME").await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub fn delete_operation<N>(&self, name: N) -> DeleteCertificateOperationBuilder
+    where
+        N: Into<String>,
+    {
+        DeleteCertificateOperationBuilder::new(self.clone(), name.into())
     }
 
     /// Lists all the certificates in the Key Vault.

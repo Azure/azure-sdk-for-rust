@@ -1,0 +1,5 @@
+[tags]
+deny = [
+   # "No such file or directory" } }, "reading file ../../../azure-rest-api-specs/specification/migrate/common-types/resource-management/v3/types.json"
+   "package-migrateengine-2022-05"
+]

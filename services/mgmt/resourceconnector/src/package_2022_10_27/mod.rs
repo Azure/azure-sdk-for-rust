@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
@@ -278,6 +278,7 @@ pub mod appliances {
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 resource_name: resource_name.into(),
+                artifact_type: None,
             }
         }
         #[doc = "Gets an Appliance upgrade graph."]
@@ -1191,8 +1192,14 @@ pub mod appliances {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) resource_name: String,
+            pub(crate) artifact_type: Option<String>,
         }
         impl RequestBuilder {
+            #[doc = "This sets the type of artifact being returned, when empty no artifact endpoint is returned."]
+            pub fn artifact_type(mut self, artifact_type: impl Into<String>) -> Self {
+                self.artifact_type = Some(artifact_type.into());
+                self
+            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -1218,6 +1225,9 @@ pub mod appliances {
                         req.url_mut()
                             .query_pairs_mut()
                             .append_pair(azure_core::query_param::API_VERSION, "2022-10-27");
+                        if let Some(artifact_type) = &this.artifact_type {
+                            req.url_mut().query_pairs_mut().append_pair("artifactType", artifact_type);
+                        }
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);

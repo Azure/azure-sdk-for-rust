@@ -38,7 +38,7 @@ async fn main() -> azure_core::Result<()> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let digest = md5::compute(slice.clone());
+    let digest = md5::compute(slice.clone()).0;
 
     // The required parameters are container_name_name, blob_name.
     // The builder supports many more optional
@@ -50,7 +50,7 @@ async fn main() -> azure_core::Result<()> {
         .metadata(metadata)
         .sequence_number(100)
         .await?;
-    println!("put_page_blob == {:?}", res);
+    println!("put_page_blob == {res:?}");
 
     // this will update a page. The slice must be at least
     // the size of tha page or a buffer out
@@ -59,14 +59,14 @@ async fn main() -> azure_core::Result<()> {
         .put_page(BA512Range::new(0, 511)?, slice.clone())
         .hash(digest)
         .await?;
-    println!("update first page == {:?}", res);
+    println!("update first page == {res:?}");
 
     // update a second page with the same data
     let res = blob_client
         .put_page(BA512Range::new(512, 1023)?, slice.clone())
         .hash(digest)
         .await?;
-    println!("update second page == {:?}", res);
+    println!("update second page == {res:?}");
 
     // update the second page again with checks
     let res = blob_client
@@ -74,19 +74,19 @@ async fn main() -> azure_core::Result<()> {
         .hash(digest)
         .if_sequence_number(IfSequenceNumber::Equal(100))
         .await?;
-    println!("update sequence number condition == {:?}", res);
+    println!("update sequence number condition == {res:?}");
 
     // let's get page ranges
     let res = blob_client.get_page_ranges().await?;
-    println!("get page ranges == {:?}", res);
+    println!("get page ranges == {res:?}");
 
     // let's clear a page
     let res = blob_client.clear_page(BA512Range::new(0, 511)?).await?;
-    println!("clear first page {:?}", res);
+    println!("clear first page {res:?}");
 
     // let's get page ranges again
     let res = blob_client.get_page_ranges().await?;
-    println!("get page ranges == {:?}", res);
+    println!("get page ranges == {res:?}");
 
     Ok(())
 }

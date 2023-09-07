@@ -11,11 +11,11 @@ fn main() -> Result<()> {
         for tag in spec.config()?.tags() {
             println!("  {}", &tag.name());
             for input_file in &tag.input_files() {
-                println!("    {}", input_file);
+                println!("    {input_file}");
             }
             tag_count += 1;
         }
     }
-    println!("{} tags", tag_count);
+    println!("{tag_count} tags");
     Ok(())
 }

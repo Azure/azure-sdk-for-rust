@@ -18,7 +18,7 @@ fn main() -> Result<()> {
         Some(version) => {
             for name in names.iter() {
                 if !has_version(name, version)? {
-                    println!("{}", name);
+                    println!("{name}");
                     // println!("cargo owner --add github:Azure:azure-sdk-publish-rust -- {}", name);
                 }
             }

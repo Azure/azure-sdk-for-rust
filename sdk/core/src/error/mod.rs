@@ -89,6 +89,7 @@ impl Error {
 
     /// Create a new `Error` based on a specific error kind and an underlying error cause
     /// along with a message
+    #[must_use]
     pub fn full<E, C>(kind: ErrorKind, error: E, message: C) -> Self
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
@@ -106,6 +107,7 @@ impl Error {
     }
 
     /// Create an `Error` based on an error kind and some sort of message
+    #[must_use]
     pub fn message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
@@ -119,6 +121,7 @@ impl Error {
     }
 
     /// Creates an `Error` based on an error kind and formatted message
+    #[must_use]
     pub fn with_message<F, C>(kind: ErrorKind, message: F) -> Self
     where
         Self: Sized,
@@ -134,6 +137,7 @@ impl Error {
     }
 
     /// Wrap this error in additional `message`
+    #[must_use]
     pub fn context<C>(self, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
@@ -142,6 +146,7 @@ impl Error {
     }
 
     /// Wrap this error in additional message
+    #[must_use]
     pub fn with_context<F, C>(self, f: F) -> Self
     where
         F: FnOnce() -> C,
@@ -254,8 +259,20 @@ impl From<std::io::Error> for Error {
     }
 }
 
+impl From<base64::DecodeError> for Error {
+    fn from(error: base64::DecodeError) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
+        Self::new(ErrorKind::DataConversion, error)
+    }
+}
+
+impl From<std::string::FromUtf8Error> for Error {
+    fn from(error: std::string::FromUtf8Error) -> Self {
         Self::new(ErrorKind::DataConversion, error)
     }
 }
@@ -275,11 +292,11 @@ impl From<url::ParseError> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
-            Context::Simple(kind) => write!(f, "{}", kind),
-            Context::Message { message, .. } => write!(f, "{}", message),
-            Context::Custom(Custom { error, .. }) => write!(f, "{}", error),
+            Context::Simple(kind) => write!(f, "{kind}"),
+            Context::Message { message, .. } => write!(f, "{message}"),
+            Context::Custom(Custom { error, .. }) => write!(f, "{error}"),
             Context::Full(_, message) => {
-                write!(f, "{}", message)
+                write!(f, "{message}")
             }
         }
     }
@@ -373,7 +390,11 @@ mod tests {
     use super::*;
     use std::io;
 
-    #[allow(dead_code, unconditional_recursion)]
+    #[allow(
+        dead_code,
+        unconditional_recursion,
+        clippy::extra_unused_type_parameters
+    )]
     fn ensure_send<T: Send>() {
         ensure_send::<Error>();
     }
@@ -400,10 +421,10 @@ mod tests {
 
         // Generate the display and error chain
         let mut error: &dyn std::error::Error = &error;
-        let display = format!("{}", error);
+        let display = format!("{error}");
         let mut errors = vec![];
         while let Some(cause) = error.source() {
-            errors.push(format!("{}", cause));
+            errors.push(format!("{cause}"));
             error = cause;
         }
 
@@ -425,7 +446,7 @@ mod tests {
             .unwrap()
             .downcast_ref::<std::io::Error>()
             .unwrap();
-        assert_eq!(format!("{}", downcasted), "second error");
+        assert_eq!(format!("{downcasted}"), "second error");
     }
 
     #[test]
@@ -433,17 +454,17 @@ mod tests {
         let error = create_error();
         let inner = error.into_inner().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", inner), "second error");
+        assert_eq!(format!("{inner}"), "second error");
 
         let error = create_error();
         let inner = error.get_ref().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", inner), "second error");
+        assert_eq!(format!("{inner}"), "second error");
 
         let mut error = create_error();
         let inner = error.get_mut().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", inner), "second error");
+        assert_eq!(format!("{inner}"), "second error");
     }
 
     #[test]

@@ -14,14 +14,14 @@ async fn main() -> azure_core::Result<()> {
 
     println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client.create().await?;
-    println!("create file system response == {:?}\n", create_fs_response);
+    println!("create file system response == {create_fs_response:?}\n");
 
     let file_path = "some/path/example-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
 
-    println!("creating file '{}'...", file_path);
+    println!("creating file '{file_path}'...");
     let create_file_response = file_client.create().await?;
-    println!("create file response == {:?}\n", create_file_response);
+    println!("create file response == {create_file_response:?}\n");
 
     let string1 = "some data";
     let data1 = bytes::Bytes::from(string1);
@@ -31,28 +31,28 @@ async fn main() -> azure_core::Result<()> {
     let data2 = bytes::Bytes::from(string2);
     let data2_length = data2.len() as i64;
 
-    println!("appending '{}' to file '{}'...", string1, file_path);
+    println!("appending '{string1}' to file '{file_path}'...");
     let append_to_file_response = file_client.append(0, data1).await?;
-    println!("append to file response == {:?}\n", append_to_file_response);
+    println!("append to file response == {append_to_file_response:?}\n");
 
-    println!("appending '{}' to file '{}'...", string2, file_path);
+    println!("appending '{string2}' to file '{file_path}'...");
     let append_to_file_response = file_client.append(data1_length, data2).await?;
-    println!("append to file response == {:?}\n", append_to_file_response);
+    println!("append to file response == {append_to_file_response:?}\n");
 
-    println!("flushing file '{}'...", file_path);
+    println!("flushing file '{file_path}'...");
     let flush_file_response = file_client
         .flush(data1_length + data2_length)
         .close(true)
         .await?;
-    println!("flush file response == {:?}\n", flush_file_response);
+    println!("flush file response == {flush_file_response:?}\n");
 
-    println!("reading file '{}'...", file_path);
+    println!("reading file '{file_path}'...");
     let read_file_response = file_client.read().await?;
-    println!("read file response == {:?}\n", read_file_response);
+    println!("read file response == {read_file_response:?}\n");
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    println!("delete file system response == {delete_fs_response:?}\n");
 
     Ok(())
 }

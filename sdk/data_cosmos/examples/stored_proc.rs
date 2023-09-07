@@ -45,38 +45,26 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .unwrap()?;
-    println!(
-        "list_stored_procedures_response == {:#?}",
-        list_stored_procedures_response
-    );
+    println!("list_stored_procedures_response == {list_stored_procedures_response:#?}");
 
     let create_stored_procedure_response = stored_procedure
         .create_stored_procedure(FUNCTION_BODY)
         .await?;
-    println!(
-        "create_stored_procedure_response == {:#?}",
-        create_stored_procedure_response
-    );
+    println!("create_stored_procedure_response == {create_stored_procedure_response:#?}");
 
     let execute_stored_procedure_response = stored_procedure
         .execute_stored_procedure::<serde_json::Value>()
         .parameters(["Robert"])
         .await?;
 
-    println!(
-        "execute_stored_procedure_response == {:#?}",
-        execute_stored_procedure_response
-    );
+    println!("execute_stored_procedure_response == {execute_stored_procedure_response:#?}");
     println!(
         "Response as JSON:\n{}",
         execute_stored_procedure_response.payload
     );
 
     let delete_stored_procedure_response = stored_procedure.delete_stored_procedure().await?;
-    println!(
-        "delete_stored_procedure_response == {:#?}",
-        delete_stored_procedure_response
-    );
+    println!("delete_stored_procedure_response == {delete_stored_procedure_response:#?}");
 
     Ok(())
 }

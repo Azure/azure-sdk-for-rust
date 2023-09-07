@@ -77,7 +77,7 @@ impl StorageCredentials {
         Self::BearerToken(token.into())
     }
 
-    /// Create a TokenCredential based credential
+    /// Create a `TokenCredential` based credential
     ///
     /// Azure Storage accepts OAuth 2.0 access tokens from the Azure AD tenant
     /// associated with the subscription that contains the storage account.
@@ -159,7 +159,7 @@ fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, Strin
     let url = if sas_token.starts_with('?') {
         url.parse(sas_token)
     } else {
-        url.parse(&format!("?{}", sas_token))
+        url.parse(&format!("?{sas_token}"))
     }
     .with_context(ErrorKind::DataConversion, || {
         format!("failed to parse SAS token: {sas_token}")

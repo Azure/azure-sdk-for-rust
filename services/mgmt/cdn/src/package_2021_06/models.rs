@@ -7015,6 +7015,11 @@ pub mod route_update_properties_parameters {
             }
         }
     }
+    impl Default for ForwardingProtocol {
+        fn default() -> Self {
+            Self::MatchRequest
+        }
+    }
     #[doc = "whether this route will be linked to the default endpoint domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "LinkToDefaultDomain")]
@@ -7052,6 +7057,11 @@ pub mod route_update_properties_parameters {
             }
         }
     }
+    impl Default for LinkToDefaultDomain {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
     #[doc = "Whether to automatically redirect HTTP traffic to HTTPS traffic. Note that this is a easy way to set up this rule and it will be the first rule that gets executed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "HttpsRedirect")]
@@ -7087,6 +7097,11 @@ pub mod route_update_properties_parameters {
                 Self::Disabled => serializer.serialize_unit_variant("HttpsRedirect", 1u32, "Disabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for HttpsRedirect {
+        fn default() -> Self {
+            Self::Disabled
         }
     }
     #[doc = "Whether to enable use of this rule. Permitted values are 'Enabled' or 'Disabled'"]
@@ -7316,6 +7331,11 @@ pub mod rule_update_properties_parameters {
                 Self::Stop => serializer.serialize_unit_variant("MatchProcessingBehavior", 1u32, "Stop"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+    impl Default for MatchProcessingBehavior {
+        fn default() -> Self {
+            Self::Continue
         }
     }
 }

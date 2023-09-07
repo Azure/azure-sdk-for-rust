@@ -1,6 +1,8 @@
 use crate::prelude::*;
+#[cfg(feature = "md5")]
+use azure_core::base64;
 use azure_core::{headers::*, prelude::*, RequestId};
-use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
+use azure_storage::{headers::content_md5_from_headers_optional, ConsistencyMD5};
 use bytes::Bytes;
 use time::OffsetDateTime;
 
@@ -16,7 +18,10 @@ operation! {
     ?metadata: Metadata,
     ?access_tier: AccessTier,
     ?tags: Tags,
-    ?lease_id: LeaseId
+    ?lease_id: LeaseId,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTags
 }
 
 impl PutBlockListBuilder {
@@ -31,12 +36,14 @@ impl PutBlockListBuilder {
 
             // calculate the xml MD5. This can be made optional
             // if needed, but i think it's best to calculate it.
+            #[cfg(feature = "md5")]
             let md5 = {
                 let hash = md5::compute(&body_bytes);
                 base64::encode(hash.0)
             };
 
             let mut headers = Headers::new();
+            #[cfg(feature = "md5")]
             headers.insert(CONTENT_MD5, &md5);
             headers.add(self.content_type);
             headers.add(self.content_encoding);
@@ -51,6 +58,9 @@ impl PutBlockListBuilder {
             }
             headers.add(self.access_tier);
             headers.add(self.lease_id);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request = self.client.finalize_request(
                 url,
@@ -69,7 +79,7 @@ impl PutBlockListBuilder {
 pub struct PutBlockListResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,
-    pub content_md5: ConsistencyMD5,
+    pub content_md5: Option<ConsistencyMD5>,
     pub request_id: RequestId,
     pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
@@ -79,7 +89,7 @@ impl PutBlockListResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockListResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
-        let content_md5 = content_md5_from_headers(headers)?;
+        let content_md5 = content_md5_from_headers_optional(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let request_server_encrypted = request_server_encrypted_from_headers(headers)?;

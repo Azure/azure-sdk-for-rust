@@ -1,6 +1,6 @@
 //! Authorize using the device authorization grant flow
 //!
-//! This flow allows users to sign in to input-constrained devices such as a smart TV, IoT device, or printer.
+//! This flow allows users to sign in to input-constrained devices such as a smart TV, `IoT` device, or printer.
 //!
 //! You can learn more about this authorization flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-device-code).
 mod device_code_responses;
@@ -18,7 +18,7 @@ use std::{borrow::Cow, sync::Arc};
 use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.
-/// The user has only 15 minutes to sign in (the usual value for expires_in).
+/// The user has only 15 minutes to sign in (the usual value for `expires_in`).
 pub async fn start<'a, 'b, T>(
     http_client: Arc<dyn HttpClient>,
     tenant_id: T,
@@ -29,10 +29,7 @@ where
     T: Into<Cow<'a, str>>,
 {
     let tenant_id = tenant_id.into();
-    let url = &format!(
-        "https://login.microsoftonline.com/{}/oauth2/v2.0/devicecode",
-        tenant_id
-    );
+    let url = &format!("https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/devicecode");
 
     let encoded = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id)

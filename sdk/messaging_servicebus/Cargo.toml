@@ -1,6 +1,6 @@
 [package]
 name = "azservicebus"
-version = "0.1.2"
+version = "0.14.0"
 description = "An unofficial AMQP 1.0 rust client for Azure Service Bus"
 readme = "README.md"
 authors = ["Minghua Wu"]
@@ -42,7 +42,7 @@ uuid = { version = "1", features=["v4"] }
 indexmap = { version = "1.9", features = ["std"] }
 
 # Azure dependencies
-azure_core = { path = "../core", version = "0.8" }
+azure_core = { path = "../core", version = "0.14" }
 
 # AMQP dependencies
 fe2o3-amqp-types = "0.7"

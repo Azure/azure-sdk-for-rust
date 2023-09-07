@@ -12,7 +12,7 @@ pub(crate) struct Oauth2HttpClient {
 }
 
 impl Oauth2HttpClient {
-    /// Create a new Oauth2HttpClient
+    /// Create a new `Oauth2HttpClient`
     pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
         Self { http_client }
     }
@@ -24,7 +24,7 @@ impl Oauth2HttpClient {
         let method = try_from_method(&oauth2_request.method)?;
         let mut request = Request::new(oauth2_request.url, method);
         for (name, value) in to_headers(&oauth2_request.headers) {
-            request.insert_header(name, value)
+            request.insert_header(name, value);
         }
         request.set_body(oauth2_request.body);
         let response = self.http_client.execute_request(&request).await?;
@@ -51,7 +51,7 @@ fn try_from_method(method: &oauth2::http::Method) -> azure_core::Result<azure_co
         oauth2::http::Method::PATCH => Ok(azure_core::Method::Patch),
         oauth2::http::Method::TRACE => Ok(azure_core::Method::Trace),
         _ => Err(Error::with_message(ErrorKind::DataConversion, || {
-            format!("unsupported oauth2::http::Method {}", method)
+            format!("unsupported oauth2::http::Method {method}")
         })),
     }
 }
@@ -64,14 +64,14 @@ fn try_from_headers(
         let name = name.as_str();
         let header_name = oauth2::http::header::HeaderName::from_str(name)
             .with_context(ErrorKind::DataConversion, || {
-                format!("unable to convert http header name '{}'", name)
+                format!("unable to convert http header name '{name}'")
             })?;
         let value = value.as_str().to_owned();
         header_map.append(
             header_name,
             oauth2::http::HeaderValue::from_str(&value)
                 .with_context(ErrorKind::DataConversion, || {
-                    format!("unable to convert http header value for '{}'", name)
+                    format!("unable to convert http header value for '{name}'")
                 })?,
         );
     }

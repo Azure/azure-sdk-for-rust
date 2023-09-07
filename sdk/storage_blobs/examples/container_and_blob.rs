@@ -30,7 +30,7 @@ async fn main() -> azure_core::Result<()> {
 
     // this is not mandatory but it helps preventing
     // spurious data to be uploaded.
-    let hash = md5::compute(&data[..]);
+    let hash = md5::compute(&data[..]).0;
 
     let res = container_client
         .blob_client("blob0.txt")
@@ -38,7 +38,7 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .hash(hash)
         .await?;
-    println!("{:?}", res);
+    println!("{res:?}");
 
     let res = container_client
         .blob_client("blob1.txt")
@@ -46,7 +46,7 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .hash(hash)
         .await?;
-    println!("{:?}", res);
+    println!("{res:?}");
 
     let res = container_client
         .blob_client("blob2.txt")
@@ -54,7 +54,7 @@ async fn main() -> azure_core::Result<()> {
         .content_type("text/plain")
         .hash(hash)
         .await?;
-    println!("{:?}", res);
+    println!("{res:?}");
 
     // only get the first set of blobs in the list
     let res = container_client
@@ -64,7 +64,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("{:?}", res);
+    println!("{res:?}");
 
     Ok(())
 }

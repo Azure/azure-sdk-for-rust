@@ -25,12 +25,12 @@ impl BA512Range {
     pub fn new(start: u64, end: u64) -> azure_core::Result<Self> {
         if start % 512 != 0 {
             return Err(Error::with_message(ErrorKind::Other, || {
-                format!("start range not 512-byte aligned: {}", start)
+                format!("start range not 512-byte aligned: {start}")
             }));
         }
         if (end + 1) % 512 != 0 {
             return Err(Error::with_message(ErrorKind::Other, || {
-                format!("end range not 512-byte aligned: {}", end)
+                format!("end range not 512-byte aligned: {end}")
             }));
         }
 
@@ -157,7 +157,7 @@ mod test {
     fn test_512range_display() {
         let range = BA512Range { start: 0, end: 511 };
 
-        let txt = format!("{}", range);
+        let txt = format!("{range}");
 
         assert_eq!(txt, "bytes=0-511");
     }

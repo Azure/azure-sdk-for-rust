@@ -1,4 +1,5 @@
 use crate::blob::{BlobBlockType, BlockWithSizeList};
+use azure_core::base64;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct BlockList {

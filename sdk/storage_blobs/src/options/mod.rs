@@ -14,6 +14,8 @@ mod block_id;
 mod condition_append_position;
 mod condition_max_size;
 mod delete_snapshot_method;
+mod encryption_key;
+mod encryption_scope;
 mod hash;
 mod rehydrate_policy;
 mod tags;
@@ -32,6 +34,8 @@ pub use block_id::BlockId;
 pub use condition_append_position::ConditionAppendPosition;
 pub use condition_max_size::ConditionMaxSize;
 pub use delete_snapshot_method::DeleteSnapshotsMethod;
+pub use encryption_key::CPKInfo;
+pub use encryption_scope::EncryptionScope;
 pub use hash::Hash;
 pub use rehydrate_policy::RehydratePriority;
 pub use tags::Tags;
@@ -46,7 +50,7 @@ request_query!(
     ///
     ///See: <https://docs.microsoft.com/rest/api/storageservices/get-blob>"]
     VersionId,
-    "version_id"
+    "versionid"
 );
 
 request_query!(

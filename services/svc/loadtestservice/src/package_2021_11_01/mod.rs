@@ -57,7 +57,7 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{}/", endpoint)]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
@@ -158,7 +158,6 @@ pub mod load_test_administration {
                 search: None,
                 last_modified_start_time: None,
                 last_modified_end_time: None,
-                continuation_token: None,
                 maxpagesize: None,
             }
         }
@@ -214,7 +213,6 @@ pub mod load_test_administration {
             list_test_files::RequestBuilder {
                 client: self.0.clone(),
                 test_id: test_id.into(),
-                continuation_token: None,
             }
         }
         #[doc = "Get associated app component (collection of azure resources) for the given test."]
@@ -539,7 +537,6 @@ pub mod load_test_administration {
             pub(crate) search: Option<String>,
             pub(crate) last_modified_start_time: Option<time::OffsetDateTime>,
             pub(crate) last_modified_end_time: Option<time::OffsetDateTime>,
-            pub(crate) continuation_token: Option<String>,
             pub(crate) maxpagesize: Option<i32>,
         }
         impl RequestBuilder {
@@ -561,11 +558,6 @@ pub mod load_test_administration {
             #[doc = "End DateTime(ISO 8601 literal format) of the last updated time range to filter tests."]
             pub fn last_modified_end_time(mut self, last_modified_end_time: impl Into<time::OffsetDateTime>) -> Self {
                 self.last_modified_end_time = Some(last_modified_end_time.into());
-                self
-            }
-            #[doc = "Continuation token to get the next page of response"]
-            pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
-                self.continuation_token = Some(continuation_token.into());
                 self
             }
             #[doc = "Number of results in response."]
@@ -626,9 +618,6 @@ pub mod load_test_administration {
                                     req.url_mut()
                                         .query_pairs_mut()
                                         .append_pair("lastModifiedEndTime", &last_modified_end_time.to_string());
-                                }
-                                if let Some(continuation_token) = &this.continuation_token {
-                                    req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
                                 }
                                 if let Some(maxpagesize) = &this.maxpagesize {
                                     req.url_mut().query_pairs_mut().append_pair("maxpagesize", &maxpagesize.to_string());
@@ -945,14 +934,8 @@ pub mod load_test_administration {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) test_id: String,
-            pub(crate) continuation_token: Option<String>,
         }
         impl RequestBuilder {
-            #[doc = "Continuation token to get the next page of response"]
-            pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
-                self.continuation_token = Some(continuation_token.into());
-                self
-            }
             pub fn into_stream(self) -> azure_core::Pageable<models::FileInfoList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -991,9 +974,6 @@ pub mod load_test_administration {
                                 req.url_mut()
                                     .query_pairs_mut()
                                     .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
-                                if let Some(continuation_token) = &this.continuation_token {
-                                    req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
-                                }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1418,7 +1398,6 @@ pub mod load_test_run {
             list_test_runs::RequestBuilder {
                 client: self.0.clone(),
                 orderby: None,
-                continuation_token: None,
                 search: None,
                 test_id: None,
                 execution_from: None,
@@ -1933,7 +1912,6 @@ pub mod load_test_run {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) orderby: Option<String>,
-            pub(crate) continuation_token: Option<String>,
             pub(crate) search: Option<String>,
             pub(crate) test_id: Option<String>,
             pub(crate) execution_from: Option<time::OffsetDateTime>,
@@ -1945,11 +1923,6 @@ pub mod load_test_run {
             #[doc = "Sort on the supported fields in (field asc/desc) format. eg: executedDateTime asc. Supported fields - executedDateTime"]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
-                self
-            }
-            #[doc = "Continuation token to get the next page of response"]
-            pub fn continuation_token(mut self, continuation_token: impl Into<String>) -> Self {
-                self.continuation_token = Some(continuation_token.into());
                 self
             }
             #[doc = "Prefix based, case sensitive search on searchable fields - description, executedUser. For example, to search for a test run, with description 500 VUs, the search parameter can be 500."]
@@ -2022,9 +1995,6 @@ pub mod load_test_run {
                                     .append_pair(azure_core::query_param::API_VERSION, "2022-11-01");
                                 if let Some(orderby) = &this.orderby {
                                     req.url_mut().query_pairs_mut().append_pair("orderby", orderby);
-                                }
-                                if let Some(continuation_token) = &this.continuation_token {
-                                    req.url_mut().query_pairs_mut().append_pair("continuationToken", continuation_token);
                                 }
                                 if let Some(search) = &this.search {
                                     req.url_mut().query_pairs_mut().append_pair("search", search);

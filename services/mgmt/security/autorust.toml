@@ -2,4 +2,6 @@
 deny = [
     "package-2020-01-preview-only", # duplicate tag https://github.com/Azure/azure-rest-api-specs/pull/13828
     "package-2019-08-only", # defines start_time_utc param twice
+    "package-composite-v3", # defines multiple components twice 
   ]
+deny_contains_preview = true

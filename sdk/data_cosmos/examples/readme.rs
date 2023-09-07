@@ -104,7 +104,7 @@ async fn main() -> azure_core::Result<()> {
         println!("Received {} documents in one batch!", res.documents.len());
         res.documents
             .iter()
-            .for_each(|doc| println!("Document: {:#?}", doc));
+            .for_each(|doc| println!("Document: {doc:#?}"));
     }
 
     println!("\nQuerying documents");

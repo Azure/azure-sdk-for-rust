@@ -1,3 +1,10 @@
+[tags]
+deny = [
+    # duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
+    "package-preview-2022-10",
+    "package-preview-2022-10-05",
+]
+
 [properties]
 boxed = [
     ["../../../azure-rest-api-specs/specification/cost-management/resource-manager/Microsoft.CostManagement/preview/2019-03-01-preview/costmanagement.json", "QueryFilter", "not"],

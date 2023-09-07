@@ -7,8 +7,8 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiProperties {
     #[doc = "Interval in minutes for which the weather data for the api needs to be refreshed."]
-    #[serde(rename = "apiFreshnessWindowInMinutes", default, skip_serializing_if = "Option::is_none")]
-    pub api_freshness_window_in_minutes: Option<i32>,
+    #[serde(rename = "apiFreshnessTimeInMinutes", default, skip_serializing_if = "Option::is_none")]
+    pub api_freshness_time_in_minutes: Option<i32>,
 }
 impl ApiProperties {
     pub fn new() -> Self {
@@ -21,8 +21,26 @@ pub struct ArmAsyncOperation {
     #[doc = "Status of the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Arm async operation error class.\r\nRef: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/async-api-reference.md#azure-asyncoperation-resource-format."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ArmAsyncOperationError>,
 }
 impl ArmAsyncOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Arm async operation error class.\r\nRef: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/async-api-reference.md#azure-asyncoperation-resource-format."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ArmAsyncOperationError {
+    #[doc = "Status of the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "Status of the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ArmAsyncOperationError {
     pub fn new() -> Self {
         Self::default()
     }
@@ -572,6 +590,17 @@ pub struct FarmBeatsSolutionProperties {
     #[doc = "Application id of the multi tenant application to be used by partner to access FarmBeats data."]
     #[serde(rename = "accessFBApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub access_fb_application_id: Option<String>,
+    #[doc = "Application id of the SaaS multi tenant application."]
+    #[serde(rename = "saaSApplicationId", default, skip_serializing_if = "Option::is_none")]
+    pub saa_s_application_id: Option<String>,
+    #[doc = "List of ActionIds needed to make the SaaS multi tenant application access relevant fb data."]
+    #[serde(
+        rename = "actionIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub action_ids: Vec<String>,
     #[doc = "Role Id of the SaaS multi tenant application to access relevant fb data."]
     #[serde(rename = "roleId", default, skip_serializing_if = "Option::is_none")]
     pub role_id: Option<String>,

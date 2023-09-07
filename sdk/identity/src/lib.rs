@@ -1,7 +1,7 @@
 //! Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 //! This crate provides mechanisms for several ways to authenticate against Azure
 //!
-//! For example, to authenticate using the recommended DefaultAzureCredential, you can do the following:
+//! For example, to authenticate using the recommended `DefaultAzureCredential`, you can do the following:
 //!
 //! ```no_run
 //! use azure_core::auth::TokenCredential;
@@ -47,6 +47,7 @@ pub mod client_credentials_flow;
 #[cfg(feature = "development")]
 pub mod development;
 pub mod device_code_flow;
+pub mod federated_credentials_flow;
 mod oauth2_http_client;
 pub mod refresh_token;
 mod timeout;
