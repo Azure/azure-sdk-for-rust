@@ -240,7 +240,7 @@ impl ServiceBusClient<BasicRetryPolicy> {
     /// # Example
     ///
     /// ```rust,ignore
-    /// use azure_messaging_servicebus::{
+    /// use azservicebus::{
     ///     ServiceBusClient, ServiceBusClientOptions, ServiceBusRetryPolicy,
     /// };
     ///
@@ -270,7 +270,7 @@ impl ServiceBusClient<BasicRetryPolicy> {
     /// # Example
     ///
     /// ```rust,no_run
-    /// use azure_messaging_servicebus::{
+    /// use azservicebus::{
     ///     ServiceBusClient, ServiceBusClientOptions,
     /// };
     ///

@@ -35,7 +35,7 @@
 mod macros;
 
 cfg_not_wasm32! {
-    use azure_messaging_servicebus::{
+    use azservicebus::{
         authorization::AzureNamedKeyCredential,
         ServiceBusClient, ServiceBusClientOptions,
         ServiceBusTransportType,

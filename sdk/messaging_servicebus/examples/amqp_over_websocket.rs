@@ -1,4 +1,4 @@
-use azure_messaging_servicebus::{
+use azservicebus::{
     ServiceBusClient, ServiceBusClientOptions, ServiceBusSenderOptions, ServiceBusTransportType,
 };
 

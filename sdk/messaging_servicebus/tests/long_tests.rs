@@ -8,7 +8,7 @@
 mod macros;
 
 cfg_not_wasm32! {
-    use azure_messaging_servicebus::{ServiceBusReceivedMessage, ServiceBusReceiver, ServiceBusSender};
+    use azservicebus::{ServiceBusReceivedMessage, ServiceBusReceiver, ServiceBusSender};
 
     mod common;
 
@@ -63,7 +63,7 @@ cfg_not_wasm32! {
         // cargo test --test long_tests --features test_e2e -- --ignored send_to_queue_every_minute_for_two_hour --exact --nocapture
         // ```
 
-        use azure_messaging_servicebus::{ServiceBusClient};
+        use azservicebus::{ServiceBusClient};
 
         common::setup_dotenv();
 

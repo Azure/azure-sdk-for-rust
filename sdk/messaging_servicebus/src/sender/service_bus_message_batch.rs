@@ -29,7 +29,7 @@ pub struct CreateMessageBatchOptions {
 /// # Examples
 ///
 /// ```rust,ignore
-/// use azure_messaging_servicebus::CreateMessageBatchOptions;
+/// use azservicebus::CreateMessageBatchOptions;
 ///
 /// let options = CreateMessageBatchOptions::default();
 /// let mut message_batch = sender.create_message_batch(options).unwrap();
