@@ -43,6 +43,9 @@ use uuid::Uuid;
 #[cfg(feature = "xml")]
 pub mod xml;
 
+#[cfg(feature = "tokio")]
+pub mod tokio;
+
 pub mod base64;
 pub use bytes_stream::*;
 pub use constants::*;

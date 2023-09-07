@@ -33,6 +33,7 @@ url = "2.2"
 uuid = { version = "1.0" }
 pin-project = "1.0"
 paste = "1.0"
+tokio = {version="1.0", optional=true}
 
 # Add dependency to getrandom to enable WASM support
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -43,7 +44,7 @@ rustc_version = "0.4"
 
 [dev-dependencies]
 env_logger = "0.10"
-tokio = { version = "1", features = ["default"] }
+tokio = { version = "1.0", features = ["default"] }
 thiserror = "1.0"
 
 [features]
@@ -54,3 +55,4 @@ enable_reqwest_rustls = ["reqwest/rustls-tls"]
 test_e2e = []
 azurite_workaround = []
 xml = ["quick-xml"]
+tokio-fs = ["tokio/fs", "tokio/io-util"]
