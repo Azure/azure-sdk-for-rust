@@ -16,7 +16,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 
     let credential = AzureNamedKeyCredential::new(sas_key_name, sas_key);
-    let mut client = ServiceBusClient::new_with_named_key_credential(
+    let mut client = ServiceBusClient::new_from_named_key_credential(
         namespace,
         credential,
         ServiceBusClientOptions::default(),

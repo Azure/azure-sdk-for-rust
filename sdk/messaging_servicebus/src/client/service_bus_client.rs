@@ -77,7 +77,7 @@ where
 {
     /// Creates a new instance of the [`ServiceBusClient`] class using the specified
     /// connection string and [`ServiceBusClientOptions`].
-    pub async fn create_client<'a>(
+    pub async fn new_from_connection_string<'a>(
         self,
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
@@ -94,17 +94,28 @@ where
         })
     }
 
+    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
+    /// connection string and [`ServiceBusClientOptions`].
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_connection_string` instead"
+    )]
+    pub async fn create_client<'a>(
+        self,
+        connection_string: impl Into<Cow<'a, str>>,
+        options: ServiceBusClientOptions,
+    ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
+        self.new_from_connection_string(connection_string, options).await
+    }
+
     /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
-    pub async fn create_client_with_named_key_credential(
+    pub async fn new_from_named_key_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         credential: AzureNamedKeyCredential,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
-        let identifier = options.identifier.clone().unwrap_or_else(|| {
-            diagnostics::utilities::generate_identifier(&fully_qualified_namespace)
-        });
         let signuture_resource = build_connection_resource(
             &options.transport_type,
             Some(&fully_qualified_namespace),
@@ -112,57 +123,87 @@ where
         )?;
         let shared_access_credential =
             SharedAccessCredential::try_from_named_key_credential(credential, signuture_resource)?;
-        let credential = ServiceBusTokenCredential::new(shared_access_credential);
-        let connection = ServiceBusConnection::new_with_credential(
-            fully_qualified_namespace,
-            credential,
-            options,
-        )
-        .await?;
-        Ok(ServiceBusClient {
-            identifier,
-            connection,
-        })
+        self.new_from_credential(fully_qualified_namespace, shared_access_credential, options).await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_named_key_credential` instead"
+    )]
+    pub async fn create_client_with_named_key_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
+        self.new_from_named_key_credential(fully_qualified_namespace, credential, options).await
     }
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
+    pub async fn new_from_sas_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureSasCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
+        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
+        self.new_from_credential(fully_qualified_namespace, shared_access_credential, options).await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_sas_credential` instead"
+    )]
     pub async fn create_client_with_sas_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         credential: AzureSasCredential,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
-        let fully_qualified_namespace = fully_qualified_namespace.into();
-        let identifier = options.identifier.clone().unwrap_or_else(|| {
-            diagnostics::utilities::generate_identifier(&fully_qualified_namespace)
-        });
-        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
-        let credential = ServiceBusTokenCredential::new(shared_access_credential);
-        let connection = ServiceBusConnection::new_with_credential(
-            fully_qualified_namespace,
-            credential,
-            options,
-        )
-        .await?;
-        Ok(ServiceBusClient {
-            identifier,
-            connection,
-        })
+        self.new_from_sas_credential(fully_qualified_namespace, credential, options).await
     }
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
+    pub async fn new_from_token_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        credential: impl TokenCredential + 'static,
+        options: ServiceBusClientOptions,
+    ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
+        let credential = ServiceBusTokenCredential::new(credential);
+        self.new_from_credential(fully_qualified_namespace, credential, options).await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_token_credential` instead"
+    )]
     pub async fn create_client_with_token_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         credential: impl TokenCredential + 'static,
         options: ServiceBusClientOptions,
     ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
+        self.new_from_token_credential(fully_qualified_namespace, credential, options).await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] using the specified
+    /// namespace and credential
+    pub async fn new_from_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        credential: impl Into<ServiceBusTokenCredential>,
+        options: ServiceBusClientOptions,
+    ) -> Result<ServiceBusClient<RP>, azure_core::Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let identifier = options.identifier.clone().unwrap_or_else(|| {
             diagnostics::utilities::generate_identifier(&fully_qualified_namespace)
         });
-        let credential = ServiceBusTokenCredential::new(credential);
-        let connection = ServiceBusConnection::new_with_credential(
+        let credential = credential.into();
+        let connection = ServiceBusConnection::new_from_credential(
             fully_qualified_namespace,
             credential,
             options,
@@ -241,45 +282,111 @@ impl ServiceBusClient<BasicRetryPolicy> {
     ///     client.dispose().await.unwrap();
     /// }
     /// ```
+    pub async fn new_from_connection_string<'a>(
+        connection_string: impl Into<Cow<'a, str>>,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_custom_retry_policy()
+            .new_from_connection_string(connection_string, options)
+            .await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using the specified
+    /// connection string and [`ServiceBusClientOptions`].
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_connection_string` instead"
+    )]
     pub async fn new<'a>(
         connection_string: impl Into<Cow<'a, str>>,
         options: ServiceBusClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_custom_retry_policy()
-            .create_client(connection_string, options)
+            .new_from_connection_string(connection_string, options)
             .await
     }
 
     /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
-    pub async fn new_with_named_key_credential(
+    pub async fn new_from_named_key_credential(
         fully_qualified_namespace: impl Into<String>,
         credential: AzureNamedKeyCredential,
         options: ServiceBusClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_custom_retry_policy()
-            .create_client_with_named_key_credential(fully_qualified_namespace, credential, options)
+            .new_from_named_key_credential(fully_qualified_namespace, credential, options)
             .await
     }
 
+    /// Creates a new instance of the [`ServiceBusClient`] class using a named key credential.
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_named_key_credential` instead"
+    )]
+    pub async fn new_with_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_named_key_credential(fully_qualified_namespace, credential, options).await
+    }
+
     /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
-    pub async fn new_with_sas_credential(
+    pub async fn new_from_sas_credential(
         fully_qualified_namespace: impl Into<String>,
         credential: AzureSasCredential,
         options: ServiceBusClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_custom_retry_policy()
-            .create_client_with_sas_credential(fully_qualified_namespace, credential, options)
+            .new_from_sas_credential(fully_qualified_namespace, credential, options)
             .await
     }
 
+    /// Creates a new instance of the [`ServiceBusClient`] class using a SAS token credential.
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_sas_credential` instead"
+    )]
+    pub async fn new_with_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: AzureSasCredential,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_sas_credential(fully_qualified_namespace, credential, options).await
+    }
+
     /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
-    pub async fn new_with_token_credential(
+    pub async fn new_from_token_credential(
         fully_qualified_namespace: impl Into<String>,
         credential: impl TokenCredential + 'static,
         options: ServiceBusClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_custom_retry_policy()
-            .create_client_with_token_credential(fully_qualified_namespace, credential, options)
+            .new_from_token_credential(fully_qualified_namespace, credential, options)
+            .await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] class using a token credential.
+    #[deprecated(
+        since = "0.14.0",
+        note = "Please use `new_from_token_credential` instead"
+    )]
+    pub async fn new_with_token_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: impl TokenCredential + 'static,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_token_credential(fully_qualified_namespace, credential, options).await
+    }
+
+    /// Creates a new instance of the [`ServiceBusClient`] using the specified
+    /// namespace and credential.
+    pub async fn new_from_credential(
+        fully_qualified_namespace: impl Into<String>,
+        credential: impl Into<ServiceBusTokenCredential>,
+        options: ServiceBusClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_custom_retry_policy()
+            .new_from_credential(fully_qualified_namespace, credential, options)
             .await
     }
 }

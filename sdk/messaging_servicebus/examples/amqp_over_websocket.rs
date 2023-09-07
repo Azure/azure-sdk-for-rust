@@ -13,7 +13,7 @@ async fn main() -> Result<(), anyhow::Error> {
         transport_type: ServiceBusTransportType::AmqpWebSocket,
         ..Default::default()
     };
-    let mut client = ServiceBusClient::new(connection_string, options).await?;
+    let mut client = ServiceBusClient::new_from_connection_string(connection_string, options).await?;
 
     // Create a sender for auth only
     let sender = client

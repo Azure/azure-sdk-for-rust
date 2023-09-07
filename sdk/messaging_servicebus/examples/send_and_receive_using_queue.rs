@@ -8,7 +8,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let queue_name = std::env::var("SERVICE_BUS_QUEUE")?;
 
     let mut client =
-        ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
+        ServiceBusClient::new_from_connection_string(connection_string, ServiceBusClientOptions::default()).await?;
 
     // Create a sender and receiver
     let mut sender = client

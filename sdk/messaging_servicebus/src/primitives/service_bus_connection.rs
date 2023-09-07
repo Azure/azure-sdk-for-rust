@@ -259,7 +259,7 @@ impl<C> ServiceBusConnection<C>
 where
     C: TransportClient + Send,
 {
-    pub(crate) async fn new_with_credential(
+    pub(crate) async fn new_from_credential(
         fully_qualified_namespace: String,
         credential: impl Into<ServiceBusTokenCredential>,
         options: ServiceBusClientOptions,

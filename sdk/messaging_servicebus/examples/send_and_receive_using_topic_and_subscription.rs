@@ -11,7 +11,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION")?;
 
     let mut client =
-        ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
+        ServiceBusClient::new_from_connection_string(connection_string, ServiceBusClientOptions::default()).await?;
     let mut sender = client
         .create_sender(&topic_name, ServiceBusSenderOptions::default())
         .await?;

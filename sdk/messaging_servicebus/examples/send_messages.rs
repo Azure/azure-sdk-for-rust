@@ -7,7 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Replace "<NAMESPACE-CONNECTION-STRING>" with your connection string,
     // which can be found in the Azure portal and should look like
     // "Endpoint=sb://<NAMESPACE>.servicebus.windows.net/;SharedAccessKeyName=<KEY_NAME>;SharedAccessKey=<KEY_VALUE>"
-    let mut client = ServiceBusClient::new(
+    let mut client = ServiceBusClient::new_from_connection_string(
         "<NAMESPACE-CONNECTION-STRING>",
         ServiceBusClientOptions::default(),
     )

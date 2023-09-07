@@ -10,7 +10,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let session_id = "session1";
 
     let mut client =
-        ServiceBusClient::new(connection_string, ServiceBusClientOptions::default()).await?;
+        ServiceBusClient::new_from_connection_string(connection_string, ServiceBusClientOptions::default()).await?;
 
     // Create a sender and send a session message
     let mut sender = client
