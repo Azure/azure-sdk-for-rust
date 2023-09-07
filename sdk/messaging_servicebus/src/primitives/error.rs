@@ -1,41 +1,49 @@
 //! Error types for the service bus primitives.
 
-use std::marker::PhantomData;
-
 use fe2o3_amqp::{connection::OpenError, link::SenderAttachError, session::BeginError};
+use timer_kit::error::Elapsed;
 
 use crate::{
     amqp::error::{AmqpClientError, DisposeError},
     authorization::shared_access_signature::SasSignatureError,
+    util::IntoAzureCoreError,
 };
 
 use super::service_bus_connection_string_properties::FormatError;
 
-/// The operation timed out
+/// Argument error
 #[derive(Debug)]
-pub struct TimeoutElapsed {
-    _sealed: PhantomData<()>,
-}
+pub struct ArgumentError(pub String);
 
-impl TimeoutElapsed {
-    pub(crate) fn new() -> Self {
-        Self {
-            _sealed: PhantomData,
-        }
-    }
-}
-
-impl std::fmt::Display for TimeoutElapsed {
+impl std::fmt::Display for ArgumentError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "The operation timed out")
+        write!(f, "Argument error: {}", self.0.as_str())
     }
 }
 
-impl std::error::Error for TimeoutElapsed {}
+impl std::error::Error for ArgumentError {}
 
-impl From<timer_kit::error::Elapsed> for TimeoutElapsed {
-    fn from(_: timer_kit::error::Elapsed) -> Self {
-        Self::new()
+impl From<ArgumentError> for azure_core::Error {
+    fn from(value: ArgumentError) -> Self {
+        azure_core::Error::new(azure_core::error::ErrorKind::Other, value)
+    }
+}
+
+/// The client is already disposed
+#[derive(Debug)]
+pub struct ClientDisposedError;
+
+impl std::fmt::Display for ClientDisposedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Client is disposed")
+    }
+}
+
+impl std::error::Error for ClientDisposedError {}
+
+impl From<ClientDisposedError> for azure_core::Error {
+    fn from(value: ClientDisposedError) -> Self {
+        azure_core::Error::new(azure_core::error::ErrorKind::Other, value)
     }
 }
 
@@ -43,10 +51,10 @@ impl From<timer_kit::error::Elapsed> for TimeoutElapsed {
 //
 /// Error with service bus connection
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub(crate) enum Error {
     /// Argument error
     #[error("Argument error: {}", .0)]
-    ArgumentError(String),
+    ArgumentError(#[from] ArgumentError),
 
     /// Error with the connection string
     #[error(transparent)]
@@ -70,7 +78,7 @@ pub enum Error {
 
     /// Opening the connection timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
+    Elapsed(#[from] Elapsed),
 
     /// Error beginning the AMQP session
     #[error(transparent)]
@@ -90,7 +98,26 @@ pub enum Error {
 
     /// Client is disposed
     #[error("Client is disposed")]
-    ClientDisposed,
+    ClientDisposed(#[from] ClientDisposedError),
+}
+
+impl From<Error> for azure_core::Error {
+    fn from(value: Error) -> Self {
+        match value {
+            Error::ArgumentError(error) => error.into(),
+            Error::FormatError(error) => error.into(),
+            Error::SasSignatureError(error) => error.into(),
+            Error::UrlParseError(error) => error.into(),
+            Error::Open(error) => error.into_azure_core_error(),
+            Error::WebSocket(error) => error.into_azure_core_error(),
+            Error::Elapsed(error) => error.into_azure_core_error(),
+            Error::Begin(error) => error.into_azure_core_error(),
+            Error::SenderAttach(error) => error.into_azure_core_error(),
+            Error::ReceiverAttach(error) => error.into_azure_core_error(),
+            Error::Dispose(error) => error.into(),
+            Error::ClientDisposed(error) => error.into(),
+        }
+    }
 }
 
 impl From<AmqpClientError> for Error {
@@ -104,7 +131,7 @@ impl From<AmqpClientError> for Error {
             AmqpClientError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpClientError::Dispose(err) => Self::Dispose(err),
             AmqpClientError::ReceiverAttach(err) => Self::ReceiverAttach(err),
-            AmqpClientError::ClientDisposed => Self::ClientDisposed,
+            AmqpClientError::ClientDisposed(err) => Self::ClientDisposed(err),
         }
     }
 }
@@ -119,4 +146,13 @@ pub enum RetryError<E> {
     /// Error with the operation
     #[error(transparent)]
     Operation(E),
+}
+
+impl<E> From<RetryError<E>> for azure_core::Error
+where
+    E: std::error::Error + Send + Sync + 'static,
+{
+    fn from(value: RetryError<E>) -> Self {
+        azure_core::Error::new(azure_core::error::ErrorKind::Other, value)
+    }
 }

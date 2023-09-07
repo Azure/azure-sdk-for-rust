@@ -14,7 +14,7 @@ use crate::{
 };
 
 use super::{
-    error::Error, service_bus_connection_string_properties::ServiceBusConnectionStringProperties,
+    error::{Error, ArgumentError}, service_bus_connection_string_properties::ServiceBusConnectionStringProperties,
     service_bus_retry_options::ServiceBusRetryOptions,
     service_bus_transport_type::ServiceBusTransportType,
 };
@@ -22,11 +22,11 @@ use super::{
 macro_rules! ok_if_not_none_or_empty {
     ($id:expr, $type_name:literal) => {
         match $id {
-            Some(s) if s.is_empty() => Err(Error::ArgumentError(format!(
+            Some(s) if s.is_empty() => Err(ArgumentError(format!(
                 "{} cannot be empty",
                 $type_name
             ))),
-            None => Err(Error::ArgumentError(format!(
+            None => Err(ArgumentError(format!(
                 "{} cannot be None",
                 $type_name
             ))),
@@ -47,13 +47,13 @@ pub(crate) fn build_connection_resource(
             builder.set_path(entity_name.unwrap_or_default());
             builder
                 .set_port(None)
-                .map_err(|_| Error::ArgumentError("Unable to set port to None".to_string()))?;
+                .map_err(|_| ArgumentError("Unable to set port to None".to_string()))?;
             builder.set_fragment(None);
             builder
                 .set_password(None)
-                .map_err(|_| Error::ArgumentError("Unable to set password to None".to_string()))?;
+                .map_err(|_| ArgumentError("Unable to set password to None".to_string()))?;
             builder.set_username("").map_err(|_| {
-                Error::ArgumentError("Unable to set username to empty string".to_string())
+                ArgumentError("Unable to set username to empty string".to_string())
             })?;
 
             // Removes the trailing slash if and only if there is one and it is not the first
@@ -309,16 +309,16 @@ fn validate_connection_string_properties(
             .and_then(|e| e.host_str()),
     ) || (!has_shared_key && !has_shared_access_signature)
     {
-        return Err(Error::ArgumentError(format!(
+        return Err(ArgumentError(format!(
             "Missing connection information {}",
             connection_string_argument_name
-        )));
+        )).into());
     }
 
     // The connection string may contain a precomputed shared access signture OR a shared key name and value
     // but not both.
     if has_shared_key && has_shared_access_signature {
-        return Err(Error::ArgumentError(format!("Connection string contains both a shared access signature and a shared key. Only one of these should be present {}", connection_string_argument_name)));
+        return Err(ArgumentError(format!("Connection string contains both a shared access signature and a shared key. Only one of these should be present {}", connection_string_argument_name)).into());
     }
 
     Ok(())

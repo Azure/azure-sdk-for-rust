@@ -14,6 +14,12 @@ pub enum FormatError {
     InvalidConnectionString,
 }
 
+impl From<FormatError> for azure_core::Error {
+    fn from(value: FormatError) -> Self {
+        azure_core::Error::new(azure_core::error::ErrorKind::Other, value)
+    }
+}
+
 /// Error with outputting the connection string.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum ToConnectionStringError {

@@ -11,12 +11,16 @@ use fe2o3_amqp::{
 };
 use fe2o3_amqp_management::error::{AttachError, Error as ManagementError};
 use fe2o3_amqp_types::messaging::{Modified, Rejected, Released};
+use timer_kit::error::Elapsed;
 
 use crate::{
-    primitives::service_bus_retry_policy::{
-        should_try_recover_from_management_error, ServiceBusRetryPolicyError,
+    primitives::{
+        error::ClientDisposedError,
+        service_bus_retry_policy::{
+            should_try_recover_from_management_error, ServiceBusRetryPolicyError,
+        },
     },
-    primitives::error::TimeoutElapsed,
+    util::IntoAzureCoreError,
     ServiceBusMessage,
 };
 
@@ -33,7 +37,7 @@ pub(crate) enum AmqpConnectionScopeError {
     WebSocket(#[from] fe2o3_amqp_ws::Error),
 
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
+    Elapsed(#[from] Elapsed),
 
     #[error(transparent)]
     Begin(#[from] BeginError),
@@ -50,7 +54,7 @@ pub(crate) enum AmqpConnectionScopeError {
 
 /// Error with AMQP client
 #[derive(Debug, thiserror::Error)]
-pub enum AmqpClientError {
+pub(crate) enum AmqpClientError {
     /// Error parsing the URL
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
@@ -65,7 +69,7 @@ pub enum AmqpClientError {
 
     /// Operation timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
+    Elapsed(#[from] Elapsed),
 
     /// Error beginning the AMQP session
     #[error(transparent)]
@@ -85,7 +89,23 @@ pub enum AmqpClientError {
 
     /// Client is already disposed
     #[error("The client is disposed")]
-    ClientDisposed,
+    ClientDisposed(#[from] ClientDisposedError),
+}
+
+impl From<AmqpClientError> for azure_core::Error {
+    fn from(value: AmqpClientError) -> Self {
+        match value {
+            AmqpClientError::UrlParseError(error) => error.into(),
+            AmqpClientError::Open(error) => error.into_azure_core_error(),
+            AmqpClientError::WebSocket(error) => error.into_azure_core_error(),
+            AmqpClientError::Elapsed(error) => error.into_azure_core_error(),
+            AmqpClientError::Begin(error) => error.into_azure_core_error(),
+            AmqpClientError::SenderAttach(error) => error.into_azure_core_error(),
+            AmqpClientError::ReceiverAttach(error) => error.into_azure_core_error(),
+            AmqpClientError::Dispose(error) => error.into(),
+            AmqpClientError::ClientDisposed(error) => error.into(),
+        }
+    }
 }
 
 impl From<AmqpConnectionScopeError> for AmqpClientError {
@@ -97,7 +117,7 @@ impl From<AmqpConnectionScopeError> for AmqpClientError {
             AmqpConnectionScopeError::Begin(err) => Self::Begin(err),
             AmqpConnectionScopeError::SenderAttach(err) => Self::SenderAttach(err),
             AmqpConnectionScopeError::ReceiverAttach(err) => Self::ReceiverAttach(err),
-            AmqpConnectionScopeError::ScopeDisposed => Self::ClientDisposed,
+            AmqpConnectionScopeError::ScopeDisposed => Self::ClientDisposed(ClientDisposedError),
         }
     }
 }
@@ -198,7 +218,7 @@ pub enum NotAcceptedError {
 
 /// Error closing the AMQP connection and AMQP session
 #[derive(Debug, thiserror::Error)]
-pub enum DisposeError {
+pub(crate) enum DisposeError {
     /// Error closing the AMQP session
     #[error(transparent)]
     SessionCloseError(#[from] session::Error),
@@ -208,9 +228,18 @@ pub enum DisposeError {
     ConnectionCloseError(#[from] connection::Error),
 }
 
+impl From<DisposeError> for azure_core::Error {
+    fn from(value: DisposeError) -> Self {
+        match value {
+            DisposeError::SessionCloseError(error) => error.into_azure_core_error(),
+            DisposeError::ConnectionCloseError(error) => error.into_azure_core_error(),
+        }
+    }
+}
+
 /// Error opening a management link
 #[derive(Debug, thiserror::Error)]
-pub enum OpenMgmtLinkError {
+pub(crate) enum OpenMgmtLinkError {
     /// Connection scope is disposed
     #[error("Scope is disposed")]
     ConnectionScopeDisposed,
@@ -226,7 +255,7 @@ pub enum OpenMgmtLinkError {
 
 /// Error opening a sender link
 #[derive(Debug, thiserror::Error)]
-pub enum OpenSenderError {
+pub(crate) enum OpenSenderError {
     /// Connection scope is disposed
     #[error("The connection scope is disposed")]
     ConnectionScopeDisposed,
@@ -244,6 +273,17 @@ pub enum OpenSenderError {
     CbsAuth(#[from] CbsAuthError),
 }
 
+impl From<OpenSenderError> for azure_core::Error {
+    fn from(value: OpenSenderError) -> Self {
+        match value {
+            OpenSenderError::ConnectionScopeDisposed => ClientDisposedError.into(),
+            OpenSenderError::ManagementLinkAttach(error) => error.into_azure_core_error(),
+            OpenSenderError::SenderAttach(error) => error.into_azure_core_error(),
+            OpenSenderError::CbsAuth(error) => error.into(),
+        }
+    }
+}
+
 impl From<OpenMgmtLinkError> for OpenSenderError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
@@ -256,7 +296,7 @@ impl From<OpenMgmtLinkError> for OpenSenderError {
 
 /// Error recovering a sender link
 #[derive(Debug, thiserror::Error)]
-pub enum RecoverSenderError {
+pub(crate) enum RecoverSenderError {
     /// Connection scope is disposed
     #[error("The connection scope is disposed")]
     ConnectionScopeDisposed,
@@ -312,7 +352,7 @@ impl From<OpenMgmtLinkError> for RecoverSenderError {
 
 /// Error opening a receiver link
 #[derive(Debug, thiserror::Error)]
-pub enum OpenReceiverError {
+pub(crate) enum OpenReceiverError {
     /// Connection scope is disposed
     #[error("The connection scope is disposed")]
     ConnectionScopeDisposed,
@@ -330,6 +370,17 @@ pub enum OpenReceiverError {
     CbsAuth(#[from] CbsAuthError),
 }
 
+impl From<OpenReceiverError> for azure_core::Error {
+    fn from(value: OpenReceiverError) -> Self {
+        match value {
+            OpenReceiverError::ConnectionScopeDisposed => ClientDisposedError.into(),
+            OpenReceiverError::ManagementLinkAttach(error) => error.into_azure_core_error(),
+            OpenReceiverError::ReceiverAttach(error) => error.into_azure_core_error(),
+            OpenReceiverError::CbsAuth(error) => error.into(),
+        }
+    }
+}
+
 impl From<OpenMgmtLinkError> for OpenReceiverError {
     fn from(err: OpenMgmtLinkError) -> Self {
         match err {
@@ -344,7 +395,7 @@ impl From<OpenMgmtLinkError> for OpenReceiverError {
 
 /// Error recovering a receiver link
 #[derive(Debug, thiserror::Error)]
-pub enum RecoverReceiverError {
+pub(crate) enum RecoverReceiverError {
     /// Connection scope is disposed
     #[error("The connection scope is disposed")]
     ConnectionScopeDisposed,
@@ -400,7 +451,7 @@ impl From<OpenMgmtLinkError> for RecoverReceiverError {
 
 /// Error opening a rule manager
 #[derive(Debug, thiserror::Error)]
-pub enum OpenRuleManagerError {
+pub(crate) enum OpenRuleManagerError {
     /// Connection scope is disposed
     #[error("The connection scope is disposed")]
     ConnectionScopeDisposed,
@@ -412,6 +463,16 @@ pub enum OpenRuleManagerError {
     /// Error with CBS auth the rule manager
     #[error(transparent)]
     CbsAuth(#[from] CbsAuthError),
+}
+
+impl From<OpenRuleManagerError> for azure_core::Error {
+    fn from(value: OpenRuleManagerError) -> Self {
+        match value {
+            OpenRuleManagerError::ConnectionScopeDisposed => ClientDisposedError.into(),
+            OpenRuleManagerError::ManagementLinkAttach(error) => error.into_azure_core_error(),
+            OpenRuleManagerError::CbsAuth(error) => error.into(),
+        }
+    }
 }
 
 impl ServiceBusRetryPolicyError for OpenRuleManagerError {
@@ -438,7 +499,7 @@ impl From<OpenMgmtLinkError> for OpenRuleManagerError {
 
 /// Error sending message to the service
 #[derive(Debug, thiserror::Error)]
-pub enum AmqpSendError {
+pub(crate) enum AmqpSendError {
     /// Error with sending the message
     #[error(transparent)]
     Send(#[from] fe2o3_amqp::link::SendError),
@@ -449,11 +510,7 @@ pub enum AmqpSendError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
-
-    /// Connection scope is disposed
-    #[error("Connection scope is disposed")]
-    ConnectionScopeDisposed,
+    Elapsed(#[from] Elapsed),
 }
 
 impl ServiceBusRetryPolicyError for LinkStateError {
@@ -512,13 +569,13 @@ impl ServiceBusRetryPolicyError for AmqpSendError {
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, Self::ConnectionScopeDisposed)
+        false
     }
 }
 
 /// Error receiving message from the service
 #[derive(Debug, thiserror::Error)]
-pub enum AmqpRecvError {
+pub(crate) enum AmqpRecvError {
     /// Error with receiving the message
     #[error(transparent)]
     Recv(#[from] RecvError),
@@ -529,15 +586,11 @@ pub enum AmqpRecvError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
+    Elapsed(#[from] Elapsed),
 
     /// The lock token is not found in the message
     #[error("A valid lock token was not found in the message")]
     LockTokenNotFound,
-
-    /// Connection scope is disposed
-    #[error("Connection scope is disposed")]
-    ConnectionScopeDisposed,
 }
 
 impl ServiceBusRetryPolicyError for AmqpRecvError {
@@ -554,13 +607,13 @@ impl ServiceBusRetryPolicyError for AmqpRecvError {
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, Self::ConnectionScopeDisposed)
+        false
     }
 }
 
 /// Error with message disposition
 #[derive(Debug, thiserror::Error)]
-pub enum AmqpDispositionError {
+pub(crate) enum AmqpDispositionError {
     /// Error with the link state
     #[error(transparent)]
     IllegalState(#[from] IllegalLinkStateError),
@@ -571,11 +624,7 @@ pub enum AmqpDispositionError {
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
-
-    /// Connection scope is disposed
-    #[error("Connection scope is disposed")]
-    ConnectionScopeDisposed,
+    Elapsed(#[from] Elapsed),
 }
 
 impl ServiceBusRetryPolicyError for AmqpDispositionError {
@@ -585,29 +634,24 @@ impl ServiceBusRetryPolicyError for AmqpDispositionError {
             Self::IllegalState(IllegalLinkStateError::IllegalState) => false,
             Self::RequestResponse(err) => should_try_recover_from_management_error(err),
             Self::Elapsed(_) => false,
-            Self::ConnectionScopeDisposed => false,
         }
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, Self::ConnectionScopeDisposed)
+        false
     }
 }
 
 /// Error with request-response operation
 #[derive(Debug, thiserror::Error)]
-pub enum AmqpRequestResponseError {
+pub(crate) enum AmqpRequestResponseError {
     /// Error with the request-response operation on the management link
     #[error(transparent)]
     RequestResponse(#[from] ManagementError),
 
     /// The operation timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
-
-    /// Connection scope is disposed
-    #[error("Connection scope is disposed")]
-    ConnectionScopeDisposed,
+    Elapsed(#[from] Elapsed),
 }
 
 impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
@@ -615,12 +659,11 @@ impl ServiceBusRetryPolicyError for AmqpRequestResponseError {
         match self {
             Self::RequestResponse(err) => should_try_recover_from_management_error(err),
             Self::Elapsed(_) => false,
-            Self::ConnectionScopeDisposed => false,
         }
     }
 
     fn is_scope_disposed(&self) -> bool {
-        matches!(self, Self::ConnectionScopeDisposed)
+        false
     }
 }
 
@@ -632,7 +675,7 @@ impl From<serde_amqp::Error> for AmqpRequestResponseError {
 
 /// Error with CBS auth
 #[derive(Debug, thiserror::Error)]
-pub enum CbsAuthError {
+pub(crate) enum CbsAuthError {
     /// Error with the token provider
     #[error(transparent)]
     TokenCredential(#[from] azure_core::Error),
@@ -640,6 +683,15 @@ pub enum CbsAuthError {
     /// Error with the CBS link
     #[error(transparent)]
     Cbs(#[from] ManagementError),
+}
+
+impl From<CbsAuthError> for azure_core::Error {
+    fn from(value: CbsAuthError) -> Self {
+        match value {
+            CbsAuthError::TokenCredential(error) => error,
+            CbsAuthError::Cbs(error) => error.into_azure_core_error(),
+        }
+    }
 }
 
 /// Error with adding a message to a batch
@@ -704,7 +756,7 @@ pub enum CreateRuleError {
 
     /// Operation timed out
     #[error(transparent)]
-    Elapsed(#[from] TimeoutElapsed),
+    Elapsed(#[from] Elapsed),
 
     /// Connection scope is disposed
     #[error("Connection scope is disposed")]
@@ -724,7 +776,6 @@ impl From<AmqpRequestResponseError> for CreateRuleError {
         match err {
             AmqpRequestResponseError::RequestResponse(err) => Self::RequestResponse(err),
             AmqpRequestResponseError::Elapsed(err) => Self::Elapsed(err),
-            AmqpRequestResponseError::ConnectionScopeDisposed => Self::ConnectionScopeDisposed,
         }
     }
 }

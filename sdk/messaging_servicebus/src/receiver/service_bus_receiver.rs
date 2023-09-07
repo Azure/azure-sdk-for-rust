@@ -1,13 +1,14 @@
 //! Defines and implements `ServiceBusReceiver` and `ServiceBusReceiverOptions`
 
-use fe2o3_amqp::link::DetachError;
+
 use fe2o3_amqp_types::primitives::OrderedMap;
 use serde_amqp::Value;
 
 use crate::amqp::amqp_receiver::AmqpReceiver;
-use crate::amqp::error::{AmqpDispositionError, AmqpRecvError, AmqpRequestResponseError};
-use crate::primitives::error::RetryError;
+
+
 use crate::primitives::service_bus_peeked_message::ServiceBusPeekedMessage;
+use crate::util::IntoAzureCoreError;
 use crate::{
     core::TransportReceiver, primitives::service_bus_received_message::ServiceBusReceivedMessage,
 };
@@ -77,8 +78,8 @@ impl ServiceBusReceiver {
     }
 
     /// Closes the receiver and performs any cleanup required.
-    pub async fn dispose(self) -> Result<(), DetachError> {
-        self.inner.close().await
+    pub async fn dispose(self) -> Result<(), azure_core::Error> {
+        self.inner.close().await.map_err(IntoAzureCoreError::into_azure_core_error)
     }
 
     /// Receive a single message from the entity using the receiver's receive mode.
@@ -86,7 +87,7 @@ impl ServiceBusReceiver {
     /// This method will wait indefinitely until at least one message is received.
     pub async fn receive_message(
         &mut self,
-    ) -> Result<ServiceBusReceivedMessage, RetryError<AmqpRecvError>> {
+    ) -> Result<ServiceBusReceivedMessage, azure_core::Error> {
         self.receive_messages(1).await.map(|mut v| {
             v.drain(..)
                 .next()
@@ -100,8 +101,8 @@ impl ServiceBusReceiver {
     pub async fn receive_messages(
         &mut self,
         max_messages: u32,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, RetryError<AmqpRecvError>> {
-        self.inner.receive_messages(max_messages).await
+    ) -> Result<Vec<ServiceBusReceivedMessage>, azure_core::Error> {
+        self.inner.receive_messages(max_messages).await.map_err(Into::into)
     }
 
     /// Receive a single message from the entity using the receiver's receive mode with a maximum
@@ -112,7 +113,7 @@ impl ServiceBusReceiver {
     pub async fn receive_message_with_max_wait_time(
         &mut self,
         max_wait_time: impl Into<Option<std::time::Duration>>,
-    ) -> Result<Option<ServiceBusReceivedMessage>, RetryError<AmqpRecvError>> {
+    ) -> Result<Option<ServiceBusReceivedMessage>, azure_core::Error> {
         self.receive_messages_with_max_wait_time(1, max_wait_time)
             .await
             .map(|mut v| v.drain(..).next())
@@ -128,18 +129,19 @@ impl ServiceBusReceiver {
         &mut self,
         max_messages: u32,
         max_wait_time: impl Into<Option<std::time::Duration>>,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, RetryError<AmqpRecvError>> {
+    ) -> Result<Vec<ServiceBusReceivedMessage>, azure_core::Error> {
         self.inner
             .receive_messages_with_max_wait_time(max_messages, max_wait_time.into())
             .await
+            .map_err(Into::into)
     }
 
     /// Completes a [`ServiceBusReceivedMessage`]. This will delete the message from the service.
     pub async fn complete_message(
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
-    ) -> Result<(), RetryError<AmqpDispositionError>> {
-        self.inner.complete(message.as_ref(), None).await
+    ) -> Result<(), azure_core::Error> {
+        self.inner.complete(message.as_ref(), None).await.map_err(Into::into)
     }
 
     /// Abandons a [`ServiceBusReceivedMessage`]. This will make the message available again for
@@ -148,10 +150,11 @@ impl ServiceBusReceiver {
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-    ) -> Result<(), RetryError<AmqpDispositionError>> {
+    ) -> Result<(), azure_core::Error> {
         self.inner
             .abandon(message.as_ref(), properties_to_modify, None)
             .await
+            .map_err(Into::into)
     }
 
     /// Moves a message to the dead-letter subqueue.
@@ -159,7 +162,7 @@ impl ServiceBusReceiver {
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
         options: DeadLetterOptions,
-    ) -> Result<(), RetryError<AmqpDispositionError>> {
+    ) -> Result<(), azure_core::Error> {
         self.inner
             .dead_letter(
                 message.as_ref(),
@@ -169,6 +172,7 @@ impl ServiceBusReceiver {
                 None,
             )
             .await
+            .map_err(Into::into)
     }
 
     /// Indicates that the receiver wants to defer the processing for the message.
@@ -182,10 +186,11 @@ impl ServiceBusReceiver {
         &mut self,
         message: impl AsRef<ServiceBusReceivedMessage>,
         properties_to_modify: Option<OrderedMap<String, Value>>,
-    ) -> Result<(), RetryError<AmqpDispositionError>> {
+    ) -> Result<(), azure_core::Error> {
         self.inner
             .defer(message.as_ref(), properties_to_modify, None)
             .await
+            .map_err(Into::into)
     }
 
     /// Fetches the next active [`ServiceBusPeekedMessage`] without changing the state of the
@@ -200,7 +205,7 @@ impl ServiceBusReceiver {
     pub async fn peek_message(
         &mut self,
         from_sequence_number: Option<i64>,
-    ) -> Result<Option<ServiceBusPeekedMessage>, RetryError<AmqpRequestResponseError>> {
+    ) -> Result<Option<ServiceBusPeekedMessage>, azure_core::Error> {
         self.peek_messages(1, from_sequence_number)
             .await
             .map(|mut v| v.drain(..).next())
@@ -217,10 +222,11 @@ impl ServiceBusReceiver {
         &mut self,
         max_messages: u32, // FIXME: stop user from putting a negative number here?
         from_sequence_number: Option<i64>,
-    ) -> Result<Vec<ServiceBusPeekedMessage>, RetryError<AmqpRequestResponseError>> {
+    ) -> Result<Vec<ServiceBusPeekedMessage>, azure_core::Error> {
         self.inner
             .peek_messages(from_sequence_number, max_messages as i32)
             .await
+            .map_err(Into::into)
     }
 
     /// Receives a deferred message identified by `sequence_number`. An error is returned if the
@@ -228,7 +234,7 @@ impl ServiceBusReceiver {
     pub async fn receive_deferred_message(
         &mut self,
         sequence_number: i64,
-    ) -> Result<Option<ServiceBusReceivedMessage>, RetryError<AmqpRequestResponseError>> {
+    ) -> Result<Option<ServiceBusReceivedMessage>, azure_core::Error> {
         self.receive_deferred_messages(std::iter::once(sequence_number))
             .await
             .map(|mut v| v.drain(..).next())
@@ -239,7 +245,7 @@ impl ServiceBusReceiver {
     pub async fn receive_deferred_messages<Seq>(
         &mut self,
         sequence_numbers: Seq,
-    ) -> Result<Vec<ServiceBusReceivedMessage>, RetryError<AmqpRequestResponseError>>
+    ) -> Result<Vec<ServiceBusReceivedMessage>, azure_core::Error>
     where
         Seq: IntoIterator<Item = i64> + Send,
         Seq::IntoIter: Send,
@@ -247,6 +253,7 @@ impl ServiceBusReceiver {
         self.inner
             .receive_deferred_messages(sequence_numbers.into_iter(), None)
             .await
+            .map_err(Into::into)
     }
 
     /// Renews the lock on the specified message. The lock will be renewed based on the setting
@@ -254,7 +261,7 @@ impl ServiceBusReceiver {
     pub async fn renew_message_lock(
         &mut self,
         message: &mut ServiceBusReceivedMessage,
-    ) -> Result<(), RetryError<AmqpRequestResponseError>> {
+    ) -> Result<(), azure_core::Error> {
         let lock_tokens = vec![message.lock_token().clone()];
         let mut expirations = self.inner.renew_message_lock(lock_tokens).await?;
         if let Some(expiration) = expirations.drain(..).next() {

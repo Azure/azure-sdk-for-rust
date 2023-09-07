@@ -1,16 +1,15 @@
 //! Implements `ServiceBusSender` and `ServiceBusSenderOptions`
 
-use fe2o3_amqp::link::DetachError;
+
 use time::OffsetDateTime;
 
 use crate::{
     amqp::{
         amqp_sender::AmqpSender,
-        error::{AmqpRequestResponseError, AmqpSendError, RequestedSizeOutOfRange},
+        error::RequestedSizeOutOfRange,
     },
     core::TransportSender,
-    primitives::error::RetryError,
-    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch,
+    CreateMessageBatchOptions, ServiceBusMessage, ServiceBusMessageBatch, util::IntoAzureCoreError,
 };
 
 // Conditional import for docs.rs
@@ -65,7 +64,7 @@ impl ServiceBusSender {
     pub async fn send_message(
         &mut self,
         message: impl Into<ServiceBusMessage>,
-    ) -> Result<(), RetryError<AmqpSendError>> {
+    ) -> Result<(), azure_core::Error> {
         let iter = std::iter::once(message.into());
         self.send_messages(iter).await
     }
@@ -74,22 +73,22 @@ impl ServiceBusSender {
     pub async fn send_messages<M, I>(
         &mut self,
         messages: M,
-    ) -> Result<(), RetryError<AmqpSendError>>
+    ) -> Result<(), azure_core::Error>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
         I: Into<ServiceBusMessage>,
     {
         let messages = messages.into_iter().map(|m| m.into());
-        self.inner.send(messages).await
+        self.inner.send(messages).await.map_err(Into::into)
     }
 
     /// Sends a [`ServiceBusMessageBatch`] to the Queue/Topic.
     pub async fn send_message_batch(
         &mut self,
         batch: ServiceBusMessageBatch,
-    ) -> Result<(), RetryError<AmqpSendError>> {
-        self.inner.send_batch(batch.inner).await
+    ) -> Result<(), azure_core::Error> {
+        self.inner.send_batch(batch.inner).await.map_err(Into::into)
     }
 
     /// Schedules a single [`ServiceBusMessage`] to appear on the Queue/Topic at a later time.
@@ -97,7 +96,7 @@ impl ServiceBusSender {
         &mut self,
         message: impl Into<ServiceBusMessage>,
         enqueue_time: OffsetDateTime,
-    ) -> Result<i64, RetryError<AmqpRequestResponseError>> {
+    ) -> Result<i64, azure_core::Error> {
         let messages = std::iter::once(message.into());
         let seq_nums = self.schedule_messages(messages, enqueue_time).await?;
         // PANIC: there should be exactly one sequence number returned
@@ -110,7 +109,7 @@ impl ServiceBusSender {
         &mut self,
         messages: M,
         enqueue_time: OffsetDateTime,
-    ) -> Result<Vec<i64>, RetryError<AmqpRequestResponseError>>
+    ) -> Result<Vec<i64>, azure_core::Error>
     where
         M: IntoIterator<Item = I>,
         M::IntoIter: ExactSizeIterator + Send,
@@ -125,14 +124,14 @@ impl ServiceBusSender {
             m.set_scheduled_enqueue_time(enqueue_time);
             m
         });
-        self.inner.schedule_messages(messages).await
+        self.inner.schedule_messages(messages).await.map_err(Into::into)
     }
 
     /// Cancels a single scheduled [`ServiceBusMessage`] that was previously scheduled with
     pub async fn cancel_scheduled_message(
         &mut self,
         sequence_number: i64,
-    ) -> Result<(), RetryError<AmqpRequestResponseError>> {
+    ) -> Result<(), azure_core::Error> {
         // The request will always encode the sequence numbers as a Vec, so it doesn't hurt to
         // allocate a Vec here.
         self.cancel_scheduled_messages(std::iter::once(sequence_number))
@@ -143,7 +142,7 @@ impl ServiceBusSender {
     pub async fn cancel_scheduled_messages<I>(
         &mut self,
         sequence_numbers: I,
-    ) -> Result<(), RetryError<AmqpRequestResponseError>>
+    ) -> Result<(), azure_core::Error>
     where
         I: IntoIterator<Item = i64>,
         I::IntoIter: ExactSizeIterator + Send,
@@ -153,11 +152,11 @@ impl ServiceBusSender {
             return Ok(());
         }
 
-        self.inner.cancel_scheduled_messages(iter).await
+        self.inner.cancel_scheduled_messages(iter).await.map_err(Into::into)
     }
 
     /// Closes the sender and performs any cleanup required.
-    pub async fn dispose(self) -> Result<(), DetachError> {
-        self.inner.close().await
+    pub async fn dispose(self) -> Result<(), azure_core::Error> {
+        self.inner.close().await.map_err(IntoAzureCoreError::into_azure_core_error)
     }
 }

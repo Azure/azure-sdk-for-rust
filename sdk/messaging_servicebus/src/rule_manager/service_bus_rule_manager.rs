@@ -1,16 +1,14 @@
 //! Rule manager for Service Bus subscriptions.
 
-use fe2o3_amqp::link::DetachError;
+
 
 use crate::{
     administration::RuleProperties,
     amqp::{
         amqp_request_message::add_rule::CreateRuleFilter,
         amqp_rule_manager::AmqpRuleManager,
-        error::{AmqpRequestResponseError, CreateRuleError},
     },
-    core::TransportRuleManager,
-    primitives::error::RetryError,
+    core::TransportRuleManager, util::IntoAzureCoreError,
 };
 
 /// A `ServiceBusRuleManager` is used to manage rules for a subscription.
@@ -34,8 +32,8 @@ impl ServiceBusRuleManager {
     }
 
     /// Closes the rule manager and perform any cleanup required.
-    pub async fn dispose(self) -> Result<(), DetachError> {
-        self.inner.close().await
+    pub async fn dispose(self) -> Result<(), azure_core::Error> {
+        self.inner.close().await.map_err(IntoAzureCoreError::into_azure_core_error)
     }
 
     /// Add a rule to the current subscription to filter the messages reaching from topic to the
@@ -70,22 +68,22 @@ impl ServiceBusRuleManager {
         &mut self,
         name: impl Into<String>,
         filter: impl Into<CreateRuleFilter>,
-    ) -> Result<(), RetryError<CreateRuleError>> {
-        self.inner.create_rule(name.into(), filter.into()).await
+    ) -> Result<(), azure_core::Error> {
+        self.inner.create_rule(name.into(), filter.into()).await.map_err(Into::into)
     }
 
     /// Remove a rule from the current subscription.
     pub async fn delete_rule(
         &mut self,
         rule_name: impl Into<String>,
-    ) -> Result<(), RetryError<AmqpRequestResponseError>> {
-        self.inner.delete_rule(rule_name.into()).await
+    ) -> Result<(), azure_core::Error> {
+        self.inner.delete_rule(rule_name.into()).await.map_err(Into::into)
     }
 
     /// Get the rules associated with the current subscription.
     pub async fn get_rules(
         &mut self,
-    ) -> Result<Vec<RuleProperties>, RetryError<AmqpRequestResponseError>> {
+    ) -> Result<Vec<RuleProperties>, azure_core::Error> {
         let mut skip = 0;
         let mut buffer = Vec::new();
         loop {
