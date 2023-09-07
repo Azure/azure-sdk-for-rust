@@ -24,6 +24,13 @@ impl Body {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    pub(crate) async fn reset(&mut self) -> crate::Result<()> {
+        match self {
+            Body::Bytes(_) => Ok(()),
+            Body::SeekableStream(stream) => stream.reset().await,
+        }
+    }
 }
 
 impl<B> From<B> for Body
