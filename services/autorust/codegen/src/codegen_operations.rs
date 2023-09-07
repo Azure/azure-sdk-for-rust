@@ -841,7 +841,7 @@ impl ToTokens for ResponseCode {
         tokens.extend(quote! {
             pub struct Response(azure_core::Response);
         });
-        if let Some(response_type) = self.response_type() {
+        let body_fn = if let Some(response_type) = self.response_type() {
             let deserialize_body = if response_type.is_bytes() {
                 quote! {
                     let body = bytes;
@@ -855,41 +855,47 @@ impl ToTokens for ResponseCode {
                     let body: #response_type = serde_json::from_slice(&bytes)?;
                 }
             };
-
-            let headers_fn = if self.headers.has_headers() {
-                quote! { pub fn headers(&self) -> Headers { Headers(self.0.headers()) } }
-            } else {
-                quote! {}
+            let into_body = quote! {
+                pub async fn into_body(self) -> azure_core::Result<#response_type> {
+                    let bytes = self.0.into_body().collect().await?;
+                    #deserialize_body
+                    Ok(body)
+                }
             };
+            into_body
+        } else {
+            quote! {}
+        };
 
-            tokens.extend(quote! {
-                impl Response {
-                    pub async fn into_body(self) -> azure_core::Result<#response_type> {
-                        let bytes = self.0.into_body().collect().await?;
-                        #deserialize_body
-                        Ok(body)
-                    }
-                    pub fn into_raw_response(self) -> azure_core::Response {
-                        self.0
-                    }
-                    pub fn as_raw_response(&self) -> &azure_core::Response {
-                        &self.0
-                    }
-                    #headers_fn
+        let headers_fn = if self.headers.has_headers() {
+            quote! { pub fn headers(&self) -> Headers { Headers(self.0.headers()) } }
+        } else {
+            quote! {}
+        };
+
+        tokens.extend(quote! {
+            impl Response {
+                #body_fn
+                pub fn into_raw_response(self) -> azure_core::Response {
+                    self.0
                 }
-                impl From<Response> for azure_core::Response {
-                    fn from(rsp: Response) -> Self {
-                        rsp.into_raw_response()
-                    }
+                pub fn as_raw_response(&self) -> &azure_core::Response {
+                    &self.0
                 }
-                impl AsRef<azure_core::Response> for Response {
-                    fn as_ref(&self) -> &azure_core::Response {
-                        self.as_raw_response()
-                    }
+                #headers_fn
+            }
+            impl From<Response> for azure_core::Response {
+                fn from(rsp: Response) -> Self {
+                    rsp.into_raw_response()
                 }
-            });
-            tokens.extend(self.headers.to_token_stream());
-        }
+            }
+            impl AsRef<azure_core::Response> for Response {
+                fn as_ref(&self) -> &azure_core::Response {
+                    self.as_raw_response()
+                }
+            }
+        });
+        tokens.extend(self.headers.to_token_stream());
     }
 }
 
