@@ -14,7 +14,7 @@ use std::sync::Arc;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account_name = std::env::args().nth(1).expect("please specify storage account");
 
-    let endpoint = format!("https://{}.blob.core.windows.net", account_name);
+    let endpoint = format!("https://{account_name}.blob.core.windows.net");
     let scopes = &["https://storage.azure.com/"];
     let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_blobstorage::Client::builder(credential)
@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    println!("# of containers {}", count);
+    println!("# of containers {count}");
 
     Ok(())
 }

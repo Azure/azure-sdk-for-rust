@@ -17,7 +17,7 @@ pub const TESTING_MODE_RECORD: &str = "RECORD";
 
 /// Create a new mock transport policy.
 ///
-/// Returns a reply mock policy unless the environment variable  "TESTING_MODE" is set to "RECORD".
+/// Returns a reply mock policy unless the environment variable  "`TESTING_MODE`" is set to "RECORD".
 pub fn new_mock_transport(transaction_name: String) -> Arc<dyn Policy> {
     match std::env::var(TESTING_MODE_KEY)
         .as_deref()

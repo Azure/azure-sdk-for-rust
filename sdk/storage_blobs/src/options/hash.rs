@@ -1,4 +1,7 @@
-use azure_core::headers::{self, Header, CONTENT_MD5};
+use azure_core::{
+    base64,
+    headers::{self, Header, CONTENT_MD5},
+};
 use azure_storage::headers::CONTENT_CRC64;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
@@ -18,12 +21,19 @@ impl Header for Hash {
     fn value(&self) -> headers::HeaderValue {
         match self {
             Hash::MD5(md5) => base64::encode(md5),
-            Hash::CRC64(crc64) => format!("{}", crc64),
+            Hash::CRC64(crc64) => format!("{crc64}"),
         }
         .into()
     }
 }
 
+impl From<[u8; 16]> for Hash {
+    fn from(md5: [u8; 16]) -> Self {
+        Hash::MD5(md5)
+    }
+}
+
+#[cfg(feature = "md5")]
 impl From<md5::Digest> for Hash {
     fn from(md5: md5::Digest) -> Self {
         Hash::MD5(md5.0)

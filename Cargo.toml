@@ -8,3 +8,4 @@ exclude = [
   "sdk/messaging_servicebus", # excluded because of wasm support
   "sdk/messaging_servicebus/examples/wasm32_in_browser", # excluded because of wasm support
 ]
+resolver = "2"

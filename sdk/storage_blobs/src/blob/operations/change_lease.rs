@@ -6,6 +6,9 @@ operation! {
     ChangeLease,
     client: BlobLeaseClient,
     proposed_lease_id: ProposedLeaseId,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTags
 }
 
 impl ChangeLeaseBuilder {
@@ -19,6 +22,9 @@ impl ChangeLeaseBuilder {
             headers.insert(LEASE_ACTION, "change");
             headers.add(self.client.lease_id());
             headers.add(self.proposed_lease_id);
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

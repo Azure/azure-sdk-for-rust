@@ -39,7 +39,7 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .public_access(PublicAccess::None)
         .await?;
-    println!("Container {} created", container_name);
+    println!("Container {container_name} created");
 
     println!("Checking that container is empty");
 
@@ -59,7 +59,7 @@ async fn main() -> azure_core::Result<()> {
     // create 4 root blobs
     for i in 0..4u8 {
         container_client
-            .blob_client(format!("blob_at_root{}.txt", i))
+            .blob_client(format!("blob_at_root{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
@@ -68,7 +68,7 @@ async fn main() -> azure_core::Result<()> {
     // create 3 firstfolder/ blobs
     for i in 0..3u8 {
         container_client
-            .blob_client(format!("firstfolder/blob_at_1stfolder{}.txt", i))
+            .blob_client(format!("firstfolder/blob_at_1stfolder{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
@@ -77,7 +77,7 @@ async fn main() -> azure_core::Result<()> {
     // create 3 secondroot/ blobs
     for i in 0..3u8 {
         container_client
-            .blob_client(format!("secondroot/blobsd{}.txt", i))
+            .blob_client(format!("secondroot/blobsd{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
@@ -86,7 +86,7 @@ async fn main() -> azure_core::Result<()> {
     // create 2 firstfolder/secondfolder blobs
     for i in 0..2u8 {
         container_client
-            .blob_client(format!("firstfolder/secondfolder/blob{}.txt", i))
+            .blob_client(format!("firstfolder/secondfolder/blob{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
@@ -95,7 +95,7 @@ async fn main() -> azure_core::Result<()> {
     // create 4 firstfolder/thirdfolder blobs
     for i in 0..4u8 {
         container_client
-            .blob_client(format!("firstfolder/thirdfolder/blob{}.txt", i))
+            .blob_client(format!("firstfolder/thirdfolder/blob{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
@@ -104,10 +104,7 @@ async fn main() -> azure_core::Result<()> {
     // create 4 firstfolder/fourthfolder blobs
     for i in 0..5u8 {
         container_client
-            .blob_client(format!(
-                "firstfolder/thirdfolder/fourthfolder/blob{}.txt",
-                i
-            ))
+            .blob_client(format!("firstfolder/thirdfolder/fourthfolder/blob{i}.txt"))
             .put_block_blob("somedata")
             .content_type("text/plain")
             .await?;
@@ -157,10 +154,10 @@ async fn main() -> azure_core::Result<()> {
     let mut cnt: i32 = 0;
     while let Some(value) = stream.next().await {
         let len = value?.blobs.blobs().count();
-        println!("\treceived {} blobs", len);
+        println!("\treceived {len} blobs");
         match cnt {
             // we added 21 blobs so 5x4 + 1
-            0 | 1 | 2 | 3 => assert_eq!(len, 5),
+            0..=3 => assert_eq!(len, 5),
             4 => assert_eq!(len, 1),
             _ => panic!("more than entries than expected!"),
         }
@@ -168,7 +165,7 @@ async fn main() -> azure_core::Result<()> {
     }
 
     container_client.delete().await?;
-    println!("Container {} deleted", container_name);
+    println!("Container {container_name} deleted");
 
     Ok(())
 }

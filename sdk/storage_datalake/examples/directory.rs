@@ -20,7 +20,7 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .properties(fs_properties.clone())
         .await?;
-    println!("create file system response == {:?}\n", create_fs_response);
+    println!("create file system response == {create_fs_response:?}\n");
 
     let directory_name = "some/directory";
     let directory_client = file_system_client.get_directory_client(directory_name);
@@ -29,16 +29,12 @@ async fn main() -> azure_core::Result<()> {
         .create()
         .properties(fs_properties.clone())
         .await?;
-    println!(
-        "create directory response == {:?}\n",
-        create_directory_response
-    );
+    println!("create directory response == {create_directory_response:?}\n");
 
-    println!("creating directory '{}' if not exists...", directory_name);
+    println!("creating directory '{directory_name}' if not exists...");
     let create_directory_if_not_exists_result = directory_client.create_if_not_exists().await;
     println!(
-        "create directory result (should fail) == {:?}\n",
-        create_directory_if_not_exists_result
+        "create directory result (should fail) == {create_directory_if_not_exists_result:?}\n"
     );
 
     let new_directory_name = "some/directory2";
@@ -53,7 +49,7 @@ async fn main() -> azure_core::Result<()> {
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    println!("delete file system response == {delete_fs_response:?}\n");
 
     Ok(())
 }

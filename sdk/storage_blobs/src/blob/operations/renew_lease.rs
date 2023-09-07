@@ -5,6 +5,9 @@ use time::OffsetDateTime;
 operation! {
     RenewLease,
     client: BlobLeaseClient,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTags
 }
 
 impl RenewLeaseBuilder {
@@ -17,6 +20,9 @@ impl RenewLeaseBuilder {
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "renew");
             headers.add(self.client.lease_id());
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

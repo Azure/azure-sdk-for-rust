@@ -20,13 +20,13 @@ async fn main() -> azure_core::Result<()> {
     let queue_service = QueueServiceClient::new(account, storage_credentials);
 
     let queue = queue_service.queue_client(queue_name);
-    println!("{:#?}", queue);
+    println!("{queue:#?}");
 
     trace!("peeking messages");
 
     let response = queue.peek_messages().number_of_messages(2).await?;
 
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     Ok(())
 }

@@ -18,11 +18,11 @@ fn main() -> Result<()> {
             let spec: OpenAPI = serde_json::from_slice(&bytes)?;
             println!("# of paths: {}", spec.paths().len());
             for (path, _op) in spec.paths() {
-                println!("  {}", path);
+                println!("  {path}");
             }
             println!("# of definitions: {}", spec.definitions.len());
             for (name, _definition) in spec.definitions {
-                println!("  {}", name);
+                println!("  {name}");
             }
         }
     }

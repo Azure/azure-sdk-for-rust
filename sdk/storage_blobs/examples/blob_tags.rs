@@ -28,25 +28,25 @@ async fn main() -> azure_core::Result<()> {
     blob_client.put_block_blob("hello world").tags(tags).await?;
 
     let result = blob_client.get_tags().await?;
-    println!("get tags result: {:?}", result);
+    println!("get tags result: {result:?}");
 
     let mut new_tags = HashMap::new();
     new_tags.insert("tag2", "value2");
     new_tags.insert("tag3", "value3");
     let result = blob_client.set_tags(new_tags).await?;
-    println!("set tags result: {:?}", result);
+    println!("set tags result: {result:?}");
 
     let result = blob_client.get_tags().await?;
-    println!("get tags result: {:?}", result);
+    println!("get tags result: {result:?}");
 
     for (key, value) in result.tags.into_iter() {
-        println!("key:{} value:{}", key, value);
+        println!("key:{key} value:{value}");
     }
 
     let blob_client = container_client.blob_client(&blob_notags_name);
     blob_client.put_block_blob("hello world").await?;
     let result = blob_client.get_tags().await?;
-    println!("get tags without tags result: {:?}", result);
+    println!("get tags without tags result: {result:?}");
 
     container_client.delete().await?;
 

@@ -36,7 +36,7 @@ fn main() -> Result<()> {
                     file.write_all(json.as_bytes())?;
                 }
                 None => {
-                    println!("{}", json);
+                    println!("{json}");
                 }
             }
         }

@@ -1,4 +1,5 @@
 use super::AuthorizationToken;
+use azure_core::base64;
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -7,7 +8,7 @@ const SIGNATURE_PREFIX: &str = "sig=";
 /// The token field of a [`Permission`](super::Permission) object.
 ///
 /// This field is a url encoded string with the type of permission, the signature, and the version (currently only 1.0)
-/// This type is a wrapper around AuthorizationToken.
+/// This type is a wrapper around `AuthorizationToken`.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 #[serde(try_from = "String")]
 pub struct PermissionToken {
@@ -32,8 +33,7 @@ impl std::fmt::Display for PermissionToken {
         };
         write!(
             f,
-            "{}{}&{}1.0&{}{}",
-            PERMISSION_TYPE_PREFIX, permission_type, VERSION_PREFIX, SIGNATURE_PREFIX, signature
+            "{PERMISSION_TYPE_PREFIX}{permission_type}&{VERSION_PREFIX}1.0&{SIGNATURE_PREFIX}{signature}"
         )
     }
 }
@@ -70,7 +70,10 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let permission_type = try_get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
         let signature = try_get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
-            "master" => AuthorizationToken::Primary(base64::decode(signature)?),
+            "master" => AuthorizationToken::Primary(
+                base64::decode(signature)
+                    .map_err(PermissionTokenParseError::InvalidBase64Encoding)?,
+            ),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
                 return Err(PermissionTokenParseError::UnrecognizedPermissionType {
@@ -155,7 +158,7 @@ pub enum PermissionTokenParseError {
     )]
     UnrecognizedPermissionType { provided_type: String },
     #[error("the authorization token was not properly base64 encoded: {0}")]
-    InvalidBase64Encoding(#[from] base64::DecodeError),
+    InvalidBase64Encoding(#[source] azure_core::error::Error),
 }
 
 #[cfg(test)]

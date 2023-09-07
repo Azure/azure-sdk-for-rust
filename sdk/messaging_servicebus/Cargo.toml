@@ -1,6 +1,6 @@
 [package]
 name = "azure_messaging_servicebus"
-version = "0.8.0"
+version = "0.14.0"
 description = "Azure Service Bus client library for rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]

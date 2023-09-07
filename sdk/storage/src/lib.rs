@@ -7,10 +7,10 @@ information on the project, and an overview of other crates, please refer to
 
 Please use these crates for additional functionality:
 
-- [azure_data_tables](https://crates.io/crates/azure_data_tables)
-- [azure_storage_blobs](https://crates.io/crates/azure_storage_blobs)
-- [azure_storage_datalake](https://crates.io/crates/azure_storage_datalake)
-- [azure_storage_queues](https://crates.io/crates/azure_storage_queues)
+- [`azure_data_tables`](https://crates.io/crates/azure_data_tables)
+- [`azure_storage_blobs`](https://crates.io/crates/azure_storage_blobs)
+- [`azure_storage_datalake`](https://crates.io/crates/azure_storage_datalake)
+- [`azure_storage_queues`](https://crates.io/crates/azure_storage_queues)
 */
 
 #![recursion_limit = "256"]
@@ -59,7 +59,10 @@ pub use stored_access_policy::{StoredAccessPolicy, StoredAccessPolicyList};
 pub use consistency::{ConsistencyCRC64, ConsistencyMD5};
 
 mod consistency {
-    use azure_core::error::{Error, ErrorKind, ResultExt};
+    use azure_core::{
+        base64,
+        error::{Error, ErrorKind},
+    };
     use bytes::Bytes;
     use serde::{Deserialize, Deserializer};
     use std::{convert::TryInto, str::FromStr};
@@ -72,10 +75,7 @@ mod consistency {
     impl ConsistencyCRC64 {
         /// Decodes from base64 encoded input
         pub fn decode(input: impl AsRef<[u8]>) -> azure_core::Result<Self> {
-            let bytes = base64::decode(input).context(
-                ErrorKind::DataConversion,
-                "ConsistencyCRC64 failed base64 decode",
-            )?;
+            let bytes = base64::decode(input)?;
             let bytes = Bytes::from(bytes);
             match bytes.len() {
                 CRC64_BYTE_LENGTH => Ok(Self(bytes)),
@@ -127,8 +127,7 @@ mod consistency {
     impl ConsistencyMD5 {
         /// Decodes from base64 encoded input
         pub fn decode(input: impl AsRef<[u8]>) -> azure_core::Result<Self> {
-            let bytes = base64::decode(input)
-                .context(ErrorKind::DataConversion, "ConsistencyMD5 failed decode")?;
+            let bytes = base64::decode(input)?;
             let bytes = Bytes::from(bytes);
             match bytes.len() {
                 MD5_BYTE_LENGTH => Ok(Self(bytes)),

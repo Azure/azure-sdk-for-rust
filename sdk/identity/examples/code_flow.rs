@@ -24,14 +24,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "https://management.azure.com/user_impersonation",
     );
 
-    println!("c == {:?}", c);
+    println!("c == {c:?}");
     println!("\nbrowse this url:\n{}", c.authorize_url);
 
     // Start a naive server to receive the redirect with the token. This naive server is blocking
     // so you should use something better.
     let code = development::naive_redirect_server(&c, 3003).unwrap();
 
-    println!("code received: {:?}", code);
+    println!("code received: {code:?}");
 
     // Exchange the token with one that can be used for authorization
     let token = c
@@ -39,15 +39,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await
         .unwrap();
 
-    println!("token received: {:?}", token);
+    println!("token received: {token:?}");
 
     // Let's enumerate the Azure SQL Databases instances
     // in the subscription. Note: this way of calling the REST API
     // will be different (and easier) using other Azure Rust SDK
     // crates, this is just an example.
     let url = Url::parse(&format!(
-            "https://management.azure.com/subscriptions/{}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview",
-            subscription_id
+            "https://management.azure.com/subscriptions/{subscription_id}/providers/Microsoft.Sql/servers?api-version=2015-05-01-preview"
         ))?;
 
     let resp = reqwest::Client::new()
@@ -61,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .text()
         .await?;
 
-    println!("\n\nresp {:?}", resp);
+    println!("\n\nresp {resp:?}");
 
     Ok(())
 }

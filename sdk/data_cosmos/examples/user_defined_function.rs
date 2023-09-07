@@ -41,7 +41,7 @@ async fn main() -> azure_core::Result<()> {
     let ret = user_defined_function
         .create_user_defined_function("body")
         .await?;
-    println!("Creeate response object:\n{:#?}", ret);
+    println!("Creeate response object:\n{ret:#?}");
 
     let stream = collection
         .list_user_defined_functions()
@@ -60,7 +60,7 @@ async fn main() -> azure_core::Result<()> {
         .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
         .await?;
-    println!("Replace response object:\n{:#?}", ret);
+    println!("Replace response object:\n{ret:#?}");
 
     let ret = collection
         .query_documents("SELECT udf.test15(100)")
@@ -70,11 +70,11 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .unwrap()?;
-    println!("Query response object:\n{:#?}", ret);
+    println!("Query response object:\n{ret:#?}");
 
     // this code extracts the first object
     let fn_return = ret.documents().next().unwrap().as_object().unwrap();
-    println!("fn_return == {:?}", fn_return);
+    println!("fn_return == {fn_return:?}");
     // and from the first object get the first value as f64
     let value = fn_return
         .into_iter()
@@ -84,14 +84,14 @@ async fn main() -> azure_core::Result<()> {
         .1
         .as_f64()
         .unwrap();
-    println!("value == {:?}", value);
+    println!("value == {value:?}");
 
     let ret = user_defined_function
         .delete_user_defined_function()
         .consistency_level(&ret)
         .await?;
 
-    println!("Delete response object:\n{:#?}", ret);
+    println!("Delete response object:\n{ret:#?}");
 
     Ok(())
 }

@@ -15,7 +15,7 @@ pub enum StatusCode {
 impl fmt::Display for StatusCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            StatusCode::Code(n) => write!(f, "{}", n),
+            StatusCode::Code(n) => write!(f, "{n}"),
             StatusCode::Default => write!(f, "default"),
         }
     }

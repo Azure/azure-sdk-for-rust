@@ -14,7 +14,7 @@ pub struct DocumentClient {
 }
 
 impl DocumentClient {
-    /// Create a new instance of a DocumentClient.
+    /// Create a new instance of a `DocumentClient`.
     ///
     /// A document is identified by its primary key and its partition key.
     pub(crate) fn new<S: Into<String>, PK: Serialize>(

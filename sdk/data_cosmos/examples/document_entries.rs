@@ -52,7 +52,7 @@ async fn main() -> azure_core::Result<()> {
     let mut response = None;
     for i in 0u64..5 {
         let doc = MySampleStruct {
-            id: format!("unique_id{}", i),
+            id: format!("unique_id{i}"),
             a_string: "Something here".into(),
             a_number: i,
             a_timestamp: OffsetDateTime::now_utc().unix_timestamp(),
@@ -74,7 +74,7 @@ async fn main() -> azure_core::Result<()> {
     let response = paged.next().await.unwrap()?;
 
     assert_eq!(response.documents.len(), 3);
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // we inserted 5 documents and retrieved the first 3.
     // continuation_token must be present
@@ -83,7 +83,7 @@ async fn main() -> azure_core::Result<()> {
     let response = paged.next().await.unwrap()?;
 
     assert_eq!(response.documents.len(), 2);
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     // we got the last 2 entries. Now continuation_token
     // must be absent
@@ -120,7 +120,7 @@ async fn main() -> azure_core::Result<()> {
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::Found(_)));
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     let mut doc = match response {
         GetDocumentResponse::Found(ref resp) => resp.clone(),
@@ -136,10 +136,7 @@ async fn main() -> azure_core::Result<()> {
         .if_match_condition(IfMatchCondition::Match(doc.etag)) // use optimistic concurrency check
         .await?;
 
-    println!(
-        "replace_document_response == {:#?}",
-        replace_document_response
-    );
+    println!("replace_document_response == {replace_document_response:#?}");
 
     // This id should not be found. We expect None as result and
     // has_been_found == false
@@ -152,10 +149,10 @@ async fn main() -> azure_core::Result<()> {
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::NotFound(_)));
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     for i in 0u64..5 {
-        let id = format!("unique_id{}", i);
+        let id = format!("unique_id{i}");
         client
             .document_client(id.clone(), &id)?
             .delete_document()

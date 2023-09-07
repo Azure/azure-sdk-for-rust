@@ -15,7 +15,7 @@ async fn collection_operations() -> azure_core::Result<()> {
     log::info!("Successfully created a database");
 
     // create collection!
-    let database = client.database_client(database_name.clone());
+    let database = client.database_client(database_name);
 
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);

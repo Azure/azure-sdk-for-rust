@@ -24,7 +24,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut publishers = client
         .list_publishers(&location, &subscription_id)
-        .into_future()
         .await?
         .into_iter()
         .map(|x| x.name)
@@ -34,7 +33,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for publisher in publishers {
         let mut offers = client
             .list_offers(&location, &publisher, &subscription_id)
-            .into_future()
             .await?
             .into_iter()
             .map(|x| x.name)
@@ -44,7 +42,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         'offer: for offer in offers {
             let mut skus = client
                 .list_skus(&location, &publisher, &offer, &subscription_id)
-                .into_future()
                 .await?
                 .into_iter()
                 .map(|x| x.name)
@@ -54,7 +51,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             for sku in skus {
                 let mut versions = client
                     .list(&location, &publisher, &offer, &sku, &subscription_id)
-                    .into_future()
                     .await?
                     .into_iter()
                     .map(|x| x.name)
@@ -62,13 +58,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 versions.sort();
 
                 for version in versions {
-                    let id = format!("{}:{}:{}:{}", publisher, offer, sku, version);
-                    eprintln!("checking {}", id);
+                    let id = format!("{publisher}:{offer}:{sku}:{version}");
+                    eprintln!("checking {id}");
 
-                    let vm = client
-                        .get(&location, &publisher, &offer, &sku, &version, &subscription_id)
-                        .into_future()
-                        .await?;
+                    let vm = client.get(&location, &publisher, &offer, &sku, &version, &subscription_id).await?;
 
                     if let Some(props) = vm.properties {
                         if props.plan.is_some() {
@@ -77,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                         if let Some(os) = props.os_disk_image {
                             if os.operating_system == OperatingSystem::Linux {
-                                println!("{}", id);
+                                println!("{id}");
                                 break;
                             }
                         }

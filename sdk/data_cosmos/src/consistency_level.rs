@@ -113,7 +113,7 @@ impl AsHeaders for ConsistencyLevel {
         // if we have a Session consistency level we make sure to pass
         // the x-ms-session-token header too.
         if let ConsistencyLevel::Session(session_token) = self {
-            headers.push((crate::headers::HEADER_SESSION_TOKEN, session_token.into()))
+            headers.push((crate::headers::HEADER_SESSION_TOKEN, session_token.into()));
         }
 
         headers.into_iter()

@@ -9,74 +9,71 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
+  msrv:
+    name: Get minimum supported rust version
+    runs-on: ubuntu-20.04
+    outputs:
+      msrv: ${{ steps.get_msrv.outputs.msrv }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: get_msrv
+        run: |
+          MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
+          echo setting msrv to ${MSRV}
+          echo msrv=${MSRV} >> "$GITHUB_OUTPUT"
+
   code-style:
     name: Code Style
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update --no-self-update stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --all
-      - run: cargo doc --all --no-deps
-      - name: check json
-        run: ./eng/scripts/check_json_format.sh
-      - name: check READMEs
-        run: |
-          cargo install cargo-readme
-          ./eng/scripts/cargo_readme.sh
-          if git status sdk | grep -q '.md$'; then
-            echo "Run ./eng/scripts/cargo_readme.sh to update readmes" && exit 1
-          fi
+      # for code style, we only care about `stable`
+      - run: eng/scripts/code_style.sh stable
 
   test-sdk:
     name: SDK Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         build:
           - stable
-          - nightly
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update --no-self-update ${{ matrix.build }}
-      - run: rustup target add --toolchain ${{ matrix.build }} wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-
-      - name: check core with --no-default-features
-        run: cargo +${{ matrix.build }} check -p azure_core --no-default-features
-
-      - name: check for wasm
-        run: cargo +${{ matrix.build }} check --target=wasm32-unknown-unknown --no-default-features
-
-      - name: check for azurite_workaround
-        run: cargo +${{ matrix.build }} check --all --features azurite_workaround
-
-      - name: sdk tests
-        run: cargo +${{ matrix.build }} test --all
+      - run: eng/scripts/sdk_tests.sh ${{ matrix.build }}
 
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04
-    env:
-      RUSTFLAGS: -Dwarnings -Aunreachable-code -Aunused-assignments -Adead-code -Aclippy::new-without-default -Aclippy::unnecessary_to_owned
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update --no-self-update stable
       - uses: Swatinem/rust-cache@v2
-
-      - name: services check
-        run: cargo check --manifest-path services/Cargo.toml --all
-
-      - name: services check examples
-        run: cargo check --manifest-path services/Cargo.toml --examples
-
-      - name: services clippy
-        run: cargo clippy --manifest-path services/Cargo.toml --all
-
-      - name: services fmt
-        run: cargo fmt --manifest-path services/Cargo.toml --all -- --check
-
+        with:
+          workspaces: services
+      - run: eng/scripts/services_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -84,17 +81,23 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update --no-self-update stable
       - uses: Swatinem/rust-cache@v2
-
-      - name: emulator integration tests
-        run: |
-          npm install azurite@3.13.1
-          npx azurite &
-          cargo test --features test_integration
-
+      - run: eng/scripts/emulator_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -102,20 +105,23 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
       - uses: actions/checkout@v3
-      - run: rustup update --no-self-update stable
       - uses: Swatinem/rust-cache@v2
-
-      - name: e2e tests build
-        run: |
-          PROJECTS=(core  data_cosmos  identity  messaging_servicebus  storage  storage_blobs  storage_queues  storage_datalake  data_tables)
-          for PROJ in ${PROJECTS[@]}
-          do
-            echo "Checking e2e tests for $PROJ"
-            cargo check --tests --features test_e2e --manifest-path sdk/$PROJ/Cargo.toml || exit 1
-          done
-
+      - run: eng/scripts/e2e_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -128,13 +134,6 @@ jobs:
         uses: actions/checkout@v3
         with:
           path: azure-sdk-for-rust
-      - run: rustup update --no-self-update
-      - name: fmt check
-        run: cargo fmt --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml -- --check
-      - name: clippy check
-        run: cargo clippy --all --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
-      - name: unit tests
-        run: cargo test --lib --manifest-path azure-sdk-for-rust/services/autorust/Cargo.toml
       - name: git clone Azure/azure-rest-api-specs
         uses: actions/checkout@v3
         with:
@@ -145,9 +144,5 @@ jobs:
         with:
           repository: OAI/OpenAPI-Specification
           path: OpenAPI-Specification
-      - name: integration tests
-        run: |
-          cd azure-sdk-for-rust/services/autorust
-          cargo test --package autorust_openapi --test openapi_spec_examples
-          cargo test --package autorust_openapi --test azure_rest_api_specs
-          cargo test --package autorust_codegen --test azure_rest_api_specs
+      # for code style, we only care about `stable`
+      - run: azure-sdk-for-rust/eng/scripts/autorust_tests.sh

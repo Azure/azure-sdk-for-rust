@@ -15,8 +15,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let config = client
         .web_apps_client()
         .get_configuration(resource_group_name, webapp_name, subscription_id)
-        .into_future()
         .await?;
-    println!("{:#?}", config);
+    println!("{config:#?}");
     Ok(())
 }

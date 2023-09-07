@@ -1,7 +1,4 @@
-use azure_core::{
-    error::{ErrorKind, ResultExt},
-    prelude::Range,
-};
+use azure_core::{prelude::Range, xml::read_xml_str};
 
 #[derive(Debug, Deserialize)]
 struct Start {
@@ -25,8 +22,8 @@ struct PageRange {
 
 #[derive(Debug, Deserialize)]
 struct PageList {
-    #[serde(rename = "PageRange")]
-    pub page_list: Option<Vec<PageRange>>,
+    #[serde(rename = "PageRange", default)]
+    pub page_list: Vec<PageRange>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
@@ -36,16 +33,13 @@ pub struct PageRangeList {
 
 impl PageRangeList {
     pub fn try_from_xml(xml: &str) -> azure_core::Result<Self> {
-        let pl: PageList =
-            serde_xml_rs::de::from_reader(xml.as_bytes()).map_kind(ErrorKind::DataConversion)?;
+        let pl: PageList = read_xml_str(xml)?;
 
         let mut prl = PageRangeList { ranges: Vec::new() };
 
-        if let Some(range_list) = pl.page_list {
-            for range in range_list {
-                prl.ranges
-                    .push(Range::new(range.start.value, range.end.value));
-            }
+        for range in pl.page_list {
+            prl.ranges
+                .push(Range::new(range.start.value, range.end.value));
         }
 
         Ok(prl)
@@ -76,5 +70,13 @@ mod test {
         assert!(prl.ranges[0].end == 511);
         assert!(prl.ranges[1].start == 1024);
         assert!(prl.ranges[1].end == 1535);
+
+        let page_list = "<?xml version=\"1.0\" encoding=\"utf-8\"?><PageList></PageList>";
+        let prl = PageRangeList::try_from_xml(page_list).unwrap();
+        assert!(prl.ranges.is_empty());
+
+        let page_list = "<?xml version=\"1.0\" encoding=\"utf-8\"?><PageList />";
+        let prl = PageRangeList::try_from_xml(page_list).unwrap();
+        assert!(prl.ranges.is_empty());
     }
 }

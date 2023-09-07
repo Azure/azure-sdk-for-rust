@@ -64,7 +64,7 @@ pub struct UserResponse {
 }
 
 impl UserResponse {
-    /// Creates a UserResponse from an HttpResponse
+    /// Creates a `UserResponse` from an `HttpResponse`
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
         let body = body.collect().await?;

@@ -65,8 +65,7 @@ pub async fn perform(
         .finish();
 
     let url = Url::parse(&format!(
-        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-        tenant_id
+        "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     ))
     .with_context(ErrorKind::DataConversion, || {
         format!("The supplied tenant id could not be url encoded: {tenant_id}")

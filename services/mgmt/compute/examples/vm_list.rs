@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{:?}", &vm.resource.id);
         }
     }
-    println!("# of virtual machines {}", count);
+    println!("# of virtual machines {count}");
 
     Ok(())
 }

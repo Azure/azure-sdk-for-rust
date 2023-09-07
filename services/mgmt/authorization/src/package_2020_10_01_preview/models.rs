@@ -1004,13 +1004,13 @@ pub mod access_review_scope {
 #[doc = "The approval settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApprovalSettings {
-    #[doc = "Determine whether approval is required or not."]
+    #[doc = "Determines whether approval is required or not."]
     #[serde(rename = "isApprovalRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_approval_required: Option<bool>,
-    #[doc = "Determine whether approval is required for assignment extension."]
+    #[doc = "Determines whether approval is required for assignment extension."]
     #[serde(rename = "isApprovalRequiredForExtension", default, skip_serializing_if = "Option::is_none")]
     pub is_approval_required_for_extension: Option<bool>,
-    #[doc = "Determine whether requestor justification required."]
+    #[doc = "Determine whether requestor justification is required."]
     #[serde(rename = "isRequestorJustificationRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_requestor_justification_required: Option<bool>,
     #[doc = "The type of rule"]
@@ -1077,13 +1077,13 @@ pub mod approval_settings {
 #[doc = "The approval stage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApprovalStage {
-    #[doc = "The time in days when approval request would be timed out."]
+    #[doc = "The time in days when approval request would be timed out"]
     #[serde(rename = "approvalStageTimeOutInDays", default, skip_serializing_if = "Option::is_none")]
     pub approval_stage_time_out_in_days: Option<i32>,
-    #[doc = "Determine whether approver need to provide justification for his decision."]
+    #[doc = "Determines whether approver need to provide justification for his decision."]
     #[serde(rename = "isApproverJustificationRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_approver_justification_required: Option<bool>,
-    #[doc = "The time in minutes when the approval request would be escalated if the primary approver does not approves."]
+    #[doc = "The time in minutes when the approval request would be escalated if the primary approver does not approve"]
     #[serde(rename = "escalationTimeInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub escalation_time_in_minutes: Option<i32>,
     #[doc = "The primary approver of the request."]
@@ -4238,7 +4238,7 @@ impl RoleManagementPolicy {
         Self::default()
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy approval rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyApprovalRule {
     #[serde(flatten)]
@@ -4321,7 +4321,7 @@ impl RoleManagementPolicyAssignmentProperties {
         Self::default()
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy authentication context rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyAuthenticationContextRule {
     #[serde(flatten)]
@@ -4364,7 +4364,7 @@ impl RoleManagementPolicyEnablementRule {
         }
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy expiration rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyExpirationRule {
     #[serde(flatten)]
@@ -4410,7 +4410,7 @@ impl RoleManagementPolicyListResult {
         Self::default()
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy notification rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyNotificationRule {
     #[serde(flatten)]
@@ -4424,7 +4424,7 @@ pub struct RoleManagementPolicyNotificationRule {
     #[doc = "The recipient type."]
     #[serde(rename = "recipientType", default, skip_serializing_if = "Option::is_none")]
     pub recipient_type: Option<role_management_policy_notification_rule::RecipientType>,
-    #[doc = "The list notification recipients."]
+    #[doc = "The list of notification recipients."]
     #[serde(
         rename = "notificationRecipients",
         default,
@@ -4432,7 +4432,7 @@ pub struct RoleManagementPolicyNotificationRule {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub notification_recipients: Vec<String>,
-    #[doc = "Its value determine if the notification need to be sent to the recipient type specified in policy rule."]
+    #[doc = "Determines if the notification will be sent to the recipient type specified in the policy rule."]
     #[serde(rename = "isDefaultRecipientsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_default_recipients_enabled: Option<bool>,
 }
@@ -4643,7 +4643,7 @@ pub struct RoleManagementPolicyRuleTarget {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub operations: Vec<String>,
-    #[doc = "The assignment level to which it is applied."]
+    #[doc = "The assignment level to which rule is applied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
     #[doc = "The list of target objects."]

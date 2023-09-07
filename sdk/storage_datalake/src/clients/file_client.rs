@@ -15,7 +15,7 @@ pub struct FileClient {
 impl PathClient for FileClient {
     fn url(&self) -> azure_core::Result<Url> {
         let fs_url = self.file_system_client.url()?;
-        let file_path = vec![fs_url.path(), &self.file_path].join("/");
+        let file_path = [fs_url.path(), &self.file_path].join("/");
         Ok(self.file_system_client.url()?.join(&file_path)?)
     }
 
@@ -69,7 +69,7 @@ impl FileClient {
         let destination_client = self.file_system_client.get_file_client(destination_path);
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
-        let file_path = vec![fs_url.path(), &self.file_path].join("/");
+        let file_path = [fs_url.path(), &self.file_path].join("/");
         RenamePathBuilder::new(destination_client)
             .mode(PathRenameMode::Legacy)
             .rename_source(file_path)

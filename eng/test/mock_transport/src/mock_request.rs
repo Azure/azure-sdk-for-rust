@@ -1,4 +1,4 @@
-use azure_core::{Body, Method, Request};
+use azure_core::{base64, Body, Method, Request};
 use serde::de::Visitor;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use serde::{Deserialize, Deserializer};

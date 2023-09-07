@@ -4211,7 +4211,7 @@ pub struct ScheduleCreationParameterProperties {
     #[doc = "Properties of an hourly schedule."]
     #[serde(rename = "hourlyRecurrence", default, skip_serializing_if = "Option::is_none")]
     pub hourly_recurrence: Option<HourDetails>,
-    #[doc = "The time zone ID (e.g. Pacific Standard time)."]
+    #[doc = "The time zone ID (e.g. China Standard Time, Greenland Standard Time, Pacific Standard time, etc.). The possible values for this property can be found in `IReadOnlyCollection<string> TimeZoneConverter.TZConvert.KnownWindowsTimeZoneIds` (https://github.com/mattjohnsonpint/TimeZoneConverter/blob/main/README.md)"]
     #[serde(rename = "timeZoneId", default, skip_serializing_if = "Option::is_none")]
     pub time_zone_id: Option<String>,
     #[doc = "Notification settings for a schedule."]
@@ -4333,7 +4333,7 @@ pub struct ScheduleProperties {
     #[doc = "Properties of an hourly schedule."]
     #[serde(rename = "hourlyRecurrence", default, skip_serializing_if = "Option::is_none")]
     pub hourly_recurrence: Option<HourDetails>,
-    #[doc = "The time zone ID (e.g. Pacific Standard time)."]
+    #[doc = "The time zone ID (e.g. China Standard Time, Greenland Standard Time, Pacific Standard time, etc.). The possible values for this property can be found in `IReadOnlyCollection<string> TimeZoneConverter.TZConvert.KnownWindowsTimeZoneIds` (https://github.com/mattjohnsonpint/TimeZoneConverter/blob/main/README.md)"]
     #[serde(rename = "timeZoneId", default, skip_serializing_if = "Option::is_none")]
     pub time_zone_id: Option<String>,
     #[doc = "Notification settings for a schedule."]

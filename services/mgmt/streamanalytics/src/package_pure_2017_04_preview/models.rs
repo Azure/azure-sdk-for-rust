@@ -1047,6 +1047,46 @@ impl CustomClrSerializationProperties {
         Self::default()
     }
 }
+#[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Delta Lake format."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeltaSerialization {
+    #[serde(flatten)]
+    pub serialization: Serialization,
+    #[doc = "The properties that are associated with the Delta Lake serialization type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DeltaSerializationProperties>,
+}
+impl DeltaSerialization {
+    pub fn new(serialization: Serialization) -> Self {
+        Self {
+            serialization,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with the Delta Lake serialization type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeltaSerializationProperties {
+    #[doc = "Specifies the path of the Delta Lake table that the output will be written to."]
+    #[serde(rename = "deltaTablePath")]
+    pub delta_table_path: String,
+    #[doc = "Specifies the names of the columns for which the Delta Lake table will be partitioned. We are only supporting 1 partition column, but keeping it as an array for extensibility."]
+    #[serde(
+        rename = "partitionColumns",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub partition_columns: Vec<String>,
+}
+impl DeltaSerializationProperties {
+    pub fn new(delta_table_path: String) -> Self {
+        Self {
+            delta_table_path,
+            partition_columns: Vec::new(),
+        }
+    }
+}
 #[doc = "Condition applicable to the resource, or to the job overall, that warrant customer attention."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticCondition {
@@ -1366,6 +1406,7 @@ pub enum EventSerializationType {
     Json,
     CustomClr,
     Parquet,
+    Delta,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -1396,6 +1437,7 @@ impl Serialize for EventSerializationType {
             Self::Json => serializer.serialize_unit_variant("EventSerializationType", 2u32, "Json"),
             Self::CustomClr => serializer.serialize_unit_variant("EventSerializationType", 3u32, "CustomClr"),
             Self::Parquet => serializer.serialize_unit_variant("EventSerializationType", 4u32, "Parquet"),
+            Self::Delta => serializer.serialize_unit_variant("EventSerializationType", 5u32, "Delta"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

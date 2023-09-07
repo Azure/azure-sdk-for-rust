@@ -43,6 +43,7 @@ use uuid::Uuid;
 #[cfg(feature = "xml")]
 pub mod xml;
 
+pub mod base64;
 pub use bytes_stream::*;
 pub use constants::*;
 pub use context::Context;
@@ -87,7 +88,7 @@ where
     T: AppendToUrlQuery,
 {
     fn append_to_url_query(&self, url: &mut url::Url) {
-        (*self).append_to_url_query(url)
+        (*self).append_to_url_query(url);
     }
 }
 

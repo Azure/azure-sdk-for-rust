@@ -217,11 +217,11 @@ impl From<autorust_openapi::Error> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
-            Context::Simple(kind) => write!(f, "{}", kind),
-            Context::Message { message, .. } => write!(f, "{}", message),
-            Context::Custom(Custom { error, .. }) => write!(f, "{}", error),
+            Context::Simple(kind) => write!(f, "{kind}"),
+            Context::Message { message, .. } => write!(f, "{message}"),
+            Context::Custom(Custom { error, .. }) => write!(f, "{error}"),
             Context::Full(_, message) => {
-                write!(f, "{}", message)
+                write!(f, "{message}")
             }
         }
     }
@@ -333,10 +333,10 @@ mod tests {
 
         // Generate the display and error chain
         let mut error: &dyn std::error::Error = &error;
-        let display = format!("{}", error);
+        let display = format!("{error}");
         let mut errors = vec![display.clone()];
         while let Some(cause) = error.source() {
-            errors.push(format!("{}", cause));
+            errors.push(format!("{cause}"));
             error = cause;
         }
 
@@ -353,7 +353,7 @@ mod tests {
         let error = &create_error() as &dyn std::error::Error;
         assert!(error.is::<Error>());
         let downcasted = error.source().unwrap().downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", downcasted), "third error");
+        assert_eq!(format!("{downcasted}"), "third error");
     }
 
     #[test]
@@ -361,17 +361,17 @@ mod tests {
         let error = create_error();
         let inner = error.into_inner().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", inner), "second error");
+        assert_eq!(format!("{inner}"), "second error");
 
         let error = create_error();
         let inner = error.get_ref().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", inner), "second error");
+        assert_eq!(format!("{inner}"), "second error");
 
         let mut error = create_error();
         let inner = error.get_mut().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
-        assert_eq!(format!("{}", inner), "second error");
+        assert_eq!(format!("{inner}"), "second error");
     }
 
     #[test]

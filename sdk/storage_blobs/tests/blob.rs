@@ -1,9 +1,10 @@
-#![cfg(all(test, feature = "test_e2e"))]
+#![cfg(all(test, feature = "test_e2e", feature = "md5"))]
 #[macro_use]
 extern crate log;
 
 use azure_core::date;
 use azure_storage::prelude::*;
+use azure_storage_blobs::container::operations::ListBlobsResponse;
 use azure_storage_blobs::{blob::BlockListType, container::PublicAccess, prelude::*};
 use bytes::Bytes;
 use futures::StreamExt;
@@ -212,6 +213,56 @@ async fn put_and_get_block_list() {
 }
 
 #[tokio::test]
+async fn put_block_list_and_list_files() {
+    let uuid = Uuid::new_v4();
+    let container_name = format!("sdkrust{}", uuid);
+    let name = format!("rustputblock{}.txt", uuid);
+
+    let blob_service = initialize();
+    let container = blob_service.container_client(&container_name);
+    let blob = container.blob_client(name.clone());
+
+    container
+        .create()
+        .public_access(PublicAccess::None)
+        .await
+        .expect("container already present");
+
+    let contents = vec![
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+        "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+    ];
+    let mut block_list = BlockList::default();
+    for content in contents {
+        let block_id = format!("sdkrustblock{}", Uuid::new_v4());
+        blob.put_block(block_id.clone(), Bytes::from(content))
+            .await
+            .unwrap_or_else(|e| panic!("Couldn't put block for content: {} - {}", content, e));
+        block_list
+            .blocks
+            .push(BlobBlockType::new_uncommitted(block_id));
+    }
+
+    blob.put_block_list(block_list).await.unwrap();
+
+    let response: ListBlobsResponse = container
+        .list_blobs()
+        .into_stream()
+        .next()
+        .await
+        .expect("stream failed")
+        .unwrap();
+
+    let blobs = response.blobs.blobs().collect::<Vec<_>>();
+
+    assert_eq!(1, blobs.len());
+    assert_eq!(&name, &blobs[0].name);
+
+    container.delete().await.unwrap();
+}
+
+#[tokio::test]
 async fn list_containers() {
     let blob_service = initialize();
     trace!("running list_containers");
@@ -367,7 +418,7 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
-    let _ = requires_send_future(blob.get_properties().into_future());
+    requires_send_future(blob.get_properties().into_future()).await?;
     container.delete().await?;
     Ok(())
 }
@@ -382,7 +433,7 @@ async fn put_block_blob_and_snapshot() {
     let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);
 
-    if blob_service
+    if !blob_service
         .list_containers()
         .into_stream()
         .next()
@@ -391,8 +442,7 @@ async fn put_block_blob_and_snapshot() {
         .unwrap()
         .containers
         .iter()
-        .find(|x| x.name == container_name)
-        .is_none()
+        .any(|x| x.name == container_name)
     {
         container
             .create()
@@ -500,7 +550,7 @@ async fn set_blobtier() {
     println!("container {} deleted!", container_name);
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, clippy::let_underscore_future)]
 fn send_check() {
     let client = initialize();
     let blob = client.container_client("a").blob_client("b");

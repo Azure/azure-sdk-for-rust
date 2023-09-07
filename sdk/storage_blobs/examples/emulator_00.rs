@@ -21,7 +21,7 @@ async fn main() -> azure_core::Result<()> {
         .next()
         .await
         .expect("stream failed")?;
-    println!("{:?}", res);
+    println!("{res:?}");
 
     Ok(())
 }

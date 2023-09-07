@@ -1,16 +1,16 @@
 use azure_core::{
-    error::{Error, ErrorKind, ResultExt},
+    error::Error,
     headers::{Header, HeaderName, HeaderValue, TAGS},
+    xml::to_xml,
 };
 use std::{
     collections::HashMap,
-    fmt::Write,
     iter::{Extend, IntoIterator},
     str::FromStr,
 };
 use url::form_urlencoded;
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default, Serialize)]
 #[serde(rename_all = "PascalCase")]
 /// User-defined tags for specified blobs made up of one or more key-value
 /// pairs.
@@ -33,13 +33,13 @@ pub struct Tags {
     pub tag_set: TagSet,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default, Serialize)]
 pub struct TagSet {
     #[serde(default, rename = "Tag")]
     pub tags: Vec<Tag>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Tag {
     pub key: String,
@@ -63,17 +63,10 @@ impl Tags {
     }
 
     pub fn to_xml(&self) -> azure_core::Result<String> {
-        let mut s = String::from("<?xml version=\"1.0\" encoding=\"utf-8\"?><Tags><TagSet>");
-        for tag in &self.tag_set.tags {
-            write!(
-                &mut s,
-                "<Tag><Key>{}</Key><Value>{}</Value></Tag>",
-                tag.key, tag.value
-            )
-            .context(ErrorKind::DataConversion, "failed to write Tags xml")?;
-        }
-        s.push_str("</TagSet></Tags>");
-        Ok(s)
+        Ok(format!(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>{}",
+            to_xml(&self)?
+        ))
     }
 }
 
@@ -171,13 +164,13 @@ mod tests {
         let empty = r#"<?xml version="1.0" encoding="utf-8"?><Tags><TagSet></TagSet></Tags>"#;
         let tags: Tags = read_xml(empty.as_bytes())?;
         assert_eq!(tags.tag_set.tags.len(), 0);
-        let empty_as_xml = tags.to_xml()?;
-        assert_eq!(empty_as_xml, empty);
 
         // verify parsing of self closing tags
         let empty = r#"<?xml version="1.0" encoding="utf-8"?><Tags><TagSet/></Tags>"#;
         let tags: Tags = read_xml(empty.as_bytes())?;
         assert_eq!(tags.tag_set.tags.len(), 0);
+        let empty_as_xml = tags.to_xml()?;
+        assert_eq!(empty_as_xml, empty);
 
         Ok(())
     }

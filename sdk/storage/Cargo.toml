@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage"
-version = "0.9.0"
+version = "0.14.0"
 description = "Azure Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -11,19 +11,16 @@ documentation = "https://docs.rs/azure_storage"
 keywords = ["sdk", "azure", "storage"]
 categories = ["api-bindings"]
 edition = "2021"
-rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.8", features = ["xml"] }
-base64 = "0.13"
+azure_core = { path = "../core", version = "0.14", features = ["xml"] }
 time = "0.3.10"
 futures = "0.3"
 log = "0.4"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-serde-xml-rs = "0.6"
 url = "2.2"
 uuid = { version = "1.0", features = ["v4"] }
 bytes = "1.0"
@@ -44,6 +41,5 @@ azure_identity = { path = "../identity", default-features = false }
 default = ["enable_reqwest"]
 test_e2e = []
 test_integration = []
-azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]

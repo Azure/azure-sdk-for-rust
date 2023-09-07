@@ -1,0 +1,2767 @@
+#![allow(non_camel_case_types)]
+#![allow(unused_imports)]
+use serde::de::{value, Deserializer, IntoDeserializer};
+use serde::{Deserialize, Serialize, Serializer};
+use std::str::FromStr;
+#[doc = "An AML file system instance. Follows Azure Resource Manager standards: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/resource-api-reference.md"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmlFilesystem {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[doc = "Managed Identity properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<AmlFilesystemIdentity>,
+    #[doc = "SKU for the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SkuName>,
+    #[doc = "Availability zones for resources. This field should only contain a single element in the array."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub zones: Vec<String>,
+    #[doc = "Properties of the AML file system."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<aml_filesystem::Properties>,
+}
+impl AmlFilesystem {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            identity: None,
+            sku: None,
+            zones: Vec::new(),
+            properties: None,
+        }
+    }
+}
+pub mod aml_filesystem {
+    use super::*;
+    #[doc = "Properties of the AML file system."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[doc = "The size of the AML file system, in TiB. This might be rounded up."]
+        #[serde(rename = "storageCapacityTiB")]
+        pub storage_capacity_ti_b: f32,
+        #[doc = "An indication of AML file system health. Gives more information about health than just that related to provisioning."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub health: Option<AmlFilesystemHealth>,
+        #[doc = "ARM provisioning state."]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "A fully qualified URL."]
+        #[serde(rename = "filesystemSubnet")]
+        pub filesystem_subnet: UrlString,
+        #[doc = "AML file system client information"]
+        #[serde(rename = "clientInfo", default, skip_serializing_if = "Option::is_none")]
+        pub client_info: Option<AmlFilesystemClientInfo>,
+        #[doc = "Throughput provisioned in MB per sec, calculated as storageCapacityTiB * per-unit storage throughput"]
+        #[serde(rename = "throughputProvisionedMBps", default, skip_serializing_if = "Option::is_none")]
+        pub throughput_provisioned_m_bps: Option<i32>,
+        #[doc = "AML file system encryption settings."]
+        #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
+        pub encryption_settings: Option<AmlFilesystemEncryptionSettings>,
+        #[doc = "Start time of a 30-minute weekly maintenance window."]
+        #[serde(rename = "maintenanceWindow")]
+        pub maintenance_window: properties::MaintenanceWindow,
+        #[doc = "Hydration and archive settings and status"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub hsm: Option<properties::Hsm>,
+    }
+    impl Properties {
+        pub fn new(storage_capacity_ti_b: f32, filesystem_subnet: UrlString, maintenance_window: properties::MaintenanceWindow) -> Self {
+            Self {
+                storage_capacity_ti_b,
+                health: None,
+                provisioning_state: None,
+                filesystem_subnet,
+                client_info: None,
+                throughput_provisioned_m_bps: None,
+                encryption_settings: None,
+                maintenance_window,
+                hsm: None,
+            }
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "ARM provisioning state."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "ProvisioningState")]
+        pub enum ProvisioningState {
+            Succeeded,
+            Failed,
+            Creating,
+            Deleting,
+            Updating,
+            Canceled,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for ProvisioningState {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for ProvisioningState {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for ProvisioningState {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                    Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                    Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Creating"),
+                    Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Deleting"),
+                    Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Updating"),
+                    Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Canceled"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+        #[doc = "Start time of a 30-minute weekly maintenance window."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct MaintenanceWindow {
+            #[doc = "Day of the week on which the maintenance window will occur."]
+            #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+            pub day_of_week: Option<maintenance_window::DayOfWeek>,
+            #[doc = "The time of day (in UTC) to start the maintenance window."]
+            #[serde(rename = "timeOfDayUTC", default, skip_serializing_if = "Option::is_none")]
+            pub time_of_day_utc: Option<String>,
+        }
+        impl MaintenanceWindow {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        pub mod maintenance_window {
+            use super::*;
+            #[doc = "Day of the week on which the maintenance window will occur."]
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub enum DayOfWeek {
+                Monday,
+                Tuesday,
+                Wednesday,
+                Thursday,
+                Friday,
+                Saturday,
+                Sunday,
+            }
+        }
+        #[doc = "Hydration and archive settings and status"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Hsm {
+            #[doc = "AML file system HSM settings."]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub settings: Option<AmlFilesystemHsmSettings>,
+            #[doc = "Archive status"]
+            #[serde(
+                rename = "archiveStatus",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
+            pub archive_status: Vec<AmlFilesystemArchive>,
+        }
+        impl Hsm {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+}
+#[doc = "Information about the AML file system archive"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemArchive {
+    #[doc = "Lustre file system path to archive relative to the file system root.  Specify '/' to archive all modified data."]
+    #[serde(rename = "filesystemPath", default, skip_serializing_if = "Option::is_none")]
+    pub filesystem_path: Option<String>,
+    #[doc = "The status of the archive"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<aml_filesystem_archive::Status>,
+}
+impl AmlFilesystemArchive {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod aml_filesystem_archive {
+    use super::*;
+    #[doc = "The status of the archive"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Status {
+        #[doc = "The state of the archive operation"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub state: Option<status::State>,
+        #[doc = "The time of the last completed archive operation"]
+        #[serde(rename = "lastCompletionTime", default, with = "azure_core::date::rfc3339::option")]
+        pub last_completion_time: Option<time::OffsetDateTime>,
+        #[doc = "The time the latest archive operation started"]
+        #[serde(rename = "lastStartedTime", default, with = "azure_core::date::rfc3339::option")]
+        pub last_started_time: Option<time::OffsetDateTime>,
+        #[doc = "The completion percentage of the archive operation"]
+        #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+        pub percent_complete: Option<i32>,
+        #[doc = "Server-defined error code for the archive operation"]
+        #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+        pub error_code: Option<String>,
+        #[doc = "Server-defined error message for the archive operation"]
+        #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+        pub error_message: Option<String>,
+    }
+    impl Status {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod status {
+        use super::*;
+        #[doc = "The state of the archive operation"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "State")]
+        pub enum State {
+            NotConfigured,
+            Idle,
+            InProgress,
+            Canceled,
+            Completed,
+            Failed,
+            Cancelling,
+            #[serde(rename = "FSScanInProgress")]
+            FsScanInProgress,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for State {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for State {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for State {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::NotConfigured => serializer.serialize_unit_variant("State", 0u32, "NotConfigured"),
+                    Self::Idle => serializer.serialize_unit_variant("State", 1u32, "Idle"),
+                    Self::InProgress => serializer.serialize_unit_variant("State", 2u32, "InProgress"),
+                    Self::Canceled => serializer.serialize_unit_variant("State", 3u32, "Canceled"),
+                    Self::Completed => serializer.serialize_unit_variant("State", 4u32, "Completed"),
+                    Self::Failed => serializer.serialize_unit_variant("State", 5u32, "Failed"),
+                    Self::Cancelling => serializer.serialize_unit_variant("State", 6u32, "Cancelling"),
+                    Self::FsScanInProgress => serializer.serialize_unit_variant("State", 7u32, "FSScanInProgress"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+}
+#[doc = "Information required to execute the archive operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemArchiveInfo {
+    #[doc = "Lustre file system path to archive relative to the file system root.  Specify '/' to archive all modified data."]
+    #[serde(rename = "filesystemPath", default, skip_serializing_if = "Option::is_none")]
+    pub filesystem_path: Option<String>,
+}
+impl AmlFilesystemArchiveInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The error details provided when the checkAmlFSSubnets call fails."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemCheckSubnetError {
+    #[doc = "The error details for the AML file system's subnet."]
+    #[serde(rename = "filesystemSubnet", default, skip_serializing_if = "Option::is_none")]
+    pub filesystem_subnet: Option<aml_filesystem_check_subnet_error::FilesystemSubnet>,
+}
+impl AmlFilesystemCheckSubnetError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod aml_filesystem_check_subnet_error {
+    use super::*;
+    #[doc = "The error details for the AML file system's subnet."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct FilesystemSubnet {
+        #[doc = "The status of the AML file system subnet check."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub status: Option<filesystem_subnet::Status>,
+        #[doc = "The details of the AML file system subnet check."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+    }
+    impl FilesystemSubnet {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod filesystem_subnet {
+        use super::*;
+        #[doc = "The status of the AML file system subnet check."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "Status")]
+        pub enum Status {
+            Ok,
+            Invalid,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for Status {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for Status {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for Status {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Ok => serializer.serialize_unit_variant("Status", 0u32, "Ok"),
+                    Self::Invalid => serializer.serialize_unit_variant("Status", 1u32, "Invalid"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+}
+#[doc = "AML file system client information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemClientInfo {
+    #[doc = "The IPv4 address used by clients to mount the AML file system's Lustre Management Service (MGS)."]
+    #[serde(rename = "mgsAddress", default, skip_serializing_if = "Option::is_none")]
+    pub mgs_address: Option<String>,
+    #[doc = "Recommended command to mount the AML file system"]
+    #[serde(rename = "mountCommand", default, skip_serializing_if = "Option::is_none")]
+    pub mount_command: Option<String>,
+    #[doc = "The version of Lustre running in the AML file system"]
+    #[serde(rename = "lustreVersion", default, skip_serializing_if = "Option::is_none")]
+    pub lustre_version: Option<String>,
+    #[doc = "AML file system container storage interface information"]
+    #[serde(rename = "containerStorageInterface", default, skip_serializing_if = "Option::is_none")]
+    pub container_storage_interface: Option<AmlFilesystemContainerStorageInterface>,
+}
+impl AmlFilesystemClientInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "AML file system container storage interface information"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemContainerStorageInterface {
+    #[doc = "Recommended AKS Persistent Volume Claim for the CSI driver, in Base64 encoded YAML"]
+    #[serde(rename = "persistentVolumeClaim", default, skip_serializing_if = "Option::is_none")]
+    pub persistent_volume_claim: Option<String>,
+    #[doc = "Recommended AKS Persistent Volume for the CSI driver, in Base64 encoded YAML"]
+    #[serde(rename = "persistentVolume", default, skip_serializing_if = "Option::is_none")]
+    pub persistent_volume: Option<String>,
+    #[doc = "Recommended AKS Storage Class for the CSI driver, in Base64 encoded YAML"]
+    #[serde(rename = "storageClass", default, skip_serializing_if = "Option::is_none")]
+    pub storage_class: Option<String>,
+}
+impl AmlFilesystemContainerStorageInterface {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "AML file system encryption settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemEncryptionSettings {
+    #[doc = "Describes a reference to key vault key."]
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyVaultKeyReference>,
+}
+impl AmlFilesystemEncryptionSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An indication of AML file system health. Gives more information about health than just that related to provisioning."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemHealth {
+    #[doc = "List of AML file system health states."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<aml_filesystem_health::State>,
+    #[doc = "Server-defined error code for the AML file system health"]
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
+    pub status_code: Option<String>,
+    #[doc = "Describes the health state."]
+    #[serde(rename = "statusDescription", default, skip_serializing_if = "Option::is_none")]
+    pub status_description: Option<String>,
+}
+impl AmlFilesystemHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod aml_filesystem_health {
+    use super::*;
+    #[doc = "List of AML file system health states."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Unavailable,
+        Available,
+        Degraded,
+        Transitioning,
+        Maintenance,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Unavailable => serializer.serialize_unit_variant("State", 0u32, "Unavailable"),
+                Self::Available => serializer.serialize_unit_variant("State", 1u32, "Available"),
+                Self::Degraded => serializer.serialize_unit_variant("State", 2u32, "Degraded"),
+                Self::Transitioning => serializer.serialize_unit_variant("State", 3u32, "Transitioning"),
+                Self::Maintenance => serializer.serialize_unit_variant("State", 4u32, "Maintenance"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "AML file system HSM settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AmlFilesystemHsmSettings {
+    #[doc = "A fully qualified URL."]
+    pub container: UrlString,
+    #[doc = "A fully qualified URL."]
+    #[serde(rename = "loggingContainer")]
+    pub logging_container: UrlString,
+    #[doc = "Only blobs in the non-logging container that start with this path/prefix get hydrated into the cluster namespace."]
+    #[serde(rename = "importPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub import_prefix: Option<String>,
+}
+impl AmlFilesystemHsmSettings {
+    pub fn new(container: UrlString, logging_container: UrlString) -> Self {
+        Self {
+            container,
+            logging_container,
+            import_prefix: None,
+        }
+    }
+}
+#[doc = "Managed Identity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemIdentity {
+    #[doc = "The principal ID for the user-assigned identity of the resource."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID associated with the resource."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the resource."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<aml_filesystem_identity::Type>,
+    #[doc = "A dictionary where each key is a user assigned identity resource ID, and each key's value is an empty dictionary."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedIdentities>,
+}
+impl AmlFilesystemIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod aml_filesystem_identity {
+    use super::*;
+    #[doc = "The type of identity used for the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserAssigned,
+        None,
+    }
+}
+pub type AmlFilesystemName = String;
+#[doc = "Information required to validate the subnet that will be used in AML file system create"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemSubnetInfo {
+    #[doc = "A fully qualified URL."]
+    #[serde(rename = "filesystemSubnet", default, skip_serializing_if = "Option::is_none")]
+    pub filesystem_subnet: Option<UrlString>,
+    #[doc = "The size of the AML file system, in TiB."]
+    #[serde(rename = "storageCapacityTiB", default, skip_serializing_if = "Option::is_none")]
+    pub storage_capacity_ti_b: Option<f32>,
+    #[doc = "SKU for the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SkuName>,
+    #[doc = "Region that the AML file system will be created in."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+impl AmlFilesystemSubnetInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An AML file system update instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of the AML file system."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<aml_filesystem_update::Properties>,
+}
+impl AmlFilesystemUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod aml_filesystem_update {
+    use super::*;
+    #[doc = "Properties of the AML file system."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "AML file system encryption settings."]
+        #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
+        pub encryption_settings: Option<AmlFilesystemEncryptionSettings>,
+        #[doc = "Start time of a 30-minute weekly maintenance window."]
+        #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
+        pub maintenance_window: Option<properties::MaintenanceWindow>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Start time of a 30-minute weekly maintenance window."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct MaintenanceWindow {
+            #[doc = "Day of the week on which the maintenance window will occur."]
+            #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+            pub day_of_week: Option<maintenance_window::DayOfWeek>,
+            #[doc = "The time of day (in UTC) to start the maintenance window."]
+            #[serde(rename = "timeOfDayUTC", default, skip_serializing_if = "Option::is_none")]
+            pub time_of_day_utc: Option<String>,
+        }
+        impl MaintenanceWindow {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        pub mod maintenance_window {
+            use super::*;
+            #[doc = "Day of the week on which the maintenance window will occur."]
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            pub enum DayOfWeek {
+                Monday,
+                Tuesday,
+                Wednesday,
+                Thursday,
+                Friday,
+                Saturday,
+                Sunday,
+            }
+        }
+    }
+}
+#[doc = "Result of the request to list AML file systems. It contains a list of AML file systems and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AmlFilesystemsListResult {
+    #[doc = "URL to get the next set of AML file system list results, if there are any."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "List of AML file systems."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AmlFilesystem>,
+}
+impl azure_core::Continuable for AmlFilesystemsListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl AmlFilesystemsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "REST API operation description: see https://github.com/Azure/azure-rest-api-specs/blob/master/documentation/openapi-authoring-automated-guidelines.md#r3023-operationsapiimplementation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiOperation {
+    #[doc = "The object that represents the operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<api_operation::Display>,
+    #[doc = "Origin of the operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[doc = "The flag that indicates whether the operation applies to data plane."]
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Additional details about an operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<api_operation::Properties>,
+}
+impl ApiOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod api_operation {
+    use super::*;
+    #[doc = "The object that represents the operation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Display {
+        #[doc = "Operation type: Read, write, delete, etc."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[doc = "Service provider: Microsoft.StorageCache"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Cache, etc."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[doc = "The description of the operation"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "Additional details about an operation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "Specification of the all the metrics provided for a resource type."]
+        #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
+        pub service_specification: Option<properties::ServiceSpecification>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Specification of the all the metrics provided for a resource type."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct ServiceSpecification {
+            #[doc = "Details about operations related to metrics."]
+            #[serde(
+                rename = "metricSpecifications",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
+            pub metric_specifications: Vec<MetricSpecification>,
+            #[doc = "Details about operations related to logs."]
+            #[serde(
+                rename = "logSpecifications",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
+            pub log_specifications: Vec<LogSpecification>,
+        }
+        impl ServiceSpecification {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+}
+#[doc = "Result of the request to list Resource Provider operations. It contains a list of operations and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiOperationListResult {
+    #[doc = "URL to get the next set of operation list results if there are any."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "List of Resource Provider operations supported by the Microsoft.StorageCache resource provider."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ApiOperation>,
+}
+impl azure_core::Continuable for ApiOperationListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ApiOperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The status of operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AscOperation {
+    #[doc = "The operation Id."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The operation name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The start time of the operation."]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[doc = "The end time of the operation."]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[doc = "The status of the operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = "Describes the format of Error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+    #[doc = "Additional operation-specific output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AscOperationProperties>,
+}
+impl AscOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Additional operation-specific output."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AscOperationProperties {
+    #[doc = "Additional operation-specific output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Value>,
+}
+impl AscOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties pertaining to the BlobNfsTarget."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BlobNfsTarget {
+    #[doc = "A fully qualified URL."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<UrlString>,
+    #[doc = "Identifies the StorageCache usage model to be used for this storage target."]
+    #[serde(rename = "usageModel", default, skip_serializing_if = "Option::is_none")]
+    pub usage_model: Option<String>,
+    #[doc = "Amount of time (in seconds) the cache waits before it checks the back-end storage for file updates."]
+    #[serde(rename = "verificationTimer", default, skip_serializing_if = "Option::is_none")]
+    pub verification_timer: Option<i32>,
+    #[doc = "Amount of time (in seconds) the cache waits after the last file change before it copies the changed file to back-end storage."]
+    #[serde(rename = "writeBackTimer", default, skip_serializing_if = "Option::is_none")]
+    pub write_back_timer: Option<i32>,
+}
+impl BlobNfsTarget {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A cache instance. Follows Azure Resource Manager standards: https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/resource-api-reference.md"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Cache {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "A fully qualified URL."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<UrlString>,
+    #[doc = "Region name string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Schema for the name of resources served by this provider. Note that objects will contain an odata @id annotation as appropriate. This will contain the complete resource id of the object. These names are case-preserving, but not case sensitive."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<ResourceName>,
+    #[doc = "Type of the cache; Microsoft.StorageCache/Cache"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Cache identity properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<CacheIdentity>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Properties of the cache."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<cache::Properties>,
+    #[doc = "SKU for the cache."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<cache::Sku>,
+}
+impl Cache {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod cache {
+    use super::*;
+    #[doc = "Properties of the cache."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "The size of this Cache, in GB."]
+        #[serde(rename = "cacheSizeGB", default, skip_serializing_if = "Option::is_none")]
+        pub cache_size_gb: Option<i32>,
+        #[doc = "An indication of cache health. Gives more information about health than just that related to provisioning."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub health: Option<CacheHealth>,
+        #[doc = "Array of IPv4 addresses that can be used by clients mounting this cache."]
+        #[serde(
+            rename = "mountAddresses",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
+        pub mount_addresses: Vec<String>,
+        #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        pub provisioning_state: Option<properties::ProvisioningState>,
+        #[doc = "A fully qualified URL."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub subnet: Option<UrlString>,
+        #[doc = "Properties describing the software upgrade state of the cache."]
+        #[serde(rename = "upgradeStatus", default, skip_serializing_if = "Option::is_none")]
+        pub upgrade_status: Option<CacheUpgradeStatus>,
+        #[doc = "Cache Upgrade Settings."]
+        #[serde(rename = "upgradeSettings", default, skip_serializing_if = "Option::is_none")]
+        pub upgrade_settings: Option<CacheUpgradeSettings>,
+        #[doc = "Cache network settings."]
+        #[serde(rename = "networkSettings", default, skip_serializing_if = "Option::is_none")]
+        pub network_settings: Option<CacheNetworkSettings>,
+        #[doc = "Cache encryption settings."]
+        #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
+        pub encryption_settings: Option<CacheEncryptionSettings>,
+        #[doc = "Cache security settings."]
+        #[serde(rename = "securitySettings", default, skip_serializing_if = "Option::is_none")]
+        pub security_settings: Option<CacheSecuritySettings>,
+        #[doc = "Cache Directory Services settings."]
+        #[serde(rename = "directoryServicesSettings", default, skip_serializing_if = "Option::is_none")]
+        pub directory_services_settings: Option<CacheDirectorySettings>,
+        #[doc = "Availability zones for resources. This field should only contain a single element in the array."]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
+        pub zones: Vec<String>,
+        #[doc = "The list of priming jobs defined for the cache."]
+        #[serde(rename = "primingJobs", default, skip_serializing_if = "Option::is_none")]
+        pub priming_jobs: Option<PrimingJobList>,
+        #[doc = "List of storage target space allocations."]
+        #[serde(rename = "spaceAllocation", default, skip_serializing_if = "Option::is_none")]
+        pub space_allocation: Option<SpaceAllocationList>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "ProvisioningState")]
+        pub enum ProvisioningState {
+            Succeeded,
+            Failed,
+            Canceled,
+            Creating,
+            Deleting,
+            Updating,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for ProvisioningState {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for ProvisioningState {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for ProvisioningState {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                    Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                    Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
+                    Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Creating"),
+                    Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Deleting"),
+                    Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Updating"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+    }
+    #[doc = "SKU for the cache."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Sku {
+        #[doc = "SKU name for this cache."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+    }
+    impl Sku {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "Active Directory settings used to join a cache to a domain."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CacheActiveDirectorySettings {
+    #[doc = "Primary DNS IP address used to resolve the Active Directory domain controller's fully qualified domain name."]
+    #[serde(rename = "primaryDnsIpAddress")]
+    pub primary_dns_ip_address: String,
+    #[doc = "Secondary DNS IP address used to resolve the Active Directory domain controller's fully qualified domain name."]
+    #[serde(rename = "secondaryDnsIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_dns_ip_address: Option<String>,
+    #[doc = "The fully qualified domain name of the Active Directory domain controller."]
+    #[serde(rename = "domainName")]
+    pub domain_name: String,
+    #[doc = "The Active Directory domain's NetBIOS name."]
+    #[serde(rename = "domainNetBiosName")]
+    pub domain_net_bios_name: String,
+    #[doc = "The NetBIOS name to assign to the HPC Cache when it joins the Active Directory domain as a server. Length must 1-15 characters from the class [-0-9a-zA-Z]."]
+    #[serde(rename = "cacheNetBiosName")]
+    pub cache_net_bios_name: String,
+    #[doc = "True if the HPC Cache is joined to the Active Directory domain."]
+    #[serde(rename = "domainJoined", default, skip_serializing_if = "Option::is_none")]
+    pub domain_joined: Option<cache_active_directory_settings::DomainJoined>,
+    #[doc = "Active Directory admin credentials used to join the HPC Cache to a domain."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credentials: Option<cache_active_directory_settings::Credentials>,
+}
+impl CacheActiveDirectorySettings {
+    pub fn new(primary_dns_ip_address: String, domain_name: String, domain_net_bios_name: String, cache_net_bios_name: String) -> Self {
+        Self {
+            primary_dns_ip_address,
+            secondary_dns_ip_address: None,
+            domain_name,
+            domain_net_bios_name,
+            cache_net_bios_name,
+            domain_joined: None,
+            credentials: None,
+        }
+    }
+}
+pub mod cache_active_directory_settings {
+    use super::*;
+    #[doc = "True if the HPC Cache is joined to the Active Directory domain."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "DomainJoined")]
+    pub enum DomainJoined {
+        Yes,
+        No,
+        Error,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for DomainJoined {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for DomainJoined {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for DomainJoined {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Yes => serializer.serialize_unit_variant("DomainJoined", 0u32, "Yes"),
+                Self::No => serializer.serialize_unit_variant("DomainJoined", 1u32, "No"),
+                Self::Error => serializer.serialize_unit_variant("DomainJoined", 2u32, "Error"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Active Directory admin credentials used to join the HPC Cache to a domain."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Credentials {
+        #[doc = "Username of the Active Directory domain administrator. This value is stored encrypted and not returned on response."]
+        pub username: String,
+        #[doc = "Plain text password of the Active Directory domain administrator. This value is stored encrypted and not returned on response."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub password: Option<String>,
+    }
+    impl Credentials {
+        pub fn new(username: String) -> Self {
+            Self { username, password: None }
+        }
+    }
+}
+#[doc = "Cache Directory Services settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheDirectorySettings {
+    #[doc = "Active Directory settings used to join a cache to a domain."]
+    #[serde(rename = "activeDirectory", default, skip_serializing_if = "Option::is_none")]
+    pub active_directory: Option<CacheActiveDirectorySettings>,
+    #[doc = "Settings for Extended Groups username and group download."]
+    #[serde(rename = "usernameDownload", default, skip_serializing_if = "Option::is_none")]
+    pub username_download: Option<CacheUsernameDownloadSettings>,
+}
+impl CacheDirectorySettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cache encryption settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheEncryptionSettings {
+    #[doc = "Describes a reference to key vault key."]
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyVaultKeyReference>,
+    #[doc = "Specifies whether the service will automatically rotate to the newest version of the key in the key vault."]
+    #[serde(rename = "rotationToLatestKeyVersionEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub rotation_to_latest_key_version_enabled: Option<bool>,
+}
+impl CacheEncryptionSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An indication of cache health. Gives more information about health than just that related to provisioning."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheHealth {
+    #[doc = "List of cache health states. Down is when the cluster is not responding.  Degraded is when its functioning but has some alerts. Transitioning when it is creating or deleting. Unknown will be returned in old api versions when a new value is added in future versions. WaitingForKey is when the create is waiting for the system assigned identity to be given access to the encryption key in the encryption settings."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<cache_health::State>,
+    #[doc = "Describes explanation of state."]
+    #[serde(rename = "statusDescription", default, skip_serializing_if = "Option::is_none")]
+    pub status_description: Option<String>,
+    #[doc = "Outstanding conditions that need to be investigated and resolved."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub conditions: Vec<Condition>,
+}
+impl CacheHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod cache_health {
+    use super::*;
+    #[doc = "List of cache health states. Down is when the cluster is not responding.  Degraded is when its functioning but has some alerts. Transitioning when it is creating or deleting. Unknown will be returned in old api versions when a new value is added in future versions. WaitingForKey is when the create is waiting for the system assigned identity to be given access to the encryption key in the encryption settings."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Unknown,
+        Healthy,
+        Degraded,
+        Down,
+        Transitioning,
+        Stopping,
+        Stopped,
+        Upgrading,
+        Flushing,
+        WaitingForKey,
+        StartFailed,
+        UpgradeFailed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Unknown => serializer.serialize_unit_variant("State", 0u32, "Unknown"),
+                Self::Healthy => serializer.serialize_unit_variant("State", 1u32, "Healthy"),
+                Self::Degraded => serializer.serialize_unit_variant("State", 2u32, "Degraded"),
+                Self::Down => serializer.serialize_unit_variant("State", 3u32, "Down"),
+                Self::Transitioning => serializer.serialize_unit_variant("State", 4u32, "Transitioning"),
+                Self::Stopping => serializer.serialize_unit_variant("State", 5u32, "Stopping"),
+                Self::Stopped => serializer.serialize_unit_variant("State", 6u32, "Stopped"),
+                Self::Upgrading => serializer.serialize_unit_variant("State", 7u32, "Upgrading"),
+                Self::Flushing => serializer.serialize_unit_variant("State", 8u32, "Flushing"),
+                Self::WaitingForKey => serializer.serialize_unit_variant("State", 9u32, "WaitingForKey"),
+                Self::StartFailed => serializer.serialize_unit_variant("State", 10u32, "StartFailed"),
+                Self::UpgradeFailed => serializer.serialize_unit_variant("State", 11u32, "UpgradeFailed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Cache identity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheIdentity {
+    #[doc = "The principal ID for the system-assigned identity of the cache."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID associated with the cache."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the cache"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<cache_identity::Type>,
+    #[doc = "A dictionary where each key is a user assigned identity resource ID, and each key's value is an empty dictionary."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl CacheIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod cache_identity {
+    use super::*;
+    #[doc = "The type of identity used for the cache"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
+}
+#[doc = "Cache network settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheNetworkSettings {
+    #[doc = "The IPv4 maximum transmission unit configured for the subnet."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mtu: Option<i32>,
+    #[doc = "Array of additional IP addresses used by this cache."]
+    #[serde(
+        rename = "utilityAddresses",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub utility_addresses: Vec<String>,
+    #[doc = "DNS servers for the cache to use.  It will be set from the network configuration if no value is provided."]
+    #[serde(
+        rename = "dnsServers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub dns_servers: Vec<String>,
+    #[doc = "DNS search domain"]
+    #[serde(rename = "dnsSearchDomain", default, skip_serializing_if = "Option::is_none")]
+    pub dns_search_domain: Option<String>,
+    #[doc = "NTP server IP Address or FQDN for the cache to use. The default is time.windows.com."]
+    #[serde(rename = "ntpServer", default, skip_serializing_if = "Option::is_none")]
+    pub ntp_server: Option<String>,
+}
+impl CacheNetworkSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cache security settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheSecuritySettings {
+    #[doc = "NFS access policies defined for this cache."]
+    #[serde(
+        rename = "accessPolicies",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub access_policies: Vec<NfsAccessPolicy>,
+}
+impl CacheSecuritySettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cache Upgrade Settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheUpgradeSettings {
+    #[doc = "True if the user chooses to select an installation time between now and firmwareUpdateDeadline. Else the firmware will automatically be installed after firmwareUpdateDeadline if not triggered earlier via the upgrade operation."]
+    #[serde(rename = "upgradeScheduleEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub upgrade_schedule_enabled: Option<bool>,
+    #[doc = "When upgradeScheduleEnabled is true, this field holds the user-chosen upgrade time. At the user-chosen time, the firmware update will automatically be installed on the cache."]
+    #[serde(rename = "scheduledTime", default, with = "azure_core::date::rfc3339::option")]
+    pub scheduled_time: Option<time::OffsetDateTime>,
+}
+impl CacheUpgradeSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties describing the software upgrade state of the cache."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheUpgradeStatus {
+    #[doc = "Version string of the firmware currently installed on this cache."]
+    #[serde(rename = "currentFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
+    pub current_firmware_version: Option<String>,
+    #[doc = "True if there is a firmware update ready to install on this cache. The firmware will automatically be installed after firmwareUpdateDeadline if not triggered earlier via the upgrade operation."]
+    #[serde(rename = "firmwareUpdateStatus", default, skip_serializing_if = "Option::is_none")]
+    pub firmware_update_status: Option<cache_upgrade_status::FirmwareUpdateStatus>,
+    #[doc = "Time at which the pending firmware update will automatically be installed on the cache."]
+    #[serde(rename = "firmwareUpdateDeadline", default, with = "azure_core::date::rfc3339::option")]
+    pub firmware_update_deadline: Option<time::OffsetDateTime>,
+    #[doc = "Time of the last successful firmware update."]
+    #[serde(rename = "lastFirmwareUpdate", default, with = "azure_core::date::rfc3339::option")]
+    pub last_firmware_update: Option<time::OffsetDateTime>,
+    #[doc = "When firmwareUpdateAvailable is true, this field holds the version string for the update."]
+    #[serde(rename = "pendingFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
+    pub pending_firmware_version: Option<String>,
+}
+impl CacheUpgradeStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod cache_upgrade_status {
+    use super::*;
+    #[doc = "True if there is a firmware update ready to install on this cache. The firmware will automatically be installed after firmwareUpdateDeadline if not triggered earlier via the upgrade operation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "FirmwareUpdateStatus")]
+    pub enum FirmwareUpdateStatus {
+        #[serde(rename = "available")]
+        Available,
+        #[serde(rename = "unavailable")]
+        Unavailable,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for FirmwareUpdateStatus {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for FirmwareUpdateStatus {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for FirmwareUpdateStatus {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Available => serializer.serialize_unit_variant("FirmwareUpdateStatus", 0u32, "available"),
+                Self::Unavailable => serializer.serialize_unit_variant("FirmwareUpdateStatus", 1u32, "unavailable"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Settings for Extended Groups username and group download."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CacheUsernameDownloadSettings {
+    #[doc = "Whether or not Extended Groups is enabled."]
+    #[serde(rename = "extendedGroups", default, skip_serializing_if = "Option::is_none")]
+    pub extended_groups: Option<bool>,
+    #[doc = "This setting determines how the cache gets username and group names for clients."]
+    #[serde(rename = "usernameSource", default, skip_serializing_if = "Option::is_none")]
+    pub username_source: Option<cache_username_download_settings::UsernameSource>,
+    #[doc = "The URI of the file containing group information (in /etc/group file format). This field must be populated when 'usernameSource' is set to 'File'."]
+    #[serde(rename = "groupFileURI", default, skip_serializing_if = "Option::is_none")]
+    pub group_file_uri: Option<String>,
+    #[doc = "The URI of the file containing user information (in /etc/passwd file format). This field must be populated when 'usernameSource' is set to 'File'."]
+    #[serde(rename = "userFileURI", default, skip_serializing_if = "Option::is_none")]
+    pub user_file_uri: Option<String>,
+    #[doc = "The fully qualified domain name or IP address of the LDAP server to use."]
+    #[serde(rename = "ldapServer", default, skip_serializing_if = "Option::is_none")]
+    pub ldap_server: Option<String>,
+    #[doc = "The base distinguished name for the LDAP domain."]
+    #[serde(rename = "ldapBaseDN", default, skip_serializing_if = "Option::is_none")]
+    pub ldap_base_dn: Option<String>,
+    #[doc = "Whether or not the LDAP connection should be encrypted."]
+    #[serde(rename = "encryptLdapConnection", default, skip_serializing_if = "Option::is_none")]
+    pub encrypt_ldap_connection: Option<bool>,
+    #[doc = "Determines if the certificates must be validated by a certificate authority. When true, caCertificateURI must be provided."]
+    #[serde(rename = "requireValidCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub require_valid_certificate: Option<bool>,
+    #[doc = "Determines if the certificate should be automatically downloaded. This applies to 'caCertificateURI' only if 'requireValidCertificate' is true."]
+    #[serde(rename = "autoDownloadCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub auto_download_certificate: Option<bool>,
+    #[doc = "The URI of the CA certificate to validate the LDAP secure connection. This field must be populated when 'requireValidCertificate' is set to true."]
+    #[serde(rename = "caCertificateURI", default, skip_serializing_if = "Option::is_none")]
+    pub ca_certificate_uri: Option<String>,
+    #[doc = "Indicates whether or not the HPC Cache has performed the username download successfully."]
+    #[serde(rename = "usernameDownloaded", default, skip_serializing_if = "Option::is_none")]
+    pub username_downloaded: Option<cache_username_download_settings::UsernameDownloaded>,
+    #[doc = "When present, these are the credentials for the secure LDAP connection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credentials: Option<cache_username_download_settings::Credentials>,
+}
+impl CacheUsernameDownloadSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod cache_username_download_settings {
+    use super::*;
+    #[doc = "This setting determines how the cache gets username and group names for clients."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "UsernameSource")]
+    pub enum UsernameSource {
+        #[serde(rename = "AD")]
+        Ad,
+        #[serde(rename = "LDAP")]
+        Ldap,
+        File,
+        None,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for UsernameSource {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for UsernameSource {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for UsernameSource {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Ad => serializer.serialize_unit_variant("UsernameSource", 0u32, "AD"),
+                Self::Ldap => serializer.serialize_unit_variant("UsernameSource", 1u32, "LDAP"),
+                Self::File => serializer.serialize_unit_variant("UsernameSource", 2u32, "File"),
+                Self::None => serializer.serialize_unit_variant("UsernameSource", 3u32, "None"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for UsernameSource {
+        fn default() -> Self {
+            Self::None
+        }
+    }
+    #[doc = "Indicates whether or not the HPC Cache has performed the username download successfully."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "UsernameDownloaded")]
+    pub enum UsernameDownloaded {
+        Yes,
+        No,
+        Error,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for UsernameDownloaded {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for UsernameDownloaded {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for UsernameDownloaded {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Yes => serializer.serialize_unit_variant("UsernameDownloaded", 0u32, "Yes"),
+                Self::No => serializer.serialize_unit_variant("UsernameDownloaded", 1u32, "No"),
+                Self::Error => serializer.serialize_unit_variant("UsernameDownloaded", 2u32, "Error"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "When present, these are the credentials for the secure LDAP connection."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Credentials {
+        #[doc = "The Bind Distinguished Name identity to be used in the secure LDAP connection. This value is stored encrypted and not returned on response."]
+        #[serde(rename = "bindDn", default, skip_serializing_if = "Option::is_none")]
+        pub bind_dn: Option<String>,
+        #[doc = "The Bind password to be used in the secure LDAP connection. This value is stored encrypted and not returned on response."]
+        #[serde(rename = "bindPassword", default, skip_serializing_if = "Option::is_none")]
+        pub bind_password: Option<String>,
+    }
+    impl Credentials {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "Result of the request to list caches. It contains a list of caches and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CachesListResult {
+    #[doc = "URL to get the next set of cache list results, if there are any."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "List of Caches."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<Cache>,
+}
+impl azure_core::Continuable for CachesListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl CachesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties pertaining to the ClfsTarget"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ClfsTarget {
+    #[doc = "A fully qualified URL."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<UrlString>,
+}
+impl ClfsTarget {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An error response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CloudError {
+    #[doc = "An error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+impl azure_core::Continuable for CloudError {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An error response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "A list of additional details about the error."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<CloudErrorBody>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Outstanding conditions that will need to be resolved."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Condition {
+    #[doc = "The time when the condition was raised."]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
+    pub timestamp: Option<time::OffsetDateTime>,
+    #[doc = "The issue requiring attention."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl Condition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the format of Error response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorResponse {
+    #[doc = "Error code"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes a reference to key vault key."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultKeyReference {
+    #[doc = "The URL referencing a key encryption key in key vault."]
+    #[serde(rename = "keyUrl")]
+    pub key_url: String,
+    #[doc = "Describes a resource Id to source key vault."]
+    #[serde(rename = "sourceVault")]
+    pub source_vault: key_vault_key_reference::SourceVault,
+}
+impl KeyVaultKeyReference {
+    pub fn new(key_url: String, source_vault: key_vault_key_reference::SourceVault) -> Self {
+        Self { key_url, source_vault }
+    }
+}
+pub mod key_vault_key_reference {
+    use super::*;
+    #[doc = "Describes a resource Id to source key vault."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct SourceVault {
+        #[doc = "Resource Id."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub id: Option<String>,
+    }
+    impl SourceVault {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "Details about operation related to logs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LogSpecification {
+    #[doc = "The name of the log."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Localized display name of the log."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+impl LogSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Specifications of the Dimension of metrics."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MetricDimension {
+    #[doc = "Name of the dimension"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Localized friendly display name of the dimension"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "Internal name of the dimension."]
+    #[serde(rename = "internalName", default, skip_serializing_if = "Option::is_none")]
+    pub internal_name: Option<String>,
+    #[doc = "To be exported to shoe box."]
+    #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_for_shoebox: Option<bool>,
+}
+impl MetricDimension {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Details about operation related to metrics."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MetricSpecification {
+    #[doc = "The name of the metric."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Localized display name of the metric."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "The description of the metric."]
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[doc = "The unit that the metric is measured in."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[doc = "The type of metric aggregation."]
+    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    #[doc = "Support metric aggregation type."]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub supported_aggregation_types: Vec<String>,
+    #[doc = "Type of metrics."]
+    #[serde(rename = "metricClass", default, skip_serializing_if = "Option::is_none")]
+    pub metric_class: Option<String>,
+    #[doc = "Dimensions of the metric"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub dimensions: Vec<MetricDimension>,
+}
+impl MetricSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A namespace junction."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NamespaceJunction {
+    #[doc = "Namespace path on a cache for a Storage Target."]
+    #[serde(rename = "namespacePath", default, skip_serializing_if = "Option::is_none")]
+    pub namespace_path: Option<String>,
+    #[doc = "Path in Storage Target to which namespacePath points."]
+    #[serde(rename = "targetPath", default, skip_serializing_if = "Option::is_none")]
+    pub target_path: Option<String>,
+    #[doc = "NFS export where targetPath exists."]
+    #[serde(rename = "nfsExport", default, skip_serializing_if = "Option::is_none")]
+    pub nfs_export: Option<String>,
+    #[doc = "Name of the access policy applied to this junction."]
+    #[serde(rename = "nfsAccessPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub nfs_access_policy: Option<String>,
+}
+impl NamespaceJunction {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties pertaining to the Nfs3Target"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Nfs3Target {
+    #[doc = "IP address or host name of an NFSv3 host (e.g., 10.0.44.44)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "Identifies the StorageCache usage model to be used for this storage target."]
+    #[serde(rename = "usageModel", default, skip_serializing_if = "Option::is_none")]
+    pub usage_model: Option<String>,
+    #[doc = "Amount of time (in seconds) the cache waits before it checks the back-end storage for file updates."]
+    #[serde(rename = "verificationTimer", default, skip_serializing_if = "Option::is_none")]
+    pub verification_timer: Option<i32>,
+    #[doc = "Amount of time (in seconds) the cache waits after the last file change before it copies the changed file to back-end storage."]
+    #[serde(rename = "writeBackTimer", default, skip_serializing_if = "Option::is_none")]
+    pub write_back_timer: Option<i32>,
+}
+impl Nfs3Target {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A set of rules describing access policies applied to NFSv3 clients of the cache."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NfsAccessPolicy {
+    #[doc = "Name identifying this policy. Access Policy names are not case sensitive."]
+    pub name: String,
+    #[doc = "The set of rules describing client accesses allowed under this policy."]
+    #[serde(rename = "accessRules")]
+    pub access_rules: Vec<NfsAccessRule>,
+}
+impl NfsAccessPolicy {
+    pub fn new(name: String, access_rules: Vec<NfsAccessRule>) -> Self {
+        Self { name, access_rules }
+    }
+}
+#[doc = "Rule to place restrictions on portions of the cache namespace being presented to clients."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NfsAccessRule {
+    #[doc = "Scope for this rule. The scope and filter determine which clients match the rule."]
+    pub scope: nfs_access_rule::Scope,
+    #[doc = "Filter applied to the scope for this rule. The filter's format depends on its scope. 'default' scope matches all clients and has no filter value. 'network' scope takes a filter in CIDR format (for example, 10.99.1.0/24). 'host' takes an IP address or fully qualified domain name as filter. If a client does not match any filter rule and there is no default rule, access is denied."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<String>,
+    #[doc = "Access allowed by this rule."]
+    pub access: nfs_access_rule::Access,
+    #[doc = "Allow SUID semantics."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub suid: Option<bool>,
+    #[doc = "For the default policy, allow access to subdirectories under the root export. If this is set to no, clients can only mount the path '/'. If set to yes, clients can mount a deeper path, like '/a/b'."]
+    #[serde(rename = "submountAccess", default, skip_serializing_if = "Option::is_none")]
+    pub submount_access: Option<bool>,
+    #[doc = "Map root accesses to anonymousUID and anonymousGID."]
+    #[serde(rename = "rootSquash", default, skip_serializing_if = "Option::is_none")]
+    pub root_squash: Option<bool>,
+    #[doc = "UID value that replaces 0 when rootSquash is true. 65534 will be used if not provided."]
+    #[serde(rename = "anonymousUID", default, skip_serializing_if = "Option::is_none")]
+    pub anonymous_uid: Option<String>,
+    #[doc = "GID value that replaces 0 when rootSquash is true. This will use the value of anonymousUID if not provided."]
+    #[serde(rename = "anonymousGID", default, skip_serializing_if = "Option::is_none")]
+    pub anonymous_gid: Option<String>,
+}
+impl NfsAccessRule {
+    pub fn new(scope: nfs_access_rule::Scope, access: nfs_access_rule::Access) -> Self {
+        Self {
+            scope,
+            filter: None,
+            access,
+            suid: None,
+            submount_access: None,
+            root_squash: None,
+            anonymous_uid: None,
+            anonymous_gid: None,
+        }
+    }
+}
+pub mod nfs_access_rule {
+    use super::*;
+    #[doc = "Scope for this rule. The scope and filter determine which clients match the rule."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Scope")]
+    pub enum Scope {
+        #[serde(rename = "default")]
+        Default,
+        #[serde(rename = "network")]
+        Network,
+        #[serde(rename = "host")]
+        Host,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Scope {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Scope {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Scope {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("Scope", 0u32, "default"),
+                Self::Network => serializer.serialize_unit_variant("Scope", 1u32, "network"),
+                Self::Host => serializer.serialize_unit_variant("Scope", 2u32, "host"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Access allowed by this rule."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Access")]
+    pub enum Access {
+        #[serde(rename = "no")]
+        No,
+        #[serde(rename = "ro")]
+        Ro,
+        #[serde(rename = "rw")]
+        Rw,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Access {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Access {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Access {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::No => serializer.serialize_unit_variant("Access", 0u32, "no"),
+                Self::Ro => serializer.serialize_unit_variant("Access", 1u32, "ro"),
+                Self::Rw => serializer.serialize_unit_variant("Access", 2u32, "rw"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "A priming job instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrimingJob {
+    #[doc = "Schema for the name of resources served by this provider. Note that objects will contain an odata @id annotation as appropriate. This will contain the complete resource id of the object. These names are case-preserving, but not case sensitive."]
+    #[serde(rename = "primingJobName")]
+    pub priming_job_name: ResourceName,
+    #[doc = "The URL for the priming manifest file to download. This file must be readable from the HPC Cache. When the file is in Azure blob storage the URL should include a Shared Access Signature (SAS) granting read permissions on the blob."]
+    #[serde(rename = "primingManifestUrl")]
+    pub priming_manifest_url: String,
+    #[doc = "The unique identifier of the priming job."]
+    #[serde(rename = "primingJobId", default, skip_serializing_if = "Option::is_none")]
+    pub priming_job_id: Option<String>,
+    #[doc = "The state of the priming operation."]
+    #[serde(rename = "primingJobState", default, skip_serializing_if = "Option::is_none")]
+    pub priming_job_state: Option<priming_job::PrimingJobState>,
+    #[doc = "The status code of the priming job."]
+    #[serde(rename = "primingJobStatus", default, skip_serializing_if = "Option::is_none")]
+    pub priming_job_status: Option<String>,
+    #[doc = "The job details or error information if any."]
+    #[serde(rename = "primingJobDetails", default, skip_serializing_if = "Option::is_none")]
+    pub priming_job_details: Option<String>,
+    #[doc = "The current progress of the priming job, as a percentage."]
+    #[serde(rename = "primingJobPercentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub priming_job_percent_complete: Option<f64>,
+}
+impl PrimingJob {
+    pub fn new(priming_job_name: ResourceName, priming_manifest_url: String) -> Self {
+        Self {
+            priming_job_name,
+            priming_manifest_url,
+            priming_job_id: None,
+            priming_job_state: None,
+            priming_job_status: None,
+            priming_job_details: None,
+            priming_job_percent_complete: None,
+        }
+    }
+}
+pub mod priming_job {
+    use super::*;
+    #[doc = "The state of the priming operation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "PrimingJobState")]
+    pub enum PrimingJobState {
+        Queued,
+        Running,
+        Paused,
+        Complete,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for PrimingJobState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for PrimingJobState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for PrimingJobState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Queued => serializer.serialize_unit_variant("PrimingJobState", 0u32, "Queued"),
+                Self::Running => serializer.serialize_unit_variant("PrimingJobState", 1u32, "Running"),
+                Self::Paused => serializer.serialize_unit_variant("PrimingJobState", 2u32, "Paused"),
+                Self::Complete => serializer.serialize_unit_variant("PrimingJobState", 3u32, "Complete"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Object containing the priming job ID."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrimingJobIdParameter {
+    #[doc = "The unique identifier of the priming job."]
+    #[serde(rename = "primingJobId")]
+    pub priming_job_id: String,
+}
+impl PrimingJobIdParameter {
+    pub fn new(priming_job_id: String) -> Self {
+        Self { priming_job_id }
+    }
+}
+pub type PrimingJobList = Vec<PrimingJob>;
+#[doc = "Information about the number of available IP addresses that are required for the AML file system."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RequiredAmlFilesystemSubnetsSize {
+    #[doc = "The number of available IP addresses that are required for the AML file system."]
+    #[serde(rename = "filesystemSubnetSize", default, skip_serializing_if = "Option::is_none")]
+    pub filesystem_subnet_size: Option<i32>,
+}
+impl RequiredAmlFilesystemSubnetsSize {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Information required to get the number of available IP addresses a subnet should have that will be used in AML file system create"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RequiredAmlFilesystemSubnetsSizeInfo {
+    #[doc = "The size of the AML file system, in TiB."]
+    #[serde(rename = "storageCapacityTiB", default, skip_serializing_if = "Option::is_none")]
+    pub storage_capacity_ti_b: Option<f32>,
+    #[doc = "SKU for the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SkuName>,
+}
+impl RequiredAmlFilesystemSubnetsSizeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type ResourceName = String;
+#[doc = "A resource SKU."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceSku {
+    #[doc = "The type of resource the SKU applies to."]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[doc = "A list of capabilities of this SKU, such as throughput or ops/sec."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub capabilities: Vec<ResourceSkuCapabilities>,
+    #[doc = "The set of locations where the SKU is available. This is the supported and registered Azure Geo Regions (e.g., West US, East US, Southeast Asia, etc.)."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub locations: Vec<String>,
+    #[doc = "The set of locations where the SKU is available."]
+    #[serde(
+        rename = "locationInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub location_info: Vec<ResourceSkuLocationInfo>,
+    #[doc = "The name of this SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The restrictions preventing this SKU from being used. This is empty if there are no restrictions."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub restrictions: Vec<Restriction>,
+}
+impl ResourceSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A resource SKU capability."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceSkuCapabilities {
+    #[doc = "Name of a capability, such as ops/sec."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Quantity, if the capability is measured by quantity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+impl ResourceSkuCapabilities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Resource SKU location information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceSkuLocationInfo {
+    #[doc = "Location where this SKU is available."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Zones if any."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub zones: Vec<String>,
+}
+impl ResourceSkuLocationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response from the List Cache SKUs operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceSkusResult {
+    #[doc = "The URI to fetch the next page of cache SKUs."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "The list of SKUs available for the subscription."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ResourceSku>,
+}
+impl azure_core::Continuable for ResourceSkusResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ResourceSkusResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The usage and limit (quota) for a resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceUsage {
+    #[doc = "The limit (quota) for this resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i32>,
+    #[doc = "Unit that the limit and usages are expressed in, such as 'Count'."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[doc = "The current usage of this resource."]
+    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
+    pub current_value: Option<i32>,
+    #[doc = "Naming information for this resource type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<resource_usage::Name>,
+}
+impl ResourceUsage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod resource_usage {
+    use super::*;
+    #[doc = "Naming information for this resource type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Name {
+        #[doc = "Canonical name for this resource type."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub value: Option<String>,
+        #[doc = "Localized name for this resource type."]
+        #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+        pub localized_value: Option<String>,
+    }
+    impl Name {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "Result of the request to list resource usages. It contains a list of resource usages & limits and a URL link to get the next set of results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceUsagesListResult {
+    #[doc = "URL to get the next set of resource usage list results if there are any."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "List of usages and limits for resources controlled by the Microsoft.StorageCache resource provider."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ResourceUsage>,
+}
+impl azure_core::Continuable for ResourceUsagesListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl ResourceUsagesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The restrictions preventing this SKU from being used."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Restriction {
+    #[doc = "The type of restrictions. In this version, the only possible value for this is location."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The value of restrictions. If the restriction type is set to location, then this would be the different locations where the SKU is restricted."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub values: Vec<String>,
+    #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". \"QuotaId\" is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. \"NotAvailableForSubscription\" is related to capacity at the datacenter."]
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    pub reason_code: Option<restriction::ReasonCode>,
+}
+impl Restriction {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod restriction {
+    use super::*;
+    #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". \"QuotaId\" is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. \"NotAvailableForSubscription\" is related to capacity at the datacenter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ReasonCode")]
+    pub enum ReasonCode {
+        QuotaId,
+        NotAvailableForSubscription,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ReasonCode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ReasonCode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ReasonCode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::QuotaId => serializer.serialize_unit_variant("ReasonCode", 0u32, "QuotaId"),
+                Self::NotAvailableForSubscription => serializer.serialize_unit_variant("ReasonCode", 1u32, "NotAvailableForSubscription"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "SKU for the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SkuName {
+    #[doc = "SKU name for this resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl SkuName {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type SpaceAllocationList = Vec<StorageTargetSpaceAllocation>;
+pub type SpaceAllocationParameter = Vec<StorageTargetSpaceAllocation>;
+#[doc = "Type of the Storage Target."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTarget {
+    #[serde(flatten)]
+    pub storage_target_resource: StorageTargetResource,
+    #[doc = "Properties of the Storage Target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StorageTargetProperties>,
+}
+impl StorageTarget {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of the Storage Target."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageTargetProperties {
+    #[doc = "List of cache namespace junctions to target for namespace associations."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub junctions: Vec<NamespaceJunction>,
+    #[doc = "Type of the Storage Target."]
+    #[serde(rename = "targetType")]
+    pub target_type: storage_target_properties::TargetType,
+    #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<storage_target_properties::ProvisioningState>,
+    #[doc = "Storage target operational state."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<storage_target_properties::State>,
+    #[doc = "Properties pertaining to the Nfs3Target"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nfs3: Option<Nfs3Target>,
+    #[doc = "Properties pertaining to the ClfsTarget"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clfs: Option<ClfsTarget>,
+    #[doc = "Properties pertaining to the UnknownTarget"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unknown: Option<UnknownTarget>,
+    #[doc = "Properties pertaining to the BlobNfsTarget."]
+    #[serde(rename = "blobNfs", default, skip_serializing_if = "Option::is_none")]
+    pub blob_nfs: Option<BlobNfsTarget>,
+    #[doc = "The percentage of cache space allocated for this storage target"]
+    #[serde(rename = "allocationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub allocation_percentage: Option<i32>,
+}
+impl StorageTargetProperties {
+    pub fn new(target_type: storage_target_properties::TargetType) -> Self {
+        Self {
+            junctions: Vec::new(),
+            target_type,
+            provisioning_state: None,
+            state: None,
+            nfs3: None,
+            clfs: None,
+            unknown: None,
+            blob_nfs: None,
+            allocation_percentage: None,
+        }
+    }
+}
+pub mod storage_target_properties {
+    use super::*;
+    #[doc = "Type of the Storage Target."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "TargetType")]
+    pub enum TargetType {
+        #[serde(rename = "nfs3")]
+        Nfs3,
+        #[serde(rename = "clfs")]
+        Clfs,
+        #[serde(rename = "unknown")]
+        Unknown,
+        #[serde(rename = "blobNfs")]
+        BlobNfs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for TargetType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for TargetType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for TargetType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Nfs3 => serializer.serialize_unit_variant("TargetType", 0u32, "nfs3"),
+                Self::Clfs => serializer.serialize_unit_variant("TargetType", 1u32, "clfs"),
+                Self::Unknown => serializer.serialize_unit_variant("TargetType", 2u32, "unknown"),
+                Self::BlobNfs => serializer.serialize_unit_variant("TargetType", 3u32, "blobNfs"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Canceled,
+        Creating,
+        Deleting,
+        Updating,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Creating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Deleting"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Updating"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Storage target operational state."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Ready,
+        Busy,
+        Suspended,
+        Flushing,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Ready => serializer.serialize_unit_variant("State", 0u32, "Ready"),
+                Self::Busy => serializer.serialize_unit_variant("State", 1u32, "Busy"),
+                Self::Suspended => serializer.serialize_unit_variant("State", 2u32, "Suspended"),
+                Self::Flushing => serializer.serialize_unit_variant("State", 3u32, "Flushing"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Resource used by a cache."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTargetResource {
+    #[doc = "Schema for the name of resources served by this provider. Note that objects will contain an odata @id annotation as appropriate. This will contain the complete resource id of the object. These names are case-preserving, but not case sensitive."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<ResourceName>,
+    #[doc = "Resource ID of the Storage Target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Type of the Storage Target; Microsoft.StorageCache/Cache/StorageTarget"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Region name string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl StorageTargetResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Storage Target space allocation properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTargetSpaceAllocation {
+    #[doc = "Schema for the name of resources served by this provider. Note that objects will contain an odata @id annotation as appropriate. This will contain the complete resource id of the object. These names are case-preserving, but not case sensitive."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<ResourceName>,
+    #[doc = "The percentage of cache space allocated for this storage target"]
+    #[serde(rename = "allocationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub allocation_percentage: Option<i32>,
+}
+impl StorageTargetSpaceAllocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of Storage Targets."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTargetsResult {
+    #[doc = "The URI to fetch the next page of Storage Targets."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "The list of Storage Targets defined for the cache."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<StorageTarget>,
+}
+impl azure_core::Continuable for StorageTargetsResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl StorageTargetsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
+}
+pub type UrlString = String;
+#[doc = "Properties of an unknown type of Storage Target."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UnknownProperties {}
+impl UnknownProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties pertaining to the UnknownTarget"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UnknownTarget {
+    #[doc = "Properties of an unknown type of Storage Target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<UnknownProperties>,
+}
+impl UnknownTarget {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A usage model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UsageModel {
+    #[doc = "Localized information describing this usage model."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<usage_model::Display>,
+    #[doc = "Non-localized keyword name for this usage model."]
+    #[serde(rename = "modelName", default, skip_serializing_if = "Option::is_none")]
+    pub model_name: Option<String>,
+    #[doc = "The type of Storage Target to which this model is applicable (only nfs3 as of this version)."]
+    #[serde(rename = "targetType", default, skip_serializing_if = "Option::is_none")]
+    pub target_type: Option<String>,
+}
+impl UsageModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod usage_model {
+    use super::*;
+    #[doc = "Localized information describing this usage model."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Display {
+        #[doc = "String to display for this usage model."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "A list of cache usage models."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UsageModelsResult {
+    #[doc = "The URI to fetch the next page of cache usage models."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "The list of usage models available for the subscription."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<UsageModel>,
+}
+impl azure_core::Continuable for UsageModelsResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone()
+    }
+}
+impl UsageModelsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A dictionary where each key is a user assigned identity resource ID, and each key's value is an empty dictionary."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentities {}
+impl UserAssignedIdentities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SystemData {
+    #[doc = "The identity that created the resource."]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
+    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
+    pub created_at: Option<time::OffsetDateTime>,
+    #[doc = "The identity that last modified the resource."]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
+    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
+    pub last_modified_at: Option<time::OffsetDateTime>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod system_data {
+    use super::*;
+    #[doc = "The type of identity that created the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "CreatedByType")]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for CreatedByType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for CreatedByType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for CreatedByType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
+                Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
+                Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
+                Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The type of identity that last modified the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "LastModifiedByType")]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for LastModifiedByType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for LastModifiedByType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for LastModifiedByType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::User => serializer.serialize_unit_variant("LastModifiedByType", 0u32, "User"),
+                Self::Application => serializer.serialize_unit_variant("LastModifiedByType", 1u32, "Application"),
+                Self::ManagedIdentity => serializer.serialize_unit_variant("LastModifiedByType", 2u32, "ManagedIdentity"),
+                Self::Key => serializer.serialize_unit_variant("LastModifiedByType", 3u32, "Key"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}

@@ -30,7 +30,7 @@ async fn main() -> azure_core::Result<()> {
         ))
         .await?;
 
-    println!("response == {:#?}", response);
+    println!("response == {response:#?}");
 
     Ok(())
 }

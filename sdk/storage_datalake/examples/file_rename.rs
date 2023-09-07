@@ -14,35 +14,29 @@ async fn main() -> azure_core::Result<()> {
 
     println!("creating file system '{}'...", &file_system_name);
     let create_fs_response = file_system_client.create().await?;
-    println!("create file system response == {:?}\n", create_fs_response);
+    println!("create file system response == {create_fs_response:?}\n");
 
     let file_path1 = "some/path/example-file1.txt";
     let file_client1 = file_system_client.get_file_client(file_path1);
     let file_path2 = "some/path/example-file2.txt";
     let file_client2 = file_system_client.get_file_client(file_path2);
 
-    println!("creating file '{}'...", file_path1);
+    println!("creating file '{file_path1}'...");
     let create_file_response1 = file_client1.create().await?;
-    println!("create file response == {:?}\n", create_file_response1);
+    println!("create file response == {create_file_response1:?}\n");
 
-    println!("creating file '{}'...", file_path2);
+    println!("creating file '{file_path2}'...");
     let create_file_response2 = file_client2.create().await?;
-    println!("create file response == {:?}\n", create_file_response2);
+    println!("create file response == {create_file_response2:?}\n");
 
-    println!(
-        "renaming file '{}' to '{}' if not exists...",
-        file_path1, file_path2
-    );
+    println!("renaming file '{file_path1}' to '{file_path2}' if not exists...");
     let rename_file_if_not_exists_result = file_client1.rename_if_not_exists(file_path2).await;
-    println!(
-        "rename file result (should fail) == {:?}\n",
-        rename_file_if_not_exists_result
-    );
+    println!("rename file result (should fail) == {rename_file_if_not_exists_result:?}\n");
 
-    println!("renaming file '{}' to '{}'...", file_path1, file_path2);
+    println!("renaming file '{file_path1}' to '{file_path2}'...");
     file_client1.rename(file_path2).await?;
     let renamed_file_properties = file_client2.get_properties().await?;
-    println!("renamed file properties == {:?}\n", renamed_file_properties);
+    println!("renamed file properties == {renamed_file_properties:?}\n");
 
     // getting properties for the source file should fail, when the file no longer exists
     // Eventually we will implement the `exists` method, which internally employs a similar check
@@ -51,7 +45,7 @@ async fn main() -> azure_core::Result<()> {
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().await?;
-    println!("delete file system response == {:?}\n", delete_fs_response);
+    println!("delete file system response == {delete_fs_response:?}\n");
 
     Ok(())
 }

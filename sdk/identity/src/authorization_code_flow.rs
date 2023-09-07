@@ -1,6 +1,6 @@
 //! Authorize using the authorization code flow
 //!
-//! You can learn more about the OAuth2 authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
+//! You can learn more about the `OAuth2` authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
 use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::error::{ErrorKind, ResultExt};
@@ -23,15 +23,13 @@ pub fn start(
 ) -> AuthorizationCodeFlow {
     let auth_url = oauth2::AuthUrl::from_url(
         Url::parse(&format!(
-            "https://login.microsoftonline.com/{}/oauth2/v2.0/authorize",
-            tenant_id
+            "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize"
         ))
         .expect("Invalid authorization endpoint URL"),
     );
     let token_url = oauth2::TokenUrl::from_url(
         Url::parse(&format!(
-            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-            tenant_id
+            "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
         ))
         .expect("Invalid token endpoint URL"),
     );

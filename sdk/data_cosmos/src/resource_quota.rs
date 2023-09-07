@@ -80,13 +80,6 @@ pub(crate) fn resource_quotas_from_str(
             v.push(ResourceQuota::InteropUsers(parseu64(stripped)?));
         } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
             v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
-        } else {
-            return Err(Error::with_message(ErrorKind::DataConversion, || {
-                format!(
-                    "resource quota has an unrecognized part - part: \"{}\" full string: \"{}\"",
-                    token, full_string
-                )
-            }));
         }
 
         trace!("v == {:#?}", v);
@@ -99,10 +92,7 @@ fn parse_int_error(e: std::num::ParseIntError, n: &str, resource_quota: &str) ->
     Error::full(
         ErrorKind::DataConversion,
         e,
-        format!(
-            "failed to convert '{}' as int when parsing resource quote '{}'",
-            n, resource_quota
-        ),
+        format!("failed to convert '{n}' as int when parsing resource quote '{resource_quota}'"),
     )
 }
 

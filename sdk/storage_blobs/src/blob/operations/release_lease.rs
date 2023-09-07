@@ -1,10 +1,13 @@
 use crate::prelude::*;
-use azure_core::{headers::*, RequestId};
+use azure_core::{headers::*, prelude::*, RequestId};
 use time::OffsetDateTime;
 
 operation! {
     ReleaseLease,
     client: BlobLeaseClient,
+    ?if_modified_since: IfModifiedSinceCondition,
+    ?if_match: IfMatchCondition,
+    ?if_tags: IfTags
 }
 
 impl ReleaseLeaseBuilder {
@@ -17,6 +20,9 @@ impl ReleaseLeaseBuilder {
             let mut headers = Headers::new();
             headers.insert(LEASE_ACTION, "release");
             headers.add(self.client.lease_id());
+            headers.add(self.if_modified_since);
+            headers.add(self.if_match);
+            headers.add(self.if_tags);
 
             let mut request =
                 self.client

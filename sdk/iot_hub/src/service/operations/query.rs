@@ -21,7 +21,7 @@ azure_core::operation! {
 }
 
 impl QueryBuilder {
-    /// Invoke a qiven query on the IoT Hub
+    /// Invoke a qiven query on the `IoT` Hub
     pub fn into_future(mut self) -> Query {
         Box::pin(async move {
             let uri = format!(

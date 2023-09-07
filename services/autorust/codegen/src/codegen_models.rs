@@ -682,7 +682,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
 
-        field_names.insert(format!("{}", field_name), is_required);
+        field_names.insert(format!("{field_name}"), is_required);
 
         if !type_name.is_vec() && !is_required {
             type_name = type_name.optional(true);
@@ -773,7 +773,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             // when there are multiple responses, we only add the Continuable
             // for the cases that have the field we care about.
             // println!("checking {} {} {}", struct_name_code, field_name, field_names.contains(&format!("{}", field_name)));
-            if let Some(is_required) = field_names.get(&format!("{}", field_name)) {
+            if let Some(is_required) = field_names.get(&format!("{field_name}")) {
                 if *is_required {
                     continuable = quote! {
                         impl azure_core::Continuable for #struct_name_code {
