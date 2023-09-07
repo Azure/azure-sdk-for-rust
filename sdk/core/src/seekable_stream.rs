@@ -14,6 +14,10 @@ pub trait SeekableStream: AsyncRead + Unpin + std::fmt::Debug + Send + Sync + Dy
     async fn reset(&mut self) -> crate::error::Result<()>;
     fn len(&self) -> usize;
 
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     fn buffer_size(&self) -> usize {
         DEFAULT_BUFFER_SIZE
     }
