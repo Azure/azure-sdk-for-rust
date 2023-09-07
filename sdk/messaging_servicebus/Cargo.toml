@@ -42,7 +42,7 @@ uuid = { version = "1", features=["v4"] }
 indexmap = { version = "1.9", features = ["std"] }
 
 # Azure dependencies
-azure_core = { path = "../core", version = "0.8" }
+azure_core = { path = "../core", version = "0.14" }
 
 # AMQP dependencies
 fe2o3-amqp-types = "0.7"
