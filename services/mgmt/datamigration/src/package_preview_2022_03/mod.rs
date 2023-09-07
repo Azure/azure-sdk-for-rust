@@ -440,6 +440,24 @@ pub mod database_migrations_sql_db {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -503,6 +521,24 @@ pub mod database_migrations_sql_db {
     pub mod cancel {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -859,6 +895,24 @@ pub mod database_migrations_sql_mi {
     pub mod cancel {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -915,6 +969,24 @@ pub mod database_migrations_sql_mi {
     pub mod cutover {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -1269,6 +1341,24 @@ pub mod database_migrations_sql_vm {
     pub mod cancel {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -1325,6 +1415,24 @@ pub mod database_migrations_sql_vm {
     pub mod cutover {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -1994,6 +2102,24 @@ pub mod sql_migration_services {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -3393,6 +3519,24 @@ pub mod services {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -3557,6 +3701,24 @@ pub mod services {
     pub mod start {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -3617,6 +3779,24 @@ pub mod services {
     pub mod stop {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -4815,6 +4995,24 @@ pub mod tasks {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -5637,6 +5835,24 @@ pub mod service_tasks {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -6329,6 +6545,24 @@ pub mod projects {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]
@@ -7127,6 +7361,24 @@ pub mod files {
     pub mod delete {
         use super::models;
         pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
         #[derive(Clone)]
         #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
         #[doc = r""]

@@ -144,9 +144,7 @@ impl BlobSharedAccessSignature {
                 .unwrap_or(&"".to_string())
                 .to_string(),
             self.ip.as_ref().unwrap_or(&"".to_string()).to_string(),
-            self.protocol
-                .map(|x| x.to_string())
-                .unwrap_or_else(|| "".to_string()),
+            self.protocol.map(|x| x.to_string()).unwrap_or_default(),
             SERVICE_SAS_VERSION.to_string(),
             self.resource.to_string(),
             "".to_string(), // snapshot time

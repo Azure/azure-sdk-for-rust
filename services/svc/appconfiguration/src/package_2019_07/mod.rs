@@ -435,6 +435,34 @@ pub mod get_keys {
 pub mod check_keys {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -683,6 +711,34 @@ pub mod get_key_values {
 pub mod check_key_values {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -1209,6 +1265,42 @@ pub mod delete_key_value {
 pub mod check_key_value {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+        #[doc = "An identifier representing the returned state of the resource."]
+        pub fn e_tag(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("etag"))
+        }
+        #[doc = "A UTC datetime that specifies the last time the resource was modified."]
+        pub fn last_modified(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("last-modified"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -1464,6 +1556,34 @@ pub mod get_labels {
 pub mod check_labels {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
@@ -1988,6 +2108,34 @@ pub mod get_revisions {
 pub mod check_revisions {
     use super::models;
     pub struct Response(azure_core::Response);
+    impl Response {
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+        pub fn headers(&self) -> Headers {
+            Headers(self.0.headers())
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    pub struct Headers<'a>(&'a azure_core::headers::Headers);
+    impl<'a> Headers<'a> {
+        #[doc = "Enables real-time consistency between requests by providing the returned value in the next request made to the server."]
+        pub fn sync_token(&self) -> azure_core::Result<&str> {
+            self.0.get_str(&azure_core::headers::HeaderName::from_static("sync-token"))
+        }
+    }
     #[derive(Clone)]
     #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
     #[doc = r""]
