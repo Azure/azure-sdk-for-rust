@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = EventHubProducerClientOptions::default();
     let default_credential = DefaultAzureCredential::default();
 
-    let mut producer_client = EventHubProducerClient::from_namespace_and_credential(
+    let mut producer_client = EventHubProducerClient::new_from_credential(
         fqn,
         event_hub_name,
         default_credential,

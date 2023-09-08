@@ -52,7 +52,7 @@ pub struct EventHubConnection {
 
 impl EventHubConnection {
     /// Creates a new [`EventHubConnection`] from a connection string.
-    pub async fn from_connection_string(
+    pub async fn new_from_connection_string(
         connection_string: impl AsRef<str>,
         event_hub_name: impl Into<Option<String>>,
         options: EventHubConnectionOptions,
@@ -129,7 +129,7 @@ impl EventHubConnection {
         let token_credential =
             EventHubTokenCredential::SharedAccessCredential(shared_access_credential);
 
-        Self::from_namespace_and_credential(
+        Self::new_from_credential(
             fully_qualified_namespace.to_string(),
             event_hub_name,
             token_credential,
@@ -138,8 +138,21 @@ impl EventHubConnection {
         .await
     }
 
+    /// Creates a new [`EventHubConnection`] from a connection string.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_connection_string` instead"
+    )]
+    pub async fn from_connection_string(
+        connection_string: impl AsRef<str>,
+        event_hub_name: impl Into<Option<String>>,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_connection_string(connection_string, event_hub_name, options).await
+    }
+
     /// Creates a new [`EventHubConnection`] from a namespace and a credential.
-    pub async fn from_namespace_and_credential(
+    pub async fn new_from_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: impl Into<EventHubTokenCredential>,
@@ -169,8 +182,22 @@ impl EventHubConnection {
         })
     }
 
+    /// Creates a new [`EventHubConnection`] from a namespace and a credential.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_credential` instead"
+    )]
+    pub async fn from_namespace_and_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+    }
+
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
-    pub async fn from_namespace_and_named_key_credential(
+    pub async fn new_from_named_key_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: AzureNamedKeyCredential,
@@ -181,7 +208,37 @@ impl EventHubConnection {
         let resource = build_connection_signature_authorization_resource(options.transport_type, &fully_qualified_namespace, &event_hub_name)?;
         let shared_access_credential = SharedAccessCredential::try_from_named_key_credential(credential, resource)?;
 
-        Self::from_namespace_and_credential(
+        Self::new_from_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            shared_access_credential,
+            options,
+        ).await
+    }
+
+    /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_named_key_credential` instead"
+    )]
+    pub async fn from_namespace_and_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_named_key_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+    }
+
+    /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
+    pub async fn new_from_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
+        Self::new_from_credential(
             fully_qualified_namespace,
             event_hub_name,
             shared_access_credential,
@@ -190,19 +247,17 @@ impl EventHubConnection {
     }
 
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_sas_credential` instead"
+    )]
     pub async fn from_namespace_and_sas_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: AzureSasCredential,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
-        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
-        Self::from_namespace_and_credential(
-            fully_qualified_namespace,
-            event_hub_name,
-            shared_access_credential,
-            options,
-        ).await
+        Self::new_from_sas_credential(fully_qualified_namespace, event_hub_name, credential, options).await
     }
 }
 

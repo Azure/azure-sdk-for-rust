@@ -12,7 +12,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = EventHubConsumerClientOptions::default();
 
     // Create a consumer client
-    let mut consumer_client = EventHubConsumerClient::from_connection_string(
+    let mut consumer_client = EventHubConsumerClient::new_from_connection_string(
         EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME,
         connection_string,
         event_hub_name,

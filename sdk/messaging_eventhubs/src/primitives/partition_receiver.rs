@@ -39,7 +39,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
     }
 
     /// Creates a new [`PartitionReceiver`] from a connection string.
-    pub async fn from_connection_string(
+    pub async fn new_from_connection_string(
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
@@ -48,7 +48,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         options: PartitionReceiverOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .from_connection_string(
+            .new_from_connection_string(
                 consumer_group,
                 partition_id,
                 event_position,
@@ -59,8 +59,32 @@ impl PartitionReceiver<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a new [`PartitionReceiver`] from a connection string.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_connection_string` instead"
+    )]
+    pub async fn from_connection_string(
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        connection_string: impl Into<String>,
+        event_hub_name: impl Into<Option<String>>,
+        options: PartitionReceiverOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_connection_string(
+            consumer_group,
+            partition_id,
+            event_position,
+            connection_string,
+            event_hub_name,
+            options,
+        )
+        .await
+    }
+
     /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
-    pub async fn from_namespace_and_credential(
+    pub async fn new_from_credential(
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
@@ -70,7 +94,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         options: PartitionReceiverOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .from_namespace_and_credential(
+            .new_from_credential(
                 consumer_group,
                 partition_id,
                 event_position,
@@ -80,6 +104,29 @@ impl PartitionReceiver<BasicRetryPolicy> {
                 options,
             )
             .await
+    }
+
+    /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
+    #[deprecated(since = "0.14.1", note = "Please use `new_from_credential` instead")]
+    pub async fn from_namespace_and_credential(
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        options: PartitionReceiverOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_credential(
+            consumer_group,
+            partition_id,
+            event_position,
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            options,
+        )
+        .await
     }
 
     /// Creates a new [`PartitionReceiver`] from an existing [`EventHubConnection`].
@@ -107,7 +154,7 @@ where
     RP: EventHubsRetryPolicy + From<EventHubsRetryOptions> + Send,
 {
     /// Creates a new [`PartitionReceiver`] from a connection string.
-    pub async fn from_connection_string(
+    pub async fn new_from_connection_string(
         self,
         consumer_group: &str,
         partition_id: &str,
@@ -116,7 +163,7 @@ where
         event_hub_name: impl Into<Option<String>>,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
-        let connection = EventHubConnection::from_connection_string(
+        let connection = EventHubConnection::new_from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
             options.connection_options.clone(),
@@ -133,9 +180,34 @@ where
         .await
     }
 
+    /// Creates a new [`PartitionReceiver`] from a connection string.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_connection_string` instead"
+    )]
+    pub async fn from_connection_string(
+        self,
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        connection_string: impl Into<String>,
+        event_hub_name: impl Into<Option<String>>,
+        options: PartitionReceiverOptions,
+    ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
+        self.new_from_connection_string(
+            consumer_group,
+            partition_id,
+            event_position,
+            connection_string,
+            event_hub_name,
+            options,
+        )
+        .await
+    }
+
     /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
     #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
-    pub async fn from_namespace_and_credential(
+    pub async fn new_from_credential(
         self,
         consumer_group: &str,
         partition_id: &str,
@@ -145,7 +217,7 @@ where
         credential: impl Into<EventHubTokenCredential>,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
-        let connection = EventHubConnection::from_namespace_and_credential(
+        let connection = EventHubConnection::new_from_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential.into(),
@@ -158,6 +230,31 @@ where
             partition_id,
             event_position,
             connection,
+            options,
+        )
+        .await
+    }
+
+    /// Creates a new [`PartitionReceiver`] from a namespace and a credential.
+    #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
+    #[deprecated(since = "0.14.1", note = "Please use `new_from_credential` instead")]
+    pub async fn from_namespace_and_credential(
+        self,
+        consumer_group: &str,
+        partition_id: &str,
+        event_position: EventPosition,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        options: PartitionReceiverOptions,
+    ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
+        self.new_from_credential(
+            consumer_group,
+            partition_id,
+            event_position,
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
             options,
         )
         .await
@@ -232,9 +329,7 @@ where
 impl<RP> PartitionReceiver<RP> {
     /// Closes the [`PartitionReceiver`].
     pub async fn close(self) -> Result<(), azure_core::Error> {
-        self.inner_consumer
-            .close()
-            .await?;
+        self.inner_consumer.close().await?;
         self.connection.close_if_owned().await?;
         Ok(())
     }
