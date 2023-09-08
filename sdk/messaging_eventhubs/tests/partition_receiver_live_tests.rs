@@ -22,7 +22,7 @@ cfg_not_wasm32! {
         let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
         let partition_id = "0";
 
-        let mut receiver = PartitionReceiver::from_connection_string(
+        let mut receiver = PartitionReceiver::new_from_connection_string(
             consumer_group,
             partition_id,
             EventPosition::earliest(),

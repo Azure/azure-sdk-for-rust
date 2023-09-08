@@ -17,7 +17,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let mut producer_client =
-//!         EventHubProducerClient::from_connection_string(
+//!         EventHubProducerClient::new_from_connection_string(
 //!             "<CONNECTION_STRING>", // Replace with your connection string
 //!             "<EVENT_HUB_NAME>".to_string(), // Replace with your hub name
 //!             EventHubProducerClientOptions::default()
@@ -45,7 +45,7 @@
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     // Create a consumer client
 //!     let mut consumer_client =
-//!         EventHubConsumerClient::from_connection_string(
+//!         EventHubConsumerClient::new_from_connection_string(
 //!             EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME,
 //!             "<CONNECTION_STRING>", // Replace with your connection string
 //!             "<EVENT_HUB_NAME>".to_string(), // Replace with your hub name

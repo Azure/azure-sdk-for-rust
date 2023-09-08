@@ -16,7 +16,7 @@ cfg_not_wasm32! {
 
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let options = EventHubConnectionOptions::default();
-        let connection = EventHubConnection::from_connection_string(connection_string, None, options)
+        let connection = EventHubConnection::new_from_connection_string(connection_string, None, options)
             .await
             .unwrap();
         connection.close().await.unwrap();
@@ -32,7 +32,7 @@ cfg_not_wasm32! {
         let mut options = EventHubConnectionOptions::default();
         options.transport_type = EventHubsTransportType::AmqpWebSockets;
         let connection =
-            EventHubConnection::from_connection_string(connection_string, event_hub_name, options)
+            EventHubConnection::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
         connection.close().await.unwrap();
@@ -47,7 +47,7 @@ cfg_not_wasm32! {
         let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
         let options = EventHubConnectionOptions::default();
         let connection =
-            EventHubConnection::from_connection_string(connection_string, event_hub_name, options)
+            EventHubConnection::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
         connection.close().await.unwrap();
@@ -56,10 +56,7 @@ cfg_not_wasm32! {
     #[tokio::test]
     async fn connection_can_connect_with_named_key_credential() {
         common::setup_dotenv();
-        use azeventhubs::authorization::{
-            SharedAccessCredential, AzureNamedKeyCredential,
-            build_connection_signature_authorization_resource,
-        };
+        use azeventhubs::authorization::AzureNamedKeyCredential;
 
         let options = EventHubConnectionOptions::default();
 
@@ -71,7 +68,7 @@ cfg_not_wasm32! {
 
         let named_key_credential = AzureNamedKeyCredential::new(key_name, key);
 
-        let connection = EventHubConnection::from_namespace_and_named_key_credential(
+        let connection = EventHubConnection::new_from_named_key_credential(
             fqn,
             event_hub_name,
             named_key_credential,
@@ -93,11 +90,13 @@ cfg_not_wasm32! {
         let options = EventHubConnectionOptions::default();
         let credential = DefaultAzureCredential::default();
 
-        let connection = EventHubConnection::from_namespace_and_credential(
+        let connection = EventHubConnection::new_from_credential(
             fqn,
             event_hub_name,
             credential,
             options,
         ).await.unwrap();
+
+        connection.close().await.unwrap();
     }
 }
