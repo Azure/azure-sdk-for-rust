@@ -1,7 +1,8 @@
 //! Types related to auth.
 //!
-//! FIXME: Many are exact copies from the Event Hubs crate. This should probably moved
-//! to a common crate.
+
+// FIXME: Many are exact copies from the Service Bus crate. This should probably moved
+// to a common crate.
 
 pub use azure_named_key_credential::AzureNamedKeyCredential;
 pub use azure_sas_credential::AzureSasCredential;
