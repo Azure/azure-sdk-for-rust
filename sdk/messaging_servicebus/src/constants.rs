@@ -44,6 +44,7 @@ pub(crate) const JSON_WEB_TOKEN_TYPE: &str = "jwt";
 // pub(crate) const WELL_KNOWN_PUBLIC_PORTS_LIMIT: i32 = 1023;
 
 // pub(crate) const DEFAULT_SCOPE: &str = "https://servicebus.azure.net/.default";
+pub(crate) const DEFAULT_RESOURCE: &str = "https://servicebus.azure.net/";
 
 /// `time::OffsetDateTime` doesn't implement `Default`. This value is taken from the
 /// dotnet SDK `DateTime.MinValue` (Azure.Messaging.ServiceBus).

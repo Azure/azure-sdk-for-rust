@@ -1,5 +1,7 @@
 use azure_core::auth::{TokenCredential, TokenResponse};
 
+use crate::constants::DEFAULT_RESOURCE;
+
 use super::shared_access_credential::SharedAccessCredential;
 
 /// Token-based credential for Service Bus.
@@ -74,6 +76,10 @@ impl ServiceBusTokenCredential {
             }
             ServiceBusTokenCredential::Other(credential) => credential.get_token(resource).await,
         }
+    }
+
+    pub(crate) async fn get_token_using_default_resource(&self) -> azure_core::Result<TokenResponse> {
+        self.get_token(DEFAULT_RESOURCE).await
     }
 }
 
