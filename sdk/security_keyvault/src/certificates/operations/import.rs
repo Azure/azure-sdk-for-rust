@@ -36,7 +36,7 @@ struct ImportRequest {
 }
 
 impl ImportCertificateBuilder {
-    pub fn into_future(mut self) -> ImportCertificate {
+    pub fn into_future(self) -> ImportCertificate {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("certificates/{}/import", self.name));
@@ -65,7 +65,7 @@ impl ImportCertificateBuilder {
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

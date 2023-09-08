@@ -10,7 +10,7 @@ operation! {
 }
 
 impl SetSecretBuilder {
-    pub fn into_future(mut self) -> SetSecret {
+    pub fn into_future(self) -> SetSecret {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("secrets/{}", self.name));
@@ -29,7 +29,7 @@ impl SetSecretBuilder {
 
             self.client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             Ok(())
