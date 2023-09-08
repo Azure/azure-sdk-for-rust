@@ -4,7 +4,7 @@ use std::sync::{atomic::AtomicBool, Arc};
 use url::Url;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, error::{AmqpConnectionScopeError, AmqpClientError}},
+    amqp::{amqp_client::AmqpClient, error::{AmqpConnectionScopeError, AmqpClientError}, amqp_producer::AmqpProducer, amqp_consumer::AmqpConsumer},
     authorization::{
         event_hub_token_credential::EventHubTokenCredential,
         shared_access_credential::SharedAccessCredential,
@@ -43,14 +43,14 @@ impl From<EventHubConnectionError> for azure_core::error::Error {
 /// Event Hub producers and/or consumers, or may be used as a dedicated connection for a single
 /// producer or consumer client.
 #[derive(Debug)]
-pub struct EventHubConnection<C> {
+pub struct EventHubConnection {
     fully_qualified_namespace: String,
     event_hub_name: Arc<String>,
     is_closed: Arc<AtomicBool>,
-    pub(crate) inner: Sharable<C>,
+    pub(crate) inner: Sharable<AmqpClient>,
 }
 
-impl EventHubConnection<AmqpClient> {
+impl EventHubConnection {
     /// Creates a new [`EventHubConnection`] from a connection string.
     pub async fn from_connection_string(
         connection_string: impl AsRef<str>,
@@ -206,11 +206,7 @@ impl EventHubConnection<AmqpClient> {
     }
 }
 
-impl<C> EventHubConnection<C>
-where
-    C: TransportClient,
-    C::DisposeError: Into<azure_core::error::Error>,
-{
+impl EventHubConnection {
     pub(crate) async fn get_properties<RP>(
         &mut self,
         retry_policy: RP,
@@ -269,10 +265,9 @@ where
         requested_features: TransportProducerFeatures,
         partition_options: PartitionPublishingOptions,
         retry_policy: RP,
-    ) -> Result<C::Producer<RP>, azure_core::Error>
+    ) -> Result<AmqpProducer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
-        C::OpenProducerError: Into<azure_core::error::Error>,
     {
         match &mut self.inner {
             Sharable::Owned(c) => c
@@ -315,10 +310,9 @@ where
         track_last_enqueued_event_properties: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
-    ) -> Result<C::Consumer<RP>, azure_core::Error>
+    ) -> Result<AmqpConsumer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
-        C::OpenConsumerError: Into<azure_core::error::Error>,
     {
         match &mut self.inner {
             Sharable::Owned(c) => c
@@ -400,7 +394,7 @@ where
     }
 }
 
-impl<C> EventHubConnection<C> {
+impl EventHubConnection {
     pub(crate) fn clone_as_shared(&mut self) -> Self {
         let shared = self.inner.clone_as_shared();
         let inner = match shared {
@@ -501,12 +495,7 @@ fn build_connection_signature_authorization_resource(
 }
 
 #[async_trait]
-impl<C> RecoverableTransport for EventHubConnection<C>
-where
-    C: Send,
-    Sharable<C>: RecoverableTransport,
-    <Sharable<C> as RecoverableTransport>::RecoverError: Into<azure_core::Error>,
-{
+impl RecoverableTransport for EventHubConnection {
     type RecoverError = azure_core::Error;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {

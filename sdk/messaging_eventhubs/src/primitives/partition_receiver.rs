@@ -1,10 +1,7 @@
 use std::{collections::VecDeque, marker::PhantomData, time::Duration as StdDuration};
 
 use crate::{
-    amqp::{
-        amqp_client::AmqpClient,
-        amqp_consumer::{receive_event_batch, AmqpConsumer},
-    },
+    amqp::amqp_consumer::{receive_event_batch, AmqpConsumer},
     authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
     core::BasicRetryPolicy,
@@ -19,7 +16,7 @@ use super::partition_receiver_options::PartitionReceiverOptions;
 /// Event Hubs service than is offered by other event consumers.
 #[derive(Debug)]
 pub struct PartitionReceiver<RP> {
-    connection: EventHubConnection<AmqpClient>,
+    connection: EventHubConnection,
     inner_consumer: AmqpConsumer<RP>,
     options: PartitionReceiverOptions,
 }
@@ -90,7 +87,7 @@ impl PartitionReceiver<BasicRetryPolicy> {
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
-        connection: EventHubConnection<AmqpClient>,
+        connection: EventHubConnection,
         options: PartitionReceiverOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
@@ -172,7 +169,7 @@ where
         consumer_group: &str,
         partition_id: &str,
         event_position: EventPosition,
-        mut connection: EventHubConnection<AmqpClient>,
+        mut connection: EventHubConnection,
         options: PartitionReceiverOptions,
     ) -> Result<PartitionReceiver<RP>, azure_core::Error> {
         let consumer_identifier = options.identifier.clone();

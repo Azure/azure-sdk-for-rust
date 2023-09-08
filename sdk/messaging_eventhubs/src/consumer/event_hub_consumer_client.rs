@@ -1,10 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::{
-    amqp::{
-        amqp_client::AmqpClient,
-        amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
-    },
+    amqp::amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
     authorization::{event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential, AzureSasCredential},
     core::BasicRetryPolicy,
     event_hubs_properties::EventHubProperties,
@@ -26,7 +23,7 @@ use super::{EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
 /// sometimes referred to as "Non-Epoch Consumers."
 #[derive(Debug)]
 pub struct EventHubConsumerClient<RP> {
-    connection: EventHubConnection<AmqpClient>,
+    connection: EventHubConnection,
     retry_policy_marker: PhantomData<RP>,
     options: EventHubConsumerClientOptions,
     consumer_group: String,
@@ -123,7 +120,7 @@ impl EventHubConsumerClient<BasicRetryPolicy> {
     /// Creates a new [`EventHubConsumerClient`] from an existing connection.
     pub fn with_connection(
         consumer_group: impl Into<String>,
-        connection: &mut EventHubConnection<AmqpClient>,
+        connection: &mut EventHubConnection,
         client_options: EventHubConsumerClientOptions,
     ) -> Self {
         Self::with_policy().with_connection(consumer_group, connection, client_options)
@@ -247,7 +244,7 @@ impl<RP> EventHubConsumerClientBuilder<RP> {
     pub fn with_connection(
         self,
         consumer_group: impl Into<String>,
-        connection: &mut EventHubConnection<AmqpClient>,
+        connection: &mut EventHubConnection,
         client_options: EventHubConsumerClientOptions,
     ) -> EventHubConsumerClient<RP> {
         EventHubConsumerClient {

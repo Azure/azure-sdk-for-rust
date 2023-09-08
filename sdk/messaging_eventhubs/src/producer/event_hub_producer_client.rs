@@ -1,10 +1,7 @@
 use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{
-    amqp::{
-        amqp_client::AmqpClient,
-        amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
-    },
+    amqp::amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
     authorization::{event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential, AzureSasCredential},
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
@@ -30,7 +27,7 @@ pub const MINIMUM_BATCH_SIZE_LIMIT_IN_BYTES: u64 = 24;
 /// batches.
 #[derive(Debug)]
 pub struct EventHubProducerClient<RP> {
-    connection: EventHubConnection<AmqpClient>,
+    connection: EventHubConnection,
     /// An abstracted Event Hub transport-specific producer that is associated with the
     /// Event Hub gateway rather than a specific partition; intended to perform delegated operations.
     gateway_producer: Option<AmqpProducer<RP>>,
@@ -114,7 +111,7 @@ impl EventHubProducerClient<BasicRetryPolicy> {
 
     /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
-        connection: &mut EventHubConnection<AmqpClient>,
+        connection: &mut EventHubConnection,
         client_options: EventHubProducerClientOptions,
     ) -> Self {
         Self::with_policy().with_connection(connection, client_options)
@@ -243,7 +240,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
     /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
         self,
-        connection: &mut EventHubConnection<AmqpClient>,
+        connection: &mut EventHubConnection,
         client_options: EventHubProducerClientOptions,
     ) -> EventHubProducerClient<RP> {
         let connection = connection.clone_as_shared();
