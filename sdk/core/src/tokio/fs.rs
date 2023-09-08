@@ -1,4 +1,8 @@
-use crate::{request::Body, seekable_stream::SeekableStream, setters};
+use crate::{
+    request::Body,
+    seekable_stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
+    setters,
+};
 use futures::{task::Poll, Future};
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{
@@ -40,7 +44,7 @@ impl FileStreamBuilder {
     pub async fn build(mut self) -> crate::Result<FileStream> {
         let stream_size = self.handle.metadata().await?.len();
 
-        let buffer_size = self.buffer_size.unwrap_or(1024 * 64);
+        let buffer_size = self.buffer_size.unwrap_or(DEFAULT_BUFFER_SIZE);
 
         let offset = if let Some(offset) = self.offset {
             self.handle.seek(SeekFrom::Start(offset)).await?;
@@ -87,7 +91,7 @@ impl FileStream {
     /// Resets the number of bytes that will be read from this instance to the
     /// `stream_size`
     ///
-    /// This is useful if you want to read the stream in mutliple blocks
+    /// This is useful if you want to read the stream in multiple blocks
     pub async fn next_block(&mut self) -> crate::Result<()> {
         log::info!("setting limit to {}", self.block_size);
         let mut handle = self.handle.clone().lock_owned().await;
