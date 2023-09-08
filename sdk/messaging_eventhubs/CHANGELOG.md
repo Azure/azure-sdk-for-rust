@@ -1,5 +1,14 @@
 # Change log
 
+## 0.14.1
+
+- Renamed the following constructor methods and marked the old methods as deprecated
+  - `from_connection_string()` -> `new_from_connection_string()`
+  - `from_namespace_and_credential()` -> `new_from_credential()`
+  - `from_namespace_and_named_key_credential()` -> `new_from_named_key_credential()`
+  - `from_namespace_and_sas_credential()` -> `new_from_sas_credential()`
+- Removed generic parameter `C` from `EventHubConnection`
+
 ## 0.14.0
 
 - Fixed problem with `azure_identity` credentials
