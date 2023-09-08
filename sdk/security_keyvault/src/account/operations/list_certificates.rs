@@ -14,7 +14,7 @@ impl ListCertificatesBuilder {
     pub fn into_stream(self) -> Pageable<KeyVaultGetCertificatesResponse, Error> {
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
-            let mut ctx = self.context.clone();
+            let ctx = self.context.clone();
             async move {
                 let mut uri = this.client.keyvault_client.vault_url.clone();
                 uri.set_path("certificates");
@@ -31,11 +31,7 @@ impl ListCertificatesBuilder {
                     None,
                 )?;
 
-                let response = this
-                    .client
-                    .keyvault_client
-                    .send(&mut ctx, &mut request)
-                    .await?;
+                let response = this.client.keyvault_client.send(&ctx, &mut request).await?;
 
                 let response = CollectedResponse::from_response(response).await?;
                 let body = response.body();
