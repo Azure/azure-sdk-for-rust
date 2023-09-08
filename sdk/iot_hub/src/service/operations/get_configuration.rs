@@ -12,7 +12,7 @@ azure_core::operation! {
 
 impl GetConfigurationBuilder {
     /// Execute the request to get the configuration of a given identifier.
-    pub fn into_future(mut self) -> GetConfiguration {
+    pub fn into_future(self) -> GetConfiguration {
         Box::pin(async move {
             let uri = match self.configuration_id {
                 Some(val) => format!(
@@ -28,7 +28,7 @@ impl GetConfigurationBuilder {
             let mut request = self.client.finalize_request(&uri, Method::Get)?;
             request.set_body(azure_core::EMPTY_BODY);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             GetConfigurationResponse::try_from(response).await
         })

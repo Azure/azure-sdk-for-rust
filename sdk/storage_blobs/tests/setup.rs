@@ -1,18 +1,23 @@
 use azure_core::TransportOptions;
-use azure_identity::DefaultAzureCredential;
 use azure_storage::StorageCredentials;
 use azure_storage_blobs::prelude::BlobServiceClient;
-use std::sync::Arc;
+use std::env::var;
 
 pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<BlobServiceClient> {
-    let account_name = (std::env::var(mock_transport::TESTING_MODE_KEY).as_deref()
-        == Ok(mock_transport::TESTING_MODE_RECORD))
-    .then(get_account)
-    .unwrap_or_default();
-    let storage_credentials = (std::env::var(mock_transport::TESTING_MODE_KEY).as_deref()
-        == Ok(mock_transport::TESTING_MODE_RECORD))
-    .then(|| StorageCredentials::TokenCredential(Arc::new(DefaultAzureCredential::default())))
-    .unwrap_or_else(|| StorageCredentials::BearerToken(String::default()));
+    let (account_name, storage_credentials) = if var(mock_transport::TESTING_MODE_KEY).as_deref()
+        == Ok(mock_transport::TESTING_MODE_RECORD)
+    {
+        let account_name = var("STORAGE_ACCOUNT").expect("missing env STORAGE_ACCOUNT");
+        let account_key = var("STORAGE_ACCESS_KEY").expect("missing env STORAGE_ACCESS_KEY");
+        let storage_credentials = StorageCredentials::Key(account_name.clone(), account_key);
+        (account_name, storage_credentials)
+    } else {
+        (
+            String::new(),
+            StorageCredentials::BearerToken(String::new()),
+        )
+    };
+
     let transport_options = TransportOptions::new_custom_policy(
         mock_transport::new_mock_transport(transaction_name.into()),
     );
@@ -20,8 +25,4 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Blo
         .transport(transport_options)
         .blob_service_client();
     Ok(client)
-}
-
-fn get_account() -> String {
-    std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!")
 }

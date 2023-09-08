@@ -11,7 +11,7 @@ operation! {
 }
 
 impl EncryptBuilder {
-    pub fn into_future(mut self) -> Encrypt {
+    pub fn into_future(self) -> Encrypt {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/encrypt?api-version=7.2
             let version = self.version.unwrap_or_default();
@@ -67,7 +67,7 @@ impl EncryptBuilder {
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

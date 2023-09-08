@@ -249,8 +249,11 @@ pub struct FixedRetryOptions {
 
 impl FixedRetryOptions {
     setters! {
+        #[doc = "Set the delay between retry attempts."]
         delay: Duration => delay,
+        #[doc = "Set the maximum number of retry attempts before giving up."]
         max_retries: u32 => max_retries,
+        #[doc = "Set the maximum permissible elapsed time since starting to retry."]
         max_total_elapsed: Duration => max_total_elapsed,
     }
 }
@@ -268,12 +271,13 @@ impl Default for FixedRetryOptions {
 /// Telemetry options.
 #[derive(Clone, Debug, Default)]
 pub struct TelemetryOptions {
-    /// Optional application ID to telemeter.
+    /// Optional application ID to telemetry.
     pub(crate) application_id: Option<String>,
 }
 
 impl TelemetryOptions {
     setters! {
+        #[doc = "Set the application ID to telemetry."]
         application_id: String => Some(application_id),
     }
 }
