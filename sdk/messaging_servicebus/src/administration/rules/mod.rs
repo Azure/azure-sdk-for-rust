@@ -7,7 +7,6 @@ use serde_amqp::{
     described::Described, descriptor::Descriptor, DeserializeComposite, SerializeComposite,
 };
 
-use filters::RuleFilter;
 use time::OffsetDateTime;
 
 mod filters;

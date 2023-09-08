@@ -392,11 +392,19 @@ impl FalseRuleFilter {
     }
 }
 
+/// Topic filter
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum RuleFilter {
+    /// SQL rule filter
     Sql(SqlRuleFilter),
+
+    /// Correlation rule filter
     Correlation(CorrelationRuleFilter),
+
+    /// Boolean filter that is always true
     True(TrueRuleFilter),
+
+    /// Boolean filter that is always false
     False(FalseRuleFilter),
 }
 
