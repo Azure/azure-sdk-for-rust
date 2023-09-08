@@ -9,9 +9,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING")?;
     let event_hub_name = std::env::var("EVENT_HUB_NAME")?;
     let options = EventHubProducerClientOptions::default();
-    let mut producer_client =
-        EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
-            .await?;
+    let mut producer_client = EventHubProducerClient::new_from_connection_string(
+        connection_string,
+        event_hub_name,
+        options,
+    )
+    .await?;
 
     let partition_ids = producer_client.get_partition_ids().await?;
 

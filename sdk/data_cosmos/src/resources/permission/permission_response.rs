@@ -5,7 +5,7 @@ use azure_core::Response as HttpResponse;
 
 use super::Permission;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct PermissionResponse {
     pub permission: Permission,
     pub charge: f64,

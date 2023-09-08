@@ -1,11 +1,11 @@
 use std::{collections::HashMap, marker::PhantomData};
 
 use crate::{
-    amqp::{
-        amqp_client::AmqpClient,
-        amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
+    amqp::amqp_producer::{AmqpProducer, RecoverableAmqpProducer},
+    authorization::{
+        event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential,
+        AzureSasCredential,
     },
-    authorization::{event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential, AzureSasCredential},
     core::{BasicRetryPolicy, TransportProducer},
     event_hubs_properties::EventHubProperties,
     event_hubs_retry_policy::EventHubsRetryPolicy,
@@ -30,7 +30,7 @@ pub const MINIMUM_BATCH_SIZE_LIMIT_IN_BYTES: u64 = 24;
 /// batches.
 #[derive(Debug)]
 pub struct EventHubProducerClient<RP> {
-    connection: EventHubConnection<AmqpClient>,
+    connection: EventHubConnection,
     /// An abstracted Event Hub transport-specific producer that is associated with the
     /// Event Hub gateway rather than a specific partition; intended to perform delegated operations.
     gateway_producer: Option<AmqpProducer<RP>>,
@@ -51,25 +51,72 @@ impl EventHubProducerClient<BasicRetryPolicy> {
     }
 
     /// Creates a [`EventHubProducerClient`] using a connection string.
-    pub async fn from_connection_string(
+    pub async fn new_from_connection_string(
         connection_string: impl Into<String>,
         event_hub_name: impl Into<Option<String>>,
         client_options: EventHubProducerClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .from_connection_string(connection_string, event_hub_name, client_options)
+            .new_from_connection_string(connection_string, event_hub_name, client_options)
             .await
     }
 
+    /// Creates a [`EventHubProducerClient`] using a connection string.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_connection_string` instead"
+    )]
+    pub async fn from_connection_string(
+        connection_string: impl Into<String>,
+        event_hub_name: impl Into<Option<String>>,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_connection_string(connection_string, event_hub_name, client_options).await
+    }
+
     /// Creates a [`EventHubProducerClient`] using a namespace and a credential.
-    pub async fn from_namespace_and_credential(
+    pub async fn new_from_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: impl Into<EventHubTokenCredential>,
         client_options: EventHubProducerClientOptions,
     ) -> Result<Self, azure_core::Error> {
         Self::with_policy()
-            .from_namespace_and_credential(
+            .new_from_credential(
+                fully_qualified_namespace,
+                event_hub_name,
+                credential,
+                client_options,
+            )
+            .await
+    }
+
+    /// Creates a [`EventHubProducerClient`] using a namespace and a credential.
+    #[deprecated(since = "0.14.1", note = "Please use `new_from_credential` instead")]
+    pub async fn from_namespace_and_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            client_options,
+        )
+        .await
+    }
+
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureNamedKeyCredential`].
+    pub async fn new_from_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::with_policy()
+            .new_from_named_key_credential(
                 fully_qualified_namespace,
                 event_hub_name,
                 credential,
@@ -79,24 +126,27 @@ impl EventHubProducerClient<BasicRetryPolicy> {
     }
 
     /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureNamedKeyCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_named_key_credential` instead"
+    )]
     pub async fn from_namespace_and_named_key_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: AzureNamedKeyCredential,
         client_options: EventHubProducerClientOptions,
     ) -> Result<Self, azure_core::Error> {
-        Self::with_policy()
-            .from_namespace_and_named_key_credential(
-                fully_qualified_namespace,
-                event_hub_name,
-                credential,
-                client_options,
-            )
-            .await
+        Self::new_from_named_key_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            client_options,
+        )
+        .await
     }
 
     /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureSasCredential`].
-    pub async fn from_namespace_and_sas_credential(
+    pub async fn new_from_sas_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: AzureSasCredential,
@@ -112,9 +162,29 @@ impl EventHubProducerClient<BasicRetryPolicy> {
             .await
     }
 
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureSasCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_sas_credential` instead"
+    )]
+    pub async fn from_namespace_and_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_sas_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            client_options,
+        )
+        .await
+    }
+
     /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
-        connection: &mut EventHubConnection<AmqpClient>,
+        connection: &mut EventHubConnection,
         client_options: EventHubProducerClientOptions,
     ) -> Self {
         Self::with_policy().with_connection(connection, client_options)
@@ -131,7 +201,7 @@ pub struct EventHubProducerClientBuilder<RP> {
 
 impl<RP> EventHubProducerClientBuilder<RP> {
     /// Creates a [`EventHubProducerClient`] using a connection string.
-    pub async fn from_connection_string(
+    pub async fn new_from_connection_string(
         self,
         connection_string: impl Into<String>,
         event_hub_name: impl Into<Option<String>>,
@@ -140,7 +210,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        let connection = EventHubConnection::from_connection_string(
+        let connection = EventHubConnection::new_from_connection_string(
             connection_string.into(),
             event_hub_name.into(),
             client_options.connection_options.clone(),
@@ -156,8 +226,26 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         })
     }
 
+    /// Creates a [`EventHubProducerClient`] using a connection string.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_connection_string` instead"
+    )]
+    pub async fn from_connection_string(
+        self,
+        connection_string: impl Into<String>,
+        event_hub_name: impl Into<Option<String>>,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<EventHubProducerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        self.new_from_connection_string(connection_string, event_hub_name, client_options)
+            .await
+    }
+
     /// Creates a [`EventHubProducerClient`] using a namespace and a credential.
-    pub async fn from_namespace_and_credential(
+    pub async fn new_from_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
@@ -167,7 +255,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        let connection = EventHubConnection::from_namespace_and_credential(
+        let connection = EventHubConnection::new_from_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential.into(),
@@ -184,8 +272,29 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         })
     }
 
+    /// Creates a [`EventHubProducerClient`] using a namespace and a credential.
+    #[deprecated(since = "0.14.1", note = "Please use `new_from_credential` instead")]
+    pub async fn from_namespace_and_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<EventHubProducerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        self.new_from_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            client_options,
+        )
+        .await
+    }
+
     /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureNamedKeyCredential`].
-    pub async fn from_namespace_and_named_key_credential(
+    pub async fn new_from_named_key_credential(
         self,
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
@@ -195,7 +304,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        let connection = EventHubConnection::from_namespace_and_named_key_credential(
+        let connection = EventHubConnection::new_from_named_key_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential,
@@ -212,6 +321,30 @@ impl<RP> EventHubProducerClientBuilder<RP> {
         })
     }
 
+    /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureNamedKeyCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `new_from_named_key_credential` instead"
+    )]
+    pub async fn from_namespace_and_named_key_credential(
+        self,
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        client_options: EventHubProducerClientOptions,
+    ) -> Result<EventHubProducerClient<RP>, azure_core::Error>
+    where
+        RP: EventHubsRetryPolicy + Send,
+    {
+        self.new_from_named_key_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            client_options,
+        )
+        .await
+    }
+
     /// Creates a [`EventHubProducerClient`] using a namespace and a [`AzureSasCredential`].
     pub async fn from_namespace_and_sas_credential(
         self,
@@ -223,7 +356,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        let connection = EventHubConnection::from_namespace_and_sas_credential(
+        let connection = EventHubConnection::new_from_sas_credential(
             fully_qualified_namespace.into(),
             event_hub_name.into(),
             credential,
@@ -243,7 +376,7 @@ impl<RP> EventHubProducerClientBuilder<RP> {
     /// Creates a [`EventHubProducerClient`] using a [`EventHubConnection`].
     pub fn with_connection(
         self,
-        connection: &mut EventHubConnection<AmqpClient>,
+        connection: &mut EventHubConnection,
         client_options: EventHubProducerClientOptions,
     ) -> EventHubProducerClient<RP> {
         let connection = connection.clone_as_shared();
@@ -432,10 +565,7 @@ where
     pub async fn close(self) -> Result<(), azure_core::Error> {
         let mut result = Ok(());
         for (_, producer) in self.producer_pool {
-            let res = producer
-                .close()
-                .await
-                .map_err(Into::into);
+            let res = producer.close().await.map_err(Into::into);
             result = result.and(res);
         }
 

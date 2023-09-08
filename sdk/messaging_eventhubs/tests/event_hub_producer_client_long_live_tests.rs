@@ -24,7 +24,7 @@ cfg_not_wasm32! {
         let partition_id = "0";
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
 
@@ -58,7 +58,7 @@ cfg_not_wasm32! {
         let partition_id = "0";
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
 
@@ -94,7 +94,7 @@ cfg_not_wasm32! {
         let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
         let properties = producer_client.get_event_hub_properties().await.unwrap();

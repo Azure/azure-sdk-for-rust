@@ -4,7 +4,7 @@ use std::sync::{atomic::AtomicBool, Arc};
 use url::Url;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, error::{AmqpConnectionScopeError, AmqpClientError}},
+    amqp::{amqp_client::AmqpClient, error::{AmqpConnectionScopeError, AmqpClientError}, amqp_producer::AmqpProducer, amqp_consumer::AmqpConsumer},
     authorization::{
         event_hub_token_credential::EventHubTokenCredential,
         shared_access_credential::SharedAccessCredential,
@@ -43,16 +43,16 @@ impl From<EventHubConnectionError> for azure_core::error::Error {
 /// Event Hub producers and/or consumers, or may be used as a dedicated connection for a single
 /// producer or consumer client.
 #[derive(Debug)]
-pub struct EventHubConnection<C> {
+pub struct EventHubConnection {
     fully_qualified_namespace: String,
     event_hub_name: Arc<String>,
     is_closed: Arc<AtomicBool>,
-    pub(crate) inner: Sharable<C>,
+    pub(crate) inner: Sharable<AmqpClient>,
 }
 
-impl EventHubConnection<AmqpClient> {
+impl EventHubConnection {
     /// Creates a new [`EventHubConnection`] from a connection string.
-    pub async fn from_connection_string(
+    pub async fn new_from_connection_string(
         connection_string: impl AsRef<str>,
         event_hub_name: impl Into<Option<String>>,
         options: EventHubConnectionOptions,
@@ -129,7 +129,7 @@ impl EventHubConnection<AmqpClient> {
         let token_credential =
             EventHubTokenCredential::SharedAccessCredential(shared_access_credential);
 
-        Self::from_namespace_and_credential(
+        Self::new_from_credential(
             fully_qualified_namespace.to_string(),
             event_hub_name,
             token_credential,
@@ -138,8 +138,21 @@ impl EventHubConnection<AmqpClient> {
         .await
     }
 
+    /// Creates a new [`EventHubConnection`] from a connection string.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_connection_string` instead"
+    )]
+    pub async fn from_connection_string(
+        connection_string: impl AsRef<str>,
+        event_hub_name: impl Into<Option<String>>,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_connection_string(connection_string, event_hub_name, options).await
+    }
+
     /// Creates a new [`EventHubConnection`] from a namespace and a credential.
-    pub async fn from_namespace_and_credential(
+    pub async fn new_from_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: impl Into<EventHubTokenCredential>,
@@ -169,8 +182,22 @@ impl EventHubConnection<AmqpClient> {
         })
     }
 
+    /// Creates a new [`EventHubConnection`] from a namespace and a credential.
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_credential` instead"
+    )]
+    pub async fn from_namespace_and_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: impl Into<EventHubTokenCredential>,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+    }
+
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
-    pub async fn from_namespace_and_named_key_credential(
+    pub async fn new_from_named_key_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: AzureNamedKeyCredential,
@@ -181,7 +208,37 @@ impl EventHubConnection<AmqpClient> {
         let resource = build_connection_signature_authorization_resource(options.transport_type, &fully_qualified_namespace, &event_hub_name)?;
         let shared_access_credential = SharedAccessCredential::try_from_named_key_credential(credential, resource)?;
 
-        Self::from_namespace_and_credential(
+        Self::new_from_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            shared_access_credential,
+            options,
+        ).await
+    }
+
+    /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_named_key_credential` instead"
+    )]
+    pub async fn from_namespace_and_named_key_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureNamedKeyCredential,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        Self::new_from_named_key_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+    }
+
+    /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
+    pub async fn new_from_sas_credential(
+        fully_qualified_namespace: impl Into<String>,
+        event_hub_name: impl Into<String>,
+        credential: AzureSasCredential,
+        options: EventHubConnectionOptions,
+    ) -> Result<Self, azure_core::Error> {
+        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
+        Self::new_from_credential(
             fully_qualified_namespace,
             event_hub_name,
             shared_access_credential,
@@ -190,27 +247,21 @@ impl EventHubConnection<AmqpClient> {
     }
 
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
+    #[deprecated(
+        since = "0.14.1",
+        note = "Please use `EventHubConnection::new_from_sas_credential` instead"
+    )]
     pub async fn from_namespace_and_sas_credential(
         fully_qualified_namespace: impl Into<String>,
         event_hub_name: impl Into<String>,
         credential: AzureSasCredential,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
-        let shared_access_credential = SharedAccessCredential::try_from_sas_credential(credential)?;
-        Self::from_namespace_and_credential(
-            fully_qualified_namespace,
-            event_hub_name,
-            shared_access_credential,
-            options,
-        ).await
+        Self::new_from_sas_credential(fully_qualified_namespace, event_hub_name, credential, options).await
     }
 }
 
-impl<C> EventHubConnection<C>
-where
-    C: TransportClient,
-    C::DisposeError: Into<azure_core::error::Error>,
-{
+impl EventHubConnection {
     pub(crate) async fn get_properties<RP>(
         &mut self,
         retry_policy: RP,
@@ -269,10 +320,9 @@ where
         requested_features: TransportProducerFeatures,
         partition_options: PartitionPublishingOptions,
         retry_policy: RP,
-    ) -> Result<C::Producer<RP>, azure_core::Error>
+    ) -> Result<AmqpProducer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
-        C::OpenProducerError: Into<azure_core::error::Error>,
     {
         match &mut self.inner {
             Sharable::Owned(c) => c
@@ -315,10 +365,9 @@ where
         track_last_enqueued_event_properties: bool,
         owner_level: Option<i64>,
         prefetch_count: Option<u32>,
-    ) -> Result<C::Consumer<RP>, azure_core::Error>
+    ) -> Result<AmqpConsumer<RP>, azure_core::Error>
     where
         RP: EventHubsRetryPolicy + Send,
-        C::OpenConsumerError: Into<azure_core::error::Error>,
     {
         match &mut self.inner {
             Sharable::Owned(c) => c
@@ -400,7 +449,7 @@ where
     }
 }
 
-impl<C> EventHubConnection<C> {
+impl EventHubConnection {
     pub(crate) fn clone_as_shared(&mut self) -> Self {
         let shared = self.inner.clone_as_shared();
         let inner = match shared {
@@ -501,12 +550,7 @@ fn build_connection_signature_authorization_resource(
 }
 
 #[async_trait]
-impl<C> RecoverableTransport for EventHubConnection<C>
-where
-    C: Send,
-    Sharable<C>: RecoverableTransport,
-    <Sharable<C> as RecoverableTransport>::RecoverError: Into<azure_core::Error>,
-{
+impl RecoverableTransport for EventHubConnection {
     type RecoverError = azure_core::Error;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {

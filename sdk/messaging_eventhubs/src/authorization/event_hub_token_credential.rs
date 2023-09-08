@@ -11,8 +11,9 @@ use super::shared_access_credential::SharedAccessCredential;
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust, no_run
 /// use azure_identity::DefaultAzureCredential;
+/// use azeventhubs::authorization::EventHubTokenCredential;
 ///
 /// let credential = EventHubTokenCredential::from(DefaultAzureCredential::default());
 /// ```

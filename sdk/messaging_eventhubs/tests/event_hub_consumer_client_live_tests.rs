@@ -27,7 +27,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, None, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, None, options)
                 .await
                 .unwrap();
 
@@ -62,7 +62,7 @@ cfg_not_wasm32! {
         let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
 
-        let mut consumer = EventHubConsumerClient::from_connection_string(
+        let mut consumer = EventHubConsumerClient::new_from_connection_string(
             consumer_group,
             connection_string,
             event_hub_name,
@@ -115,7 +115,7 @@ cfg_not_wasm32! {
         let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
 
-        let mut consumer = EventHubConsumerClient::from_connection_string(
+        let mut consumer = EventHubConsumerClient::new_from_connection_string(
             consumer_group,
             connection_string,
             event_hub_name,
@@ -165,7 +165,7 @@ cfg_not_wasm32! {
         options.retry_options = retry_options;
 
         let handle = tokio::spawn(async move {
-            let mut consumer = EventHubConsumerClient::from_connection_string(
+            let mut consumer = EventHubConsumerClient::new_from_connection_string(
                 consumer_group,
                 connection_string,
                 event_hub_name,

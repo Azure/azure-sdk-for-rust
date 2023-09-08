@@ -20,7 +20,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let options = EventHubProducerClientOptions::default();
         let producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, None, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, None, options)
                 .await
                 .unwrap();
         producer_client.close().await.unwrap();
@@ -40,7 +40,7 @@ cfg_not_wasm32! {
         let options = EventHubProducerClientOptions::default();
         let named_key_credential = AzureNamedKeyCredential::new(key_name, key);
 
-        let mut producer_client = EventHubProducerClient::from_namespace_and_named_key_credential(
+        let mut producer_client = EventHubProducerClient::new_from_named_key_credential(
             fqn,
             event_hub_name,
             named_key_credential,
@@ -66,7 +66,7 @@ cfg_not_wasm32! {
         let options = EventHubProducerClientOptions::default();
         let default_credential = DefaultAzureCredential::default();
 
-        let mut producer_client = EventHubProducerClient::from_namespace_and_credential(
+        let mut producer_client = EventHubProducerClient::new_from_credential(
             fqn,
             event_hub_name,
             default_credential,
@@ -87,7 +87,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let connection_options = EventHubConnectionOptions::default();
         let mut connection =
-            EventHubConnection::from_connection_string(connection_string, None, connection_options)
+            EventHubConnection::new_from_connection_string(connection_string, None, connection_options)
                 .await
                 .unwrap();
 
@@ -110,7 +110,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, None, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, None, options)
                 .await
                 .unwrap();
 
@@ -128,7 +128,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, None, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, None, options)
                 .await
                 .unwrap();
 
@@ -150,7 +150,7 @@ cfg_not_wasm32! {
         let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING_WITH_ENTITY_PATH").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, None, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, None, options)
                 .await
                 .unwrap();
 
@@ -177,7 +177,7 @@ cfg_not_wasm32! {
         let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
 
@@ -194,7 +194,7 @@ cfg_not_wasm32! {
         let event_hub_name = std::env::var("EVENT_HUB_NAME").unwrap();
         let options = EventHubProducerClientOptions::default();
         let mut producer_client =
-            EventHubProducerClient::from_connection_string(connection_string, event_hub_name, options)
+            EventHubProducerClient::new_from_connection_string(connection_string, event_hub_name, options)
                 .await
                 .unwrap();
 
