@@ -24,14 +24,9 @@ impl HttpClient for ::reqwest::Client {
 
         let reqwest_request = match body {
             Body::Bytes(bytes) => req.body(bytes).build(),
-            Body::SeekableStream(mut seekable_stream) => {
-                seekable_stream.reset().await.context(
-                    ErrorKind::Other,
-                    "failed to reset body stream when building request",
-                )?;
-                req.body(::reqwest::Body::wrap_stream(seekable_stream))
-                    .build()
-            }
+            Body::SeekableStream(seekable_stream) => req
+                .body(::reqwest::Body::wrap_stream(seekable_stream))
+                .build(),
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 

@@ -69,7 +69,7 @@ impl CreateOrUpdateConfigurationBuilder {
     }
 
     /// Performs the create or update request on the device identity
-    pub fn into_future(mut self) -> CreateOrUpdateConfiguration {
+    pub fn into_future(self) -> CreateOrUpdateConfiguration {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/configurations/{}?api-version={}",
@@ -101,7 +101,7 @@ impl CreateOrUpdateConfigurationBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             CreateOrUpdateConfigurationResponse::try_from(response).await
         })

@@ -30,7 +30,7 @@ struct UpdateRequest {
 }
 
 impl UpdateCertificatePropertiesBuilder {
-    pub fn into_future(mut self) -> UpdateCertificateProperties {
+    pub fn into_future(self) -> UpdateCertificateProperties {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             let version = self.version.unwrap_or_default();
@@ -56,7 +56,7 @@ impl UpdateCertificatePropertiesBuilder {
 
             self.client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             Ok(())
