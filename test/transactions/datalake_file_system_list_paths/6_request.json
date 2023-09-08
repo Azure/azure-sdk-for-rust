@@ -2,11 +2,11 @@
   "uri": "/azurerustsdk-datalake-file-system-list-paths?resource=filesystem&recursive=false&directory=some",
   "method": "GET",
   "headers": {
-    "content-length": "0",
     "authorization": "<<STRIPPED>>",
-    "user-agent": "azsdk-rust-storage_datalake/0.3.0 (1.61.0; linux; x86_64)",
-    "x-ms-date": "Thu, 16 Jun 2022 10:22:58 GMT",
-    "x-ms-version": "2019-12-12"
+    "content-length": "0",
+    "user-agent": "azsdk-rust-storage/0.14.0 (1.72.0; linux; x86_64)",
+    "x-ms-date": "Thu, 07 Sep 2023 19:20:10 GMT",
+    "x-ms-version": "2020-10-02"
   },
   "body": ""
 }
