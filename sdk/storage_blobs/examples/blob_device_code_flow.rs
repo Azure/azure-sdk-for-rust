@@ -1,9 +1,9 @@
-use azure_core::{Error, error::ErrorKind};
+use azure_core::{error::ErrorKind, Error};
 use azure_identity::{device_code_flow, refresh_token};
 use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
-use std::env::{var, args};
+use std::env::{args, var};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -55,10 +55,11 @@ async fn main() -> azure_core::Result<()> {
             }
         }
     };
-    
+
     // we can now spend the access token in other crates. In this example we are
     // creating an Azure Storage client using the access token.
-    let storage_credentials = StorageCredentials::bearer_token(authorization.access_token().secret());
+    let storage_credentials =
+        StorageCredentials::bearer_token(authorization.access_token().secret());
     let blob_service_client = BlobServiceClient::new(storage_account_name, storage_credentials);
 
     // now we enumerate the containers in the specified storage account.
