@@ -36,7 +36,7 @@ mock_transport = { path = "../../eng/test/mock_transport" }
 md5 = "0.7"
 async-trait = "0.1"
 clap = { version = "4.0", features = ["derive", "env"] }
-azure_core = {path = "../core", version = "0.14", features = ["tokio-fs"]}
+azure_core = {path = "../core", version = "0.15", features = ["tokio-fs"]}
 
 [features]
 default = ["enable_reqwest"]
