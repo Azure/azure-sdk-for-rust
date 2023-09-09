@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_datalake"
-version = "0.14.0"
+version = "0.15.0"
 description = "Azure Data Lake Storage Gen2 crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -14,8 +14,8 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.14" }
-azure_storage = { path = "../storage", version = "0.14", default-features = false }
+azure_core = { path = "../core", version = "0.15" }
+azure_storage = { path = "../storage", version = "0.15", default-features = false }
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"

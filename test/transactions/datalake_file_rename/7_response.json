@@ -1,11 +1,11 @@
 {
   "status": 404,
   "headers": {
-    "date": "Tue, 08 Feb 2022 19:19:36 GMT",
+    "date": "Thu, 07 Sep 2023 19:20:14 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "x-ms-error-code": "PathNotFound",
-    "x-ms-request-id": "3cedf82e-c01f-003f-1a20-1d4f78000000",
-    "x-ms-version": "2019-12-12"
+    "x-ms-request-id": "4c08df5e-f01f-003a-1fc0-e15875000000",
+    "x-ms-version": "2020-10-02"
   },
   "body": ""
 }
