@@ -83,6 +83,12 @@ pub struct FileStream {
 }
 
 impl FileStream {
+    /// Attempts to read from the underlying file handle.
+    ///
+    /// This first acquires a lock the handle, then reads from the handle.  The
+    /// lock is released upon completion.  This is necessary due to the
+    /// requirement of `Request` (the primary consumer of `FileStream`) must be
+    /// `Clone`.
     async fn read(&mut self, slice: &mut [u8]) -> std::io::Result<usize> {
         let mut handle = self.handle.clone().lock_owned().await;
         handle.read(slice).await
@@ -135,11 +141,9 @@ impl SeekableStream for FileStream {
         min(self.stream_size - self.offset, self.block_size) as usize
     }
 
-    /*
     fn buffer_size(&self) -> usize {
         self.buffer_size
     }
-     */
 }
 
 impl futures::io::AsyncRead for FileStream {
