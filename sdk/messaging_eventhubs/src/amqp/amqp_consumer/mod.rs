@@ -415,7 +415,7 @@ where
     RP: EventHubsRetryPolicy + Send + 'a,
     AmqpConsumer<RP>: Send + 'a,
 {
-    type Item = Result<ReceivedEventData, RecoverAndReceiveError>;
+    type Item = Result<ReceivedEventData, azure_core::Error>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
@@ -434,7 +434,7 @@ where
         if let Some(item) = item {
             this.state
                 .set(EventStreamState::Value { value: next_state });
-            Poll::Ready(Some(item))
+            Poll::Ready(Some(item.map_err(Into::into)))
         } else {
             this.state.set(EventStreamState::Closing {
                 future: close_consumer(next_state).boxed(),
