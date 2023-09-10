@@ -2,7 +2,11 @@
 
 use std::path::PathBuf;
 
-use azeventhubs::{producer::{SendEventOptions, EventHubProducerClient}, BasicRetryPolicy, consumer::{EventHubConsumerClient, ReadEventOptions, EventPosition}, ReceivedEventData};
+use azeventhubs::{
+    consumer::{EventHubConsumerClient, EventPosition, ReadEventOptions},
+    producer::{EventHubProducerClient, SendEventOptions},
+    BasicRetryPolicy, ReceivedEventData,
+};
 use futures_util::StreamExt;
 
 pub type Producer = EventHubProducerClient<BasicRetryPolicy>;

@@ -1,7 +1,7 @@
 use std::sync::{atomic::Ordering, Arc};
 
 use async_trait::async_trait;
-use fe2o3_amqp::{link::ReceiverAttachExchange, Session};
+use fe2o3_amqp::link::ReceiverAttachExchange;
 use fe2o3_amqp_types::messaging::{Body, FilterSet, Modified, Source};
 use serde_amqp::{described::Described, Value};
 use url::Url;
@@ -27,7 +27,7 @@ use super::{
     amqp_management_link::AmqpManagementLink,
     amqp_producer::AmqpProducer,
     error::{
-        AmqpClientError, AmqpConnectionScopeError, DisposeError, OpenConsumerError,
+        AmqpClientError, DisposeError, OpenConsumerError,
         OpenProducerError, RecoverAndCallError, RecoverConsumerError, RecoverProducerError,
         RecoverTransportClientError,
     },
@@ -38,10 +38,23 @@ const DEFAULT_PREFETCH_COUNT: u32 = 300;
 #[derive(Debug)]
 pub struct AmqpClient {
     pub(crate) connection_scope: AmqpConnectionScope,
-    pub(crate) management_link: AmqpManagementLink,
+    pub(crate) management_link: Sharable<AmqpManagementLink>,
 }
 
 impl AmqpClient {
+    pub(crate) fn clone_as_shared(&mut self) -> Self {
+        let shared_mgmt_link = self.management_link.clone_as_shared();
+        let shared_mgmt_link = match shared_mgmt_link {
+            Some(shared_mgmt_link) => Sharable::Shared(shared_mgmt_link),
+            None => Sharable::None,
+        };
+
+        Self {
+            connection_scope: self.connection_scope.clone_as_shared(),
+            management_link: shared_mgmt_link,
+        }
+    }
+
     async fn recover_and_get_properties<'a>(
         &mut self,
         should_try_recover: bool,
@@ -54,7 +67,7 @@ impl AmqpClient {
         let request =
             EventHubPropertiesRequest::new(&*self.connection_scope.event_hub_name, token_value);
 
-        let res = self.management_link.client.call(request).await?;
+        let res = self.management_link.call(request).await?;
         Ok(res)
     }
 
@@ -74,7 +87,7 @@ impl AmqpClient {
             token_value,
         );
 
-        let res = self.management_link.client.call(request).await?;
+        let res = self.management_link.call(request).await?;
         Ok(res)
     }
 }
@@ -113,7 +126,7 @@ impl AmqpClient {
 
         // Create AmqpManagementLink
         let management_link = connection_scope.open_management_link().await?;
-
+        let management_link = Sharable::Owned(management_link);
         Ok(Self {
             connection_scope,
             management_link,
@@ -267,7 +280,7 @@ impl TransportClient for AmqpClient {
             .await?;
 
         if producer.session_handle.is_ended() {
-            let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
+            let new_session = self.connection_scope.connection.begin_session().await?;
             producer
                 .sender
                 .detach_then_resume_on_session(&new_session)
@@ -351,7 +364,7 @@ impl TransportClient for AmqpClient {
         }
 
         let mut exchange = if consumer.session_handle.is_ended() {
-            let new_session = Session::begin(&mut self.connection_scope.connection.handle).await?;
+            let new_session = self.connection_scope.connection.begin_session().await?;
             let exchange = consumer
                 .receiver
                 .detach_then_resume_on_session(&new_session)
@@ -405,6 +418,18 @@ impl TransportClient for AmqpClient {
     async fn close(&mut self) -> Result<(), Self::DisposeError> {
         self.connection_scope.close().await
     }
+
+    async fn close_if_owned(&mut self) -> Result<(), Self::DisposeError> {
+        self.connection_scope.close_if_owned().await
+    }
+
+    fn is_owned(&self) -> bool {
+        self.connection_scope.is_owned()
+    }
+
+    fn is_shared(&self) -> bool {
+        self.connection_scope.is_shared()
+    }
 }
 
 #[async_trait]
@@ -413,22 +438,15 @@ impl RecoverableTransport for AmqpClient {
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
         self.connection_scope.recover().await?;
-        self.connection_scope
-            .recover_management_link(&mut self.management_link)
-            .await?;
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl RecoverableTransport for Sharable<AmqpClient> {
-    type RecoverError = RecoverTransportClientError;
-
-    async fn recover(&mut self) -> Result<(), Self::RecoverError> {
-        match self {
-            Sharable::Owned(c) => c.recover().await,
-            Sharable::Shared(c) => c.lock().await.recover().await,
-            Sharable::None => Err(AmqpConnectionScopeError::ScopeDisposed.into()),
+        match &mut self.management_link {
+            Sharable::Owned(link) => self.connection_scope.recover_management_link(link).await?,
+            Sharable::Shared(lock) => {
+                let mut link = lock.write().await;
+                self.connection_scope.recover_management_link(&mut *link).await?
+            }
+            Sharable::None => {},
         }
+
+        Ok(())
     }
 }

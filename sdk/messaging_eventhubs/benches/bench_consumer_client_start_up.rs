@@ -1,9 +1,7 @@
 use std::time::Duration;
 
 use azeventhubs::{
-    consumer::{
-        EventHubConsumerClient, EventHubConsumerClientOptions, ReadEventOptions,
-    },
+    consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, ReadEventOptions},
     EventHubConnection, EventHubConnectionOptions, EventHubsRetryOptions,
 };
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -115,7 +113,8 @@ async fn bench_dedicated_connection_consumers_sequential(
                 n,
                 read_event_options.clone(),
                 |_| {}, // TODO: bench process event
-            ).await?;
+            )
+            .await?;
             consumer.close().await
         })
         .collect::<Vec<_>>();
@@ -172,7 +171,8 @@ async fn bench_shared_connection_consumers(
                     n,
                     read_event_options.clone(),
                     |_| {}, // TODO: bench process event
-                ).await?;
+                )
+                .await?;
                 consumer.close().await
             }
         })
@@ -194,8 +194,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     let n = 1;
     let cache_event_count = 1;
     let maximum_wait_time = Duration::from_secs(1);
-    // let n_prep = (n as f32 * 1.1).ceil() as usize; // Make sure we have enough events
-    let n_prep = 2 * n;
+    let n_prep = 2 * n; // prepare 2x events for benchmark
     let partitions = rt.block_on(prepare_events_on_all_partitions(n_prep));
 
     let mut bench_group = c.benchmark_group("consumer_client_start_up");

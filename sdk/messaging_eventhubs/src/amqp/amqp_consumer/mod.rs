@@ -15,7 +15,7 @@ use crate::{
     consumer::EventPosition,
     core::{RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util::{self, sharable::Sharable},
+    util::{self},
     ReceivedEventData,
 };
 
@@ -121,7 +121,7 @@ impl<RP> AmqpConsumer<RP> {
 }
 
 async fn recover_and_recv<RP>(
-    client: &mut Sharable<AmqpClient>,
+    client: &mut AmqpClient,
     consumer: &mut AmqpConsumer<RP>,
     should_try_recover: bool,
     buffer: &mut VecDeque<ReceivedEventData>,
@@ -139,11 +139,7 @@ where
         }
 
         // reattach the link
-        match client {
-            Sharable::Owned(client) => client.recover_consumer(consumer).await?,
-            Sharable::Shared(client) => client.lock().await.recover_consumer(consumer).await?,
-            Sharable::None => return Err(RecoverAndReceiveError::ConnectionScopeDisposed),
-        }
+        client.recover_consumer(consumer).await?;
     }
 
     match consumer
@@ -163,7 +159,7 @@ where
 }
 
 pub(crate) async fn receive_event_batch<RP>(
-    client: &mut Sharable<AmqpClient>,
+    client: &mut AmqpClient,
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
@@ -206,7 +202,7 @@ where
 }
 
 async fn next_event_inner<RP>(
-    client: &mut Sharable<AmqpClient>,
+    client: &mut AmqpClient,
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
@@ -258,7 +254,7 @@ async fn close_consumer<RP>(
 }
 
 pub(crate) struct EventStreamStateValue<'a, C> {
-    pub(crate) client: &'a mut Sharable<AmqpClient>,
+    pub(crate) client: &'a mut AmqpClient,
     pub(crate) consumer: C,
     pub(crate) buffer: VecDeque<ReceivedEventData>,
     pub(crate) max_wait_time: Option<StdDuration>,
@@ -266,7 +262,7 @@ pub(crate) struct EventStreamStateValue<'a, C> {
 
 impl<'a, C> EventStreamStateValue<'a, C> {
     pub(crate) fn new(
-        client: &'a mut Sharable<AmqpClient>,
+        client: &'a mut AmqpClient,
         consumer: C,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
@@ -397,7 +393,7 @@ where
     AmqpConsumer<RP>: Send + 'a,
 {
     pub(crate) fn with_consumer(
-        client: &'a mut Sharable<AmqpClient>,
+        client: &'a mut AmqpClient,
         consumer: AmqpConsumer<RP>,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,

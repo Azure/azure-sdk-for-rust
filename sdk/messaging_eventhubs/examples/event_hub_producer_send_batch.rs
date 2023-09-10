@@ -30,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     producer_client.send_batch(batch, options.clone()).await?;
                     batch = producer_client.create_batch(Default::default()).await?;
                     log::info!("Batch sent");
-                },
+                }
                 TryAddError::Codec { source, .. } => {
                     log::error!("Error: {:?}", source);
                     break;

@@ -1,6 +1,8 @@
 use fe2o3_amqp::link::DetachError;
 use futures_util::StreamExt;
+use tokio::task::JoinError;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration as StdDuration;
 
 use fe2o3_amqp_cbs::{client::CbsClient, AsyncCbsTokenProvider};
@@ -10,6 +12,7 @@ use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
 use tokio_util::sync::CancellationToken;
 
+use crate::util::sharable::Sharable;
 use crate::util::time::{DelayQueue, Key};
 
 use super::error::AmqpCbsEventLoopStopped;
@@ -92,6 +95,91 @@ impl AmqpCbsLinkHandle {
 
     pub(crate) fn join_handle_mut(&mut self) -> &mut JoinHandle<Result<(), DetachError>> {
         &mut self.join_handle
+    }
+}
+
+impl Sharable<AmqpCbsLinkHandle> {
+    pub(crate) async fn request_refreshable_authorization(
+        &mut self,
+        link_identifier: u32,
+        endpoint: String,
+        resource: String,
+        required_claims: Vec<String>,
+    ) -> Result<Result<(), CbsAuthError>, AmqpCbsEventLoopStopped> {
+        match self {
+            Self::Owned(link) => {
+                link.request_refreshable_authorization(
+                    link_identifier,
+                    endpoint,
+                    resource,
+                    required_claims,
+                )
+                .await
+            }
+            Self::Shared(link) => {
+                link.write()
+                    .await
+                    .request_refreshable_authorization(
+                        link_identifier,
+                        endpoint,
+                        resource,
+                        required_claims,
+                    )
+                    .await
+            }
+            Self::None => unreachable!(),
+        }
+    }
+
+    pub(crate) async fn command_sender(&self) -> mpsc::Sender<Command> {
+        match self {
+            Self::Owned(link) => link.command_sender().clone(),
+            Self::Shared(link) => link.read().await.command_sender().clone(),
+            Self::None => unreachable!(),
+        }
+    }
+
+    /// Stop regardless of ownership
+    pub(crate) async fn stop(&self) {
+        match self {
+            Self::Owned(link) => link.stop(),
+            Self::Shared(link) => link.write().await.stop(),
+            Self::None => unreachable!(),
+        }
+    }
+
+    pub(crate) async fn stop_if_owned(&self) {
+        match self {
+            Self::Owned(link) => link.stop(),
+            Self::Shared(link) => match Arc::strong_count(link) {
+                1 => link.write().await.stop(),
+                _ => {}
+            },
+            Self::None => unreachable!(),
+        }
+    }
+
+    /// Join regardless of ownership
+    pub(crate) async fn join(&mut self) -> Result<Result<(), DetachError>, JoinError> {
+        match self {
+            Self::Owned(link) => link.join_handle_mut().await,
+            Self::Shared(link) => {
+                let mut link = link.write().await;
+                link.join_handle_mut().await
+            }
+            Self::None => unreachable!(),
+        }
+    }
+
+    pub(crate) async fn join_if_owned(&mut self) -> Result<Result<(), DetachError>, JoinError> {
+        match self {
+            Self::Owned(link) => link.join_handle_mut().await,
+            Self::Shared(link) => match Arc::strong_count(link) {
+                1 => link.write().await.join_handle_mut().await,
+                _ => Ok(Ok(())),
+            },
+            Self::None => unreachable!(),
+        }
     }
 }
 

@@ -8,8 +8,11 @@ use std::{
 
 use async_trait::async_trait;
 use fe2o3_amqp::{
-    connection::ConnectionHandle, link::receiver::CreditMode, sasl_profile::SaslProfile,
-    session::SessionHandle, Connection, Receiver, Sender, Session,
+    connection::ConnectionHandle,
+    link::receiver::CreditMode,
+    sasl_profile::SaslProfile,
+    session::SessionHandle,
+    Connection, Receiver, Sender, Session,
 };
 use fe2o3_amqp_cbs::client::CbsClient;
 use fe2o3_amqp_management::MgmtClient;
@@ -36,6 +39,7 @@ use crate::{
     core::{RecoverableTransport, TransportProducerFeatures},
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
+    util::sharable::Sharable,
 };
 
 use super::{
@@ -61,13 +65,13 @@ pub(crate) struct AmqpConnectionScope {
     pub(crate) is_disposed: Arc<AtomicBool>,
 
     /// The unique identifier of the scope.
-    pub(crate) id: String,
+    pub(crate) id: Arc<String>,
 
     /// The endpoint for the Event Hubs service to which the scope is associated.
-    pub(crate) service_endpoint: Url,
+    pub(crate) service_endpoint: Arc<Url>,
 
     /// The endpoint to used establishing a connection to the Event Hubs service to which the scope is associated.
-    pub(crate) connection_endpoint: Url,
+    pub(crate) connection_endpoint: Arc<Url>,
 
     /// The name of the Event Hub to which the scope is associated.
     pub(crate) event_hub_name: Arc<String>,
@@ -82,13 +86,13 @@ pub(crate) struct AmqpConnectionScope {
     pub(crate) connection_idle_timeout: StdDuration,
 
     /// The AMQP connection to the Event Hubs service.
-    pub(crate) connection: AmqpConnection,
+    pub(crate) connection: Sharable<AmqpConnection>,
 
     /// The session dedicated for cbs auth
-    pub(crate) cbs_session_handle: SessionHandle<()>,
+    pub(crate) cbs_session_handle: Sharable<SessionHandle<()>>,
 
     /// CBS link for auth
-    pub(crate) cbs_link_handle: AmqpCbsLinkHandle,
+    pub(crate) cbs_link_handle: Sharable<AmqpCbsLinkHandle>,
 }
 
 impl AmqpConnectionScope {
@@ -97,6 +101,48 @@ impl AmqpConnectionScope {
     /// amount, ensuring that it is renewed before it has expired.
     const AUTHORIZATION_TOKEN_EXPIRATION_BUFFER: TimeSpan =
         TimeSpan::seconds(AUTHORIZATION_REFRESH_BUFFER_SECONDS as i64 + 2 * 60);
+
+    pub(crate) fn is_owned(&self) -> bool {
+        matches!(self.connection, Sharable::Owned(_))
+    }
+
+    pub(crate) fn is_shared(&self) -> bool {
+        matches!(self.connection, Sharable::Shared(_))
+    }
+
+    pub(crate) fn clone_as_shared(&mut self) -> Self {
+        let shared_connection = self.connection.clone_as_shared();
+        let shared_connection = match shared_connection {
+            Some(c) => Sharable::Shared(c),
+            None => Sharable::None,
+        };
+
+        let shared_cbs_session_handle = self.cbs_session_handle.clone_as_shared();
+        let shared_cbs_session_handle = match shared_cbs_session_handle {
+            Some(c) => Sharable::Shared(c),
+            None => Sharable::None,
+        };
+
+        let shared_cbs_link_handle = self.cbs_link_handle.clone_as_shared();
+        let shared_cbs_link_handle = match shared_cbs_link_handle {
+            Some(c) => Sharable::Shared(c),
+            None => Sharable::None,
+        };
+
+        Self {
+            is_disposed: self.is_disposed.clone(),
+            id: self.id.clone(),
+            service_endpoint: self.service_endpoint.clone(),
+            connection_endpoint: self.connection_endpoint.clone(),
+            event_hub_name: self.event_hub_name.clone(),
+            transport: self.transport.clone(),
+            credential: self.credential.clone(),
+            connection_idle_timeout: self.connection_idle_timeout.clone(),
+            connection: shared_connection,
+            cbs_session_handle: shared_cbs_session_handle,
+            cbs_link_handle: shared_cbs_link_handle,
+        }
+    }
 
     pub(crate) async fn new(
         service_endpoint: Url,
@@ -139,6 +185,12 @@ impl AmqpConnectionScope {
         );
         let cbs_link_handle = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
 
+        let id = Arc::new(id);
+        let service_endpoint = Arc::new(service_endpoint);
+        let connection_endpoint = Arc::new(connection_endpoint);
+        let connection = Sharable::Owned(connection);
+        let cbs_session_handle = Sharable::Owned(cbs_session_handle);
+        let cbs_link_handle = Sharable::Owned(cbs_link_handle);
         Ok(Self {
             is_disposed: Arc::new(AtomicBool::new(false)),
             id,
@@ -234,7 +286,7 @@ impl AmqpConnectionScope {
             return Err(OpenMgmtLinkError::ConnectionScopeDisposed);
         }
 
-        let mut session_handle = Session::begin(&mut self.connection.handle).await?;
+        let mut session_handle = self.connection.begin_session().await?;
         let mgmt_link = MgmtClient::attach(&mut session_handle, "").await?;
 
         Ok((session_handle, mgmt_link))
@@ -245,7 +297,7 @@ impl AmqpConnectionScope {
         management_link: &mut AmqpManagementLink,
     ) -> Result<(), RecoverManagementLinkError> {
         if management_link.session_handle.is_ended() {
-            let new_management_session = Session::begin(&mut self.connection.handle).await?;
+            let new_management_session = self.connection.begin_session().await?;
             management_link
                 .client
                 .detach_then_resume_on_session(&new_management_session)
@@ -298,8 +350,19 @@ impl AmqpConnectionScope {
             link_identifier,
             retry_policy,
             endpoint: producer_endpoint,
-            cbs_command_sender: self.cbs_link_handle.command_sender().clone(),
+            cbs_command_sender: self.cbs_link_handle.command_sender().await,
         })
+    }
+
+    async fn connection_identifier(&self) -> u32 {
+        match &self.connection {
+            Sharable::Owned(c) => c.identifier,
+            Sharable::Shared(c) => {
+                let guard = c.read().await;
+                guard.identifier
+            }
+            Sharable::None => unreachable!(),
+        }
     }
 
     async fn create_sending_session_and_link(
@@ -327,14 +390,15 @@ impl AmqpConnectionScope {
         .await?;
 
         // Create and open the AMQP session associated with the link.
-        let mut session_handle = Session::begin(&mut self.connection.handle).await?;
+        let mut session_handle = self.connection.begin_session().await?;
 
         // Create and open the link.
 
         // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
+        let connection_identifier = self.connection_identifier().await;
         let link_name = format!(
             "{};{}:{}:{}",
-            self.id, self.connection.identifier, session_identifier, link_identifier
+            self.id, connection_identifier, session_identifier, link_identifier
         );
         let mut builder = Sender::builder()
             .name(link_name)
@@ -417,7 +481,7 @@ impl AmqpConnectionScope {
             last_received_event: None,
             retry_policy,
             prefetch_count,
-            cbs_command_sender: self.cbs_link_handle.command_sender().clone(),
+            cbs_command_sender: self.cbs_link_handle.command_sender().await,
             endpoint: consumer_endpoint,
         })
     }
@@ -451,14 +515,15 @@ impl AmqpConnectionScope {
         .await?;
 
         // Create and open the AMQP session associated with the link.
-        let mut session_handle = Session::begin(&mut self.connection.handle).await?;
+        let mut session_handle = self.connection.begin_session().await?;
 
         // Create and open the link.
 
         // linkSettings.LinkName = $"{ Id };{ connection.Identifier }:{ session.Identifier }:{ link.Identifier }";
+        let connection_identifier = self.connection_identifier().await;
         let link_name = format!(
             "{};{}:{}:{}",
-            self.id, self.connection.identifier, session_identifier, link_identifier
+            self.id, connection_identifier, session_identifier, link_identifier
         );
         let consumer_filter = ConsumerFilter(amqp_filter::build_filter_expression(event_position)?);
         let source = Source::builder()
@@ -518,9 +583,10 @@ impl AmqpConnectionScope {
         Ok((session_handle, receiver))
     }
 
+    /// Close regardless of ownership
     pub(crate) async fn close(&mut self) -> Result<(), DisposeError> {
         let mut is_disposed = self.is_disposed.load(Ordering::Relaxed);
-        if is_disposed || self.connection.handle.is_closed() {
+        if is_disposed || self.connection.is_closed().await {
             return Ok(());
         }
 
@@ -536,11 +602,45 @@ impl AmqpConnectionScope {
             }
         }
 
-        self.cbs_link_handle.stop();
-        let _cbs_close_result = self.cbs_link_handle.join_handle_mut().await;
+        self.cbs_link_handle.stop().await;
+        let _cbs_close_result = self.cbs_link_handle.join().await;
 
         let session_close_result = self.cbs_session_handle.close().await;
-        let connection_close_result = self.connection.handle.close().await;
+        let connection_close_result = self.connection.close().await;
+
+        match (session_close_result, connection_close_result) {
+            (Ok(_), Ok(_)) => Ok(()),
+            // Connection error has priority
+            (_, Err(e)) => Err(DisposeError::ConnectionCloseError(e)),
+            (Err(e), _) => Err(DisposeError::SessionCloseError(e)),
+        }
+    }
+
+    pub(crate) async fn close_if_owned(&mut self) -> Result<(), DisposeError> {
+        let mut is_disposed = self.is_disposed.load(Ordering::Relaxed);
+        if is_disposed || self.connection.is_closed().await {
+            return Ok(());
+        }
+
+        if self.is_owned() {
+            loop {
+                match self.is_disposed.compare_exchange_weak(
+                    is_disposed,
+                    true,
+                    Ordering::Acquire,
+                    Ordering::Relaxed,
+                ) {
+                    Ok(_) => break,
+                    Err(x) => is_disposed = x,
+                }
+            }
+        }
+
+        self.cbs_link_handle.stop_if_owned().await;
+        let _cbs_close_result = self.cbs_link_handle.join_if_owned().await;
+
+        let session_close_result = self.cbs_session_handle.close_if_owned().await;
+        let connection_close_result = self.connection.close_if_owned().await;
 
         match (session_close_result, connection_close_result) {
             (Ok(_), Ok(_)) => Ok(()),
@@ -564,6 +664,30 @@ async fn attach_cbs_client(
     })
 }
 
+async fn recover_connection(
+    connection: &mut AmqpConnection,
+    service_endpoint: &Url,
+    connection_endpoint: &Url,
+    transport_type: EventHubsTransportType,
+    id: &str,
+    idle_timeout: StdDuration,
+) -> Result<(), AmqpConnectionScopeError> {
+    if let Err(err) = connection.handle.close().await {
+        log::error!("Error closing connection during recovering: {:?}", err);
+    }
+
+    let connection_handle = AmqpConnectionScope::open_connection(
+        service_endpoint,
+        connection_endpoint,
+        transport_type,
+        id,
+        idle_timeout,
+    )
+    .await?;
+    *connection = AmqpConnection::new(connection_handle);
+    Ok(())
+}
+
 #[async_trait]
 impl RecoverableTransport for AmqpConnectionScope {
     type RecoverError = AmqpConnectionScopeError;
@@ -578,35 +702,68 @@ impl RecoverableTransport for AmqpConnectionScope {
         }
 
         // Recover connection if it is closed
-        if self.connection.handle.is_closed() {
-            if let Err(err) = self.connection.handle.close().await {
-                log::error!("Error closing connection during recovering: {:?}", err);
+        if self.connection.is_closed().await {
+            match &mut self.connection {
+                Sharable::Owned(connection) => {
+                    recover_connection(
+                        connection,
+                        &self.service_endpoint,
+                        &self.connection_endpoint,
+                        self.transport,
+                        &self.id,
+                        self.connection_idle_timeout,
+                    )
+                    .await?
+                }
+                Sharable::Shared(lock) => {
+                    let mut guard = lock.write().await;
+                    recover_connection(
+                        &mut guard,
+                        &self.service_endpoint,
+                        &self.connection_endpoint,
+                        self.transport,
+                        &self.id,
+                        self.connection_idle_timeout,
+                    )
+                    .await?
+                }
+                Sharable::None => {},
             }
-
-            let connection_handle = Self::open_connection(
-                &self.service_endpoint,
-                &self.connection_endpoint,
-                self.transport,
-                &self.id,
-                self.connection_idle_timeout,
-            )
-            .await?;
-            self.connection = AmqpConnection::new(connection_handle);
         }
 
         // Recover CBS session and link if it is closed
-        if self.cbs_session_handle.is_ended() {
-            if let Err(err) = self.cbs_session_handle.end().await {
-                log::error!("Error ending CBS session during recovering: {:?}", err);
+        if self.cbs_session_handle.is_ended().await {
+            match &mut self.cbs_session_handle {
+                Sharable::Owned(session) => {
+                    if let Err(err) = session.end().await {
+                        log::error!("Error ending CBS session during recovering: {:?}", err);
+                    }
+                    let mut new_cbs_session_handle = self.connection.begin_session().await?;
+                    let cbs_client = attach_cbs_client(&mut new_cbs_session_handle).await?;
+                    let cbs_token_provider = CbsTokenProvider::new(
+                        self.credential.clone(),
+                        Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+                    );
+                    let new_cbs_link_handle = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+                    self.cbs_session_handle = Sharable::Owned(new_cbs_session_handle);
+                    self.cbs_link_handle = Sharable::Owned(new_cbs_link_handle);
+                }
+                Sharable::Shared(session_lock) => {
+                    let mut session_guard = session_lock.write().await;
+                    if let Err(err) = session_guard.end().await {
+                        log::error!("Error ending CBS session during recovering: {:?}", err);
+                    }
+                    *session_guard = self.connection.begin_session().await?;
+                    let cbs_client = attach_cbs_client(&mut session_guard).await?;
+                    let cbs_token_provider = CbsTokenProvider::new(
+                        self.credential.clone(),
+                        Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
+                    );
+                    let new_cbs_link_handle = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
+                    self.cbs_link_handle = Sharable::Owned(new_cbs_link_handle);
+                }
+                _ => {},
             }
-            self.cbs_session_handle = Session::begin(&mut self.connection.handle).await?;
-
-            let cbs_client = attach_cbs_client(&mut self.cbs_session_handle).await?;
-            let cbs_token_provider = CbsTokenProvider::new(
-                self.credential.clone(),
-                Self::AUTHORIZATION_TOKEN_EXPIRATION_BUFFER,
-            );
-            self.cbs_link_handle = AmqpCbsLink::spawn(cbs_token_provider, cbs_client);
         }
 
         Ok(())

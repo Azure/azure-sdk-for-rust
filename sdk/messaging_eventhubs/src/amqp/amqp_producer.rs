@@ -9,7 +9,7 @@ use crate::{
     core::{RecoverableError, RecoverableTransport, TransportClient, TransportProducer},
     event_hubs_retry_policy::EventHubsRetryPolicy,
     producer::{CreateBatchOptions, SendEventOptions, MINIMUM_BATCH_SIZE_LIMIT_IN_BYTES},
-    util::{self, sharable::Sharable},
+    util::{self},
     EventData,
 };
 
@@ -121,7 +121,7 @@ impl<RP> AmqpProducer<RP> {
 
 pub struct RecoverableAmqpProducer<'a, RP> {
     producer: &'a mut AmqpProducer<RP>,
-    client: &'a mut Sharable<AmqpClient>,
+    client: &'a mut AmqpClient,
 }
 
 impl<'a, RP> RecoverableAmqpProducer<'a, RP>
@@ -130,7 +130,7 @@ where
 {
     pub(crate) fn new(
         producer: &'a mut AmqpProducer<RP>,
-        client: &'a mut Sharable<AmqpClient>,
+        client: &'a mut AmqpClient,
     ) -> RecoverableAmqpProducer<'a, RP> {
         RecoverableAmqpProducer { producer, client }
     }
@@ -149,13 +149,7 @@ where
             }
 
             // reattach the link
-            match self.client {
-                Sharable::Owned(client) => client.recover_producer(self.producer).await?,
-                Sharable::Shared(client) => {
-                    client.lock().await.recover_producer(self.producer).await?
-                }
-                Sharable::None => return Err(RecoverAndSendError::ConnectionScopeDisposed),
-            }
+            self.client.recover_producer(self.producer).await?;
         }
 
         self.producer.send_batch_envelope(batch).await?;

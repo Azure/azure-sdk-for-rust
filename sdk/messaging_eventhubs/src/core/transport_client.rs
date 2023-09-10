@@ -89,10 +89,12 @@ pub trait TransportClient: Sized {
         // cancellation_token: Option<CancellationToken>,
     ) -> Result<(), Self::DisposeError>;
 
-    /// Performs the task needed to clean up resources used by the client,
-    /// including ensuring that the client itself has been closed.
-    async fn cl(mut self) -> Result<(), Self::DisposeError> {
-        self.close().await?;
-        Ok(())
-    }
+    async fn close_if_owned(
+        &mut self,
+        // cancellation_token: Option<CancellationToken>,
+    ) -> Result<(), Self::DisposeError>;
+
+    fn is_owned(&self) -> bool;
+
+    fn is_shared(&self) -> bool;
 }
