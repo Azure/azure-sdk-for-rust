@@ -1,5 +1,9 @@
 # Change log
 
+## 0.14.2
+
+- Exposed `TryAddError` to public
+
 ## 0.14.1
 
 - Renamed the following constructor methods and marked the old methods as deprecated
