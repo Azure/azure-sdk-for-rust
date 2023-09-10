@@ -63,3 +63,22 @@ impl Default for EventHubsRetryOptions {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{EventHubsRetryOptions, MaxRetries, event_hubs_retry_options::{DEFAULT_MAXIMUM_DELAY, DEFAULT_DELAY, DEFAULT_TRY_TIMEOUT}, EventHubsRetryMode};
+
+    #[test]
+    fn default_values() {
+        let options = EventHubsRetryOptions {
+            max_retries: MaxRetries::try_from(5).unwrap(),
+            ..Default::default()
+        };
+
+        assert_eq!(options.max_retries.0, 5);
+        assert_eq!(options.delay, DEFAULT_DELAY);
+        assert_eq!(options.maximum_delay, DEFAULT_MAXIMUM_DELAY);
+        assert_eq!(options.try_timeout, DEFAULT_TRY_TIMEOUT);
+        assert_eq!(options.mode, EventHubsRetryMode::default());
+    }
+}

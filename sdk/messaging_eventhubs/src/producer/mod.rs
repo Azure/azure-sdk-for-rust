@@ -18,3 +18,4 @@ pub use event_data_batch::*;
 pub use event_hub_producer_client::*;
 pub use event_hub_producer_client_options::*;
 pub use send_event_options::*;
+pub use crate::amqp::error::TryAddError;
