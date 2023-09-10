@@ -79,5 +79,9 @@ rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
 native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
 
 [[bench]]
-name = "bench_consumer_client"
+name = "bench_consumer_client_start_up"
+harness = false
+
+[[bench]]
+name = "bench_consumer_client_stream"
 harness = false
