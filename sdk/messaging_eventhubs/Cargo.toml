@@ -83,5 +83,5 @@ name = "bench_consumer_client_start_up"
 harness = false
 
 [[bench]]
-name = "bench_consumer_client_stream"
+name = "bench_event_stream_start_up"
 harness = false

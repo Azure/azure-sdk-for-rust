@@ -50,7 +50,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let rt = tokio::runtime::Runtime::new().unwrap();
 
-    let n = 100;
+    let n = 1000;
     let cache_event_count = 5;
     let maximum_wait_time = Duration::from_secs(1);
     let n_prep = 2 * n; // prepare 2x events for benchmark
