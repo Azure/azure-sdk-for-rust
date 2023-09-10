@@ -125,7 +125,10 @@ cfg_not_wasm32! {
         .unwrap();
 
         let mut options = ReadEventOptions::default();
-        options.cache_event_count = 3;
+        // Some large number that will never be reached but not too large that will take too much
+        // memory
+        options.cache_event_count = 1000;
+        options.maximum_wait_time = Some(std::time::Duration::from_secs(5));
         let mut stream = consumer
             .read_events(true, Default::default())
             .await

@@ -66,6 +66,7 @@ env_logger = "0.10.0"
 fe2o3-amqp = { version = "0.8.21", features = ["log"] }
 bytes = "1"
 azure_identity = { path = "../identity" }
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 [features]
 default = ["native-tls"]
@@ -76,3 +77,7 @@ test_integration = [] # TODO: this feature is not used for now
 
 rustls = ["fe2o3-amqp/rustls", "fe2o3-amqp-ws/rustls-tls-webpki-roots"]
 native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
+
+[[bench]]
+name = "bench_consumer_client"
+harness = false
