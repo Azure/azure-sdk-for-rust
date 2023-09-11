@@ -85,3 +85,7 @@ harness = false
 [[bench]]
 name = "bench_event_stream_start_up"
 harness = false
+
+[[bench]]
+name = "bench_event_stream"
+harness = false

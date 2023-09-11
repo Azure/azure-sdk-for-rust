@@ -191,14 +191,15 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     // Receive only one event because we are only interested in the time taken to setup the consumer
     // clients.
+    let sample_size = 10;
     let n = 1;
     let cache_event_count = 1;
     let maximum_wait_time = Duration::from_secs(1);
-    let n_prep = 2 * n; // prepare 2x events for benchmark
+    let n_prep = sample_size * n;
     let partitions = rt.block_on(prepare_events_on_all_partitions(n_prep));
 
     let mut bench_group = c.benchmark_group("consumer_client_start_up");
-    bench_group.sample_size(10);
+    bench_group.sample_size(sample_size);
     bench_group.bench_function("dedicated_connection_concurrent", |b| {
         b.to_async(&rt).iter(|| {
             bench_dedicated_connection_consumers_concurrent(

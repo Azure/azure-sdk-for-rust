@@ -5,10 +5,13 @@ use std::{
 
 use azeventhubs::{
     consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, ReadEventOptions},
-    EventHubConnection, EventHubsRetryOptions,
+    EventHubsRetryOptions,
 };
 use criterion::{criterion_group, criterion_main, Criterion};
-use utils::{consume_events, setup_dotenv, Consumer};
+use utils::{
+    consume_events, create_dedicated_connection_consumer, create_shared_connection_consumer,
+    setup_dotenv, Consumer,
+};
 
 mod utils;
 
@@ -50,15 +53,17 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let rt = tokio::runtime::Runtime::new().unwrap();
 
-    let n = 1000;
-    let cache_event_count = 5;
+    // Use a small number because we are benchmarking the start up time.
+    let sample_size = 10;
+    let n = 1;
+    let cache_event_count = 1;
     let maximum_wait_time = Duration::from_secs(1);
-    let n_prep = 2 * n; // prepare 2x events for benchmark
+    let n_prep = 2 * sample_size * n;
     let partitions = rt.block_on(utils::prepare_events_on_all_partitions(n_prep));
 
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
     let retry_options = EventHubsRetryOptions {
-        try_timeout: Duration::from_secs(5), // fail early for benchmark
+        try_timeout: Duration::from_secs(1), // fail early for benchmark
         ..Default::default()
     };
     let client_options = EventHubConsumerClientOptions {
@@ -68,25 +73,18 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     // Bench dedicated connection consumer streams
     let consumer_clients = rt
-        .block_on(async {
-            let mut consumer_clients = Vec::new();
-            for _ in partitions.iter() {
-                let consumer = EventHubConsumerClient::new_from_connection_string(
-                    consumer_group,
-                    connection_string.clone(),
-                    event_hub_name.clone(),
-                    client_options.clone(),
-                )
-                .await?;
-                consumer_clients.push(consumer);
-            }
-            Result::<Vec<Consumer>, azure_core::Error>::Ok(consumer_clients)
-        })
+        .block_on(create_dedicated_connection_consumer(
+            partitions.len(),
+            consumer_group,
+            connection_string.clone(),
+            event_hub_name.clone(),
+            client_options.clone(),
+        ))
         .unwrap();
     let consumer_clients = Arc::new(Mutex::new(consumer_clients));
 
-    let mut bench_group = c.benchmark_group("consumer_client_stream");
-    bench_group.sample_size(10);
+    let mut bench_group = c.benchmark_group("event_stream_start_up");
+    bench_group.sample_size(sample_size);
     bench_group.bench_function("dedicated_connection_consumer_stream", |b| {
         b.to_async(&rt).iter(|| {
             bench_connection_consumer_streams(
@@ -109,25 +107,16 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     // Bench shared connection consumer streams
-    let consumer_clients = rt.block_on(async {
-        let mut consumer_clients = Vec::new();
-        let mut connection = EventHubConnection::new_from_connection_string(
+    let (connection, consumer_clients) = rt
+        .block_on(create_shared_connection_consumer(
+            partitions.len(),
+            consumer_group,
             connection_string,
             event_hub_name,
-            Default::default(),
-        )
-        .await?;
-        for _ in partitions.iter() {
-            let consumer = EventHubConsumerClient::with_connection(
-                consumer_group,
-                &mut connection,
-                client_options.clone(),
-            );
-            consumer_clients.push(consumer);
-        }
-        Result::<Vec<Consumer>, azure_core::Error>::Ok(consumer_clients)
-    });
-    let consumer_clients = Arc::new(Mutex::new(consumer_clients.unwrap()));
+            client_options,
+        ))
+        .unwrap();
+    let consumer_clients = Arc::new(Mutex::new(consumer_clients));
 
     bench_group.bench_function("shared_connection_consumer_stream", |b| {
         b.to_async(&rt).iter(|| {
@@ -148,6 +137,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         for consumer in consumers {
             consumer.close().await.unwrap();
         }
+        connection.close().await.unwrap();
     });
 }
 

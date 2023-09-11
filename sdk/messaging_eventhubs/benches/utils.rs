@@ -3,11 +3,11 @@
 use std::path::PathBuf;
 
 use azeventhubs::{
-    consumer::{EventHubConsumerClient, EventPosition, ReadEventOptions},
+    consumer::{EventHubConsumerClient, EventPosition, ReadEventOptions, EventHubConsumerClientOptions, EventStream, self, SingleConsumerEventStream},
     producer::{EventHubProducerClient, SendEventOptions},
-    BasicRetryPolicy, ReceivedEventData,
+    BasicRetryPolicy, ReceivedEventData, EventHubConnection,
 };
-use futures_util::StreamExt;
+use futures_util::{StreamExt, Stream};
 
 pub type Producer = EventHubProducerClient<BasicRetryPolicy>;
 pub type Consumer = EventHubConsumerClient<BasicRetryPolicy>;
@@ -63,6 +63,25 @@ pub async fn fill_partitions(
     Ok(properties.partition_ids().to_vec())
 }
 
+pub async fn consume_event_stream<S>(
+    stream: &mut S,
+    n: usize,
+    process_event: impl Fn(ReceivedEventData),
+) -> Result<(), azure_core::Error>
+where
+    S: Stream<Item = Result<ReceivedEventData, azure_core::Error>> + Unpin,
+{
+    let mut counter = 0;
+    while let Some(Ok(event)) = stream.next().await {
+        process_event(event);
+        counter += 1;
+        if counter > n {
+            break;
+        }
+    }
+    Ok(())
+}
+
 pub async fn consume_events(
     mut consumer: &mut Consumer,
     partition_id: String,
@@ -75,14 +94,7 @@ pub async fn consume_events(
         .read_events_from_partition(&partition_id, starting_position, read_event_options)
         .await?;
 
-    let mut counter = 0;
-    while let Some(Ok(event)) = stream.next().await {
-        process_event(event);
-        counter += 1;
-        if counter > n {
-            break;
-        }
-    }
+    consume_event_stream(&mut stream, n, process_event).await?;
     stream.close().await?;
     Ok(())
 }
@@ -103,4 +115,71 @@ pub async fn prepare_events_on_all_partitions(n: usize) -> Vec<String> {
     producer.close().await.unwrap();
 
     partitions
+}
+
+pub async fn create_dedicated_connection_consumer(
+    count: usize,
+    consumer_group: &str,
+    connection_string: String,
+    event_hub_name: String,
+    client_options: EventHubConsumerClientOptions,
+) -> Result<Vec<Consumer>, Box<dyn std::error::Error>> {
+    let mut consumer_clients = Vec::new();
+    for _ in 0..count {
+        let consumer = EventHubConsumerClient::new_from_connection_string(
+            consumer_group,
+            connection_string.clone(),
+            event_hub_name.clone(),
+            client_options.clone(),
+        )
+        .await?;
+        consumer_clients.push(consumer);
+    }
+    Ok(consumer_clients)
+}
+
+pub async fn create_shared_connection_consumer(
+    count: usize,
+    consumer_group: &str,
+    connection_string: String,
+    event_hub_name: String,
+    client_options: EventHubConsumerClientOptions,
+) -> Result<(EventHubConnection, Vec<Consumer>), Box<dyn std::error::Error>> {
+    let mut consumer_clients = Vec::new();
+    let mut connection = EventHubConnection::new_from_connection_string(
+        connection_string,
+        event_hub_name,
+        Default::default(),
+    )
+    .await?;
+    for _ in 0..count {
+        let consumer = EventHubConsumerClient::with_connection(
+            consumer_group,
+            &mut connection,
+            client_options.clone(),
+        );
+        consumer_clients.push(consumer);
+    }
+    Ok((connection, consumer_clients))
+}
+
+pub async fn create_streams<'a>(
+    consumer_clients: &'a mut Vec<Consumer>,
+    partitions: &Vec<String>,
+    read_event_options: ReadEventOptions,
+) -> Result<Vec<SingleConsumerEventStream<'a, BasicRetryPolicy>>, azure_core::Error> {
+    let mut streams = Vec::new();
+    for (consumer, partition_id) in consumer_clients.iter_mut().zip(partitions)
+    {
+        let starting_position = EventPosition::earliest();
+        let stream = consumer
+            .read_events_from_partition(
+                &partition_id,
+                starting_position,
+                read_event_options.clone(),
+            )
+            .await?;
+        streams.push(stream);
+    }
+    Ok(streams)
 }
