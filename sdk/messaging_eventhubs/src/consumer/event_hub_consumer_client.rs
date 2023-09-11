@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::{
-    amqp::amqp_consumer::{multiple::MultipleAmqpConsumers, AmqpConsumer, EventStream},
+    amqp::amqp_consumer::EventStream,
     authorization::{event_hub_token_credential::EventHubTokenCredential, AzureNamedKeyCredential, AzureSasCredential},
     core::BasicRetryPolicy,
     event_hubs_properties::EventHubProperties,
@@ -9,7 +9,7 @@ use crate::{
     EventHubConnection, EventHubsRetryOptions,
 };
 
-use super::{EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
+use super::{EventHubConsumerClientOptions, EventPosition, ReadEventOptions, SingleConsumerEventStream, MultiConsumerEventStream};
 
 /// A client responsible for reading [`crate::EventData`] from a specific Event Hub
 /// as a member of a specific consumer group.
@@ -429,7 +429,7 @@ where
         partition_id: &str,
         starting_position: EventPosition,
         read_event_options: ReadEventOptions,
-    ) -> Result<EventStream<'_, AmqpConsumer<RP>>, azure_core::Error> {
+    ) -> Result<SingleConsumerEventStream<'_, RP>, azure_core::Error> {
         let consumer = self
             .connection
             .create_transport_consumer(
@@ -459,7 +459,7 @@ where
         &mut self,
         start_reading_at_earliest_event: bool,
         read_event_options: ReadEventOptions,
-    ) -> Result<EventStream<'_, MultipleAmqpConsumers<RP>>, azure_core::Error>
+    ) -> Result<MultiConsumerEventStream<'_, RP>, azure_core::Error>
     where
         RP: 'static,
     {
