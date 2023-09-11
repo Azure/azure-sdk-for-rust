@@ -1,15 +1,16 @@
+use azure_core::{error::ErrorKind, Error};
 use azure_identity::{device_code_flow, refresh_token};
 use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::stream::StreamExt;
-use std::env;
+use std::env::{args, var};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let client_id = env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
-    let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
+    let client_id = var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
+    let tenant_id = var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
 
-    let storage_account_name = std::env::args()
+    let storage_account_name = args()
         .nth(1)
         .expect("please specify the storage account name as first command line parameter");
 
@@ -42,36 +43,26 @@ async fn main() -> azure_core::Result<()> {
     // return, besides errors, a success meaning either
     // Success or Pending. The loop will continue until we
     // get either a Success or an error.
-    let mut stream = Box::pin(device_code_flow.stream());
-
+    let mut stream = device_code_flow.stream();
     let authorization = loop {
-        let response = stream.next().await.expect("device code flow stream failed");
-        if let Ok(auth) = response {
-            break auth;
+        match stream.next().await {
+            Some(Ok(authorization)) => break authorization,
+            Some(Err(_)) => continue,
+            None => {
+                return Err(Error::with_message(ErrorKind::Credential, || {
+                    "device flow stream ended unexpectedly"
+                }))
+            }
         }
     };
 
-    println!("{authorization:?}");
-
-    println!(
-        "\nReceived valid bearer token: {}",
-        &authorization.access_token().secret()
-    );
-
-    if let Some(refresh_token) = authorization.refresh_token().as_ref() {
-        println!("Received valid refresh token: {}", &refresh_token.secret());
-    }
-
-    // we can now spend the access token in other crates. In
-    // this example we are creating an Azure Storage client
-    // using the access token.
-
+    // we can now spend the access token in other crates. In this example we are
+    // creating an Azure Storage client using the access token.
     let storage_credentials =
-        StorageCredentials::BearerToken(authorization.access_token().secret().to_owned());
+        StorageCredentials::bearer_token(authorization.access_token().secret());
     let blob_service_client = BlobServiceClient::new(storage_account_name, storage_credentials);
 
-    // now we enumerate the containers in the
-    // specified storage account.
+    // now we enumerate the containers in the specified storage account.
     let containers = blob_service_client
         .list_containers()
         .into_stream()
@@ -80,7 +71,9 @@ async fn main() -> azure_core::Result<()> {
         .expect("stream failed")?;
     println!("\nList containers completed succesfully: {containers:?}");
 
-    // now let's refresh the token, if available
+    // If we want to use the refresh token to get a new access token (such as if
+    // we wanted to bump the expiry window on the token), we can do the
+    // following
     if let Some(refresh_token) = authorization.refresh_token() {
         let refreshed_token =
             refresh_token::exchange(http_client, &tenant_id, &client_id, None, refresh_token)
