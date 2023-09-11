@@ -35,6 +35,7 @@ all-features = true
 default = ["package-netapp-2022-11-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
+wasm-bindgen = ["azure_core/wasm-bindgen"]
 no-default-tag = []
 "package-netapp-2022-11-01" = []
 "package-netapp-2022-09-01" = []

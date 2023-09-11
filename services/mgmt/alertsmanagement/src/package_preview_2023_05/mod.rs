@@ -109,6 +109,10 @@ impl Client {
 }
 pub mod alert_processing_rules {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all alert processing rules in a subscription."]
@@ -222,6 +226,10 @@ pub mod alert_processing_rules {
     }
     pub mod list_by_subscription {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AlertProcessingRulesList> {
@@ -339,6 +347,10 @@ pub mod alert_processing_rules {
     }
     pub mod list_by_resource_group {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AlertProcessingRulesList> {
@@ -458,6 +470,10 @@ pub mod alert_processing_rules {
     }
     pub mod get_by_name {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AlertProcessingRule> {
@@ -518,7 +534,7 @@ pub mod alert_processing_rules {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -548,7 +564,7 @@ pub mod alert_processing_rules {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AlertProcessingRule>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AlertProcessingRule>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AlertProcessingRule>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -561,6 +577,10 @@ pub mod alert_processing_rules {
     }
     pub mod create_or_update {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AlertProcessingRule> {
@@ -622,7 +642,7 @@ pub mod alert_processing_rules {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -653,7 +673,7 @@ pub mod alert_processing_rules {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AlertProcessingRule>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AlertProcessingRule>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AlertProcessingRule>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -666,6 +686,10 @@ pub mod alert_processing_rules {
     }
     pub mod update {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AlertProcessingRule> {
@@ -727,7 +751,7 @@ pub mod alert_processing_rules {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -758,7 +782,7 @@ pub mod alert_processing_rules {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AlertProcessingRule>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AlertProcessingRule>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AlertProcessingRule>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -771,6 +795,10 @@ pub mod alert_processing_rules {
     }
     pub mod delete {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -826,7 +854,7 @@ pub mod alert_processing_rules {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
