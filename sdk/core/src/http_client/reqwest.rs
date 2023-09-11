@@ -2,7 +2,6 @@ use crate::error::{ErrorKind, ResultExt};
 use crate::{Body, HttpClient, PinnedStream};
 
 use async_trait::async_trait;
-//#[cfg(not(target_arch = "wasm32"))]
 use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr};
 
@@ -27,17 +26,12 @@ impl HttpClient for ::reqwest::Client {
         let reqwest_request = match body {
             Body::Bytes(bytes) => req.body(bytes).build(),
 
+            // We cannot currently implement `Body::SeekableStream` for WASM
+            // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
             #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(seekable_stream) => req
                 .body(::reqwest::Body::wrap_stream(seekable_stream))
                 .build(),
-
-            // Cannot currently implement `Body::SeekableStream` for WASM
-            // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
-            #[cfg(target_arch = "wasm32")]
-            Body::SeekableStream(_seekable_stream) => {
-                todo!("Body::SeekableStream is not currently supported for WASM")
-            }
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
