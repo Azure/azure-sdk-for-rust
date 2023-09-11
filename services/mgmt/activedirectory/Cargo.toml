@@ -35,7 +35,6 @@ all-features = true
 default = ["package-2020-03", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-wasm-bindgen = ["azure_core/wasm-bindgen"]
 no-default-tag = []
 "package-preview-2020-07" = []
 "package-preview-2020-03" = []

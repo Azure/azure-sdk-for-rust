@@ -35,7 +35,6 @@ all-features = true
 default = ["profile-hybrid-2020-09-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-wasm-bindgen = ["azure_core/wasm-bindgen"]
 no-default-tag = []
 "profile-hybrid-2020-09-01" = []
 "package-2015-06-preview" = []
