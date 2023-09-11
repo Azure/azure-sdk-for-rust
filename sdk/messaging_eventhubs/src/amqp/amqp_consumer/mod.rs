@@ -15,7 +15,7 @@ use crate::{
     consumer::EventPosition,
     core::{RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util::{self},
+    util::{self, time::timeout},
     ReceivedEventData,
 };
 
@@ -65,6 +65,11 @@ impl<RP> AmqpConsumer<RP> {
     }
 
     pub(crate) async fn recv_and_accept(&mut self) -> Result<ReceivedEventData, RecvError> {
+        if self.prefetch_count == 0 {
+            // At least one credit is needed
+            self.receiver.set_credit(1).await?;
+        }
+
         let delivery = self.receiver.recv().await?;
         self.receiver.accept(&delivery).await?;
         let event = ReceivedEventData::from_raw_amqp_message(delivery.into_message());
@@ -117,24 +122,24 @@ impl<RP> AmqpConsumer<RP> {
         &mut self,
         buffer: &mut VecDeque<ReceivedEventData>,
         max_wait_time: StdDuration,
-    ) -> Result<Option<()>, RecoverAndReceiveError> {
+    ) -> Result<(), RecoverAndReceiveError> {
         futures_util::select_biased! {
-            _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(Some(())),
+            _ = crate::util::time::sleep(max_wait_time).fuse() => Ok(()),
             result = self.fill_buf(buffer).fuse() => {
                 result?;
-                Ok(Some(()))
+                Ok(())
             }
         }
     }
 }
 
-async fn recover_and_recv<RP>(
+async fn recover_and_recv_batch<RP>(
     client: &mut AmqpClient,
     consumer: &mut AmqpConsumer<RP>,
     should_try_recover: bool,
     buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: StdDuration,
-) -> Result<Option<()>, RecoverAndReceiveError>
+) -> Result<(), RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -150,19 +155,44 @@ where
         client.recover_consumer(consumer).await?;
     }
 
-    match consumer
+    consumer
         .fill_buf_with_timeout(buffer, max_wait_time)
-        .await?
-    {
-        Some(_) => {
-            if consumer.track_last_enqueued_event_properties {
-                if let Some(event) = buffer.back().cloned() {
-                    consumer.last_received_event = Some(event);
-                }
-            }
-            Ok(Some(()))
+        .await?;
+    if consumer.track_last_enqueued_event_properties {
+        if let Some(event) = buffer.back().cloned() {
+            consumer.last_received_event = Some(event);
         }
-        None => Ok(None),
+    }
+    Ok(())
+}
+
+async fn recover_and_recv<RP>(
+    client: &mut AmqpClient,
+    consumer: &mut AmqpConsumer<RP>,
+    should_try_recover: bool,
+    max_wait_time: Option<StdDuration>,
+) -> Result<Option<ReceivedEventData>, RecoverAndReceiveError>
+where
+    RP: EventHubsRetryPolicy + Send,
+{
+    if should_try_recover {
+        if let Err(recovery_err) = client.recover().await {
+            log::error!("Failed to recover client: {:?}", recovery_err);
+            if recovery_err.is_scope_disposed() {
+                return Err(recovery_err.into());
+            }
+        }
+
+        // reattach the link
+        client.recover_consumer(consumer).await?;
+    }
+
+    match max_wait_time {
+        Some(t) => match timeout(t, consumer.recv_and_accept()).await {
+            Ok(result) => result.map(Some).map_err(Into::into),
+            Err(_elapsed) => Ok(None)
+        },
+        None => consumer.recv_and_accept().await.map(Some).map_err(Into::into),
     }
 }
 
@@ -171,7 +201,7 @@ pub(crate) async fn receive_event_batch<RP>(
     consumer: &mut AmqpConsumer<RP>,
     buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
-) -> Option<Result<(), RecoverAndReceiveError>>
+) -> Result<(), RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -181,12 +211,59 @@ where
 
     loop {
         let wait_time = max_wait_time.unwrap_or(try_timeout);
-        let err = match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time)
+        let err = match recover_and_recv_batch(client, consumer, should_try_recover, buffer, wait_time)
             .await
-            .transpose()?
         {
-            Ok(_) => return Some(Ok(())),
+            Ok(_) => return Ok(()),
             Err(err) => err,
+        };
+
+        if err.is_scope_disposed() {
+            return Err(err);
+        }
+        should_try_recover = err.should_try_recover();
+
+        failed_attempts += 1;
+        let retry_delay = consumer
+            .retry_policy
+            .calculate_retry_delay(&err, failed_attempts);
+
+        match retry_delay {
+            Some(retry_delay) => {
+                util::time::sleep(retry_delay).await;
+                try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
+            }
+            None => return Err(err),
+        }
+    }
+}
+
+pub(crate) async fn receive_event<RP>(
+    client: &mut AmqpClient,
+    consumer: &mut AmqpConsumer<RP>,
+    max_wait_time: Option<StdDuration>,
+) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
+where
+    RP: EventHubsRetryPolicy + Send,
+{
+    let mut failed_attempts = 0;
+    let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
+    let mut should_try_recover = false;
+
+    loop {
+        let err = match timeout(
+            try_timeout,
+            recover_and_recv(client, consumer, should_try_recover, max_wait_time)
+        ).await {
+            Ok(result) => match result.transpose()? {
+                Ok(event) => return Some(Ok(event)),
+                Err(err) => err,
+            },
+            Err(_try_timeout_elapsed) => {
+                // There is no error returned from client, everything is fine and keep waiting
+                // TODO: is this correct?
+                continue;
+            },
         };
 
         if err.is_scope_disposed() {
@@ -209,33 +286,6 @@ where
     }
 }
 
-async fn next_event_inner<RP>(
-    client: &mut AmqpClient,
-    consumer: &mut AmqpConsumer<RP>,
-    buffer: &mut VecDeque<ReceivedEventData>,
-    max_wait_time: Option<StdDuration>,
-) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
-where
-    RP: EventHubsRetryPolicy + Send,
-{
-    if let Some(event) = buffer.pop_front() {
-        return Some(Ok(event));
-    }
-
-    loop {
-        let result = receive_event_batch(client, consumer, buffer, max_wait_time).await?;
-
-        match buffer.pop_front() {
-            Some(event) => return Some(Ok(event)),
-            None => {
-                if let Err(err) = result {
-                    return Some(Err(err));
-                }
-            }
-        }
-    }
-}
-
 async fn next_event<RP>(
     mut value: EventStreamStateValue<'_, AmqpConsumer<RP>>,
 ) -> (
@@ -245,10 +295,9 @@ async fn next_event<RP>(
 where
     RP: EventHubsRetryPolicy + Send,
 {
-    let outcome = next_event_inner(
+    let outcome = receive_event(
         value.client,
         &mut value.consumer,
-        &mut value.buffer,
         value.max_wait_time,
     )
     .await;
@@ -264,7 +313,6 @@ async fn close_consumer<RP>(
 pub(crate) struct EventStreamStateValue<'a, C> {
     pub(crate) client: &'a mut AmqpClient,
     pub(crate) consumer: C,
-    pub(crate) buffer: VecDeque<ReceivedEventData>,
     pub(crate) max_wait_time: Option<StdDuration>,
 }
 
@@ -272,13 +320,13 @@ impl<'a, C> EventStreamStateValue<'a, C> {
     pub(crate) fn new(
         client: &'a mut AmqpClient,
         consumer: C,
-        max_messages: u32,
+        // max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Self {
         Self {
             client,
             consumer,
-            buffer: VecDeque::with_capacity(max_messages as usize),
+            // buffer: VecDeque::with_capacity(max_messages as usize),
             max_wait_time,
         }
     }
@@ -403,10 +451,10 @@ where
     pub(crate) fn with_consumer(
         client: &'a mut AmqpClient,
         consumer: AmqpConsumer<RP>,
-        max_messages: u32,
+        // max_messages: u32,
         max_wait_time: Option<StdDuration>,
     ) -> Self {
-        let value = EventStreamStateValue::new(client, consumer, max_messages, max_wait_time);
+        let value = EventStreamStateValue::new(client, consumer, max_wait_time);
         let state = EventStreamState::Value { value };
 
         Self { state }

@@ -29,7 +29,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let starting_position = EventPosition::earliest();
     let mut options = ReadEventOptions::default();
     options.maximum_wait_time = Some(Duration::from_secs(5));
-    options.cache_event_count = 3;
 
     // Get a stream of events from the first partition
     let mut stream = consumer_client

@@ -13,13 +13,11 @@ use utils::*;
 async fn bench_dedicated_connection_consumers_concurrent(
     partitions: Vec<String>,
     n: usize,
-    cache_event_count: u32,      // TODO: benchmark different cache count
     maximum_wait_time: Duration, // TODO: benchmark different wait time
 ) {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_BENCHMARK_NAME").unwrap();
     let read_event_options = ReadEventOptions {
-        cache_event_count,
         maximum_wait_time: Some(maximum_wait_time),
         ..Default::default()
     };
@@ -67,13 +65,11 @@ async fn bench_dedicated_connection_consumers_concurrent(
 async fn bench_dedicated_connection_consumers_sequential(
     partitions: Vec<String>,
     n: usize,
-    cache_event_count: u32,      // TODO: benchmark different cache count
     maximum_wait_time: Duration, // TODO: benchmark different wait time
 ) {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_BENCHMARK_NAME").unwrap();
     let read_event_options = ReadEventOptions {
-        cache_event_count,
         maximum_wait_time: Some(maximum_wait_time),
         ..Default::default()
     };
@@ -129,7 +125,6 @@ async fn bench_dedicated_connection_consumers_sequential(
 async fn bench_shared_connection_consumers(
     partitions: Vec<String>,
     n: usize,
-    cache_event_count: u32,      // TODO: benchmark different cache count
     maximum_wait_time: Duration, // TODO: benchmark different wait time
 ) {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
@@ -151,7 +146,6 @@ async fn bench_shared_connection_consumers(
         ..Default::default()
     };
     let read_event_options = ReadEventOptions {
-        cache_event_count,
         maximum_wait_time: Some(maximum_wait_time),
         ..Default::default()
     };
@@ -193,7 +187,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     // clients.
     let sample_size = 10;
     let n = 1;
-    let cache_event_count = 1;
     let maximum_wait_time = Duration::from_secs(1);
     let n_prep = sample_size * n;
     let partitions = rt.block_on(prepare_events_on_all_partitions(n_prep));
@@ -205,7 +198,6 @@ fn criterion_benchmark(c: &mut Criterion) {
             bench_dedicated_connection_consumers_concurrent(
                 partitions.clone(),
                 n,
-                cache_event_count,
                 maximum_wait_time,
             )
         })
@@ -215,7 +207,6 @@ fn criterion_benchmark(c: &mut Criterion) {
             bench_dedicated_connection_consumers_sequential(
                 partitions.clone(),
                 n,
-                cache_event_count,
                 maximum_wait_time,
             )
         })
@@ -225,7 +216,6 @@ fn criterion_benchmark(c: &mut Criterion) {
             bench_shared_connection_consumers(
                 partitions.clone(),
                 n,
-                cache_event_count,
                 maximum_wait_time,
             )
         })

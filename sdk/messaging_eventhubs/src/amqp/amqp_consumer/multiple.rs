@@ -1,7 +1,6 @@
 //! A wrapper around a vector of consumers.
 
 use std::{
-    collections::VecDeque,
     fmt::Debug,
     ops::DerefMut,
     pin::Pin,
@@ -20,7 +19,7 @@ use crate::{
     },
     core::{RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util,
+    util::{self, time::timeout},
     ReceivedEventData,
 };
 
@@ -229,47 +228,6 @@ where
     fn recv(&mut self) -> MultiAmqpConsumerRecv<'_, RP> {
         MultiAmqpConsumerRecv { state: self } // TODO: remove clone
     }
-
-    async fn fill_buf(
-        &mut self,
-        buffer: &mut VecDeque<ReceivedEventData>,
-    ) -> Option<Result<(), RecvError>> {
-        // Only receive messages if there is space in the buffer
-        let max_messages = buffer.capacity() - buffer.len();
-
-        let mut counter = 0;
-        while let Some(event) = self.recv().await {
-            counter += 1;
-            if counter > max_messages {
-                return Some(Ok(()));
-            }
-            let event = match event {
-                Ok(event) => event,
-                Err(err) => {
-                    log::error!("Error while receiving event: {}", err);
-                    return Some(Err(err));
-                }
-            };
-            let _event_offset = event.offset().unwrap_or(i64::MIN);
-
-            buffer.push_back(event);
-        }
-        None
-    }
-
-    async fn fill_buf_with_timeout(
-        &mut self,
-        buffer: &mut VecDeque<ReceivedEventData>,
-        max_wait_time: StdDuration,
-    ) -> Option<Result<(), RecvError>> {
-        log::debug!("fill_buf_with_timeout()");
-        futures_util::select_biased! {
-            _ = crate::util::time::sleep(max_wait_time).fuse() => Some(Ok(())),
-            option = self.fill_buf(buffer).fuse() => {
-                option
-            }
-        }
-    }
 }
 
 async fn recover_consumers<RP>(
@@ -297,9 +255,8 @@ async fn recover_and_recv<RP>(
     client: &mut AmqpClient,
     consumers: &mut MultipleAmqpConsumers<RP>,
     should_try_recover: bool,
-    buffer: &mut VecDeque<ReceivedEventData>,
-    max_wait_time: StdDuration,
-) -> Result<Option<()>, RecoverAndReceiveError>
+    max_wait_time: Option<StdDuration>
+) -> Result<Option<ReceivedEventData>, RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
@@ -314,35 +271,41 @@ where
         recover_consumers(client, consumers).await?;
     }
 
-    consumers
-        .fill_buf_with_timeout(buffer, max_wait_time)
-        .await
-        .transpose()
-        .map_err(Into::into)
+    match max_wait_time {
+        Some(t) => match timeout(t, consumers.recv()).await {
+            Ok(opt) => opt.transpose().map_err(Into::into),
+            Err(_elapsed) => Ok(None),
+        },
+        None => consumers.recv().await.transpose().map_err(Into::into),
+    }
 }
 
-/// TODO: refactor single consumer and multiple consumer to share the same code
 async fn receive_event<RP>(
     client: &mut AmqpClient,
-    consumer: &mut MultipleAmqpConsumers<RP>,
-    buffer: &mut VecDeque<ReceivedEventData>,
-    max_wait_time: Option<StdDuration>,
-) -> Option<Result<(), RecoverAndReceiveError>>
+    consumers: &mut MultipleAmqpConsumers<RP>,
+    max_wait_time: Option<StdDuration>
+) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
     let mut failed_attempts = 0;
-    let mut try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
+    let mut try_timeout = consumers.retry_policy.calculate_try_timeout(failed_attempts);
     let mut should_try_recover = false;
 
     loop {
-        let wait_time = max_wait_time.unwrap_or(try_timeout);
-        let err = match recover_and_recv(client, consumer, should_try_recover, buffer, wait_time)
-            .await
-            .transpose()?
-        {
-            Ok(_) => return Some(Ok(())),
-            Err(err) => err,
+        let err = match timeout(
+            try_timeout,
+            recover_and_recv(client, consumers, should_try_recover, max_wait_time)
+        ).await {
+            Ok(result) => match result.transpose()? {
+                Ok(event) => return Some(Ok(event)),
+                Err(err) => err,
+            },
+            Err(_try_timeout_elapsed) => {
+                // There is no error returned from client, everything is fine and keep waiting
+                // TODO: is this correct?
+                continue;
+            },
         };
 
         if err.is_scope_disposed() {
@@ -351,43 +314,16 @@ where
         should_try_recover = err.should_try_recover();
 
         failed_attempts += 1;
-        let retry_delay = consumer
+        let retry_delay = consumers
             .retry_policy
             .calculate_retry_delay(&err, failed_attempts);
 
         match retry_delay {
             Some(retry_delay) => {
                 util::time::sleep(retry_delay).await;
-                try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
+                try_timeout = consumers.retry_policy.calculate_try_timeout(failed_attempts);
             }
             None => return Some(Err(err)),
-        }
-    }
-}
-
-async fn next_event_inner<RP>(
-    client: &mut AmqpClient,
-    consumer: &mut MultipleAmqpConsumers<RP>,
-    buffer: &mut VecDeque<ReceivedEventData>,
-    max_wait_time: Option<StdDuration>,
-) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
-where
-    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
-{
-    if let Some(event) = buffer.pop_front() {
-        return Some(Ok(event));
-    }
-
-    loop {
-        let result = receive_event(client, consumer, buffer, max_wait_time).await?;
-
-        match buffer.pop_front() {
-            Some(event) => return Some(Ok(event)),
-            None => {
-                if let Err(err) = result {
-                    return Some(Err(err));
-                }
-            }
         }
     }
 }
@@ -401,13 +337,11 @@ async fn next_event<RP>(
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
-    let outcome = next_event_inner(
+    let outcome = receive_event(
         value.client,
         &mut value.consumer,
-        &mut value.buffer,
         value.max_wait_time,
-    )
-    .await;
+    ).await;
     (outcome, value)
 }
 
@@ -475,7 +409,6 @@ where
     pub(crate) fn with_multiple_consumers(
         client: &'a mut AmqpClient,
         consumers: Vec<AmqpConsumer<RP>>,
-        max_messages: u32,
         max_wait_time: Option<StdDuration>,
         retry_policy: RP,
     ) -> Self {
@@ -489,7 +422,7 @@ where
             inner: consumers,
             retry_policy,
         };
-        let value = EventStreamStateValue::new(client, consumers, max_messages, max_wait_time);
+        let value = EventStreamStateValue::new(client, consumers, max_wait_time);
         let state = EventStreamState::Value { value };
 
         Self { state }

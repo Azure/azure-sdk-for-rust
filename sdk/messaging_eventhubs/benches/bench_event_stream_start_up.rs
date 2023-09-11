@@ -20,7 +20,6 @@ async fn bench_connection_consumer_streams(
     consumer_clients: Arc<Mutex<Vec<Consumer>>>,
     partitions: Vec<String>,
     n: usize,
-    cache_event_count: u32,
     maximum_wait_time: Duration,
 ) {
     // There should be just one bench running at a time.
@@ -28,7 +27,6 @@ async fn bench_connection_consumer_streams(
     let mut consumers = consumer_clients.try_lock().unwrap();
 
     let read_event_options = ReadEventOptions::default()
-        .with_cache_event_count(cache_event_count)
         .with_maximum_wait_time(maximum_wait_time);
 
     let futures = consumers
@@ -56,7 +54,6 @@ fn criterion_benchmark(c: &mut Criterion) {
     // Use a small number because we are benchmarking the start up time.
     let sample_size = 10;
     let n = 1;
-    let cache_event_count = 1;
     let maximum_wait_time = Duration::from_secs(1);
     let n_prep = 2 * sample_size * n;
     let partitions = rt.block_on(utils::prepare_events_on_all_partitions(n_prep));
@@ -91,7 +88,6 @@ fn criterion_benchmark(c: &mut Criterion) {
                 consumer_clients.clone(),
                 partitions.clone(),
                 n,
-                cache_event_count,
                 maximum_wait_time,
             )
         })
@@ -124,7 +120,6 @@ fn criterion_benchmark(c: &mut Criterion) {
                 consumer_clients.clone(),
                 partitions.clone(),
                 n,
-                cache_event_count,
                 maximum_wait_time,
             )
         })

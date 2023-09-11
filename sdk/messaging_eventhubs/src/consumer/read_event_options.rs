@@ -25,6 +25,10 @@ pub struct ReadEventOptions {
     /// processing.
     ///
     /// Default to [`Some(DEFAULT_CACHE_EVENT_COUNT)`]
+    #[deprecated(
+        since = "0.14.4",
+        note = "This option is no longer used and will be removed in 0.15.0"
+    )]
     pub cache_event_count: u32,
 
     /// The number of events that will be eagerly requested from the Event Hubs service and queued
@@ -83,6 +87,10 @@ impl ReadEventOptions {
     }
 
     /// Sets the cache event count.
+    #[deprecated(
+        since = "0.14.4",
+        note = "This option is no longer used and will be removed in 0.15.0"
+    )]
     pub fn with_cache_event_count(mut self, cache_event_count: u32) -> Self {
         self.cache_event_count = cache_event_count;
         self
