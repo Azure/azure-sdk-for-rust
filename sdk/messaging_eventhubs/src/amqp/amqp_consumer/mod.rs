@@ -19,6 +19,8 @@ use crate::{
     ReceivedEventData,
 };
 
+use self::multiple::MultipleAmqpConsumers;
+
 use super::{
     amqp_cbs_link::Command,
     amqp_client::AmqpClient,
@@ -26,6 +28,12 @@ use super::{
 };
 
 pub(crate) mod multiple;
+
+/// Type alias for a stream of events with a single underlying AMQP consumer
+pub type SingleConsumerEventStream<'a, RP> = EventStream<'a, AmqpConsumer<RP>>;
+
+/// Type alias for a stream of events with multiple underlying AMQP consumers
+pub type MultiConsumerEventStream<'a, RP> = EventStream<'a, MultipleAmqpConsumers<RP>>;
 
 #[derive(Debug)]
 pub struct AmqpConsumer<RP> {
