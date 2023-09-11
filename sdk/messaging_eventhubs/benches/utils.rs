@@ -3,11 +3,14 @@
 use std::path::PathBuf;
 
 use azeventhubs::{
-    consumer::{EventHubConsumerClient, EventPosition, ReadEventOptions, EventHubConsumerClientOptions, EventStream, self, SingleConsumerEventStream},
+    consumer::{
+        self, EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, EventStream,
+        ReadEventOptions, SingleConsumerEventStream,
+    },
     producer::{EventHubProducerClient, SendEventOptions},
-    BasicRetryPolicy, ReceivedEventData, EventHubConnection,
+    BasicRetryPolicy, EventHubConnection, ReceivedEventData,
 };
-use futures_util::{StreamExt, Stream};
+use futures_util::{Stream, StreamExt};
 
 pub type Producer = EventHubProducerClient<BasicRetryPolicy>;
 pub type Consumer = EventHubConsumerClient<BasicRetryPolicy>;
@@ -169,8 +172,7 @@ pub async fn create_streams<'a>(
     read_event_options: ReadEventOptions,
 ) -> Result<Vec<SingleConsumerEventStream<'a, BasicRetryPolicy>>, azure_core::Error> {
     let mut streams = Vec::new();
-    for (consumer, partition_id) in consumer_clients.iter_mut().zip(partitions)
-    {
+    for (consumer, partition_id) in consumer_clients.iter_mut().zip(partitions) {
         let starting_position = EventPosition::earliest();
         let stream = consumer
             .read_events_from_partition(

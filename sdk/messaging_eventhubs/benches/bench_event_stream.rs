@@ -1,14 +1,12 @@
 use std::{sync::Arc, time::Duration};
 
 use azeventhubs::{
-    consumer::{
-        EventHubConsumerClient, EventHubConsumerClientOptions, ReadEventOptions
-    },
-    EventHubsRetryOptions, ReceivedEventData, EventHubConnection,
+    consumer::{EventHubConsumerClient, EventHubConsumerClientOptions, ReadEventOptions},
+    EventHubConnection, EventHubsRetryOptions, ReceivedEventData,
 };
 use criterion::{criterion_group, criterion_main, Criterion};
 use futures_util::{lock::Mutex, Stream};
-use utils::{setup_dotenv, Consumer, create_dedicated_connection_consumer, create_streams};
+use utils::{create_dedicated_connection_consumer, create_streams, setup_dotenv, Consumer};
 
 mod utils;
 
@@ -67,7 +65,11 @@ fn criterion_benchmark(c: &mut Criterion) {
         ))
         .unwrap();
     let streams = rt
-        .block_on(create_streams(&mut consumer_clients, &partitions, read_event_options.clone()))
+        .block_on(create_streams(
+            &mut consumer_clients,
+            &partitions,
+            read_event_options.clone(),
+        ))
         .unwrap();
     let streams = Arc::new(Mutex::new(streams));
 
@@ -92,26 +94,32 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 
     // Bench shared connection consumer streams
-    let mut consumer_clients = rt.block_on(async {
-        let mut consumer_clients = Vec::new();
-        let mut connection = EventHubConnection::new_from_connection_string(
-            connection_string,
-            event_hub_name,
-            Default::default(),
-        )
-        .await?;
-        for _ in partitions.iter() {
-            let consumer = EventHubConsumerClient::with_connection(
-                consumer_group,
-                &mut connection,
-                client_options.clone(),
-            );
-            consumer_clients.push(consumer);
-        }
-        Result::<Vec<Consumer>, azure_core::Error>::Ok(consumer_clients)
-    }).unwrap();
+    let mut consumer_clients = rt
+        .block_on(async {
+            let mut consumer_clients = Vec::new();
+            let mut connection = EventHubConnection::new_from_connection_string(
+                connection_string,
+                event_hub_name,
+                Default::default(),
+            )
+            .await?;
+            for _ in partitions.iter() {
+                let consumer = EventHubConsumerClient::with_connection(
+                    consumer_group,
+                    &mut connection,
+                    client_options.clone(),
+                );
+                consumer_clients.push(consumer);
+            }
+            Result::<Vec<Consumer>, azure_core::Error>::Ok(consumer_clients)
+        })
+        .unwrap();
     let streams = rt
-        .block_on(create_streams(&mut consumer_clients, &partitions, read_event_options))
+        .block_on(create_streams(
+            &mut consumer_clients,
+            &partitions,
+            read_event_options,
+        ))
         .unwrap();
     let streams = Arc::new(Mutex::new(streams));
 

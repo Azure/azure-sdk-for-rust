@@ -1,5 +1,11 @@
 # Change log
 
+## 0.14.3
+
+- Reworked `EventHubConnection` to have more fine-grained locks
+- Changed `EventStream` error type to `azure_core::Error`
+- Added type alias `SingleConsumerEventStream` and `MultiConsumerEventStream`
+
 ## 0.14.2
 
 - Exposed `TryAddError` to public
