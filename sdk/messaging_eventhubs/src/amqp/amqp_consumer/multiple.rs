@@ -20,7 +20,7 @@ use crate::{
     },
     core::{RecoverableError, RecoverableTransport, TransportClient},
     event_hubs_retry_policy::EventHubsRetryPolicy,
-    util::{self, sharable::Sharable},
+    util,
     ReceivedEventData,
 };
 
@@ -294,7 +294,7 @@ where
 }
 
 async fn recover_and_recv<RP>(
-    client: &mut Sharable<AmqpClient>,
+    client: &mut AmqpClient,
     consumers: &mut MultipleAmqpConsumers<RP>,
     should_try_recover: bool,
     buffer: &mut VecDeque<ReceivedEventData>,
@@ -311,14 +311,7 @@ where
             }
         }
 
-        match client {
-            Sharable::Owned(c) => recover_consumers(c, consumers).await?,
-            Sharable::Shared(c) => {
-                let mut guard = c.lock().await;
-                recover_consumers(&mut guard, consumers).await?
-            }
-            Sharable::None => return Err(RecoverAndReceiveError::ConnectionScopeDisposed),
-        };
+        recover_consumers(client, consumers).await?;
     }
 
     consumers
@@ -330,7 +323,7 @@ where
 
 /// TODO: refactor single consumer and multiple consumer to share the same code
 async fn receive_event<RP>(
-    client: &mut Sharable<AmqpClient>,
+    client: &mut AmqpClient,
     consumer: &mut MultipleAmqpConsumers<RP>,
     buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
@@ -373,7 +366,7 @@ where
 }
 
 async fn next_event_inner<RP>(
-    client: &mut Sharable<AmqpClient>,
+    client: &mut AmqpClient,
     consumer: &mut MultipleAmqpConsumers<RP>,
     buffer: &mut VecDeque<ReceivedEventData>,
     max_wait_time: Option<StdDuration>,
@@ -480,7 +473,7 @@ where
     RP: Send + 'static,
 {
     pub(crate) fn with_multiple_consumers(
-        client: &'a mut Sharable<AmqpClient>,
+        client: &'a mut AmqpClient,
         consumers: Vec<AmqpConsumer<RP>>,
         max_messages: u32,
         max_wait_time: Option<StdDuration>,
@@ -513,7 +506,7 @@ impl<'a, RP> Stream for EventStream<'a, MultipleAmqpConsumers<RP>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
 {
-    type Item = Result<ReceivedEventData, RecoverAndReceiveError>;
+    type Item = Result<ReceivedEventData, azure_core::Error>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
@@ -532,7 +525,7 @@ where
         if let Some(item) = item {
             this.state
                 .set(EventStreamState::Value { value: next_state });
-            Poll::Ready(Some(item))
+            Poll::Ready(Some(item.map_err(Into::into)))
         } else {
             this.state.set(EventStreamState::Closing {
                 future: close_consumers(next_state).boxed(),

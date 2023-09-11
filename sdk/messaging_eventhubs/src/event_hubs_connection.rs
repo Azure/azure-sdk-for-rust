@@ -1,14 +1,20 @@
 use async_trait::async_trait;
 use const_format::concatcp;
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::Arc;
 use url::Url;
 
 use crate::{
-    amqp::{amqp_client::AmqpClient, error::{AmqpConnectionScopeError, AmqpClientError}, amqp_producer::AmqpProducer, amqp_consumer::AmqpConsumer},
+    amqp::{
+        amqp_client::AmqpClient,
+        amqp_consumer::AmqpConsumer,
+        amqp_producer::AmqpProducer,
+        error::AmqpClientError,
+    },
     authorization::{
         event_hub_token_credential::EventHubTokenCredential,
         shared_access_credential::SharedAccessCredential,
-        shared_access_signature::SharedAccessSignature, AzureNamedKeyCredential, AzureSasCredential,
+        shared_access_signature::SharedAccessSignature, AzureNamedKeyCredential,
+        AzureSasCredential,
     },
     consumer::EventPosition,
     core::{RecoverableTransport, TransportClient, TransportProducerFeatures},
@@ -18,7 +24,6 @@ use crate::{
     event_hubs_retry_policy::EventHubsRetryPolicy,
     event_hubs_transport_type::EventHubsTransportType,
     producer::PartitionPublishingOptions,
-    util::sharable::Sharable,
     PartitionProperties,
 };
 
@@ -44,10 +49,9 @@ impl From<EventHubConnectionError> for azure_core::error::Error {
 /// producer or consumer client.
 #[derive(Debug)]
 pub struct EventHubConnection {
-    fully_qualified_namespace: String,
+    fully_qualified_namespace: Arc<String>,
     event_hub_name: Arc<String>,
-    is_closed: Arc<AtomicBool>,
-    pub(crate) inner: Sharable<AmqpClient>,
+    pub(crate) inner: AmqpClient,
 }
 
 impl EventHubConnection {
@@ -171,14 +175,12 @@ impl EventHubConnection {
         )
         .await
         .map_err(<AmqpClientError as Into<azure_core::Error>>::into)?;
-        let is_closed = inner_client.connection_scope.is_disposed.clone();
-        let inner = Sharable::Owned(inner_client);
 
+        let fully_qualified_namespace = Arc::new(fully_qualified_namespace);
         Ok(Self {
             fully_qualified_namespace,
             event_hub_name,
-            is_closed,
-            inner,
+            inner: inner_client,
         })
     }
 
@@ -193,7 +195,13 @@ impl EventHubConnection {
         credential: impl Into<EventHubTokenCredential>,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
-        Self::new_from_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+        Self::new_from_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            options,
+        )
+        .await
     }
 
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
@@ -205,15 +213,21 @@ impl EventHubConnection {
     ) -> Result<Self, azure_core::Error> {
         let fully_qualified_namespace = fully_qualified_namespace.into();
         let event_hub_name = event_hub_name.into();
-        let resource = build_connection_signature_authorization_resource(options.transport_type, &fully_qualified_namespace, &event_hub_name)?;
-        let shared_access_credential = SharedAccessCredential::try_from_named_key_credential(credential, resource)?;
+        let resource = build_connection_signature_authorization_resource(
+            options.transport_type,
+            &fully_qualified_namespace,
+            &event_hub_name,
+        )?;
+        let shared_access_credential =
+            SharedAccessCredential::try_from_named_key_credential(credential, resource)?;
 
         Self::new_from_credential(
             fully_qualified_namespace,
             event_hub_name,
             shared_access_credential,
             options,
-        ).await
+        )
+        .await
     }
 
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureNamedKeyCredential`].
@@ -227,7 +241,13 @@ impl EventHubConnection {
         credential: AzureNamedKeyCredential,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
-        Self::new_from_named_key_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+        Self::new_from_named_key_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            options,
+        )
+        .await
     }
 
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
@@ -243,7 +263,8 @@ impl EventHubConnection {
             event_hub_name,
             shared_access_credential,
             options,
-        ).await
+        )
+        .await
     }
 
     /// Creates a new [`EventHubConnection`] from a namespace and a [`AzureSasCredential`].
@@ -257,7 +278,13 @@ impl EventHubConnection {
         credential: AzureSasCredential,
         options: EventHubConnectionOptions,
     ) -> Result<Self, azure_core::Error> {
-        Self::new_from_sas_credential(fully_qualified_namespace, event_hub_name, credential, options).await
+        Self::new_from_sas_credential(
+            fully_qualified_namespace,
+            event_hub_name,
+            credential,
+            options,
+        )
+        .await
     }
 }
 
@@ -269,14 +296,7 @@ impl EventHubConnection {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        match &mut self.inner {
-            Sharable::Owned(c) => c.get_properties(retry_policy).await,
-            Sharable::Shared(c) => c.lock().await.get_properties(retry_policy).await,
-            Sharable::None => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
-        }
+        self.inner.get_properties(retry_policy).await
     }
 
     pub(crate) async fn get_partition_ids<RP>(
@@ -298,19 +318,9 @@ impl EventHubConnection {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        match &mut self.inner {
-            Sharable::Owned(c) => c.get_partition_properties(partition_id, retry_policy).await,
-            Sharable::Shared(c) => {
-                c.lock()
-                    .await
-                    .get_partition_properties(partition_id, retry_policy)
-                    .await
-            }
-            Sharable::None => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
-        }
+        self.inner
+            .get_partition_properties(partition_id, retry_policy)
+            .await
     }
 
     pub(crate) async fn create_transport_producer<RP>(
@@ -324,34 +334,16 @@ impl EventHubConnection {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        match &mut self.inner {
-            Sharable::Owned(c) => c
-                .create_producer(
-                    partition_id,
-                    producer_identifier,
-                    requested_features,
-                    partition_options,
-                    retry_policy,
-                )
-                .await
-                .map_err(Into::into),
-            Sharable::Shared(c) => c
-                .lock()
-                .await
-                .create_producer(
-                    partition_id,
-                    producer_identifier,
-                    requested_features,
-                    partition_options,
-                    retry_policy,
-                )
-                .await
-                .map_err(Into::into),
-            Sharable::None => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
-        }
+        self.inner
+            .create_producer(
+                partition_id,
+                producer_identifier,
+                requested_features,
+                partition_options,
+                retry_policy,
+            )
+            .await
+            .map_err(Into::into)
     }
 
     #[allow(clippy::too_many_arguments)] // TODO: how to reduce the number of arguments?
@@ -369,99 +361,39 @@ impl EventHubConnection {
     where
         RP: EventHubsRetryPolicy + Send,
     {
-        match &mut self.inner {
-            Sharable::Owned(c) => c
-                .create_consumer(
-                    consumer_group,
-                    partition_id,
-                    consumer_identifier,
-                    event_position,
-                    retry_policy,
-                    track_last_enqueued_event_properties,
-                    owner_level,
-                    prefetch_count,
-                )
-                .await
-                .map_err(Into::into),
-            Sharable::Shared(c) => c
-                .lock()
-                .await
-                .create_consumer(
-                    consumer_group,
-                    partition_id,
-                    consumer_identifier,
-                    event_position,
-                    retry_policy,
-                    track_last_enqueued_event_properties,
-                    owner_level,
-                    prefetch_count,
-                )
-                .await
-                .map_err(Into::into),
-            Sharable::None => Err(azure_core::Error::new(
-                azure_core::error::ErrorKind::Io,
-                AmqpConnectionScopeError::ScopeDisposed,
-            )),
-        }
+        self.inner
+            .create_consumer(
+                consumer_group,
+                partition_id,
+                consumer_identifier,
+                event_position,
+                retry_policy,
+                track_last_enqueued_event_properties,
+                owner_level,
+                prefetch_count,
+            )
+            .await
+            .map_err(Into::into)
     }
 
     /// Closes the inner client regardless of whether it is owned or shared.
-    pub async fn close(self) -> Result<(), azure_core::Error> {
-        match self.inner {
-            Sharable::Owned(mut c) => c
-                .close()
-                .await
-                .map_err(Into::into),
-            Sharable::Shared(c) => c
-                .lock()
-                .await
-                .close()
-                .await
-                .map_err(Into::into),
-            Sharable::None => Ok(()),
-        }
+    pub async fn close(mut self) -> Result<(), azure_core::Error> {
+        self.inner.close().await.map_err(Into::into)
     }
 
     /// Closes the inner client if it is owned or if it is shared and this is the last reference to
     /// it.
-    pub async fn close_if_owned(self) -> Result<(), azure_core::Error> {
-        match self.inner {
-            Sharable::Owned(mut client) => client
-                .close()
-                .await
-                .map_err(Into::into),
-            Sharable::Shared(client) => match Arc::try_unwrap(client) {
-                Ok(mut client) => {
-                    // This is the last reference to the client, so we can dispose it.
-                    client
-                        .get_mut()
-                        .close()
-                        .await
-                        .map_err(Into::into)
-                }
-                Err(_) => {
-                    // This is not the last reference to the client, so we cannot dispose it.
-                    Ok(())
-                }
-            },
-            Sharable::None => Ok(()),
-        }
+    pub async fn close_if_owned(mut self) -> Result<(), azure_core::Error> {
+        self.inner.close_if_owned().await.map_err(Into::into)
     }
 }
 
 impl EventHubConnection {
     pub(crate) fn clone_as_shared(&mut self) -> Self {
-        let shared = self.inner.clone_as_shared();
-        let inner = match shared {
-            Some(shared) => Sharable::Shared(shared),
-            None => Sharable::None,
-        };
-
         Self {
             fully_qualified_namespace: self.fully_qualified_namespace.clone(),
             event_hub_name: self.event_hub_name.clone(),
-            is_closed: self.is_closed.clone(),
-            inner,
+            inner: self.inner.clone_as_shared(),
         }
     }
 
@@ -477,22 +409,21 @@ impl EventHubConnection {
 
     /// Returns true if the connection is closed.
     pub fn is_closed(&self) -> bool {
-        matches!(self.inner, Sharable::None)
-            | self.is_closed.load(std::sync::atomic::Ordering::Relaxed)
+        self.inner.is_closed()
     }
 
     /// Returns true if the connection is owned.
     ///
     /// This will return false even if it is the last reference to the shared connection.
     pub fn is_owned(&self) -> bool {
-        matches!(self.inner, Sharable::Owned(_))
+        self.inner.is_owned()
     }
 
     /// Returns true if the connection is shared.
     ///
     /// This will return true even if it is the last reference to the shared connection.
     pub fn is_shared(&self) -> bool {
-        matches!(self.inner, Sharable::Shared(_))
+        self.inner.is_shared()
     }
 }
 
@@ -554,9 +485,6 @@ impl RecoverableTransport for EventHubConnection {
     type RecoverError = azure_core::Error;
 
     async fn recover(&mut self) -> Result<(), Self::RecoverError> {
-        self.inner
-            .recover()
-            .await
-            .map_err(Into::into)
+        self.inner.recover().await.map_err(Into::into)
     }
 }

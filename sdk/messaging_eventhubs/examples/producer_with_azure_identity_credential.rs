@@ -5,6 +5,7 @@ use azure_identity::DefaultAzureCredential;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let _ = dotenv::from_filename("./sdk/messaging_eventhubs/.env");
     let namespace = std::env::var("EVENT_HUBS_NAMESPACE")?;
     let fqn = format!("{}.servicebus.windows.net", namespace);
     let event_hub_name = std::env::var("EVENT_HUB_NAME")?;
