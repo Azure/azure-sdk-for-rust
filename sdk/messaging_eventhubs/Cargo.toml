@@ -82,10 +82,10 @@ native-tls = ["fe2o3-amqp/native-tls", "fe2o3-amqp-ws/native-tls"]
 name = "bench_consumer_client_start_up"
 harness = false
 
-# [[bench]]
-# name = "bench_event_stream_start_up"
-# harness = false
+[[bench]]
+name = "bench_event_stream_start_up"
+harness = false
 
-# [[bench]]
-# name = "bench_event_stream"
-# harness = false
+[[bench]]
+name = "bench_event_stream"
+harness = false

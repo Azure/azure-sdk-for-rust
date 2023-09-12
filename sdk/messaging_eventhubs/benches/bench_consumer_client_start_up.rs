@@ -171,27 +171,27 @@ fn criterion_benchmark(c: &mut Criterion) {
     // Receive only one event because we are only interested in the time taken to setup the consumer
     // clients.
     let sample_size = 10;
-    let n = 0;
-    let n_prep = 1000;
+    let n = 1;
+    let n_prep = 1;
     let partitions = rt.block_on(prepare_events_on_all_partitions(n_prep));
 
     let mut bench_group = c.benchmark_group("consumer_client_start_up");
     bench_group.sample_size(sample_size);
-    // bench_group.bench_function("dedicated_connection_concurrent", |b| {
-    //     b.to_async(&rt)
-    //         .iter(|| bench_dedicated_connection_consumers_concurrent(partitions.clone(), n))
-    // });
-    // bench_group.bench_function("dedicated_connection_sequential", |b| {
-    //     b.to_async(&rt)
-    //         .iter(|| bench_dedicated_connection_consumers_sequential(partitions.clone(), n))
-    // });
-    for _ in 0..10 {
-        rt.block_on(bench_dedicated_connection_consumers_sequential(partitions.clone(), n));
-    }
-    // bench_group.bench_function("shared_connection", |b| {
-    //     b.to_async(&rt)
-    //         .iter(|| bench_shared_connection_consumers(partitions.clone(), n))
-    // });
+    bench_group.bench_function("dedicated_connection_concurrent", |b| {
+        b.to_async(&rt)
+            .iter(|| bench_dedicated_connection_consumers_concurrent(partitions.clone(), n))
+    });
+    bench_group.bench_function("dedicated_connection_sequential", |b| {
+        b.to_async(&rt)
+            .iter(|| bench_dedicated_connection_consumers_sequential(partitions.clone(), n))
+    });
+    // for _ in 0..10 {
+    //     rt.block_on(bench_dedicated_connection_consumers_sequential(partitions.clone(), n));
+    // }
+    bench_group.bench_function("shared_connection", |b| {
+        b.to_async(&rt)
+            .iter(|| bench_shared_connection_consumers(partitions.clone(), n))
+    });
     bench_group.finish();
 }
 
