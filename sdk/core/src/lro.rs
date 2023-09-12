@@ -49,7 +49,7 @@ pub mod body_content {
         match provisioning_state {
             "Succeeded" => Some(LroStatus::Succeeded),
             "Failed" => Some(LroStatus::Failed),
-            "Canceled" => Some(LroStatus::Cancelled),
+            "Canceled" => Some(LroStatus::Canceled),
             _ => Some(LroStatus::Other(provisioning_state.to_owned())),
         }
     }
