@@ -52,7 +52,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     // Use a small number because we are benchmarking the start up time.
     let sample_size = 10;
     let n = 1;
-    let n_prep = 5 * sample_size * n;
+    let n_prep = 1000;
     let partitions = rt.block_on(utils::prepare_events_on_all_partitions(n_prep));
 
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
@@ -79,7 +79,6 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut bench_group = c.benchmark_group("event_stream_start_up");
     bench_group.sample_size(sample_size);
-    bench_group.measurement_time(Duration::from_millis(1000)); // this has effect on the number of iterations
     bench_group.bench_function("dedicated_connection_consumer_stream", |b| {
         b.to_async(&rt).iter(|| {
             bench_connection_consumer_streams(consumer_clients.clone(), partitions.clone(), n)

@@ -254,7 +254,11 @@ where
             Err(_try_timeout_elapsed) => {
                 // There is no error returned from client, everything is fine and keep waiting
                 // TODO: is this correct?
-                continue;
+                let credit = u32::max(1, consumer.prefetch_count);
+                match consumer.receiver.set_credit(credit).await {
+                    Ok(_) => continue,
+                    Err(err) => RecoverAndReceiveError::from(err),
+                }
             },
         };
 

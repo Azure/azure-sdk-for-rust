@@ -963,8 +963,8 @@ pub enum RecoverAndReceiveError {
     #[error(transparent)]
     SessionEnd(#[from] fe2o3_amqp::session::Error),
 
-    #[error(transparent)]
-    Elapsed(#[from] Elapsed),
+    // #[error(transparent)]
+    // Elapsed(#[from] Elapsed),
 }
 
 impl From<RecoverTransportClientError> for RecoverAndReceiveError {
@@ -1024,7 +1024,7 @@ impl From<RecoverAndReceiveError> for azure_core::Error {
             RecoverAndReceiveError::SenderResume(err) => err.into_azure_core_error(),
             RecoverAndReceiveError::Disposition(err) => err.into_azure_core_error(),
             RecoverAndReceiveError::SessionEnd(err) => err.into_azure_core_error(),
-            RecoverAndReceiveError::Elapsed(err) => err.into_azure_core_error(),
+            // RecoverAndReceiveError::Elapsed(err) => err.into_azure_core_error(),
         }
     }
 }
@@ -1042,7 +1042,7 @@ impl RecoverableError for RecoverAndReceiveError {
             RecoverAndReceiveError::LinkDetach(_) => true,
             RecoverAndReceiveError::SenderResume(_) => true,
             RecoverAndReceiveError::Disposition(_) => true,
-            RecoverAndReceiveError::Elapsed(_) => true,
+            // RecoverAndReceiveError::Elapsed(_) => true,
             RecoverAndReceiveError::SessionEnd(_) => true, // TODO: should this be true?
             RecoverAndReceiveError::CbsAuth(_) => true,
         }
