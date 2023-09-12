@@ -10,15 +10,10 @@ use utils::setup_dotenv;
 mod utils;
 use utils::*;
 
-async fn bench_dedicated_connection_consumers_concurrent(
-    partitions: Vec<String>,
-    n: usize,
-    maximum_wait_time: Duration, // TODO: benchmark different wait time
-) {
+async fn bench_dedicated_connection_consumers_concurrent(partitions: Vec<String>, n: usize) {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_BENCHMARK_NAME").unwrap();
     let read_event_options = ReadEventOptions {
-        maximum_wait_time: Some(maximum_wait_time),
         ..Default::default()
     };
 
@@ -62,15 +57,10 @@ async fn bench_dedicated_connection_consumers_concurrent(
         .unwrap();
 }
 
-async fn bench_dedicated_connection_consumers_sequential(
-    partitions: Vec<String>,
-    n: usize,
-    maximum_wait_time: Duration, // TODO: benchmark different wait time
-) {
+async fn bench_dedicated_connection_consumers_sequential(partitions: Vec<String>, n: usize) {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_BENCHMARK_NAME").unwrap();
     let read_event_options = ReadEventOptions {
-        maximum_wait_time: Some(maximum_wait_time),
         ..Default::default()
     };
 
@@ -122,11 +112,7 @@ async fn bench_dedicated_connection_consumers_sequential(
         .unwrap();
 }
 
-async fn bench_shared_connection_consumers(
-    partitions: Vec<String>,
-    n: usize,
-    maximum_wait_time: Duration, // TODO: benchmark different wait time
-) {
+async fn bench_shared_connection_consumers(partitions: Vec<String>, n: usize) {
     let connection_string = std::env::var("EVENT_HUBS_CONNECTION_STRING").unwrap();
     let event_hub_name = std::env::var("EVENT_HUB_BENCHMARK_NAME").unwrap();
 
@@ -146,7 +132,6 @@ async fn bench_shared_connection_consumers(
         ..Default::default()
     };
     let read_event_options = ReadEventOptions {
-        maximum_wait_time: Some(maximum_wait_time),
         ..Default::default()
     };
 
@@ -187,38 +172,23 @@ fn criterion_benchmark(c: &mut Criterion) {
     // clients.
     let sample_size = 10;
     let n = 1;
-    let maximum_wait_time = Duration::from_secs(1);
-    let n_prep = sample_size * n;
+    let n_prep = 5 * sample_size * n;
     let partitions = rt.block_on(prepare_events_on_all_partitions(n_prep));
 
     let mut bench_group = c.benchmark_group("consumer_client_start_up");
     bench_group.sample_size(sample_size);
+    bench_group.measurement_time(Duration::from_millis(1000)); // this has effect on the number of iterations
     bench_group.bench_function("dedicated_connection_concurrent", |b| {
-        b.to_async(&rt).iter(|| {
-            bench_dedicated_connection_consumers_concurrent(
-                partitions.clone(),
-                n,
-                maximum_wait_time,
-            )
-        })
+        b.to_async(&rt)
+            .iter(|| bench_dedicated_connection_consumers_concurrent(partitions.clone(), n))
     });
     bench_group.bench_function("dedicated_connection_sequential", |b| {
-        b.to_async(&rt).iter(|| {
-            bench_dedicated_connection_consumers_sequential(
-                partitions.clone(),
-                n,
-                maximum_wait_time,
-            )
-        })
+        b.to_async(&rt)
+            .iter(|| bench_dedicated_connection_consumers_sequential(partitions.clone(), n))
     });
     bench_group.bench_function("shared_connection", |b| {
-        b.to_async(&rt).iter(|| {
-            bench_shared_connection_consumers(
-                partitions.clone(),
-                n,
-                maximum_wait_time,
-            )
-        })
+        b.to_async(&rt)
+            .iter(|| bench_shared_connection_consumers(partitions.clone(), n))
     });
     bench_group.finish();
 }

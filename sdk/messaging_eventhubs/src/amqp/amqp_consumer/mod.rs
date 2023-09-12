@@ -170,8 +170,7 @@ async fn recover_and_recv<RP>(
     client: &mut AmqpClient,
     consumer: &mut AmqpConsumer<RP>,
     should_try_recover: bool,
-    max_wait_time: Option<StdDuration>,
-) -> Result<Option<ReceivedEventData>, RecoverAndReceiveError>
+) -> Result<ReceivedEventData, RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -187,13 +186,7 @@ where
         client.recover_consumer(consumer).await?;
     }
 
-    match max_wait_time {
-        Some(t) => match timeout(t, consumer.recv_and_accept()).await {
-            Ok(result) => result.map(Some).map_err(Into::into),
-            Err(_elapsed) => Ok(None)
-        },
-        None => consumer.recv_and_accept().await.map(Some).map_err(Into::into),
-    }
+    consumer.recv_and_accept().await.map_err(Into::into)
 }
 
 pub(crate) async fn receive_event_batch<RP>(
@@ -241,8 +234,7 @@ where
 pub(crate) async fn receive_event<RP>(
     client: &mut AmqpClient,
     consumer: &mut AmqpConsumer<RP>,
-    max_wait_time: Option<StdDuration>,
-) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
+) -> Result<ReceivedEventData, RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send,
 {
@@ -253,10 +245,10 @@ where
     loop {
         let err = match timeout(
             try_timeout,
-            recover_and_recv(client, consumer, should_try_recover, max_wait_time)
+            recover_and_recv(client, consumer, should_try_recover)
         ).await {
-            Ok(result) => match result.transpose()? {
-                Ok(event) => return Some(Ok(event)),
+            Ok(result) => match result {
+                Ok(event) => return Ok(event),
                 Err(err) => err,
             },
             Err(_try_timeout_elapsed) => {
@@ -267,7 +259,7 @@ where
         };
 
         if err.is_scope_disposed() {
-            return Some(Err(err));
+            return Err(err);
         }
         should_try_recover = err.should_try_recover();
 
@@ -281,7 +273,7 @@ where
                 util::time::sleep(retry_delay).await;
                 try_timeout = consumer.retry_policy.calculate_try_timeout(failed_attempts);
             }
-            None => return Some(Err(err)),
+            None => return Err(err),
         }
     }
 }
@@ -298,10 +290,9 @@ where
     let outcome = receive_event(
         value.client,
         &mut value.consumer,
-        value.max_wait_time,
     )
     .await;
-    (outcome, value)
+    (Some(outcome), value)
 }
 
 async fn close_consumer<RP>(
@@ -313,21 +304,16 @@ async fn close_consumer<RP>(
 pub(crate) struct EventStreamStateValue<'a, C> {
     pub(crate) client: &'a mut AmqpClient,
     pub(crate) consumer: C,
-    pub(crate) max_wait_time: Option<StdDuration>,
 }
 
 impl<'a, C> EventStreamStateValue<'a, C> {
     pub(crate) fn new(
         client: &'a mut AmqpClient,
         consumer: C,
-        // max_messages: u32,
-        max_wait_time: Option<StdDuration>,
     ) -> Self {
         Self {
             client,
             consumer,
-            // buffer: VecDeque::with_capacity(max_messages as usize),
-            max_wait_time,
         }
     }
 }
@@ -421,7 +407,9 @@ where
 
         let result = match self.as_mut().project_closing() {
             Some(fut) => ready!(fut.poll(cx)),
-            None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
+            None => {
+                panic!("Stream must not be polled after completion")
+            }
         };
 
         self.set(EventStreamState::Empty);
@@ -451,10 +439,8 @@ where
     pub(crate) fn with_consumer(
         client: &'a mut AmqpClient,
         consumer: AmqpConsumer<RP>,
-        // max_messages: u32,
-        max_wait_time: Option<StdDuration>,
     ) -> Self {
-        let value = EventStreamStateValue::new(client, consumer, max_wait_time);
+        let value = EventStreamStateValue::new(client, consumer);
         let state = EventStreamState::Value { value };
 
         Self { state }
@@ -466,6 +452,7 @@ where
     }
 }
 
+// TODO: abstract AmqpConsumer into a trait
 impl<'a, RP> Stream for EventStream<'a, AmqpConsumer<RP>>
 where
     RP: EventHubsRetryPolicy + Send + 'a,
@@ -484,7 +471,17 @@ where
 
         let (item, next_state) = match this.state.as_mut().project_future() {
             Some(fut) => ready!(fut.poll(cx)),
-            None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
+            None => {
+                let result = match this.state.as_mut().project_closing() {
+                    Some(fut) => ready!(fut.poll(cx)),
+                    None => panic!("Stream must not be polled after completion"),
+                };
+
+                match result {
+                    Ok(_) => return Poll::Ready(None),
+                    Err(err) => return Poll::Ready(Some(Err(err.into()))),
+                }
+            },
         };
 
         if let Some(item) = item {

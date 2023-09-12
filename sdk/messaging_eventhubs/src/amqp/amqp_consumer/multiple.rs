@@ -5,7 +5,6 @@ use std::{
     ops::DerefMut,
     pin::Pin,
     task::{Context, Poll},
-    time::Duration as StdDuration,
 };
 
 use fe2o3_amqp::link::RecvError;
@@ -251,11 +250,11 @@ where
     result.map_err(Into::into)
 }
 
+// There is a possibility that no child consumer exists, so a None is returned.
 async fn recover_and_recv<RP>(
     client: &mut AmqpClient,
     consumers: &mut MultipleAmqpConsumers<RP>,
     should_try_recover: bool,
-    max_wait_time: Option<StdDuration>
 ) -> Result<Option<ReceivedEventData>, RecoverAndReceiveError>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
@@ -271,19 +270,12 @@ where
         recover_consumers(client, consumers).await?;
     }
 
-    match max_wait_time {
-        Some(t) => match timeout(t, consumers.recv()).await {
-            Ok(opt) => opt.transpose().map_err(Into::into),
-            Err(_elapsed) => Ok(None),
-        },
-        None => consumers.recv().await.transpose().map_err(Into::into),
-    }
+    consumers.recv().await.transpose().map_err(Into::into)
 }
 
 async fn receive_event<RP>(
     client: &mut AmqpClient,
     consumers: &mut MultipleAmqpConsumers<RP>,
-    max_wait_time: Option<StdDuration>
 ) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
 where
     RP: EventHubsRetryPolicy + Send + Unpin + 'static,
@@ -295,7 +287,7 @@ where
     loop {
         let err = match timeout(
             try_timeout,
-            recover_and_recv(client, consumers, should_try_recover, max_wait_time)
+            recover_and_recv(client, consumers, should_try_recover)
         ).await {
             Ok(result) => match result.transpose()? {
                 Ok(event) => return Some(Ok(event)),
@@ -340,7 +332,6 @@ where
     let outcome = receive_event(
         value.client,
         &mut value.consumer,
-        value.max_wait_time,
     ).await;
     (outcome, value)
 }
@@ -409,7 +400,6 @@ where
     pub(crate) fn with_multiple_consumers(
         client: &'a mut AmqpClient,
         consumers: Vec<AmqpConsumer<RP>>,
-        max_wait_time: Option<StdDuration>,
         retry_policy: RP,
     ) -> Self {
         let cancel_source = CancellationToken::new();
@@ -422,7 +412,7 @@ where
             inner: consumers,
             retry_policy,
         };
-        let value = EventStreamStateValue::new(client, consumers, max_wait_time);
+        let value = EventStreamStateValue::new(client, consumers);
         let state = EventStreamState::Value { value };
 
         Self { state }
@@ -452,7 +442,17 @@ where
 
         let (item, next_state) = match this.state.as_mut().project_future() {
             Some(fut) => ready!(fut.poll(cx)),
-            None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
+            None => {
+                let result = match this.state.as_mut().project_closing() {
+                    Some(fut) => ready!(fut.poll(cx)),
+                    None => panic!("Stream must not be polled after completion"),
+                };
+
+                match result {
+                    Ok(_) => return Poll::Ready(None),
+                    Err(err) => return Poll::Ready(Some(Err(err.into()))),
+                }
+            },
         };
 
         if let Some(item) = item {

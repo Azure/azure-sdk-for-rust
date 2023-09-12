@@ -18,6 +18,10 @@ pub struct ReadEventOptions {
     ///
     /// If `None`, the reader will wait forever for items to be available unless reading is
     /// canceled. Empty items will not be returned.
+    #[deprecated(
+        since = "0.14.4",
+        note = "This option is no longer used and will be removed in 0.15.0"
+    )]
     pub maximum_wait_time: Option<Duration>,
 
     /// The maximum number of events that will be read from the Event Hubs service and held in a
@@ -81,6 +85,10 @@ impl ReadEventOptions {
 
     /// Sets the maximum amount of time to wait to for an event to be available when reading before
     /// reading an empty event.
+    #[deprecated(
+        since = "0.14.4",
+        note = "This option is no longer used and will be removed in 0.15.0"
+    )]
     pub fn with_maximum_wait_time(mut self, maximum_wait_time: Duration) -> Self {
         self.maximum_wait_time = Some(maximum_wait_time);
         self

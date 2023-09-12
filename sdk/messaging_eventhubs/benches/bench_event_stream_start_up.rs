@@ -20,14 +20,12 @@ async fn bench_connection_consumer_streams(
     consumer_clients: Arc<Mutex<Vec<Consumer>>>,
     partitions: Vec<String>,
     n: usize,
-    maximum_wait_time: Duration,
 ) {
     // There should be just one bench running at a time.
     // The use of Arc is to fit the benchmark API.
     let mut consumers = consumer_clients.try_lock().unwrap();
 
-    let read_event_options = ReadEventOptions::default()
-        .with_maximum_wait_time(maximum_wait_time);
+    let read_event_options = ReadEventOptions::default();
 
     let futures = consumers
         .iter_mut()
@@ -54,8 +52,7 @@ fn criterion_benchmark(c: &mut Criterion) {
     // Use a small number because we are benchmarking the start up time.
     let sample_size = 10;
     let n = 1;
-    let maximum_wait_time = Duration::from_secs(1);
-    let n_prep = 2 * sample_size * n;
+    let n_prep = 5 * sample_size * n;
     let partitions = rt.block_on(utils::prepare_events_on_all_partitions(n_prep));
 
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
@@ -82,14 +79,10 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut bench_group = c.benchmark_group("event_stream_start_up");
     bench_group.sample_size(sample_size);
+    bench_group.measurement_time(Duration::from_millis(1000)); // this has effect on the number of iterations
     bench_group.bench_function("dedicated_connection_consumer_stream", |b| {
         b.to_async(&rt).iter(|| {
-            bench_connection_consumer_streams(
-                consumer_clients.clone(),
-                partitions.clone(),
-                n,
-                maximum_wait_time,
-            )
+            bench_connection_consumer_streams(consumer_clients.clone(), partitions.clone(), n)
         })
     });
     rt.block_on(async {
@@ -116,12 +109,7 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     bench_group.bench_function("shared_connection_consumer_stream", |b| {
         b.to_async(&rt).iter(|| {
-            bench_connection_consumer_streams(
-                consumer_clients.clone(),
-                partitions.clone(),
-                n,
-                maximum_wait_time,
-            )
+            bench_connection_consumer_streams(consumer_clients.clone(), partitions.clone(), n)
         })
     });
     rt.block_on(async {
