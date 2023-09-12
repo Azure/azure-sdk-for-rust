@@ -109,6 +109,10 @@ impl Client {
 }
 pub mod threat_intelligence_indicators {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Upload the indicators to the workspace"]
@@ -127,6 +131,10 @@ pub mod threat_intelligence_indicators {
     }
     pub mod upload {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UploadIndicatorsResponse> {
@@ -176,7 +184,7 @@ pub mod threat_intelligence_indicators {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -205,7 +213,7 @@ pub mod threat_intelligence_indicators {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::UploadIndicatorsResponse>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::UploadIndicatorsResponse>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::UploadIndicatorsResponse>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

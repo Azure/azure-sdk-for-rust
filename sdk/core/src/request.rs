@@ -1,5 +1,7 @@
 use crate::headers::{AsHeaders, Headers};
-use crate::{Method, SeekableStream};
+use crate::Method;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::SeekableStream;
 use bytes::Bytes;
 use std::fmt::Debug;
 use url::Url;
@@ -10,6 +12,10 @@ pub enum Body {
     /// A body of a known size.
     Bytes(bytes::Bytes),
     /// A streaming body.
+    /// This is not currently supported on WASM targets.
+    // We cannot currently implement `Body::SeekableStream` for WASM
+    // because `reqwest::Body::wrap_stream()` is not implemented for WASM.
+    #[cfg(not(target_arch = "wasm32"))]
     SeekableStream(Box<dyn SeekableStream>),
 }
 
@@ -17,6 +23,7 @@ impl Body {
     pub fn len(&self) -> usize {
         match self {
             Body::Bytes(bytes) => bytes.len(),
+            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(stream) => stream.len(),
         }
     }
@@ -28,6 +35,7 @@ impl Body {
     pub(crate) async fn reset(&mut self) -> crate::Result<()> {
         match self {
             Body::Bytes(_) => Ok(()),
+            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(stream) => stream.reset().await,
         }
     }
@@ -42,6 +50,7 @@ where
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl From<Box<dyn SeekableStream>> for Body {
     fn from(seekable_stream: Box<dyn SeekableStream>) -> Self {
         Self::SeekableStream(seekable_stream)

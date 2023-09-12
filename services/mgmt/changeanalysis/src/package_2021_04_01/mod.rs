@@ -115,6 +115,10 @@ impl Client {
 }
 pub mod operations {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all the supported operations by the Microsoft.ChangeAnalysis resource provider along with their descriptions."]
@@ -127,6 +131,10 @@ pub mod operations {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ResourceProviderOperationList> {
@@ -240,6 +248,10 @@ pub mod operations {
 }
 pub mod resource_changes {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the changes of a resource within the specified time range. Customer data will be masked if the user doesn't have access."]
@@ -265,6 +277,10 @@ pub mod resource_changes {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ChangeList> {
@@ -389,6 +405,10 @@ pub mod resource_changes {
 }
 pub mod changes {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List the changes of a resource group within the specified time range. Customer data will always be masked."]
@@ -437,6 +457,10 @@ pub mod changes {
     }
     pub mod list_changes_by_resource_group {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ChangeList> {
@@ -561,6 +585,10 @@ pub mod changes {
     }
     pub mod list_changes_by_subscription {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ChangeList> {

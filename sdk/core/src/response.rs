@@ -6,7 +6,10 @@ use futures::{Stream, StreamExt};
 use std::fmt::Debug;
 use std::pin::Pin;
 
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>> + Send + Sync>>;
+#[cfg(target_arch = "wasm32")]
+pub(crate) type PinnedStream = Pin<Box<dyn Stream<Item = crate::Result<Bytes>>>>;
 
 /// An HTTP Response.
 pub struct Response {

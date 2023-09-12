@@ -139,6 +139,10 @@ impl Client {
 }
 pub mod publish_event_grid_events {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Response(azure_core::Response);
     impl Response {
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -182,7 +186,7 @@ pub mod publish_event_grid_events {
         #[doc = ""]
         #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
         #[doc = "However, this function can provide more flexibility when required."]
-        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -208,6 +212,10 @@ pub mod publish_event_grid_events {
 }
 pub mod publish_cloud_event_events {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Response(azure_core::Response);
     impl Response {
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -257,7 +265,7 @@ pub mod publish_cloud_event_events {
         #[doc = ""]
         #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
         #[doc = "However, this function can provide more flexibility when required."]
-        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
@@ -286,6 +294,10 @@ pub mod publish_cloud_event_events {
 }
 pub mod publish_custom_event_events {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Response(azure_core::Response);
     impl Response {
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -329,7 +341,7 @@ pub mod publish_custom_event_events {
         #[doc = ""]
         #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
         #[doc = "However, this function can provide more flexibility when required."]
-        pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
             Box::pin({
                 let this = self.clone();
                 async move {
