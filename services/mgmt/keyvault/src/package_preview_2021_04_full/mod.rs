@@ -563,6 +563,9 @@ pub mod vaults {
                         match provisioning_state {
                             LroStatus::Succeeded => return Ok(body),
                             LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
                             _ => {
                                 sleep(Duration::from_secs(5)).await;
                             }
@@ -2042,6 +2045,9 @@ pub mod private_endpoint_connections {
                         match provisioning_state {
                             LroStatus::Succeeded => return Ok(body),
                             LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
                             _ => {
                                 sleep(Duration::from_secs(5)).await;
                             }
@@ -2671,6 +2677,9 @@ pub mod managed_hsms {
                         match provisioning_state {
                             LroStatus::Succeeded => return Ok(body),
                             LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
                             _ => {
                                 sleep(Duration::from_secs(5)).await;
                             }
@@ -2804,6 +2813,9 @@ pub mod managed_hsms {
                         match provisioning_state {
                             LroStatus::Succeeded => return Ok(body),
                             LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
                             _ => {
                                 sleep(Duration::from_secs(5)).await;
                             }
@@ -3979,6 +3991,9 @@ pub mod mhsm_private_endpoint_connections {
                         match provisioning_state {
                             LroStatus::Succeeded => return Ok(body),
                             LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
                             _ => {
                                 sleep(Duration::from_secs(5)).await;
                             }
