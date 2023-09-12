@@ -7,7 +7,7 @@ use crate::{
     CodeGen, Error, ErrorKind,
 };
 use crate::{content_type, Result};
-use autorust_openapi::{CollectionFormat, Header, ParameterType, Response, StatusCode};
+use autorust_openapi::{CollectionFormat, Header, MsLongRunningOperationOptions, ParameterType, Response, StatusCode};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
 use indexmap::IndexMap;
@@ -570,9 +570,10 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let request_builder_setters_code = RequestBuilderSettersCode::new(parameters);
     let response_code = ResponseCode::new(operation, produces)?;
     let long_running_operation = operation.0.long_running_operation;
-    let request_builder_send_code =
-        RequestBuilderSendCode::new(new_request_code, request_builder, response_code.clone(), long_running_operation)?;
-    let request_builder_intofuture_code = RequestBuilderIntoFutureCode::new(response_code.clone())?;
+    let long_running_operation_options = operation.0.long_running_operation_options.clone();
+    let request_builder_send_code = RequestBuilderSendCode::new(new_request_code, request_builder, response_code.clone())?;
+    let request_builder_intofuture_code =
+        RequestBuilderIntoFutureCode::new(response_code.clone(), long_running_operation, long_running_operation_options)?;
 
     let module_code = OperationModuleCode {
         module_name: operation.function_name()?,
@@ -909,20 +910,16 @@ struct RequestBuilderSendCode {
     request_builder: SetRequestCode,
     response_code: ResponseCode,
     url_args: Vec<Ident>,
-    long_running_operation: bool,
 }
 
 struct RequestBuilderIntoFutureCode {
     response_code: ResponseCode,
+    long_running_operation: bool,
+    long_running_operation_options: Option<MsLongRunningOperationOptions>,
 }
 
 impl RequestBuilderSendCode {
-    fn new(
-        new_request_code: NewRequestCode,
-        request_builder: SetRequestCode,
-        response_code: ResponseCode,
-        long_running_operation: bool,
-    ) -> Result<Self> {
+    fn new(new_request_code: NewRequestCode, request_builder: SetRequestCode, response_code: ResponseCode) -> Result<Self> {
         let params = parse_path_params(&new_request_code.path);
         let url_args: Result<Vec<_>> = params.iter().map(|s| s.to_snake_case_ident()).collect();
         let url_args = url_args?;
@@ -931,7 +928,6 @@ impl RequestBuilderSendCode {
             request_builder,
             response_code,
             url_args,
-            long_running_operation,
         })
     }
 }
@@ -993,7 +989,10 @@ impl ToTokens for RequestBuilderSendCode {
                 // Note, this is only *sometimes* this is specified in the spec.
                 //
                 // Ref: https://github.com/Azure/azure-sdk-for-rust/issues/446
-                let mut fut = quote! { #[doc = "only the first response will be fetched as the continuation token is not part of the response schema"]};
+                let mut fut = quote! {
+                    #[doc = "Only the first response will be fetched as the continuation token is not part of the response schema"]
+                    #[doc = ""]
+                };
                 fut.extend(send_future);
                 fut
             } else {
@@ -1048,20 +1047,6 @@ impl ToTokens for RequestBuilderSendCode {
                     }
                 }
             }
-        } else if self.long_running_operation {
-            // TODO:  Long running options should also move to the Pageable stream
-            // model, however this is not possible at the moment because the
-            // continuation token is often not returned in the response body, but
-            // instead a header which we don't include as part of the response
-            // model.
-            //
-            // As is, Pageable requires implementing the Continuable trait on the
-            // response object.
-            //
-            // ref: https://github.com/Azure/azure-sdk-for-rust/issues/741
-            let mut fut = quote! {#[doc = "only the first response will be fetched as long running operations are not supported yet"]};
-            fut.extend(send_future);
-            fut
         } else {
             send_future
         };
@@ -1070,8 +1055,16 @@ impl ToTokens for RequestBuilderSendCode {
 }
 
 impl RequestBuilderIntoFutureCode {
-    fn new(response_code: ResponseCode) -> Result<Self> {
-        Ok(Self { response_code })
+    fn new(
+        response_code: ResponseCode,
+        long_running_operation: bool,
+        long_running_operation_options: Option<MsLongRunningOperationOptions>,
+    ) -> Result<Self> {
+        Ok(Self {
+            response_code,
+            long_running_operation,
+            long_running_operation_options,
+        })
     }
 }
 
@@ -1083,22 +1076,94 @@ impl ToTokens for RequestBuilderIntoFutureCode {
         }
 
         let into_future = if let Some(response_type) = self.response_code.response_type() {
-            quote! {
-                impl std::future::IntoFuture for RequestBuilder {
-                    type Output = azure_core::Result<#response_type>;
-                    type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
+            if self.long_running_operation {
+                if self.long_running_operation_options.is_none() {
+                    quote! {
+                        impl std::future::IntoFuture for RequestBuilder {
+                            type Output = azure_core::Result<#response_type>;
+                            type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
 
-                    #[doc = "Returns a future that sends the request and returns the parsed response body."]
-                    #[doc = ""]
-                    #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-                    #[doc = ""]
-                    #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-                    fn into_future(self) -> Self::IntoFuture {
-                        Box::pin(
-                            async move {
-                                self.send().await?.into_body().await
+                            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+                            #[doc = ""]
+                            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+                            #[doc = ""]
+                            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+                            #[doc = ""]
+                            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
+                            fn into_future(self) -> Self::IntoFuture {
+                                Box::pin(
+                                    async move {
+                                        loop {
+                                            use azure_core::{
+                                                lro::{body_content::get_provisioning_state, LroStatus},
+                                                error::{Error, ErrorKind},
+                                                sleep::sleep
+                                            };
+                                            use std::time::Duration;
+
+                                            let this = self.clone();
+                                            let response = this.send().await?;
+                                            let status = response.as_raw_response().status();
+                                            let body = response.into_body().await?;
+
+                                            let provisioning_state = get_provisioning_state(status, &body)?;
+                                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                                            match provisioning_state {
+                                                LroStatus::Succeeded => return Ok(body),
+                                                LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                                                LroStatus::Canceled => return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string())),
+                                                _ => {
+                                                    // TODO: This should be implemented by extracting retry-after, retry-after-ms, or x-ms-retry-after-ms
+                                                    sleep(Duration::from_secs(5)).await;
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
                             }
-                        )
+                        }
+                    }
+                } else {
+                    quote! {
+                        impl std::future::IntoFuture for RequestBuilder {
+                            type Output = azure_core::Result<#response_type>;
+                            type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
+
+                            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+                            #[doc = ""]
+                            #[doc = "This operation uses a method of polling the status of a long running operation that is not yet supported.  Only the first response will be fetched."]
+                            #[doc = ""]
+                            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+                            #[doc = ""]
+                            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+                            fn into_future(self) -> Self::IntoFuture {
+                                Box::pin(
+                                    async move {
+                                        self.send().await?.into_body().await
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                quote! {
+                    impl std::future::IntoFuture for RequestBuilder {
+                        type Output = azure_core::Result<#response_type>;
+                            type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
+
+                        #[doc = "Returns a future that sends the request and returns the parsed response body."]
+                        #[doc = ""]
+                        #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+                        #[doc = ""]
+                        #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+                        fn into_future(self) -> Self::IntoFuture {
+                            Box::pin(
+                                async move {
+                                    self.send().await?.into_body().await
+                                }
+                            )
+                        }
                     }
                 }
             }

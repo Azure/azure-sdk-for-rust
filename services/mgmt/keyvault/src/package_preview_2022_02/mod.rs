@@ -1158,7 +1158,6 @@ pub mod vaults {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -1195,13 +1194,37 @@ pub mod vaults {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Vault>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Vault>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            #[doc = ""]
+            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    loop {
+                        use azure_core::{
+                            error::{Error, ErrorKind},
+                            lro::{body_content::get_provisioning_state, LroStatus},
+                            sleep::sleep,
+                        };
+                        use std::time::Duration;
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            _ => {
+                                sleep(Duration::from_secs(5)).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -1982,7 +2005,6 @@ pub mod vaults {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -2615,7 +2637,6 @@ pub mod private_endpoint_connections {
             pub(crate) private_endpoint_connection_name: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -2652,13 +2673,37 @@ pub mod private_endpoint_connections {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::PrivateEndpointConnection>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::PrivateEndpointConnection>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            #[doc = ""]
+            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    loop {
+                        use azure_core::{
+                            error::{Error, ErrorKind},
+                            lro::{body_content::get_provisioning_state, LroStatus},
+                            sleep::sleep,
+                        };
+                        use std::time::Duration;
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            _ => {
+                                sleep(Duration::from_secs(5)).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -3247,7 +3292,6 @@ pub mod managed_hsms {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3284,13 +3328,37 @@ pub mod managed_hsms {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ManagedHsm>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::ManagedHsm>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            #[doc = ""]
+            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    loop {
+                        use azure_core::{
+                            error::{Error, ErrorKind},
+                            lro::{body_content::get_provisioning_state, LroStatus},
+                            sleep::sleep,
+                        };
+                        use std::time::Duration;
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            _ => {
+                                sleep(Duration::from_secs(5)).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -3357,7 +3425,6 @@ pub mod managed_hsms {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3394,13 +3461,37 @@ pub mod managed_hsms {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ManagedHsm>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::ManagedHsm>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            #[doc = ""]
+            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    loop {
+                        use azure_core::{
+                            error::{Error, ErrorKind},
+                            lro::{body_content::get_provisioning_state, LroStatus},
+                            sleep::sleep,
+                        };
+                        use std::time::Duration;
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            _ => {
+                                sleep(Duration::from_secs(5)).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -3461,7 +3552,6 @@ pub mod managed_hsms {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -4002,7 +4092,6 @@ pub mod managed_hsms {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -4609,7 +4698,6 @@ pub mod mhsm_private_endpoint_connections {
             pub(crate) private_endpoint_connection_name: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -4639,13 +4727,37 @@ pub mod mhsm_private_endpoint_connections {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::MhsmPrivateEndpointConnection>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::MhsmPrivateEndpointConnection>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            #[doc = ""]
+            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    loop {
+                        use azure_core::{
+                            error::{Error, ErrorKind},
+                            lro::{body_content::get_provisioning_state, LroStatus},
+                            sleep::sleep,
+                        };
+                        use std::time::Duration;
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            _ => {
+                                sleep(Duration::from_secs(5)).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
