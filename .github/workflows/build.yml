@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/check_wasmsh ${{ matrix.build }}
+      - run: eng/scripts/check_wasm.sh ${{ matrix.build }}
 
   test-services:
     name: Services Tests
