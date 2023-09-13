@@ -34,10 +34,9 @@ fn criterion_benchmark(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
     let sample_size = 10;
-    let n = 100;
-    let n_prep = 5 * sample_size * n;
+    let n = 300;
+    let n_prep = 10000;
     let partitions = rt.block_on(utils::prepare_events_on_all_partitions(n_prep));
-    let partitions = partitions[0..4].to_vec();
 
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
     let retry_options = EventHubsRetryOptions {

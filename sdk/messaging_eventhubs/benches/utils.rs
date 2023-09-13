@@ -75,7 +75,8 @@ where
     S: Stream<Item = Result<ReceivedEventData, azure_core::Error>> + Unpin,
 {
     let mut counter = 0;
-    while let Some(Ok(event)) = stream.next().await {
+    while let Some(Ok(event)) = stream
+        .next().await {
         process_event(event);
         counter += 1;
         if counter > n {
