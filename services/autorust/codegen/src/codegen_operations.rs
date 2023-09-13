@@ -566,17 +566,17 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
         .unwrap_or_else(|| cg.spec.pick_produces().unwrap_or(content_type::APPLICATION_JSON))
         .to_string();
 
+    let lro = operation.0.long_running_operation;
+    let lro_options = operation.0.long_running_operation_options.clone();
+
     let request_builder = SetRequestCode::new(operation, parameters, consumes);
     let in_operation_group = operation.0.in_group();
     let client_function_code = ClientFunctionCode::new(operation, parameters, in_operation_group)?;
-    let request_builder_struct_code = RequestBuilderStructCode::new(parameters, in_operation_group);
+    let request_builder_struct_code = RequestBuilderStructCode::new(parameters, in_operation_group, lro, lro_options.clone());
     let request_builder_setters_code = RequestBuilderSettersCode::new(parameters);
     let response_code = ResponseCode::new(operation, produces)?;
-    let long_running_operation = operation.0.long_running_operation;
-    let long_running_operation_options = operation.0.long_running_operation_options.clone();
     let request_builder_send_code = RequestBuilderSendCode::new(new_request_code, request_builder, response_code.clone())?;
-    let request_builder_intofuture_code =
-        RequestBuilderIntoFutureCode::new(response_code.clone(), long_running_operation, long_running_operation_options)?;
+    let request_builder_intofuture_code = RequestBuilderIntoFutureCode::new(response_code.clone(), lro, lro_options)?;
 
     let module_code = OperationModuleCode {
         module_name: operation.function_name()?,
@@ -911,8 +911,8 @@ struct RequestBuilderSendCode {
 
 struct RequestBuilderIntoFutureCode {
     response_code: ResponseCode,
-    long_running_operation: bool,
-    long_running_operation_options: Option<MsLongRunningOperationOptions>,
+    lro: bool,
+    lro_options: Option<MsLongRunningOperationOptions>,
 }
 
 impl RequestBuilderSendCode {
@@ -1060,15 +1060,11 @@ impl ToTokens for RequestBuilderSendCode {
 }
 
 impl RequestBuilderIntoFutureCode {
-    fn new(
-        response_code: ResponseCode,
-        long_running_operation: bool,
-        long_running_operation_options: Option<MsLongRunningOperationOptions>,
-    ) -> Result<Self> {
+    fn new(response_code: ResponseCode, lro: bool, lro_options: Option<MsLongRunningOperationOptions>) -> Result<Self> {
         Ok(Self {
             response_code,
-            long_running_operation,
-            long_running_operation_options,
+            lro,
+            lro_options,
         })
     }
 }
@@ -1081,8 +1077,8 @@ impl ToTokens for RequestBuilderIntoFutureCode {
         }
 
         let into_future = if let Some(response_type) = self.response_code.response_type() {
-            let (func, rest) = if self.long_running_operation {
-                if let Some(lro_options) = &self.long_running_operation_options {
+            let (func, rest) = if self.lro {
+                if let Some(lro_options) = &self.lro_options {
                     let final_state = match lro_options.final_state_via {
                         MsLongRunningOperationOptionsFinalStateVia::Location => Some(format_ident!("Location")),
                         MsLongRunningOperationOptionsFinalStateVia::AzureAsyncOperation => Some(format_ident!("AzureAsyncOperation")),
@@ -1522,13 +1518,17 @@ impl ToTokens for DocCommentCode {
 struct RequestBuilderStructCode {
     parameters: FunctionParams,
     in_operation_group: bool,
+    lro: bool,
+    lro_options: Option<MsLongRunningOperationOptions>,
 }
 
 impl RequestBuilderStructCode {
-    fn new(parameters: &FunctionParams, in_operation_group: bool) -> Self {
+    fn new(parameters: &FunctionParams, in_operation_group: bool, lro: bool, lro_options: Option<MsLongRunningOperationOptions>) -> Self {
         Self {
             parameters: parameters.clone(),
             in_operation_group,
+            lro,
+            lro_options,
         }
     }
 }
@@ -1557,6 +1557,72 @@ impl ToTokens for RequestBuilderStructCode {
             }
             params.push(quote! { pub(crate) #variable_name: #type_name });
         }
+
+        let lro_docs = if self.lro
+            && matches!(
+                self.lro_options,
+                None | Some(MsLongRunningOperationOptions {
+                    final_state_via: MsLongRunningOperationOptionsFinalStateVia::AzureAsyncOperation
+                        | MsLongRunningOperationOptionsFinalStateVia::Location
+                })
+            ) {
+            quote! {
+                /// This `RequestBuilder` implements a Long Running Operation
+                /// (LRO).
+                ///
+                /// To finalize and submit the request, invoke `.await`, which
+                /// which will convert the `RequestBuilder` into a future
+                /// executes the request and polls the service until the
+                /// operation completes.
+                ///
+                /// In order to execute the request without polling the service
+                /// until the operation completes, use
+                /// [`RequestBuilder::send()`], which will return a lower-level
+                /// [`Response`] value.
+            }
+        } else if self.lro
+            && matches!(
+                self.lro_options,
+                Some(MsLongRunningOperationOptions {
+                    final_state_via: MsLongRunningOperationOptionsFinalStateVia::OriginalUri
+                })
+            )
+        {
+            quote! {
+                /// This [`RequestBuilder`] implements a request that returns an
+                /// unsupported Long Running Operation (LRO).  Currently, the
+                /// implementation does not support polling the status of the
+                /// operation, however future versions of this crate may include
+                /// this support.
+                ///
+                /// To finalize and submit the request, invoke `.await`, which
+                /// which will convert the [`RequestBuilder`] into a future
+                /// executes the request.  Future versions may poll the service
+                /// until the operation completes.
+                ///
+                /// In order to execute the request without polling the service
+                /// until the operation completes, use
+                /// [`RequestBuilder::send()`], which will return a lower-level
+                /// [`Response`] value.
+            }
+        } else {
+            quote! {
+                /// To finalize and submit the request, invoke `.await`, which
+                /// which will convert the [`RequestBuilder`] into a future
+                /// executes the request and returns a `Result` with the parsed
+                /// response.
+                ///
+                /// In order to execute the request without polling the service
+                /// until the operation completes, use `.send().await` instead.
+                ///
+                /// If you need lower-level access to the raw response details
+                /// (e.g. to inspect response headers or raw body data) then you
+                /// can finalize the request using the
+                /// [`RequestBuilder::send()`] method which returns a future
+                /// that resolves to a lower-level [`Response`] value.
+            }
+        };
+
         tokens.extend(quote! {
             #[derive(Clone)]
             /// `RequestBuilder` provides a mechanism for setting optional parameters on a request.
@@ -1564,15 +1630,7 @@ impl ToTokens for RequestBuilderStructCode {
             /// Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple
             /// parameters can be chained.
             ///
-            /// The building of a request is typically finalized by invoking `.await` on
-            /// `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)
-            /// method, which converts `RequestBuilder` into a future that executes the request
-            /// operation and returns a `Result` with the parsed response.
-            ///
-            /// If you need lower-level access to the raw response details (e.g. to inspect
-            /// response headers or raw body data) then you can finalize the request using the
-            /// [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level
-            /// [`Response`] value.
+            #lro_docs
             pub struct RequestBuilder {
                 #(#params),*
             }
