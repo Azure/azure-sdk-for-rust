@@ -24,7 +24,7 @@ once_cell = "1.16"
 syn = { version = "2.0", features = ["parsing"] }
 camino = "1.1"
 askama = "0.12"
-toml = "0.7"
+toml = "0.8"
 qstring = "0.7"
 
 [dev-dependencies]
