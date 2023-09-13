@@ -21,7 +21,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -37,7 +37,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -53,7 +53,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -69,7 +69,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -85,7 +85,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -101,7 +101,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -117,7 +117,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -133,7 +133,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -149,7 +149,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -165,7 +165,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -181,7 +181,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -197,7 +197,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -213,7 +213,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -229,7 +229,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -245,7 +245,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -261,7 +261,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -277,7 +277,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -293,7 +293,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -309,7 +309,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -325,7 +325,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -341,7 +341,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -357,7 +357,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -373,7 +373,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -389,7 +389,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -405,7 +405,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -421,7 +421,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -437,7 +437,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -453,7 +453,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -469,7 +469,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -485,7 +485,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -501,7 +501,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -517,7 +517,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -533,7 +533,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -549,7 +549,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -565,7 +565,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -581,7 +581,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -597,7 +597,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -613,7 +613,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -629,7 +629,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -645,7 +645,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -661,7 +661,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -677,7 +677,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -693,7 +693,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -709,7 +709,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -725,7 +725,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -741,7 +741,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -757,7 +757,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -773,7 +773,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -789,7 +789,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -805,7 +805,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -821,7 +821,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -837,7 +837,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -853,7 +853,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -869,7 +869,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -885,7 +885,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -901,7 +901,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -917,7 +917,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -933,7 +933,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -949,7 +949,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -965,7 +965,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -981,7 +981,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -997,7 +997,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1013,7 +1013,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1029,7 +1029,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1045,7 +1045,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1061,7 +1061,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1077,7 +1077,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1093,7 +1093,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1109,7 +1109,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1125,7 +1125,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1141,7 +1141,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1157,7 +1157,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1173,7 +1173,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1189,7 +1189,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1205,7 +1205,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1221,7 +1221,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1237,7 +1237,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1253,7 +1253,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1269,7 +1269,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1285,7 +1285,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1301,7 +1301,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1317,7 +1317,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1333,7 +1333,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1349,7 +1349,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1365,7 +1365,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1381,7 +1381,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1397,7 +1397,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1413,7 +1413,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1429,7 +1429,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1445,7 +1445,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1461,7 +1461,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1477,7 +1477,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1493,7 +1493,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1509,7 +1509,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1525,7 +1525,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1541,7 +1541,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1557,7 +1557,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1573,7 +1573,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1589,7 +1589,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1605,7 +1605,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1621,7 +1621,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1637,7 +1637,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1653,7 +1653,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1669,7 +1669,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1685,7 +1685,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1701,7 +1701,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1717,7 +1717,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1733,7 +1733,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1749,7 +1749,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1765,7 +1765,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1781,7 +1781,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1797,7 +1797,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1813,7 +1813,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1829,7 +1829,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1845,7 +1845,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1861,7 +1861,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1877,7 +1877,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1893,7 +1893,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1909,7 +1909,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1925,7 +1925,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1941,7 +1941,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1957,7 +1957,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1973,7 +1973,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -1989,7 +1989,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2005,7 +2005,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2021,7 +2021,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2037,7 +2037,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2053,7 +2053,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2069,7 +2069,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2085,7 +2085,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2101,7 +2101,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2117,7 +2117,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2133,7 +2133,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2149,7 +2149,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2165,7 +2165,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2181,7 +2181,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2197,7 +2197,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2213,7 +2213,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2229,7 +2229,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2245,7 +2245,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2261,7 +2261,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2277,7 +2277,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2293,7 +2293,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2309,7 +2309,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2325,7 +2325,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2341,7 +2341,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2357,7 +2357,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2373,7 +2373,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2389,7 +2389,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2405,7 +2405,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2421,7 +2421,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2437,7 +2437,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2453,7 +2453,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2469,7 +2469,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2485,7 +2485,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2501,7 +2501,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2517,7 +2517,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2533,7 +2533,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2549,7 +2549,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2565,7 +2565,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2581,7 +2581,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2597,7 +2597,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2613,7 +2613,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2629,7 +2629,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2645,7 +2645,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2661,7 +2661,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2677,7 +2677,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2693,7 +2693,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2709,7 +2709,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2725,7 +2725,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2741,7 +2741,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2757,7 +2757,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2773,7 +2773,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2789,7 +2789,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2805,7 +2805,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2821,7 +2821,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2837,7 +2837,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2853,7 +2853,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2869,7 +2869,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2885,7 +2885,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2901,7 +2901,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2917,7 +2917,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2933,7 +2933,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2949,7 +2949,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2965,7 +2965,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2981,7 +2981,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -2997,7 +2997,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3013,7 +3013,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3029,7 +3029,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3045,7 +3045,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3061,7 +3061,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3077,7 +3077,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3093,7 +3093,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3109,7 +3109,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3125,7 +3125,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3141,7 +3141,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3157,7 +3157,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3173,7 +3173,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3189,7 +3189,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3205,7 +3205,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3221,7 +3221,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3237,7 +3237,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3253,7 +3253,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3269,7 +3269,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3285,7 +3285,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3301,7 +3301,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3317,7 +3317,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3333,7 +3333,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3349,7 +3349,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3365,7 +3365,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3381,7 +3381,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3397,7 +3397,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3413,7 +3413,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3429,7 +3429,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3445,7 +3445,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3461,7 +3461,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3477,7 +3477,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3493,7 +3493,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3509,7 +3509,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3525,7 +3525,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3541,7 +3541,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3557,7 +3557,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3573,7 +3573,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3589,7 +3589,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3605,7 +3605,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3621,7 +3621,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3637,7 +3637,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3653,7 +3653,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3669,7 +3669,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3685,7 +3685,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3701,7 +3701,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3717,7 +3717,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3733,7 +3733,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3749,7 +3749,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3765,7 +3765,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3781,7 +3781,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3797,7 +3797,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3813,7 +3813,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3829,7 +3829,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3845,7 +3845,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3861,7 +3861,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3877,7 +3877,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3893,7 +3893,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3909,7 +3909,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3925,7 +3925,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3941,7 +3941,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3957,7 +3957,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3973,7 +3973,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -3989,7 +3989,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4005,7 +4005,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4021,7 +4021,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4037,7 +4037,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4053,7 +4053,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4069,7 +4069,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4085,7 +4085,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4101,7 +4101,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4117,7 +4117,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4133,7 +4133,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4149,7 +4149,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4165,7 +4165,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4181,7 +4181,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4197,7 +4197,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4213,7 +4213,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4229,7 +4229,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4245,7 +4245,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4261,7 +4261,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4277,7 +4277,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4293,7 +4293,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4309,7 +4309,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4325,7 +4325,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
@@ -4341,7 +4341,7 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
-    - uses: Swatinem/rust-cache@v1
+    - uses: Swatinem/rust-cache@v2
     - name: check all features
       run: |
         cd services
