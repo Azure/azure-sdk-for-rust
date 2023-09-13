@@ -1,5 +1,10 @@
 # Change log
 
+## 0.14.4
+
+- Removed the internal buffer from `EventStream`
+- Deprecates `cache_event_count` and `max_wait_time` fields in `ReadEventOptions`
+
 ## 0.14.3
 
 - Reworked `EventHubConnection` to have more fine-grained locks
