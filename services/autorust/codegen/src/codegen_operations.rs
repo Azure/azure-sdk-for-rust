@@ -7,12 +7,15 @@ use crate::{
     CodeGen, Error, ErrorKind,
 };
 use crate::{content_type, Result};
-use autorust_openapi::{CollectionFormat, Header, MsLongRunningOperationOptions, ParameterType, Response, StatusCode};
+use autorust_openapi::{
+    CollectionFormat, Header, MsLongRunningOperationOptions, MsLongRunningOperationOptionsFinalStateVia, ParameterType, Response,
+    StatusCode,
+};
 use heck::ToPascalCase;
 use heck::ToSnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 use std::collections::BTreeSet;
 
 pub const API_VERSION: &str = "api-version";
@@ -618,13 +621,6 @@ impl SetRequestCode {
 
 impl ToTokens for SetRequestCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        // api-version param
-        if self.has_param_api_version {
-            let api_version = &self.api_version;
-            tokens.extend(quote! {
-                req.url_mut().query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
-            });
-        }
         if self.has_param_x_ms_version {
             let api_version = &self.api_version;
             tokens.extend(quote! {
@@ -844,6 +840,7 @@ impl ResponseCode {
 impl ToTokens for ResponseCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(quote! {
+            #[derive(Debug)]
             pub struct Response(azure_core::Response);
         });
         let body_fn = if let Some(response_type) = self.response_type() {
@@ -938,7 +935,7 @@ impl ToTokens for RequestBuilderSendCode {
         let request_builder = &self.request_builder;
 
         let url_args = self.url_args.iter().map(|url_arg| {
-            quote! { &this.#url_arg }
+            quote! { &self.#url_arg }
         });
         let url_str_args = quote! { #(#url_args),* };
 
@@ -957,6 +954,28 @@ impl ToTokens for RequestBuilderSendCode {
             }
         });
 
+        let urlfn = if self.request_builder.has_param_api_version {
+            let api_version = &self.request_builder.api_version;
+            quote! {
+                fn url(&self) -> azure_core::Result<azure_core::Url> {
+                    let mut url = azure_core::Url::parse(&format!(#fpath, self.client.endpoint(), #url_str_args))?;
+
+                    let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                    if !has_api_version_already {
+                        url.query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
+                    }
+                    Ok(url)
+                }
+            }
+        } else {
+            quote! {
+                fn url(&self) -> azure_core::Result<azure_core::Url> {
+                    let url = azure_core::Url::parse(&format!(#fpath, self.client.endpoint(), #url_str_args))?;
+                    Ok(url)
+                }
+            }
+        };
+
         let send_future = quote! {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
@@ -966,7 +985,7 @@ impl ToTokens for RequestBuilderSendCode {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
+                        let url = this.url()?;
                         #new_request_code
                         #request_builder
                         req.set_body(req_body);
@@ -996,34 +1015,19 @@ impl ToTokens for RequestBuilderSendCode {
                 fut.extend(send_future);
                 fut
             } else {
-                let mut stream_api_version = quote! {};
-
-                // per discussion in SDK meeting, we should always set the
-                // api-version on the request if we have a version.
-                if request_builder.has_param_api_version {
-                    let api_version = &request_builder.api_version;
-                    stream_api_version = quote! {
-                        let has_api_version_already = req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                        if !has_api_version_already {
-                            req.url_mut().query_pairs_mut().append_pair(azure_core::query_param::API_VERSION, #api_version);
-                        }
-                    };
-                }
-
                 let response_type = self.response_code.response_type().expect("pageable response has a body");
                 quote! {
                     pub fn into_stream(self) -> azure_core::Pageable<#response_type, azure_core::error::Error> {
                         let make_request = move |continuation: Option<String>| {
                             let this = self.clone();
                             async move {
-                                let mut url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
+                                let mut url = this.url()?;
 
                                 let rsp = match continuation {
                                     Some(value) => {
                                         url.set_path("");
                                         url = url.join(&value)?;
                                         #new_request_code
-                                        #stream_api_version
                                         let req_body = azure_core::EMPTY_BODY;
                                         req.set_body(req_body);
                                         this.client.send(&mut req).await?
@@ -1051,6 +1055,7 @@ impl ToTokens for RequestBuilderSendCode {
             send_future
         };
         tokens.extend(fut);
+        tokens.extend(urlfn)
     }
 }
 
@@ -1076,94 +1081,145 @@ impl ToTokens for RequestBuilderIntoFutureCode {
         }
 
         let into_future = if let Some(response_type) = self.response_code.response_type() {
-            if self.long_running_operation {
-                if self.long_running_operation_options.is_none() {
-                    quote! {
-                        impl std::future::IntoFuture for RequestBuilder {
-                            type Output = azure_core::Result<#response_type>;
-                            type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
+            let (func, rest) = if self.long_running_operation {
+                if let Some(lro_options) = &self.long_running_operation_options {
+                    let final_state = match lro_options.final_state_via {
+                        MsLongRunningOperationOptionsFinalStateVia::Location => Some(format_ident!("Location")),
+                        MsLongRunningOperationOptionsFinalStateVia::AzureAsyncOperation => Some(format_ident!("AzureAsyncOperation")),
+                        MsLongRunningOperationOptionsFinalStateVia::OriginalUri => None,
+                    };
 
-                            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
-                            #[doc = ""]
-                            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-                            #[doc = ""]
-                            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-                            #[doc = ""]
-                            #[doc = "To only submit the request once, rather than continuously check the status of the operation until completion, use `send()` instead."]
-                            fn into_future(self) -> Self::IntoFuture {
-                                Box::pin(
-                                    async move {
-                                        loop {
-                                            use azure_core::{
-                                                lro::{body_content::get_provisioning_state, LroStatus},
-                                                error::{Error, ErrorKind},
-                                                sleep::sleep
-                                            };
-                                            use std::time::Duration;
+                    if let Some(final_state) = final_state {
+                        (
+                            quote! {
+                                use azure_core::{
+                                    lro::{
+                                        location::{get_location, FinalState, get_provisioning_state},
+                                        LroStatus, get_retry_after,
+                                    },
+                                    error::{Error, ErrorKind},
+                                    sleep::sleep
+                                };
+                                use std::time::Duration;
 
-                                            let this = self.clone();
-                                            let response = this.send().await?;
-                                            let status = response.as_raw_response().status();
-                                            let body = response.into_body().await?;
-
-                                            let provisioning_state = get_provisioning_state(status, &body)?;
-                                            log::trace!("current provisioning_state: {provisioning_state:?}");
-                                            match provisioning_state {
-                                                LroStatus::Succeeded => return Ok(body),
-                                                LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
-                                                LroStatus::Canceled => return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string())),
-                                                _ => {
-                                                    // TODO: This should be implemented by extracting retry-after, retry-after-ms, or x-ms-retry-after-ms
-                                                    sleep(Duration::from_secs(5)).await;
-                                                }
+                                let this = self.clone();
+                                let response = this.send().await?;
+                                let headers = response.as_raw_response().headers();
+                                let location = get_location(headers, FinalState::#final_state)?;
+                                if let Some(url) = location {
+                                    loop {
+                                        let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                                        let credential = self.client.token_credential();
+                                        let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                        let response = self.client.send(&mut req).await?;
+                                        let headers = response.headers();
+                                        let retry_after = get_retry_after(headers);
+                                        let bytes = response.into_body().collect().await?;
+                                        let provisioning_state = get_provisioning_state(&bytes).ok_or_else(||
+                                            Error::message(ErrorKind::Other, "Long running operation failed (missing provisioning state)".to_string())
+                                        )?;
+                                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                                        match provisioning_state {
+                                            LroStatus::Succeeded => {
+                                                let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                                let credential = self.client.token_credential();
+                                                let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                                let response = self.client.send(&mut req).await?;
+                                                return Response(response).into_body().await
+                                            }
+                                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                                            LroStatus::Canceled => return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string())),
+                                            _ => {
+                                                sleep(retry_after).await;
                                             }
                                         }
                                     }
-                                )
-                            }
-                        }
+                                } else {
+                                    response.into_body().await
+                                }
+                            },
+                            quote! {
+                                    #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+                                    #[doc = ""]
+                                    #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
+                            },
+                        )
+                    } else {
+                        println!("unsupported LRO: {lro_options:?}");
+
+                        (
+                            quote! {
+                                self.send().await?.into_body().await
+                            },
+                            quote! {
+                                    #[doc = "Returns a future that sends the request and returns the parsed response body."]
+                                    #[doc = ""]
+                                    #[doc = "This operation uses a method of polling the status of a long running operation that is not yet supported.  Only the first response will be fetched."]
+                            },
+                        )
                     }
                 } else {
-                    quote! {
-                        impl std::future::IntoFuture for RequestBuilder {
-                            type Output = azure_core::Result<#response_type>;
-                            type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
-
-                            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-                            #[doc = ""]
-                            #[doc = "This operation uses a method of polling the status of a long running operation that is not yet supported.  Only the first response will be fetched."]
-                            #[doc = ""]
-                            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-                            #[doc = ""]
-                            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-                            fn into_future(self) -> Self::IntoFuture {
-                                Box::pin(
-                                    async move {
-                                        self.send().await?.into_body().await
+                    (
+                        quote! {
+                            use azure_core::{
+                                lro::{body_content::get_provisioning_state, LroStatus, get_retry_after},
+                                error::{Error, ErrorKind},
+                                sleep::sleep
+                            };
+                            use std::time::Duration;
+                            loop {
+                                let this = self.clone();
+                                let response = this.send().await?;
+                                let retry_after = get_retry_after(response.as_raw_response().headers());
+                                let status = response.as_raw_response().status();
+                                let body = response.into_body().await?;
+                                let provisioning_state = get_provisioning_state(status, &body)?;
+                                log::trace!("current provisioning_state: {provisioning_state:?}");
+                                match provisioning_state {
+                                    LroStatus::Succeeded => return Ok(body),
+                                    LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                                    LroStatus::Canceled => return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string())),
+                                    _ => {
+                                        sleep(retry_after).await;
                                     }
-                                )
+                                }
                             }
-                        }
-                    }
+                        },
+                        quote! {
+                                #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+                                #[doc = ""]
+                                #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
+                        },
+                    )
                 }
             } else {
-                quote! {
-                    impl std::future::IntoFuture for RequestBuilder {
-                        type Output = azure_core::Result<#response_type>;
-                            type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
+                (
+                    quote! {
+                        self.send().await?.into_body().await
+                    },
+                    quote! {
+                            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+                    },
+                )
+            };
 
-                        #[doc = "Returns a future that sends the request and returns the parsed response body."]
-                        #[doc = ""]
-                        #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-                        #[doc = ""]
-                        #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-                        fn into_future(self) -> Self::IntoFuture {
-                            Box::pin(
-                                async move {
-                                    self.send().await?.into_body().await
-                                }
-                            )
-                        }
+            quote! {
+                impl std::future::IntoFuture for RequestBuilder {
+                    type Output = azure_core::Result<#response_type>;
+                    type IntoFuture = BoxFuture<'static, azure_core::Result<#response_type>>;
+                    #rest
+                    #[doc = ""]
+                    #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+                    #[doc = ""]
+                    #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+                    fn into_future(self) -> Self::IntoFuture {
+                        Box::pin(
+                            async move {
+                                #func
+                            }
+                        )
                     }
                 }
             }
