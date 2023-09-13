@@ -52,6 +52,27 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/sdk_tests.sh ${{ matrix.build }}
 
+  test-wasm:
+    name: WASM Tests
+    runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
+      - run: eng/scripts/check_wasm.sh ${{ matrix.build }}
+
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04
