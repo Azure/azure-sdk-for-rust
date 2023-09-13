@@ -26,8 +26,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let storage_credentials: Arc<dyn TokenCredential> =
-        Arc::<azure_identity::DefaultAzureCredential>::default();
+    let storage_credentials: Arc<dyn TokenCredential> = Arc::new(DefaultAzureCredential::default());
     let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container)
         .blob_client(&blob);
