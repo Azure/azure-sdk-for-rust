@@ -447,8 +447,6 @@ where
         let event_stream = EventStream::with_consumer(
             &mut self.connection.inner,
             consumer,
-            read_event_options.cache_event_count,
-            read_event_options.maximum_wait_time,
         );
         Ok(event_stream)
     }
@@ -496,8 +494,6 @@ where
         let event_stream = EventStream::with_multiple_consumers(
             &mut self.connection.inner,
             consumers,
-            read_event_options.cache_event_count,
-            read_event_options.maximum_wait_time,
             retry_policy,
         );
         Ok(event_stream)
