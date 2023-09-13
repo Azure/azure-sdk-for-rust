@@ -37,12 +37,12 @@ impl From<&str> for LroStatus {
 }
 
 /// Get the duration to delay between polling attempts
-/// 
+///
 /// This function will check for the following headers in order:
 /// * `Retry-After`
 /// * `retry-after-ms`
 /// * `x-ms-retry-after-ms`
-/// 
+///
 /// If no header is provided, the default retry time will be returned.
 pub fn get_retry_after(headers: &Headers) -> Duration {
     [RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS]
