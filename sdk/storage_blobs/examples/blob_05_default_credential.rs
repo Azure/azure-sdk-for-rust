@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate log;
 
+use std::sync::Arc;
+
 use azure_core::{
     auth::TokenCredential,
     error::{ErrorKind, ResultExt},
@@ -24,11 +26,8 @@ async fn main() -> azure_core::Result<()> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token("https://storage.azure.com/")
-        .await?;
-
-    let storage_credentials = StorageCredentials::BearerToken(bearer_token.token.secret().into());
+    let storage_credentials: Arc<dyn TokenCredential> =
+        Arc::<azure_identity::DefaultAzureCredential>::default();
     let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container)
         .blob_client(&blob);
