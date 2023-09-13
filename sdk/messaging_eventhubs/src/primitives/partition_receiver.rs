@@ -306,23 +306,14 @@ where
         let mut buffer = VecDeque::with_capacity(max_event_count);
         let max_wait_time = max_wait_time.into();
         let max_wait_time = max_wait_time.map(|t| t.max(self.options.maximum_receive_wait_time));
-        match receive_event_batch(
+        receive_event_batch(
             &mut self.connection.inner,
             &mut self.inner_consumer,
             &mut buffer,
             max_wait_time,
         )
-        .await
-        {
-            Some(result) => {
-                result?;
-                Ok(buffer.into_iter())
-            }
-            None => {
-                // Return an empty buffer
-                Ok(buffer.into_iter())
-            }
-        }
+        .await?;
+        Ok(buffer.into_iter())
     }
 }
 

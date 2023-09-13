@@ -34,10 +34,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     let rt = tokio::runtime::Runtime::new().unwrap();
 
     let sample_size = 10;
-    let n = 1;
-    let cache_event_count = 1;
-    let maximum_wait_time = Duration::from_secs(1);
-    let n_prep = 1000; // prepare 2x events for benchmark
+    let n = 300;
+    let n_prep = 10000;
     let partitions = rt.block_on(utils::prepare_events_on_all_partitions(n_prep));
 
     let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
@@ -50,9 +48,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         ..Default::default()
     };
 
-    let read_event_options = ReadEventOptions::default()
-        .with_cache_event_count(cache_event_count)
-        .with_maximum_wait_time(maximum_wait_time);
+    let read_event_options = ReadEventOptions::default();
 
     // Bench dedicated connection consumer streams
     let mut consumer_clients = rt
@@ -75,9 +71,10 @@ fn criterion_benchmark(c: &mut Criterion) {
 
     let mut bench_group = c.benchmark_group("event_stream");
     bench_group.sample_size(sample_size);
+    bench_group.measurement_time(Duration::from_millis(1000)); // this has effect on the number of iterations
     bench_group.bench_function("dedicated_connection_consumer_stream", |b| {
         b.to_async(&rt)
-            .iter(|| bench_event_stream(streams.clone(), n))
+            .iter(|| async { bench_event_stream(streams.clone(), n).await })
     });
 
     rt.block_on(async {

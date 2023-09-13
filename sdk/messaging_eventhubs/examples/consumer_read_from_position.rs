@@ -1,8 +1,6 @@
 //! This example let the consumer start from the beginning of the stream, and then read 30 events.
 //! After that, it will start from the last known sequence number, and read another 30 events.
 
-use std::time::Duration;
-
 use azeventhubs::consumer::{
     EventHubConsumerClient, EventHubConsumerClientOptions, EventPosition, ReadEventOptions,
 };
@@ -27,9 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let partition_ids = consumer_client.get_partition_ids().await?;
     let starting_position = EventPosition::earliest();
-    let mut options = ReadEventOptions::default();
-    options.maximum_wait_time = Some(Duration::from_secs(5));
-    options.cache_event_count = 3;
+    let options = ReadEventOptions::default();
 
     // Get a stream of events from the first partition
     let mut stream = consumer_client
