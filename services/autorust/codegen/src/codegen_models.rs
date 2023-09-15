@@ -804,15 +804,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                         impl azure_core::Continuable for #struct_name_code {
                             type Continuation = String;
                             fn continuation(&self) -> Option<Self::Continuation> {
-                                if let Some(value) = self.#field_name.clone() {
-                                    if value.is_empty() {
-                                        None
-                                    } else {
-                                        Some(value)
-                                    }
-                                } else {
-                                    None
-                                }
+                                self.#field_name.clone().filter(|value| !value.is_empty())
                             }
                         }
                     };

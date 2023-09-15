@@ -1234,15 +1234,7 @@ pub struct ListBlobsFlatSegmentResponse {
 impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if let Some(value) = self.next_marker.clone() {
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
-        } else {
-            None
-        }
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListBlobsFlatSegmentResponse {
@@ -1281,15 +1273,7 @@ pub struct ListBlobsHierarchySegmentResponse {
 impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if let Some(value) = self.next_marker.clone() {
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
-        } else {
-            None
-        }
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListBlobsHierarchySegmentResponse {
@@ -1325,15 +1309,7 @@ pub struct ListContainersSegmentResponse {
 impl azure_core::Continuable for ListContainersSegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if let Some(value) = self.next_marker.clone() {
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
-        } else {
-            None
-        }
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListContainersSegmentResponse {
@@ -1442,15 +1418,7 @@ pub struct PageList {
 impl azure_core::Continuable for PageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        if let Some(value) = self.next_marker.clone() {
-            if value.is_empty() {
-                None
-            } else {
-                Some(value)
-            }
-        } else {
-            None
-        }
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageList {
