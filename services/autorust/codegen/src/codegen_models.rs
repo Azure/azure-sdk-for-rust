@@ -25,6 +25,10 @@ impl PropertyGen {
         self.name.as_str()
     }
 
+    pub fn xml_attribute(&self) -> bool {
+        self.schema.xml_attribute()
+    }
+
     pub fn xml_name(&self) -> Option<&str> {
         self.schema.xml_name()
     }
@@ -88,7 +92,6 @@ impl SchemaGen {
     /// Default value is false.
     ///
     /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
-    #[allow(dead_code)]
     fn xml_attribute(&self) -> bool {
         self.schema.common.xml.as_ref().and_then(|xml| xml.attribute).unwrap_or_default()
     }
@@ -690,7 +693,12 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
         if field_name != property_name {
-            serde_attrs.push(quote! { rename = #property_name });
+            if property.xml_attribute() {
+                let as_attribute = format!("@{}", property_name);
+                serde_attrs.push(quote! { rename = #as_attribute });
+            } else {
+                serde_attrs.push(quote! { rename = #property_name});
+            }
         }
         #[allow(clippy::collapsible_else_if)]
         if is_required {
@@ -712,8 +720,12 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
             }
         }
-        if property.schema.is_local_enum() && lowercase_workaround {
-            serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
+        if property.schema.is_local_enum() {
+            if lowercase_workaround {
+                serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
+            } else {
+                serde_attrs.push(quote! { with = "azure_core::xml::text_content"});
+            }
         }
         let serde = if !serde_attrs.is_empty() {
             quote! { #[serde(#(#serde_attrs),*)] }
@@ -792,7 +804,15 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                         impl azure_core::Continuable for #struct_name_code {
                             type Continuation = String;
                             fn continuation(&self) -> Option<Self::Continuation> {
-                                self.#field_name.clone()
+                                if let Some(value) = self.#field_name.clone() {
+                                    if value.is_empty() {
+                                        None
+                                    } else {
+                                        Some(value)
+                                    }
+                                } else {
+                                    None
+                                }
                             }
                         }
                     };
