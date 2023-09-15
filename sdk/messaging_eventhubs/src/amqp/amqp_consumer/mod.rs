@@ -184,7 +184,14 @@ where
 pin_project_lite::pin_project! {
     /// A stream of event.
     ///
-    /// This is created by a ConsumerClient
+    /// This is created by a `EventHubConsumerClient`. It takes the lifetime of the
+    /// `EventHubConsumerClient` that created it, and thus the stream must be closed/dropped before
+    /// the `EventHubConsumerClient` is dropped.
+    ///
+    /// # Generic Parameters:
+    ///
+    /// * `'a` - The lifetime of the `EventHubConsumerClient` that created this stream.
+    /// * `RP` - The retry policy to use for recovering from errors.
     pub struct EventStream<'a, RP> {
         #[pin]
         state: EventStreamState<'a, Consumer<RP>>,
