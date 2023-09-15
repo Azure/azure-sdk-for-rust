@@ -481,12 +481,7 @@ pub struct PlanSummary {
     #[serde(rename = "skuId", default, skip_serializing_if = "Option::is_none")]
     pub sku_id: Option<String>,
     #[doc = "The delivery method, deployment model"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ProductType>,
     #[doc = "The display rank"]
     #[serde(rename = "displayRank", default, skip_serializing_if = "Option::is_none")]
@@ -1089,12 +1084,7 @@ impl SearchResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuggestionItem {
     #[doc = "The type of the suggestion"]
-    #[serde(
-        rename = "suggestionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "suggestionType", default, skip_serializing_if = "Option::is_none")]
     pub suggestion_type: Option<SuggestionType>,
     #[doc = "The suggestion display text"]
     #[serde(rename = "displayText")]

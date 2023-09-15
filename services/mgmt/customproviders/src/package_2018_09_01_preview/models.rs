@@ -33,12 +33,7 @@ pub mod association {
         #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
         pub target_resource_id: Option<String>,
         #[doc = "The provisioning state of the association."]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
     }
     impl Properties {
@@ -124,12 +119,7 @@ pub struct CustomRpActionRouteDefinition {
     #[serde(flatten)]
     pub custom_rp_route_definition: CustomRpRouteDefinition,
     #[doc = "The routing types that are supported for action requests."]
-    #[serde(
-        rename = "routingType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<custom_rp_action_route_definition::RoutingType>,
 }
 impl CustomRpActionRouteDefinition {
@@ -223,12 +213,7 @@ pub mod custom_rp_manifest {
         )]
         pub validations: Vec<CustomRpValidations>,
         #[doc = "The provisioning state of the resource provider."]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
     }
     impl Properties {
@@ -289,12 +274,7 @@ pub struct CustomRpResourceTypeRouteDefinition {
     #[serde(flatten)]
     pub custom_rp_route_definition: CustomRpRouteDefinition,
     #[doc = "The routing types that are supported for resource requests."]
-    #[serde(
-        rename = "routingType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<custom_rp_resource_type_route_definition::RoutingType>,
 }
 impl CustomRpResourceTypeRouteDefinition {
@@ -363,12 +343,7 @@ impl CustomRpRouteDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRpValidations {
     #[doc = "The type of validation to run against a matching request."]
-    #[serde(
-        rename = "validationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "validationType", default, skip_serializing_if = "Option::is_none")]
     pub validation_type: Option<custom_rp_validations::ValidationType>,
     #[doc = "A link to the validation specification. The specification must be hosted on raw.githubusercontent.com."]
     pub specification: String,

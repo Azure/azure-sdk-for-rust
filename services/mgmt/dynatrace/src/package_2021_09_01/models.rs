@@ -46,44 +46,19 @@ pub struct AppServiceInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "The monitoring mode of OneAgent"]
-    #[serde(
-        rename = "monitoringType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitoringType", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_type: Option<MonitoringType>,
     #[doc = "Update settings of OneAgent."]
-    #[serde(
-        rename = "autoUpdateSetting",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoUpdateSetting", default, skip_serializing_if = "Option::is_none")]
     pub auto_update_setting: Option<AutoUpdateSetting>,
     #[doc = "The current update status of OneAgent."]
-    #[serde(
-        rename = "updateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<UpdateStatus>,
     #[doc = "The availability state of OneAgent."]
-    #[serde(
-        rename = "availabilityState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
     pub availability_state: Option<AvailabilityState>,
     #[doc = "Tells whether log modules are enabled or not"]
-    #[serde(
-        rename = "logModule",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logModule", default, skip_serializing_if = "Option::is_none")]
     pub log_module: Option<LogModule>,
     #[doc = "The name of the host group"]
     #[serde(rename = "hostGroup", default, skip_serializing_if = "Option::is_none")]
@@ -243,12 +218,7 @@ impl DynatraceEnvironmentProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DynatraceSingleSignOnProperties {
     #[doc = "Various states of the SSO resource"]
-    #[serde(
-        rename = "singleSignOnState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "singleSignOnState", default, skip_serializing_if = "Option::is_none")]
     pub single_sign_on_state: Option<SingleSignOnStates>,
     #[doc = "Version of the Dynatrace agent installed on the VM."]
     #[serde(rename = "enterpriseAppId", default, skip_serializing_if = "Option::is_none")]
@@ -265,12 +235,7 @@ pub struct DynatraceSingleSignOnProperties {
     )]
     pub aad_domains: Vec<String>,
     #[doc = "Provisioning state of the monitoring resource"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl DynatraceSingleSignOnProperties {
@@ -415,7 +380,7 @@ pub struct FilteringTag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Valid actions for a filtering tag. Exclusion takes priority over inclusion."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<TagAction>,
 }
 impl FilteringTag {
@@ -433,7 +398,7 @@ pub struct IdentityProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The kind of managed identity assigned to this resource."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ManagedIdentityType,
     #[doc = "The identities assigned to this resource by the user."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -590,28 +555,13 @@ impl Serialize for LogModule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogRules {
     #[doc = "Indicates whether AAD logs are being sent."]
-    #[serde(
-        rename = "sendAadLogs",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sendAadLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_aad_logs: Option<SendAadLogsStatus>,
     #[doc = "Indicates whether subscription logs are being sent."]
-    #[serde(
-        rename = "sendSubscriptionLogs",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sendSubscriptionLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_subscription_logs: Option<SendSubscriptionLogsStatus>,
     #[doc = "Indicates whether activity logs are being sent."]
-    #[serde(
-        rename = "sendActivityLogs",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sendActivityLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_activity_logs: Option<SendActivityLogsStatus>,
     #[doc = "List of filtering tags to be used for capturing logs. This only takes effect if SendActivityLogs flag is enabled. If empty, all resources will be captured.\nIf only Exclude action is specified, the rules will apply to the list of all available resources. If Include actions are specified, the rules will only include resources with the associated tags."]
     #[serde(
@@ -724,20 +674,10 @@ impl MetricRules {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorProperties {
     #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
-    #[serde(
-        rename = "monitoringStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
     #[doc = "Flag specifying the Marketplace Subscription Status of the resource. If payment is not made in time, the resource will go in Suspended state."]
-    #[serde(
-        rename = "marketplaceSubscriptionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
     #[doc = "Properties of the Dynatrace environment."]
     #[serde(rename = "dynatraceEnvironmentProperties", default, skip_serializing_if = "Option::is_none")]
@@ -749,23 +689,13 @@ pub struct MonitorProperties {
     #[serde(rename = "planData", default, skip_serializing_if = "Option::is_none")]
     pub plan_data: Option<PlanData>,
     #[doc = "Liftr resource category"]
-    #[serde(
-        rename = "liftrResourceCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_category: Option<LiftrResourceCategories>,
     #[doc = "The priority of the resource."]
     #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_preference: Option<i32>,
     #[doc = "Provisioning state of the monitoring resource"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl MonitorProperties {
@@ -824,20 +754,10 @@ pub struct MonitorResourceUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
-    #[serde(
-        rename = "monitoringStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
     #[doc = "Flag specifying the Marketplace Subscription Status of the resource. If payment is not made in time, the resource will go in Suspended state."]
-    #[serde(
-        rename = "marketplaceSubscriptionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
     #[doc = "Properties of the Dynatrace environment."]
     #[serde(rename = "dynatraceEnvironmentProperties", default, skip_serializing_if = "Option::is_none")]
@@ -861,23 +781,13 @@ pub struct MonitoredResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Indicates whether metrics are being sent."]
-    #[serde(
-        rename = "sendingMetrics",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sendingMetrics", default, skip_serializing_if = "Option::is_none")]
     pub sending_metrics: Option<SendingMetricsStatus>,
     #[doc = "Reason for why the resource is sending metrics (or why it is not sending)."]
     #[serde(rename = "reasonForMetricsStatus", default, skip_serializing_if = "Option::is_none")]
     pub reason_for_metrics_status: Option<String>,
     #[doc = "Indicates whether logs are being sent."]
-    #[serde(
-        rename = "sendingLogs",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sendingLogs", default, skip_serializing_if = "Option::is_none")]
     pub sending_logs: Option<SendingLogsStatus>,
     #[doc = "Reason for why the resource is sending logs (or why it is not sending)."]
     #[serde(rename = "reasonForLogsStatus", default, skip_serializing_if = "Option::is_none")]
@@ -960,12 +870,7 @@ pub struct MonitoringTagRulesProperties {
     #[serde(rename = "metricRules", default, skip_serializing_if = "Option::is_none")]
     pub metric_rules: Option<MetricRules>,
     #[doc = "Provisioning state of the monitoring resource"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl MonitoringTagRulesProperties {
@@ -1025,15 +930,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1284,12 +1184,7 @@ impl SsoDetailsRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsoDetailsResponse {
     #[doc = "Indicates whether SSO is enabled or not"]
-    #[serde(
-        rename = "isSsoEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isSsoEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_sso_enabled: Option<SsoStatus>,
     #[doc = "URL for Azure AD metadata"]
     #[serde(rename = "metadataUrl", default, skip_serializing_if = "Option::is_none")]
@@ -1844,44 +1739,19 @@ pub struct VmInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "The monitoring mode of OneAgent"]
-    #[serde(
-        rename = "monitoringType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitoringType", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_type: Option<MonitoringType>,
     #[doc = "Update settings of OneAgent."]
-    #[serde(
-        rename = "autoUpdateSetting",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoUpdateSetting", default, skip_serializing_if = "Option::is_none")]
     pub auto_update_setting: Option<AutoUpdateSetting>,
     #[doc = "The current update status of OneAgent."]
-    #[serde(
-        rename = "updateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<UpdateStatus>,
     #[doc = "The availability state of OneAgent."]
-    #[serde(
-        rename = "availabilityState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
     pub availability_state: Option<AvailabilityState>,
     #[doc = "Tells whether log modules are enabled or not"]
-    #[serde(
-        rename = "logModule",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logModule", default, skip_serializing_if = "Option::is_none")]
     pub log_module: Option<LogModule>,
     #[doc = "The name of the host group"]
     #[serde(rename = "hostGroup", default, skip_serializing_if = "Option::is_none")]
@@ -1903,12 +1773,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1917,12 +1782,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

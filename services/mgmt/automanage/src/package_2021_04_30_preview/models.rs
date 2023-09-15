@@ -319,15 +319,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -647,12 +642,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -661,12 +651,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -202,7 +202,6 @@ pub struct Metric {
     #[serde(rename = "type")]
     pub type_: String,
     #[doc = "The unit of the metric."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub unit: MetricUnit,
     #[doc = "The time series returned when a data query is performed."]
     pub timeseries: Vec<TimeSeriesElement>,

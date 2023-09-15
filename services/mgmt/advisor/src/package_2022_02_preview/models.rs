@@ -48,15 +48,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -206,12 +201,7 @@ impl PredictionRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictionRequestProperties {
     #[doc = "Type of the prediction."]
-    #[serde(
-        rename = "predictionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "predictionType", default, skip_serializing_if = "Option::is_none")]
     pub prediction_type: Option<prediction_request_properties::PredictionType>,
     #[doc = "Extended properties are arguments specific for each prediction type."]
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
@@ -279,18 +269,13 @@ pub struct PredictionResponseProperties {
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<serde_json::Value>,
     #[doc = "Type of the prediction."]
-    #[serde(
-        rename = "predictionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "predictionType", default, skip_serializing_if = "Option::is_none")]
     pub prediction_type: Option<prediction_response_properties::PredictionType>,
     #[doc = "The category of the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<prediction_response_properties::Category>,
     #[doc = "The business impact of the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub impact: Option<prediction_response_properties::Impact>,
     #[doc = "The resource type identified by Advisor."]
     #[serde(rename = "impactedField", default, skip_serializing_if = "Option::is_none")]

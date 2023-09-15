@@ -82,15 +82,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -808,7 +803,7 @@ impl ExperimentStatusProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Filter {
     #[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: filter::Type,
 }
 impl Filter {
@@ -858,7 +853,7 @@ pub mod filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceIdentity {
     #[doc = "String of the resource identity type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: resource_identity::Type,
     #[doc = "GUID that represents the principal ID of this resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -889,7 +884,7 @@ pub mod resource_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Selector {
     #[doc = "Enum of the selector type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: selector::Type,
     #[doc = "String of the selector ID."]
     pub id: String,
@@ -965,12 +960,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -979,12 +969,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1141,7 +1126,7 @@ impl TargetProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetReference {
     #[doc = "Enum of the Target reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: target_reference::Type,
     #[doc = "String of the resource ID of a Target resource."]
     pub id: String,

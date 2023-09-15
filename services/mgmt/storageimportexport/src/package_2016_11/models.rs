@@ -63,7 +63,7 @@ pub struct DriveStatus {
     #[serde(rename = "driveHeaderHash", default, skip_serializing_if = "Option::is_none")]
     pub drive_header_hash: Option<String>,
     #[doc = "The drive's current state. "]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<drive_status::State>,
     #[doc = "Detailed status about the data transfer process. This field is not returned in the response until the drive is in the Transferring state."]
     #[serde(rename = "copyStatus", default, skip_serializing_if = "Option::is_none")]
@@ -148,12 +148,7 @@ pub mod drive_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionKeyDetails {
     #[doc = "The type of kek encryption key"]
-    #[serde(
-        rename = "kekType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "kekType", default, skip_serializing_if = "Option::is_none")]
     pub kek_type: Option<encryption_key_details::KekType>,
     #[doc = "Specifies the url for kek encryption key. "]
     #[serde(rename = "kekUrl", default, skip_serializing_if = "Option::is_none")]
@@ -330,12 +325,7 @@ impl GetBitLockerKeysResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityDetails {
     #[doc = "The type of identity"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_details::Type>,
     #[doc = "Specifies the principal id for the identity for the job. "]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -891,12 +881,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -905,12 +890,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdvancedFilter {
     #[doc = "The operator type used for filtering, e.g., NumberIn, StringContains, BoolEquals and others."]
-    #[serde(rename = "operatorType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "operatorType")]
     pub operator_type: advanced_filter::OperatorType,
     #[doc = "The field/property in the event based on which you want to filter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -156,7 +156,7 @@ impl BoolEqualsAdvancedFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionState {
     #[doc = "Status of the connection."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<connection_state::Status>,
     #[doc = "Description of the connection state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -218,7 +218,7 @@ pub mod connection_state {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeadLetterDestination {
     #[doc = "Type of the endpoint for the dead letter destination"]
-    #[serde(rename = "endpointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "endpointType")]
     pub endpoint_type: dead_letter_destination::EndpointType,
 }
 impl DeadLetterDestination {
@@ -302,7 +302,7 @@ pub struct DeliveryAttributeMapping {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Type of the delivery attribute or header name."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: delivery_attribute_mapping::Type,
 }
 impl DeliveryAttributeMapping {
@@ -402,23 +402,13 @@ pub struct DomainProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Provisioning state of the Event Grid Domain Resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_properties::ProvisioningState>,
     #[doc = "Endpoint for the domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
     #[doc = "This determines the format that Event Grid should expect for incoming events published to the domain."]
-    #[serde(
-        rename = "inputSchema",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "inputSchema", default, skip_serializing_if = "Option::is_none")]
     pub input_schema: Option<domain_properties::InputSchema>,
     #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
@@ -427,12 +417,7 @@ pub struct DomainProperties {
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
     #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.DomainProperties.InboundIpRules\" />"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<domain_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(
@@ -640,12 +625,7 @@ impl DomainTopic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainTopicProperties {
     #[doc = "Provisioning state of the domain topic."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_topic_properties::ProvisioningState>,
 }
 impl DomainTopicProperties {
@@ -730,12 +710,7 @@ impl DomainTopicsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainUpdateParameterProperties {
     #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.DomainUpdateParameterProperties.InboundIpRules\" />"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<domain_update_parameter_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(
@@ -935,7 +910,7 @@ impl EventSubscription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSubscriptionDestination {
     #[doc = "Type of the endpoint for the event subscription destination."]
-    #[serde(rename = "endpointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "endpointType")]
     pub endpoint_type: event_subscription_destination::EndpointType,
 }
 impl EventSubscriptionDestination {
@@ -1046,12 +1021,7 @@ impl EventSubscriptionFullUrl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionIdentity {
     #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identity."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<event_subscription_identity::Type>,
     #[doc = "The user identity associated with the resource."]
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1109,12 +1079,7 @@ pub struct EventSubscriptionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub topic: Option<String>,
     #[doc = "Provisioning state of the event subscription."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<event_subscription_properties::ProvisioningState>,
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1136,12 +1101,7 @@ pub struct EventSubscriptionProperties {
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The event delivery schema for the event subscription."]
-    #[serde(
-        rename = "eventDeliverySchema",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_properties::EventDeliverySchema>,
     #[doc = "Information about the retry policy for an event subscription."]
     #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -1276,12 +1236,7 @@ pub struct EventSubscriptionUpdateParameters {
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The event delivery schema for the event subscription."]
-    #[serde(
-        rename = "eventDeliverySchema",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventDeliverySchema", default, skip_serializing_if = "Option::is_none")]
     pub event_delivery_schema: Option<event_subscription_update_parameters::EventDeliverySchema>,
     #[doc = "Information about the retry policy for an event subscription."]
     #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -1496,12 +1451,7 @@ impl HybridConnectionEventSubscriptionDestinationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityInfo {
     #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identity."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_info::Type>,
     #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -1569,7 +1519,7 @@ pub struct InboundIpRule {
     #[serde(rename = "ipMask", default, skip_serializing_if = "Option::is_none")]
     pub ip_mask: Option<String>,
     #[doc = "Action to perform based on the match or no match of the IpMask."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<inbound_ip_rule::Action>,
 }
 impl InboundIpRule {
@@ -1619,7 +1569,7 @@ pub mod inbound_ip_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputSchemaMapping {
     #[doc = "Type of the custom mapping"]
-    #[serde(rename = "inputSchemaMappingType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "inputSchemaMappingType")]
     pub input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType,
 }
 impl InputSchemaMapping {
@@ -2045,12 +1995,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<ConnectionState>,
     #[doc = "Provisioning state of the Private Endpoint Connection."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -2580,12 +2525,7 @@ impl SystemTopic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemTopicProperties {
     #[doc = "Provisioning state of the system topic."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<system_topic_properties::ProvisioningState>,
     #[doc = "Source for the system topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2726,23 +2666,13 @@ pub struct TopicProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Provisioning state of the topic."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<topic_properties::ProvisioningState>,
     #[doc = "Endpoint for the topic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
     #[doc = "This determines the format that Event Grid should expect for incoming events published to the topic."]
-    #[serde(
-        rename = "inputSchema",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "inputSchema", default, skip_serializing_if = "Option::is_none")]
     pub input_schema: Option<topic_properties::InputSchema>,
     #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
@@ -2751,12 +2681,7 @@ pub struct TopicProperties {
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
     #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.TopicProperties.InboundIpRules\" />"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<topic_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(
@@ -2964,20 +2889,10 @@ pub struct TopicTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Region type of the resource."]
-    #[serde(
-        rename = "resourceRegionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceRegionType", default, skip_serializing_if = "Option::is_none")]
     pub resource_region_type: Option<topic_type_properties::ResourceRegionType>,
     #[doc = "Provisioning state of the topic type"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<topic_type_properties::ProvisioningState>,
     #[doc = "List of locations supported by this topic type."]
     #[serde(
@@ -3115,12 +3030,7 @@ impl TopicTypesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicUpdateParameterProperties {
     #[doc = "This determines if traffic is allowed over public network. By default it is enabled. \r\nYou can further restrict to specific IPs by configuring <seealso cref=\"P:Microsoft.Azure.Events.ResourceProvider.Common.Contracts.TopicUpdateParameterProperties.InboundIpRules\" />"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<topic_update_parameter_properties::PublicNetworkAccess>,
     #[doc = "This can be used to restrict traffic from specific IPs instead of all IPs. Note: These are considered only if PublicNetworkAccess is enabled."]
     #[serde(
@@ -3325,12 +3235,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3339,12 +3244,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

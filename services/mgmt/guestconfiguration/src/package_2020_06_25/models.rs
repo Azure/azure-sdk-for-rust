@@ -39,20 +39,10 @@ pub struct AssignmentReport {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
-    #[serde(
-        rename = "complianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report::ComplianceStatus>,
     #[doc = "Type of report, Consistency or Initial"]
-    #[serde(
-        rename = "operationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<assignment_report::OperationType>,
     #[doc = "The list of resources for which guest configuration assignment compliance is checked."]
     #[serde(
@@ -150,12 +140,7 @@ pub mod assignment_report {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentReportDetails {
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
-    #[serde(
-        rename = "complianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report_details::ComplianceStatus>,
     #[doc = "Start date and time of the guest configuration assignment compliance status check."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -167,12 +152,7 @@ pub struct AssignmentReportDetails {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
     #[doc = "Type of report, Consistency or Initial"]
-    #[serde(
-        rename = "operationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<assignment_report_details::OperationType>,
     #[doc = "The list of resources for which guest configuration assignment compliance is checked."]
     #[serde(
@@ -270,12 +250,7 @@ pub mod assignment_report_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentReportResource {
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
-    #[serde(
-        rename = "complianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report_resource::ComplianceStatus>,
     #[doc = "Name of the guest configuration assignment resource setting."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -387,23 +362,13 @@ impl ConfigurationParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationSetting {
     #[doc = "Specifies how the LCM(Local Configuration Manager) actually applies the configuration to the target nodes. Possible values are ApplyOnly, ApplyAndMonitor, and ApplyAndAutoCorrect."]
-    #[serde(
-        rename = "configurationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
     pub configuration_mode: Option<configuration_setting::ConfigurationMode>,
     #[doc = "If true - new configurations downloaded from the pull service are allowed to overwrite the old ones on the target node. Otherwise, false"]
     #[serde(rename = "allowModuleOverwrite", default, skip_serializing_if = "Option::is_none")]
     pub allow_module_overwrite: Option<bool>,
     #[doc = "Specifies what happens after a reboot during the application of a configuration. The possible values are ContinueConfiguration and StopConfiguration"]
-    #[serde(
-        rename = "actionAfterReboot",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionAfterReboot", default, skip_serializing_if = "Option::is_none")]
     pub action_after_reboot: Option<configuration_setting::ActionAfterReboot>,
     #[doc = "The time interval, in minutes, at which the LCM checks a pull service to get updated configurations. This value is ignored if the LCM is not configured in pull mode. The default value is 30."]
     #[serde(rename = "refreshFrequencyMins", default, skip_serializing_if = "Option::is_none")]
@@ -579,12 +544,7 @@ pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "guestConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub guest_configuration: Option<GuestConfigurationNavigation>,
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
-    #[serde(
-        rename = "complianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<guest_configuration_assignment_properties::ComplianceStatus>,
     #[doc = "Date and time when last compliance status was checked."]
     #[serde(rename = "lastComplianceStatusChecked", default, with = "azure_core::date::rfc3339::option")]
@@ -615,12 +575,7 @@ pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "assignmentHash", default, skip_serializing_if = "Option::is_none")]
     pub assignment_hash: Option<String>,
     #[doc = "The provisioning state, which only appears in the response."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<guest_configuration_assignment_properties::ProvisioningState>,
 }
 impl GuestConfigurationAssignmentProperties {
@@ -749,12 +704,7 @@ impl GuestConfigurationAssignmentReportList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignmentReportProperties {
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
-    #[serde(
-        rename = "complianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<guest_configuration_assignment_report_properties::ComplianceStatus>,
     #[doc = "GUID that identifies the guest configuration assignment report under a subscription, resource group."]
     #[serde(rename = "reportId", default, skip_serializing_if = "Option::is_none")]
@@ -829,7 +779,7 @@ pub mod guest_configuration_assignment_report_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationNavigation {
     #[doc = "Kind of the guest configuration. For example:DSC"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<guest_configuration_navigation::Kind>,
     #[doc = "Name of the guest configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -844,12 +794,7 @@ pub struct GuestConfigurationNavigation {
     #[serde(rename = "contentHash", default, skip_serializing_if = "Option::is_none")]
     pub content_hash: Option<String>,
     #[doc = "Specifies the assignment type and execution of the configuration. Possible values are Audit, DeployAndAutoCorrect, ApplyAndAutoCorrect and ApplyAndMonitor."]
-    #[serde(
-        rename = "assignmentType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "assignmentType", default, skip_serializing_if = "Option::is_none")]
     pub assignment_type: Option<guest_configuration_navigation::AssignmentType>,
     #[doc = "Specifies the content type of the configuration. Possible values could be Builtin or Custom."]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
@@ -1092,12 +1037,7 @@ pub struct VmssvmInfo {
     #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
     pub vm_resource_id: Option<String>,
     #[doc = "A value indicating compliance status of the machine for the assigned guest configuration."]
-    #[serde(
-        rename = "complianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<vmssvm_info::ComplianceStatus>,
     #[doc = "Id of the latest report for the guest configuration assignment. "]
     #[serde(rename = "latestReportId", default, skip_serializing_if = "Option::is_none")]

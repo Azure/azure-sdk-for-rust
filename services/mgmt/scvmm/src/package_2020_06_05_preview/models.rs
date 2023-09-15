@@ -332,20 +332,10 @@ pub struct HardwareProfile {
     #[serde(rename = "cpuCount", default, skip_serializing_if = "Option::is_none")]
     pub cpu_count: Option<i32>,
     #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
-    #[serde(
-        rename = "limitCpuForMigration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "limitCpuForMigration", default, skip_serializing_if = "Option::is_none")]
     pub limit_cpu_for_migration: Option<hardware_profile::LimitCpuForMigration>,
     #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
-    #[serde(
-        rename = "dynamicMemoryEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_enabled: Option<hardware_profile::DynamicMemoryEnabled>,
     #[doc = "Gets or sets the max dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMaxMB", default, skip_serializing_if = "Option::is_none")]
@@ -453,20 +443,10 @@ pub struct HardwareProfileUpdate {
     #[serde(rename = "cpuCount", default, skip_serializing_if = "Option::is_none")]
     pub cpu_count: Option<i32>,
     #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
-    #[serde(
-        rename = "limitCpuForMigration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "limitCpuForMigration", default, skip_serializing_if = "Option::is_none")]
     pub limit_cpu_for_migration: Option<hardware_profile_update::LimitCpuForMigration>,
     #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
-    #[serde(
-        rename = "dynamicMemoryEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_enabled: Option<hardware_profile_update::DynamicMemoryEnabled>,
     #[doc = "Gets or sets the max dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMaxMB", default, skip_serializing_if = "Option::is_none")]
@@ -604,7 +584,7 @@ impl InventoryItemDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItemProperties {
     #[doc = "The inventory type."]
-    #[serde(rename = "inventoryType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "inventoryType")]
     pub inventory_type: InventoryType,
     #[doc = "Gets the tracked resource id corresponding to the inventory resource."]
     #[serde(rename = "managedResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -726,28 +706,13 @@ pub struct NetworkInterfaces {
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
     pub network_name: Option<String>,
     #[doc = "Allocation method."]
-    #[serde(
-        rename = "ipv4AddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ipv4AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv4_address_type: Option<AllocationMethod>,
     #[doc = "Allocation method."]
-    #[serde(
-        rename = "ipv6AddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ipv6AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_address_type: Option<AllocationMethod>,
     #[doc = "Allocation method."]
-    #[serde(
-        rename = "macAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "macAddressType", default, skip_serializing_if = "Option::is_none")]
     pub mac_address_type: Option<AllocationMethod>,
     #[doc = "Gets or sets the nic id."]
     #[serde(rename = "nicId", default, skip_serializing_if = "Option::is_none")]
@@ -771,28 +736,13 @@ pub struct NetworkInterfacesUpdate {
     #[serde(rename = "virtualNetworkId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_id: Option<String>,
     #[doc = "Allocation method."]
-    #[serde(
-        rename = "ipv4AddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ipv4AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv4_address_type: Option<AllocationMethod>,
     #[doc = "Allocation method."]
-    #[serde(
-        rename = "ipv6AddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ipv6AddressType", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_address_type: Option<AllocationMethod>,
     #[doc = "Allocation method."]
-    #[serde(
-        rename = "macAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "macAddressType", default, skip_serializing_if = "Option::is_none")]
     pub mac_address_type: Option<AllocationMethod>,
     #[doc = "Gets or sets the nic id."]
     #[serde(rename = "nicId", default, skip_serializing_if = "Option::is_none")]
@@ -847,12 +797,7 @@ pub struct OsProfile {
     #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -1263,12 +1208,7 @@ pub struct VirtualDisk {
     #[serde(rename = "storageQoSPolicy", default, skip_serializing_if = "Option::is_none")]
     pub storage_qo_s_policy: Option<StorageQoSPolicyDetails>,
     #[doc = "Gets or sets a value indicating diff disk."]
-    #[serde(
-        rename = "createDiffDisk",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createDiffDisk", default, skip_serializing_if = "Option::is_none")]
     pub create_diff_disk: Option<virtual_disk::CreateDiffDisk>,
 }
 impl VirtualDisk {
@@ -1424,12 +1364,7 @@ pub struct VirtualMachineInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -1611,12 +1546,7 @@ pub struct VirtualMachineTemplateInventoryItem {
     #[serde(rename = "memoryMB", default, skip_serializing_if = "Option::is_none")]
     pub memory_mb: Option<i32>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -1671,12 +1601,7 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "vmmServerId", default, skip_serializing_if = "Option::is_none")]
     pub vmm_server_id: Option<String>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -1691,28 +1616,13 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "cpuCount", default, skip_serializing_if = "Option::is_none")]
     pub cpu_count: Option<i32>,
     #[doc = "Gets or sets a value indicating whether to enable processor compatibility mode for live migration of VMs."]
-    #[serde(
-        rename = "limitCpuForMigration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "limitCpuForMigration", default, skip_serializing_if = "Option::is_none")]
     pub limit_cpu_for_migration: Option<virtual_machine_template_properties::LimitCpuForMigration>,
     #[doc = "Gets or sets a value indicating whether to enable dynamic memory or not."]
-    #[serde(
-        rename = "dynamicMemoryEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_memory_enabled: Option<virtual_machine_template_properties::DynamicMemoryEnabled>,
     #[doc = "Gets or sets a value indicating whether the vm template is customizable or not."]
-    #[serde(
-        rename = "isCustomizable",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isCustomizable", default, skip_serializing_if = "Option::is_none")]
     pub is_customizable: Option<virtual_machine_template_properties::IsCustomizable>,
     #[doc = "Gets or sets the max dynamic memory for the vm."]
     #[serde(rename = "dynamicMemoryMaxMB", default, skip_serializing_if = "Option::is_none")]
@@ -2013,12 +1923,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2027,12 +1932,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

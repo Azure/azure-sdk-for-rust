@@ -221,12 +221,7 @@ pub mod cache {
         )]
         pub mount_addresses: Vec<String>,
         #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "A fully qualified URL."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -339,12 +334,7 @@ pub struct CacheActiveDirectorySettings {
     #[serde(rename = "cacheNetBiosName")]
     pub cache_net_bios_name: String,
     #[doc = "True if the HPC Cache is joined to the Active Directory domain."]
-    #[serde(
-        rename = "domainJoined",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "domainJoined", default, skip_serializing_if = "Option::is_none")]
     pub domain_joined: Option<cache_active_directory_settings::DomainJoined>,
     #[doc = "Active Directory admin credentials used to join the HPC Cache to a domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -452,7 +442,7 @@ impl CacheEncryptionSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheHealth {
     #[doc = "List of Cache health states."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<cache_health::State>,
     #[doc = "Describes explanation of state."]
     #[serde(rename = "statusDescription", default, skip_serializing_if = "Option::is_none")]
@@ -534,12 +524,7 @@ pub struct CacheIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the cache"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<cache_identity::Type>,
     #[doc = "A dictionary where each key is a user assigned identity resource ID, and each key's value is an empty dictionary."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -620,12 +605,7 @@ pub struct CacheUpgradeStatus {
     #[serde(rename = "currentFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub current_firmware_version: Option<String>,
     #[doc = "True if there is a firmware update ready to install on this Cache. The firmware will automatically be installed after firmwareUpdateDeadline if not triggered earlier via the upgrade operation."]
-    #[serde(
-        rename = "firmwareUpdateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firmwareUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub firmware_update_status: Option<cache_upgrade_status::FirmwareUpdateStatus>,
     #[doc = "Time at which the pending firmware update will automatically be installed on the Cache."]
     #[serde(rename = "firmwareUpdateDeadline", default, with = "azure_core::date::rfc3339::option")]
@@ -691,12 +671,7 @@ pub struct CacheUsernameDownloadSettings {
     #[serde(rename = "extendedGroups", default, skip_serializing_if = "Option::is_none")]
     pub extended_groups: Option<bool>,
     #[doc = "This setting determines how the cache gets username and group names for clients."]
-    #[serde(
-        rename = "usernameSource",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "usernameSource", default, skip_serializing_if = "Option::is_none")]
     pub username_source: Option<cache_username_download_settings::UsernameSource>,
     #[doc = "The URI of the file containing group information (in /etc/group file format). This field must be populated when 'usernameSource' is set to 'File'."]
     #[serde(rename = "groupFileURI", default, skip_serializing_if = "Option::is_none")]
@@ -723,12 +698,7 @@ pub struct CacheUsernameDownloadSettings {
     #[serde(rename = "caCertificateURI", default, skip_serializing_if = "Option::is_none")]
     pub ca_certificate_uri: Option<String>,
     #[doc = "Indicates whether or not the HPC Cache has performed the username download successfully."]
-    #[serde(
-        rename = "usernameDownloaded",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "usernameDownloaded", default, skip_serializing_if = "Option::is_none")]
     pub username_downloaded: Option<cache_username_download_settings::UsernameDownloaded>,
     #[doc = "When present, these are the credentials for the secure LDAP connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1101,13 +1071,11 @@ impl NfsAccessPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NfsAccessRule {
     #[doc = "Scope for this rule. The scope and filter determine which clients match the rule."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub scope: nfs_access_rule::Scope,
     #[doc = "Filter applied to the scope for this rule. The filter's format depends on its scope. 'default' scope matches all clients and has no filter value. 'network' scope takes a filter in CIDR format (for example, 10.99.1.0/24). 'host' takes an IP address or fully qualified domain name as filter. If a client does not match any filter rule and there is no default rule, access is denied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
     #[doc = "Access allowed by this rule."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub access: nfs_access_rule::Access,
     #[doc = "Allow SUID semantics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1408,12 +1376,7 @@ pub struct Restriction {
     )]
     pub values: Vec<String>,
     #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". \"QuotaId\" is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. \"NotAvailableForSubscription\" is related to capacity at the datacenter."]
-    #[serde(
-        rename = "reasonCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
 impl Restriction {
@@ -1486,18 +1449,13 @@ pub struct StorageTargetProperties {
     )]
     pub junctions: Vec<NamespaceJunction>,
     #[doc = "Type of the Storage Target."]
-    #[serde(rename = "targetType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "targetType")]
     pub target_type: storage_target_properties::TargetType,
     #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<storage_target_properties::ProvisioningState>,
     #[doc = "Storage target operational state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<storage_target_properties::State>,
     #[doc = "Properties pertaining to the Nfs3Target"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1795,12 +1753,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1809,12 +1762,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

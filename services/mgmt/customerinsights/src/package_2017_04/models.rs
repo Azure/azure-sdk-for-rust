@@ -130,7 +130,7 @@ pub struct Connector {
     #[serde(rename = "connectorName", default, skip_serializing_if = "Option::is_none")]
     pub connector_name: Option<String>,
     #[doc = "Type of connector."]
-    #[serde(rename = "connectorType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "connectorType")]
     pub connector_type: ConnectorType,
     #[doc = "Display name of the connector."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -148,7 +148,7 @@ pub struct Connector {
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "State of connector."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<connector::State>,
     #[doc = "The hub name."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -219,12 +219,7 @@ pub struct ConnectorMapping {
     #[serde(rename = "connectorName", default, skip_serializing_if = "Option::is_none")]
     pub connector_name: Option<String>,
     #[doc = "Type of connector."]
-    #[serde(
-        rename = "connectorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectorType", default, skip_serializing_if = "Option::is_none")]
     pub connector_type: Option<ConnectorType>,
     #[doc = "The created time."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -233,7 +228,7 @@ pub struct ConnectorMapping {
     #[serde(rename = "lastModified", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified: Option<time::OffsetDateTime>,
     #[doc = "Defines which entity type the file should map to."]
-    #[serde(rename = "entityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "entityType")]
     pub entity_type: connector_mapping::EntityType,
     #[doc = "The mapping entity name."]
     #[serde(rename = "entityTypeName")]
@@ -260,7 +255,7 @@ pub struct ConnectorMapping {
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
     #[doc = "State of connector mapping."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<connector_mapping::State>,
     #[doc = "The hub name."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -317,7 +312,7 @@ pub mod connector_mapping {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectorMappingAvailability {
     #[doc = "The frequency to update."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<connector_mapping_availability::Frequency>,
     #[doc = "The interval of the given frequency to use."]
     pub interval: i64,
@@ -343,12 +338,7 @@ pub mod connector_mapping_availability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorMappingCompleteOperation {
     #[doc = "The type of completion operation."]
-    #[serde(
-        rename = "completionOperationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "completionOperationType", default, skip_serializing_if = "Option::is_none")]
     pub completion_operation_type: Option<connector_mapping_complete_operation::CompletionOperationType>,
     #[doc = "The destination folder where files will be moved to once the import is done."]
     #[serde(rename = "destinationFolder", default, skip_serializing_if = "Option::is_none")]
@@ -373,7 +363,7 @@ pub mod connector_mapping_complete_operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectorMappingErrorManagement {
     #[doc = "The type of error management to use for the mapping."]
-    #[serde(rename = "errorManagementType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "errorManagementType")]
     pub error_management_type: connector_mapping_error_management::ErrorManagementType,
     #[doc = "The error limit allowed while importing data."]
     #[serde(rename = "errorLimit", default, skip_serializing_if = "Option::is_none")]
@@ -401,7 +391,7 @@ pub mod connector_mapping_error_management {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectorMappingFormat {
     #[doc = "The type mapping format."]
-    #[serde(rename = "formatType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "formatType")]
     pub format_type: connector_mapping_format::FormatType,
     #[doc = "The character that signifies a break between columns."]
     #[serde(rename = "columnDelimiter", default, skip_serializing_if = "Option::is_none")]
@@ -667,15 +657,10 @@ pub struct DataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The data source type."]
-    #[serde(
-        rename = "dataSourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataSourceType", default, skip_serializing_if = "Option::is_none")]
     pub data_source_type: Option<data_source::DataSourceType>,
     #[doc = "The data source status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<data_source::Status>,
     #[doc = "The data source ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -805,12 +790,7 @@ pub struct EntityTypeDefinition {
     #[serde(rename = "apiEntitySetName", default, skip_serializing_if = "Option::is_none")]
     pub api_entity_set_name: Option<String>,
     #[doc = "Type of entity."]
-    #[serde(
-        rename = "entityType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "entityType", default, skip_serializing_if = "Option::is_none")]
     pub entity_type: Option<entity_type_definition::EntityType>,
     #[doc = "The properties of the Profile."]
     #[serde(
@@ -826,12 +806,7 @@ pub struct EntityTypeDefinition {
     #[serde(rename = "lastChangedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_changed_utc: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The schema org link. This helps ACI identify and suggest semantic models."]
     #[serde(rename = "schemaItemTypeLink", default, skip_serializing_if = "Option::is_none")]
@@ -1080,7 +1055,7 @@ impl KpiAlias {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KpiDefinition {
     #[doc = "The mapping entity type."]
-    #[serde(rename = "entityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "entityType")]
     pub entity_type: kpi_definition::EntityType,
     #[doc = "The mapping entity name."]
     #[serde(rename = "entityTypeName")]
@@ -1098,13 +1073,12 @@ pub struct KpiDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<serde_json::Value>,
     #[doc = "The calculation window."]
-    #[serde(rename = "calculationWindow", with = "azure_core::xml::text_content")]
+    #[serde(rename = "calculationWindow")]
     pub calculation_window: kpi_definition::CalculationWindow,
     #[doc = "Name of calculation window field."]
     #[serde(rename = "calculationWindowFieldName", default, skip_serializing_if = "Option::is_none")]
     pub calculation_window_field_name: Option<String>,
     #[doc = "The computation function for the KPI."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub function: kpi_definition::Function,
     #[doc = "The computation expression for the KPI."]
     pub expression: String,
@@ -1139,12 +1113,7 @@ pub struct KpiDefinition {
     )]
     pub participant_profiles_metadata: Vec<KpiParticipantProfilesMetadata>,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Defines the KPI Threshold limits."]
     #[serde(rename = "thresHolds", default, skip_serializing_if = "Option::is_none")]
@@ -1342,10 +1311,10 @@ pub struct LinkDefinition {
     #[serde(rename = "linkName", default, skip_serializing_if = "Option::is_none")]
     pub link_name: Option<String>,
     #[doc = "Type of source entity."]
-    #[serde(rename = "sourceEntityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sourceEntityType")]
     pub source_entity_type: link_definition::SourceEntityType,
     #[doc = "Type of target entity."]
-    #[serde(rename = "targetEntityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "targetEntityType")]
     pub target_entity_type: link_definition::TargetEntityType,
     #[doc = "Name of the source Entity Type."]
     #[serde(rename = "sourceEntityTypeName")]
@@ -1370,23 +1339,13 @@ pub struct LinkDefinition {
     #[serde(rename = "participantPropertyReferences")]
     pub participant_property_references: Vec<ParticipantPropertyReference>,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Indicating whether the link is reference only link. This flag is ignored if the Mappings are defined. If the mappings are not defined and it is set to true, links processing will not create or update profiles."]
     #[serde(rename = "referenceOnly", default, skip_serializing_if = "Option::is_none")]
     pub reference_only: Option<bool>,
     #[doc = "Determines whether this link is supposed to create or delete instances if Link is NOT Reference Only."]
-    #[serde(
-        rename = "operationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<link_definition::OperationType>,
 }
 impl LinkDefinition {
@@ -1693,12 +1652,7 @@ pub struct Prediction {
     #[serde(rename = "primaryProfileType")]
     pub primary_profile_type: String,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Name of the prediction."]
     #[serde(rename = "predictionName", default, skip_serializing_if = "Option::is_none")]
@@ -1865,7 +1819,6 @@ pub struct PredictionModelStatus {
     #[serde(rename = "predictionGuidId", default, skip_serializing_if = "Option::is_none")]
     pub prediction_guid_id: Option<String>,
     #[doc = "Prediction model life cycle.  When prediction is in PendingModelConfirmation status, it is allowed to update the status to PendingFeaturing or Active through API."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: prediction_model_status::Status,
     #[doc = "The model status message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2245,7 +2198,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationshipDefinition {
     #[doc = "The Relationship Cardinality."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cardinality: Option<relationship_definition::Cardinality>,
     #[doc = "Localized display name for the Relationship."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -2275,12 +2228,7 @@ pub struct RelationshipDefinition {
     #[serde(rename = "profileType")]
     pub profile_type: String,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Relationship name."]
     #[serde(rename = "relationshipName", default, skip_serializing_if = "Option::is_none")]
@@ -2349,12 +2297,7 @@ pub struct RelationshipLinkDefinition {
     #[serde(rename = "profilePropertyReferences")]
     pub profile_property_references: Vec<ParticipantProfilePropertyReference>,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The property references for the Related Profile of the Relationship."]
     #[serde(rename = "relatedProfilePropertyReferences")]
@@ -2398,12 +2341,7 @@ pub struct RelationshipLinkFieldMapping {
     #[serde(rename = "interactionFieldName")]
     pub interaction_field_name: String,
     #[doc = "Link type."]
-    #[serde(
-        rename = "linkType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "linkType", default, skip_serializing_if = "Option::is_none")]
     pub link_type: Option<relationship_link_field_mapping::LinkType>,
     #[doc = "The field name on the Relationship metadata."]
     #[serde(rename = "relationshipFieldName")]
@@ -2647,15 +2585,9 @@ pub struct RoleAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<serde_json::Value>,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Type of roles."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub role: role_assignment::Role,
     #[doc = "The principals being assigned to."]
     pub principals: Vec<AssignmentPrincipal>,
@@ -2932,12 +2864,7 @@ pub struct TypePropertiesMapping {
     #[serde(rename = "targetPropertyName")]
     pub target_property_name: String,
     #[doc = "Link type."]
-    #[serde(
-        rename = "linkType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "linkType", default, skip_serializing_if = "Option::is_none")]
     pub link_type: Option<type_properties_mapping::LinkType>,
 }
 impl TypePropertiesMapping {

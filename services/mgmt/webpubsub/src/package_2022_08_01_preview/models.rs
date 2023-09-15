@@ -89,12 +89,7 @@ impl CustomCertificateList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomCertificateProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Base uri of the KeyVault that stores certificate."]
     #[serde(rename = "keyVaultBaseUri")]
@@ -165,12 +160,7 @@ impl CustomDomainList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The custom domain name."]
     #[serde(rename = "domainName")]
@@ -343,7 +333,7 @@ impl EventListener {
 #[doc = "An endpoint specifying where Web PubSub should send events to."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventListenerEndpoint {
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: event_listener_endpoint::Type,
 }
 impl EventListenerEndpoint {
@@ -391,7 +381,7 @@ pub mod event_listener_endpoint {
 #[doc = "A base class for event filter which determines whether an event should be sent to an event listener."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventListenerFilter {
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: event_listener_filter::Type,
 }
 impl EventListenerFilter {
@@ -554,12 +544,7 @@ impl LogSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIdentity {
     #[doc = "Represents the identity type: systemAssigned, userAssigned, None"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ManagedIdentityType>,
     #[doc = "Get or set the user assigned identities"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -875,12 +860,7 @@ impl PrivateEndpointConnectionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Private endpoint"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -981,7 +961,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "Indicates whether the connection has been Approved/Rejected/Removed by the owner of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateLinkServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1102,12 +1082,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeyParameters {
     #[doc = "The type of access key."]
-    #[serde(
-        rename = "keyType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
     pub key_type: Option<KeyType>,
 }
 impl RegenerateKeyParameters {
@@ -1182,7 +1157,7 @@ pub struct ResourceSku {
     #[doc = "The name of the SKU. Required.\r\n\r\nAllowed values: Standard_S1, Free_F1, Premium_P1"]
     pub name: String,
     #[doc = "Optional tier of this particular SKU. 'Standard' or 'Free'. \r\n\r\n`Basic` is deprecated, use `Standard` instead."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<WebPubSubSkuTier>,
     #[doc = "Not used. Retained for future use."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1354,18 +1329,13 @@ pub struct SharedPrivateLinkResourceProperties {
     #[serde(rename = "privateLinkResourceId")]
     pub private_link_resource_id: String,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The request message for requesting approval of the shared private link resource"]
     #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]
     pub request_message: Option<String>,
     #[doc = "Status of the shared private link resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SharedPrivateLinkResourceStatus>,
 }
 impl SharedPrivateLinkResourceProperties {
@@ -1525,12 +1495,7 @@ pub struct SkuCapacity {
     )]
     pub allowed_values: Vec<i32>,
     #[doc = "The scale type applicable to the sku."]
-    #[serde(
-        rename = "scaleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<ScaleType>,
 }
 impl SkuCapacity {
@@ -1578,12 +1543,7 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpstreamAuthSettings {
     #[doc = "Upstream auth type enum."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<UpstreamAuthType>,
     #[doc = "Managed identity settings for upstream."]
     #[serde(rename = "managedIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1744,12 +1704,7 @@ impl WebPubSubKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebPubSubNetworkAcLs {
     #[doc = "Azure Networking ACL Action."]
-    #[serde(
-        rename = "defaultAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<AclAction>,
     #[doc = "Network ACL"]
     #[serde(rename = "publicNetwork", default, skip_serializing_if = "Option::is_none")]
@@ -1772,12 +1727,7 @@ impl WebPubSubNetworkAcLs {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebPubSubProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The publicly accessible IP of the resource."]
     #[serde(rename = "externalIP", default, skip_serializing_if = "Option::is_none")]
@@ -1990,12 +1940,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2004,12 +1949,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

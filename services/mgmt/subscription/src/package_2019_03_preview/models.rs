@@ -265,7 +265,7 @@ pub struct Subscription {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription::State>,
     #[doc = "The tenant ID. For example, 00000000-0000-0000-0000-000000000000."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -390,12 +390,7 @@ pub struct SubscriptionPolicies {
     #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
     pub quota_id: Option<String>,
     #[doc = "The subscription spending limit."]
-    #[serde(
-        rename = "spendingLimit",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
 }
 impl SubscriptionPolicies {

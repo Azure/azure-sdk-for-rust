@@ -72,20 +72,10 @@ pub mod multiple_activation_key {
         #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
         pub expiration_date: Option<time::OffsetDateTime>,
         #[doc = "Type of OS for which the key is requested."]
-        #[serde(
-            rename = "osType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
         pub os_type: Option<properties::OsType>,
         #[doc = "Type of support"]
-        #[serde(
-            rename = "supportType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "supportType", default, skip_serializing_if = "Option::is_none")]
         pub support_type: Option<properties::SupportType>,
         #[doc = "Number of activations/servers using the MAK key."]
         #[serde(rename = "installedServerNumber", default, skip_serializing_if = "Option::is_none")]
@@ -96,12 +86,7 @@ pub mod multiple_activation_key {
         #[doc = "<code> true </code> if user has eligible on-premises Windows physical or virtual machines, and that the requested key will only be used in their organization; <code> false </code> otherwise."]
         #[serde(rename = "isEligible", default, skip_serializing_if = "Option::is_none")]
         pub is_eligible: Option<bool>,
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
     }
     impl Properties {

@@ -10,12 +10,7 @@ pub struct AccessReviewActorIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The identity type : user/servicePrincipal"]
-    #[serde(
-        rename = "principalType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<access_review_actor_identity::PrincipalType>,
     #[doc = "The identity display name"]
     #[serde(rename = "principalName", default, skip_serializing_if = "Option::is_none")]
@@ -160,7 +155,7 @@ impl AccessReviewDecision {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessReviewDecisionIdentity {
     #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: access_review_decision_identity::Type,
     #[doc = "The id of principal whose access was reviewed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -255,10 +250,10 @@ pub struct AccessReviewDecisionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<AccessReviewDecisionResource>,
     #[doc = "The feature- generated recommendation shown to the reviewer."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<access_review_decision_properties::Recommendation>,
     #[doc = "The decision on the approval step. This value is initially set to NotReviewed. Approvers can take action of Approve/Deny"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub decision: Option<access_review_decision_properties::Decision>,
     #[doc = "Justification provided by approvers for their action"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -270,12 +265,7 @@ pub struct AccessReviewDecisionProperties {
     #[serde(rename = "reviewedBy", default, skip_serializing_if = "Option::is_none")]
     pub reviewed_by: Option<AccessReviewActorIdentity>,
     #[doc = "The outcome of applying the decision."]
-    #[serde(
-        rename = "applyResult",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "applyResult", default, skip_serializing_if = "Option::is_none")]
     pub apply_result: Option<access_review_decision_properties::ApplyResult>,
     #[doc = "The date and time when the review decision was applied."]
     #[serde(rename = "appliedDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -425,7 +415,7 @@ pub mod access_review_decision_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessReviewDecisionResource {
     #[doc = "The type of resource: azureRole"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: access_review_decision_resource::Type,
     #[doc = "The id of resource associated with a decision record."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -645,7 +635,7 @@ pub struct AccessReviewHistoryDefinitionProperties {
     )]
     pub decisions: Vec<String>,
     #[doc = "This read-only field specifies the of the requested review history data. This is either requested, in-progress, done or error."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_history_definition_properties::Status>,
     #[doc = "Date time when history definition was created"]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -754,7 +744,7 @@ pub struct AccessReviewHistoryInstanceProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Status of the requested review history instance data. This is either requested, in-progress, done or error. The state transitions are as follows - Requested -> InProgress -> Done -> Expired"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_history_instance_properties::Status>,
     #[doc = "Date time when the history data report is scheduled to be generated."]
     #[serde(rename = "runDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -883,7 +873,7 @@ impl AccessReviewInstanceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewInstanceProperties {
     #[doc = "This read-only field specifies the status of an access review instance."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_instance_properties::Status>,
     #[doc = "The DateTime when the review instance is scheduled to be start."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -907,12 +897,7 @@ pub struct AccessReviewInstanceProperties {
     )]
     pub backup_reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This field specifies the type of reviewers for a review. Usually for a review, reviewers are explicitly assigned. However, in some cases, the reviewers may not be assigned and instead be chosen dynamically. For example managers review or self review."]
-    #[serde(
-        rename = "reviewersType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reviewersType", default, skip_serializing_if = "Option::is_none")]
     pub reviewers_type: Option<access_review_instance_properties::ReviewersType>,
 }
 impl AccessReviewInstanceProperties {
@@ -1022,12 +1007,7 @@ pub mod access_review_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewRecurrencePattern {
     #[doc = "The recurrence type : weekly, monthly, etc."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<access_review_recurrence_pattern::Type>,
     #[doc = "The interval for recurrence. For a quarterly review, the interval is 3 for type : absoluteMonthly."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1084,12 +1064,7 @@ pub mod access_review_recurrence_pattern {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewRecurrenceRange {
     #[doc = "The recurrence range type. The possible values are: endDate, noEnd, numbered."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<access_review_recurrence_range::Type>,
     #[doc = "The number of times to repeat the access review. Required and must be positive if type is numbered."]
     #[serde(rename = "numberOfOccurrences", default, skip_serializing_if = "Option::is_none")]
@@ -1173,12 +1148,7 @@ pub struct AccessReviewReviewer {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The identity type : user/servicePrincipal"]
-    #[serde(
-        rename = "principalType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<access_review_reviewer::PrincipalType>,
 }
 impl AccessReviewReviewer {
@@ -1281,7 +1251,7 @@ pub struct AccessReviewScheduleDefinitionProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "This read-only field specifies the status of an accessReview."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<access_review_schedule_definition_properties::Status>,
     #[doc = "The description provided by the access review creator and visible to admins."]
     #[serde(rename = "descriptionForAdmins", default, skip_serializing_if = "Option::is_none")]
@@ -1314,12 +1284,7 @@ pub struct AccessReviewScheduleDefinitionProperties {
     )]
     pub backup_reviewers: Vec<AccessReviewReviewer>,
     #[doc = "This field specifies the type of reviewers for a review. Usually for a review, reviewers are explicitly assigned. However, in some cases, the reviewers may not be assigned and instead be chosen dynamically. For example managers review or self review."]
-    #[serde(
-        rename = "reviewersType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reviewersType", default, skip_serializing_if = "Option::is_none")]
     pub reviewers_type: Option<access_review_schedule_definition_properties::ReviewersType>,
     #[doc = "This is the collection of instances returned when one does an expand on it."]
     #[serde(
@@ -1448,12 +1413,7 @@ pub struct AccessReviewScheduleSettings {
     #[serde(rename = "justificationRequiredOnApproval", default, skip_serializing_if = "Option::is_none")]
     pub justification_required_on_approval: Option<bool>,
     #[doc = "This specifies the behavior for the autoReview feature when an access review completes."]
-    #[serde(
-        rename = "defaultDecision",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultDecision", default, skip_serializing_if = "Option::is_none")]
     pub default_decision: Option<access_review_schedule_settings::DefaultDecision>,
     #[doc = "Flag to indicate whether auto-apply capability, to automatically change the target object access resource, is enabled. If not enabled, a user must, after the review completes, apply the access review."]
     #[serde(rename = "autoApplyDecisionsEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -1528,20 +1488,10 @@ pub struct AccessReviewScope {
     #[serde(rename = "roleDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub role_definition_id: Option<String>,
     #[doc = "The identity type user/servicePrincipal to review"]
-    #[serde(
-        rename = "principalType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<access_review_scope::PrincipalType>,
     #[doc = "The role assignment state eligible/active to review"]
-    #[serde(
-        rename = "assignmentState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "assignmentState", default, skip_serializing_if = "Option::is_none")]
     pub assignment_state: Option<access_review_scope::AssignmentState>,
     #[doc = "Duration users are inactive for. The value should be in ISO  8601 format (http://en.wikipedia.org/wiki/ISO_8601#Durations).This code can be used to convert TimeSpan to a valid interval string: XmlConvert.ToString(new TimeSpan(hours, minutes, seconds))"]
     #[serde(rename = "inactiveDuration", default, skip_serializing_if = "Option::is_none")]

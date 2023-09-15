@@ -40,12 +40,7 @@ pub struct CertificateMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Type of certificate"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<certificate_metadata::Type>,
     #[doc = "Name of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -221,23 +216,13 @@ pub struct FileInfo {
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
     #[doc = "File type"]
-    #[serde(
-        rename = "fileType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
     pub file_type: Option<file_info::FileType>,
     #[doc = "Expiry time of the file (ISO 8601 literal format)"]
     #[serde(rename = "expireDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub expire_date_time: Option<time::OffsetDateTime>,
     #[doc = "Validation status of the file"]
-    #[serde(
-        rename = "validationStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "validationStatus", default, skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<file_info::ValidationStatus>,
     #[doc = "Validation failure error details"]
     #[serde(rename = "validationFailureDetails", default, skip_serializing_if = "Option::is_none")]
@@ -386,12 +371,7 @@ impl LoadTestConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
     #[doc = "The time grain specifies the aggregation interval for the metric. Expressed as a duration 'PT1M', 'PT1H', etc."]
-    #[serde(
-        rename = "timeGrain",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<metric_availability::TimeGrain>,
 }
 impl MetricAvailability {
@@ -470,12 +450,7 @@ pub struct MetricDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
     #[doc = "The primary aggregation type value defining how to use the values for display."]
-    #[serde(
-        rename = "primaryAggregationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub primary_aggregation_type: Option<metric_definition::PrimaryAggregationType>,
     #[doc = "The collection of what all aggregation types are supported."]
     #[serde(
@@ -486,7 +461,7 @@ pub struct MetricDefinition {
     )]
     pub supported_aggregation_types: Vec<String>,
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<metric_definition::Unit>,
     #[doc = "Metric availability specifies the time grain (aggregation interval or frequency)."]
     #[serde(
@@ -746,15 +721,10 @@ impl PassFailCriteria {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PassFailMetric {
     #[doc = "The client metric on which the criteria should be applied."]
-    #[serde(
-        rename = "clientMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "clientMetric", default, skip_serializing_if = "Option::is_none")]
     pub client_metric: Option<pass_fail_metric::ClientMetric>,
     #[doc = "The aggregation function to be applied on the client metric. Allowed functions - ‘percentage’ - for error metric , ‘avg’, ‘p50’, ‘p90’, ‘p95’, ‘p99’, ‘min’, ‘max’ - for response_time_ms and latency metric, ‘avg’ - for requests_per_sec, ‘count’ - for requests"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregate: Option<pass_fail_metric::Aggregate>,
     #[doc = "The comparison operator. Supported types ‘>’, ‘<’ "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -766,13 +736,13 @@ pub struct PassFailMetric {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
     #[doc = "Action taken after the threshold is met. Default is ‘continue’."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<pass_fail_metric::Action>,
     #[doc = "The actual value of the client metric for the test run."]
     #[serde(rename = "actualValue", default, skip_serializing_if = "Option::is_none")]
     pub actual_value: Option<f64>,
     #[doc = "Outcome of the test run."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<pass_fail_metric::Result>,
 }
 impl PassFailMetric {
@@ -1024,12 +994,7 @@ pub struct Secret {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Type of secret"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<secret::Type>,
 }
 impl Secret {
@@ -1231,12 +1196,7 @@ pub struct TestRun {
     #[serde(rename = "testArtifacts", default, skip_serializing_if = "Option::is_none")]
     pub test_artifacts: Option<TestRunArtifacts>,
     #[doc = "Test result for pass/Fail criteria used during the test run."]
-    #[serde(
-        rename = "testResult",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "testResult", default, skip_serializing_if = "Option::is_none")]
     pub test_result: Option<test_run::TestResult>,
     #[doc = "Number of virtual users, for which test has been run."]
     #[serde(rename = "virtualUsers", default, skip_serializing_if = "Option::is_none")]
@@ -1254,7 +1214,7 @@ pub struct TestRun {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The test run status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<test_run::Status>,
     #[doc = "The test run start DateTime(ISO 8601 literal format)."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]

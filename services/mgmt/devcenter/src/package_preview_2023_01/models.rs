@@ -46,12 +46,7 @@ impl AllowedEnvironmentTypeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AllowedEnvironmentTypeProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AllowedEnvironmentTypeProperties {
@@ -77,12 +72,7 @@ impl AttachedNetworkConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttachedNetworkConnectionProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The resource ID of the NetworkConnection you want to attach."]
     #[serde(rename = "networkConnectionId")]
@@ -91,20 +81,10 @@ pub struct AttachedNetworkConnectionProperties {
     #[serde(rename = "networkConnectionLocation", default, skip_serializing_if = "Option::is_none")]
     pub network_connection_location: Option<String>,
     #[doc = "Health check status values"]
-    #[serde(
-        rename = "healthCheckStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthCheckStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_check_status: Option<HealthCheckStatus>,
     #[doc = "Active Directory join type"]
-    #[serde(
-        rename = "domainJoinType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "domainJoinType", default, skip_serializing_if = "Option::is_none")]
     pub domain_join_type: Option<DomainJoinType>,
 }
 impl AttachedNetworkConnectionProperties {
@@ -203,20 +183,10 @@ pub struct CatalogProperties {
     #[serde(flatten)]
     pub catalog_update_properties: CatalogUpdateProperties,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The synchronization state of the catalog."]
-    #[serde(
-        rename = "syncState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncState", default, skip_serializing_if = "Option::is_none")]
     pub sync_state: Option<catalog_properties::SyncState>,
     #[doc = "When the catalog was last synced."]
     #[serde(rename = "lastSyncTime", default, with = "azure_core::date::rfc3339::option")]
@@ -323,7 +293,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -467,20 +437,10 @@ pub struct DevBoxDefinitionProperties {
     #[serde(flatten)]
     pub dev_box_definition_update_properties: DevBoxDefinitionUpdateProperties,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Image validation status"]
-    #[serde(
-        rename = "imageValidationStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "imageValidationStatus", default, skip_serializing_if = "Option::is_none")]
     pub image_validation_status: Option<ImageValidationStatus>,
     #[doc = "Image validation error details"]
     #[serde(rename = "imageValidationErrorDetails", default, skip_serializing_if = "Option::is_none")]
@@ -527,12 +487,7 @@ pub struct DevBoxDefinitionUpdateProperties {
     #[serde(rename = "osStorageType", default, skip_serializing_if = "Option::is_none")]
     pub os_storage_type: Option<String>,
     #[doc = "Indicates whether hibernate is enabled/disabled."]
-    #[serde(
-        rename = "hibernateSupport",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hibernateSupport", default, skip_serializing_if = "Option::is_none")]
     pub hibernate_support: Option<HibernateSupport>,
 }
 impl DevBoxDefinitionUpdateProperties {
@@ -590,12 +545,7 @@ impl DevCenterListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevCenterProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The URI of the resource."]
     #[serde(rename = "devCenterUri", default, skip_serializing_if = "Option::is_none")]
@@ -826,12 +776,7 @@ impl EnvironmentTypeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentTypeProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl EnvironmentTypeProperties {
@@ -954,12 +899,7 @@ impl GalleryListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The resource ID of the backing Azure Compute Gallery."]
     #[serde(rename = "galleryResourceId")]
@@ -998,7 +938,7 @@ impl GitCatalog {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthCheck {
     #[doc = "Health check status values"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<HealthCheckStatus>,
     #[doc = "The display name of this health check item."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -1284,20 +1224,10 @@ pub struct ImageProperties {
     #[serde(rename = "recommendedMachineConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub recommended_machine_configuration: Option<RecommendedMachineConfiguration>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Indicates whether hibernate is enabled/disabled."]
-    #[serde(
-        rename = "hibernateSupport",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hibernateSupport", default, skip_serializing_if = "Option::is_none")]
     pub hibernate_support: Option<HibernateSupport>,
 }
 impl ImageProperties {
@@ -1433,12 +1363,7 @@ pub struct ImageVersionProperties {
     #[serde(rename = "osDiskImageSizeInGb", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_image_size_in_gb: Option<i32>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ImageVersionProperties {
@@ -1547,7 +1472,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1693,26 +1618,16 @@ pub struct NetworkProperties {
     #[serde(flatten)]
     pub network_connection_update_properties: NetworkConnectionUpdateProperties,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Health check status values"]
-    #[serde(
-        rename = "healthCheckStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthCheckStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_check_status: Option<HealthCheckStatus>,
     #[doc = "The name for resource group where NICs will be placed."]
     #[serde(rename = "networkingResourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub networking_resource_group_name: Option<String>,
     #[doc = "Active Directory join type"]
-    #[serde(rename = "domainJoinType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "domainJoinType")]
     pub domain_join_type: DomainJoinType,
 }
 impl NetworkProperties {
@@ -1739,15 +1654,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -2039,12 +1949,7 @@ pub struct PoolProperties {
     #[serde(flatten)]
     pub pool_update_properties: PoolUpdateProperties,
     #[doc = "Health status indicating whether a pool is available to create Dev Boxes."]
-    #[serde(
-        rename = "healthStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<HealthStatus>,
     #[doc = "Details on the Pool health status to help diagnose issues. This is only populated when the pool status indicates the pool is in a non-healthy state"]
     #[serde(
@@ -2055,12 +1960,7 @@ pub struct PoolProperties {
     )]
     pub health_status_details: Vec<HealthStatusDetail>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl PoolProperties {
@@ -2097,19 +1997,9 @@ pub struct PoolUpdateProperties {
     #[serde(rename = "networkConnectionName", default, skip_serializing_if = "Option::is_none")]
     pub network_connection_name: Option<String>,
     #[doc = "License Types"]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<LicenseType>,
-    #[serde(
-        rename = "localAdministrator",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "localAdministrator", default, skip_serializing_if = "Option::is_none")]
     pub local_administrator: Option<LocalAdminStatus>,
     #[doc = "Stop on disconnect configuration settings for Dev Boxes created in this pool."]
     #[serde(rename = "stopOnDisconnect", default, skip_serializing_if = "Option::is_none")]
@@ -2191,12 +2081,7 @@ pub struct ProjectEnvironmentTypeProperties {
     #[serde(flatten)]
     pub project_environment_type_update_properties: ProjectEnvironmentTypeUpdateProperties,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ProjectEnvironmentTypeProperties {
@@ -2229,7 +2114,7 @@ pub struct ProjectEnvironmentTypeUpdateProperties {
     #[serde(rename = "deploymentTargetId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_target_id: Option<String>,
     #[doc = "Indicates whether the environment type is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EnvironmentTypeEnableStatus>,
     #[doc = "The role definition assigned to the environment creator on backing resources."]
     #[serde(rename = "creatorRoleAssignment", default, skip_serializing_if = "Option::is_none")]
@@ -2289,12 +2174,7 @@ pub struct ProjectProperties {
     #[serde(flatten)]
     pub project_update_properties: ProjectUpdateProperties,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The URI of the resource."]
     #[serde(rename = "devCenterUri", default, skip_serializing_if = "Option::is_none")]
@@ -2546,12 +2426,7 @@ pub struct ScheduleProperties {
     #[serde(flatten)]
     pub schedule_update_properties: ScheduleUpdateProperties,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ScheduleProperties {
@@ -2580,15 +2455,10 @@ impl ScheduleUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleUpdateProperties {
     #[doc = "The supported types for a scheduled task."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ScheduledType>,
     #[doc = "The frequency of task execution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduledFrequency>,
     #[doc = "The target time to trigger the action. The format is HH:MM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2597,7 +2467,7 @@ pub struct ScheduleUpdateProperties {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
     #[doc = "Schedule enable or disable status. Indicates whether the schedule applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ScheduleEnableStatus>,
 }
 impl ScheduleUpdateProperties {
@@ -2681,7 +2551,7 @@ pub struct Sku {
     #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
     pub name: String,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SkuTier>,
     #[doc = "The SKU size. When the name field is the combination of tier and some other value, this would be the standalone code. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2741,7 +2611,7 @@ pub enum SkuTier {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StopOnDisconnectConfiguration {
     #[doc = "Stop on disconnect enable or disable status. Indicates whether stop on disconnect to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<StopOnDisconnectEnableStatus>,
     #[doc = "The specified time in minutes to wait before stopping a Dev Box once disconnect is detected."]
     #[serde(rename = "gracePeriodMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -2842,7 +2712,7 @@ pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
     #[doc = "The unit details."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
     #[doc = "The Usage Names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2948,12 +2818,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2962,12 +2827,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

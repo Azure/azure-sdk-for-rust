@@ -152,12 +152,7 @@ pub struct ProviderInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<String>,
     #[doc = "State of provisioning of the provider instance"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<provider_instance_properties::ProvisioningState>,
 }
 impl ProviderInstanceProperties {
@@ -290,12 +285,7 @@ impl SapMonitorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapMonitorProperties {
     #[doc = "State of provisioning of the HanaInstance"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<sap_monitor_properties::ProvisioningState>,
     #[doc = "The name of the resource group the SAP Monitor resources get deployed into."]
     #[serde(rename = "managedResourceGroupName", default, skip_serializing_if = "Option::is_none")]

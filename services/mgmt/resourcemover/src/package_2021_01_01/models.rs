@@ -86,12 +86,7 @@ pub struct BulkRemoveRequest {
     )]
     pub move_resources: Vec<String>,
     #[doc = "Defines the move resource input type."]
-    #[serde(
-        rename = "moveResourceInputType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveResourceInputType", default, skip_serializing_if = "Option::is_none")]
     pub move_resource_input_type: Option<MoveResourceInputType>,
 }
 impl BulkRemoveRequest {
@@ -152,12 +147,7 @@ pub struct CommitRequest {
     #[serde(rename = "moveResources")]
     pub move_resources: Vec<String>,
     #[doc = "Defines the move resource input type."]
-    #[serde(
-        rename = "moveResourceInputType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveResourceInputType", default, skip_serializing_if = "Option::is_none")]
     pub move_resource_input_type: Option<MoveResourceInputType>,
 }
 impl CommitRequest {
@@ -216,12 +206,7 @@ pub struct DiscardRequest {
     #[serde(rename = "moveResources")]
     pub move_resources: Vec<String>,
     #[doc = "Defines the move resource input type."]
-    #[serde(
-        rename = "moveResourceInputType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveResourceInputType", default, skip_serializing_if = "Option::is_none")]
     pub move_resource_input_type: Option<MoveResourceInputType>,
 }
 impl DiscardRequest {
@@ -269,12 +254,7 @@ impl Display {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
     #[doc = "The type of identity used for the resource mover service."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ResourceIdentityType>,
     #[doc = "Gets or sets the principal id."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -327,12 +307,7 @@ impl Serialize for JobName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatus {
     #[doc = "Defines the job name."]
-    #[serde(
-        rename = "jobName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "jobName", default, skip_serializing_if = "Option::is_none")]
     pub job_name: Option<JobName>,
     #[doc = "Gets or sets the monitoring job percentage."]
     #[serde(rename = "jobProgress", default, skip_serializing_if = "Option::is_none")]
@@ -506,12 +481,7 @@ pub struct MoveCollectionProperties {
     #[serde(rename = "targetRegion")]
     pub target_region: String,
     #[doc = "Defines the provisioning states."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Defines the move collection errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -631,20 +601,10 @@ pub struct MoveResourceDependency {
     #[serde(rename = "resolutionStatus", default, skip_serializing_if = "Option::is_none")]
     pub resolution_status: Option<String>,
     #[doc = "Defines the resolution type."]
-    #[serde(
-        rename = "resolutionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resolutionType", default, skip_serializing_if = "Option::is_none")]
     pub resolution_type: Option<ResolutionType>,
     #[doc = "Defines the dependency type."]
-    #[serde(
-        rename = "dependencyType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dependencyType", default, skip_serializing_if = "Option::is_none")]
     pub dependency_type: Option<DependencyType>,
     #[doc = "Defines the properties for manual resolution."]
     #[serde(rename = "manualResolution", default, skip_serializing_if = "Option::is_none")]
@@ -776,12 +736,7 @@ impl Serialize for MoveResourceInputType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MoveResourceProperties {
     #[doc = "Defines the provisioning states."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets the Source ARM Id of the resource."]
     #[serde(rename = "sourceId")]
@@ -845,12 +800,7 @@ impl MoveResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MoveResourceStatus {
     #[doc = "Defines the MoveResource states."]
-    #[serde(
-        rename = "moveState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveState", default, skip_serializing_if = "Option::is_none")]
     pub move_state: Option<MoveState>,
     #[doc = "Defines the job status."]
     #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1212,12 +1162,7 @@ pub struct PrepareRequest {
     #[serde(rename = "moveResources")]
     pub move_resources: Vec<String>,
     #[doc = "Defines the move resource input type."]
-    #[serde(
-        rename = "moveResourceInputType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveResourceInputType", default, skip_serializing_if = "Option::is_none")]
     pub move_resource_input_type: Option<MoveResourceInputType>,
 }
 impl PrepareRequest {
@@ -1445,12 +1390,7 @@ pub struct ResourceMoveRequest {
     #[serde(rename = "moveResources")]
     pub move_resources: Vec<String>,
     #[doc = "Defines the move resource input type."]
-    #[serde(
-        rename = "moveResourceInputType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveResourceInputType", default, skip_serializing_if = "Option::is_none")]
     pub move_resource_input_type: Option<MoveResourceInputType>,
 }
 impl ResourceMoveRequest {
@@ -1486,12 +1426,7 @@ pub struct SqlDatabaseResourceSettings {
     #[serde(flatten)]
     pub resource_settings: ResourceSettings,
     #[doc = "Defines the zone redundant resource setting."]
-    #[serde(
-        rename = "zoneRedundant",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<ZoneRedundant>,
 }
 impl SqlDatabaseResourceSettings {
@@ -1508,12 +1443,7 @@ pub struct SqlElasticPoolResourceSettings {
     #[serde(flatten)]
     pub resource_settings: ResourceSettings,
     #[doc = "Defines the zone redundant resource setting."]
-    #[serde(
-        rename = "zoneRedundant",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<ZoneRedundant>,
 }
 impl SqlElasticPoolResourceSettings {
@@ -1687,12 +1617,7 @@ pub struct VirtualMachineResourceSettings {
     #[serde(flatten)]
     pub resource_settings: ResourceSettings,
     #[doc = "Gets or sets the target availability zone."]
-    #[serde(
-        rename = "targetAvailabilityZone",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "targetAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub target_availability_zone: Option<virtual_machine_resource_settings::TargetAvailabilityZone>,
     #[doc = "Gets or sets the target virtual machine size."]
     #[serde(rename = "targetVmSize", default, skip_serializing_if = "Option::is_none")]

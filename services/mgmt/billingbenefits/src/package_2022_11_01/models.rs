@@ -154,7 +154,7 @@ pub struct Commitment {
     #[serde(flatten)]
     pub price: Price,
     #[doc = "Commitment grain."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grain: Option<commitment::Grain>,
 }
 impl Commitment {
@@ -335,15 +335,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -506,7 +501,7 @@ pub struct PaymentDetail {
     #[serde(rename = "billingCurrencyTotal", default, skip_serializing_if = "Option::is_none")]
     pub billing_currency_total: Option<Price>,
     #[doc = "Describes whether the payment is completed, failed, cancelled or scheduled in the future."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PaymentStatus>,
     #[serde(rename = "extendedStatusInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_status_info: Option<ExtendedStatusInfo>,
@@ -620,7 +615,7 @@ pub struct PricingCurrencyTotal {
     #[serde(flatten)]
     pub price: Price,
     #[doc = "Represents either billing plan or savings plan term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<PricingCurrencyDuration>,
 }
 impl PricingCurrencyTotal {
@@ -700,23 +695,13 @@ pub struct PurchaseRequestProperties {
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,
     #[doc = "Represent benefit term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<Term>,
     #[doc = "Represents the billing plan in ISO 8601 format. Required only for monthly billing plans."]
-    #[serde(
-        rename = "billingPlan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<BillingPlan>,
     #[doc = "Type of the Applied Scope."]
-    #[serde(
-        rename = "appliedScopeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
     #[doc = "Commitment towards the benefit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -783,23 +768,13 @@ pub struct ReservationOrderAliasRequestProperties {
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,
     #[doc = "Represent benefit term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<Term>,
     #[doc = "Represents the billing plan in ISO 8601 format. Required only for monthly billing plans."]
-    #[serde(
-        rename = "billingPlan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<BillingPlan>,
     #[doc = "Type of the Applied Scope."]
-    #[serde(
-        rename = "appliedScopeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
     #[doc = "Properties specific to applied scope type. Not required if not applicable."]
     #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
@@ -811,12 +786,7 @@ pub struct ReservationOrderAliasRequestProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub renew: Option<Renew>,
     #[doc = "The type of the resource that is being reserved."]
-    #[serde(
-        rename = "reservedResourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reservedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub reserved_resource_type: Option<ReservedResourceType>,
     #[doc = "This is the date-time when the Azure Hybrid Benefit needs to be reviewed."]
     #[serde(rename = "reviewDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -836,12 +806,7 @@ pub mod reservation_order_alias_request_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ReservedResourceProperties {
         #[doc = "Turning this on will apply the reservation discount to other VMs in the same VM size group."]
-        #[serde(
-            rename = "instanceFlexibility",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
         pub instance_flexibility: Option<InstanceFlexibility>,
     }
     impl ReservedResourceProperties {
@@ -884,34 +849,19 @@ pub struct ReservationOrderAliasResponseProperties {
     #[serde(rename = "reservationOrderId", default, skip_serializing_if = "Option::is_none")]
     pub reservation_order_id: Option<String>,
     #[doc = "Provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Subscription that will be charged for purchasing the benefit"]
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,
     #[doc = "Represent benefit term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<Term>,
     #[doc = "Represents the billing plan in ISO 8601 format. Required only for monthly billing plans."]
-    #[serde(
-        rename = "billingPlan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<BillingPlan>,
     #[doc = "Type of the Applied Scope."]
-    #[serde(
-        rename = "appliedScopeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
     #[doc = "Properties specific to applied scope type. Not required if not applicable."]
     #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
@@ -923,12 +873,7 @@ pub struct ReservationOrderAliasResponseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub renew: Option<Renew>,
     #[doc = "The type of the resource that is being reserved."]
-    #[serde(
-        rename = "reservedResourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reservedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub reserved_resource_type: Option<ReservedResourceType>,
     #[doc = "This is the date-time when the Reservation needs to be reviewed."]
     #[serde(rename = "reviewDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -948,12 +893,7 @@ pub mod reservation_order_alias_response_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ReservedResourceProperties {
         #[doc = "Turning this on will apply the reservation discount to other VMs in the same VM size group."]
-        #[serde(
-            rename = "instanceFlexibility",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
         pub instance_flexibility: Option<InstanceFlexibility>,
     }
     impl ReservedResourceProperties {
@@ -1189,12 +1129,7 @@ pub struct SavingsPlanModelProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<DisplayName>,
     #[doc = "Provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The provisioning state of the savings plan for display, e.g. Succeeded"]
     #[serde(rename = "displayProvisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1212,23 +1147,13 @@ pub struct SavingsPlanModelProperties {
     #[serde(rename = "billingAccountId", default, skip_serializing_if = "Option::is_none")]
     pub billing_account_id: Option<BillingAccountId>,
     #[doc = "Represent benefit term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<Term>,
     #[doc = "Represents the billing plan in ISO 8601 format. Required only for monthly billing plans."]
-    #[serde(
-        rename = "billingPlan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<BillingPlan>,
     #[doc = "Type of the Applied Scope."]
-    #[serde(
-        rename = "appliedScopeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
     #[doc = "The applied scope type of the savings plan for display, e.g. Shared"]
     #[serde(rename = "userFriendlyAppliedScopeType", default, skip_serializing_if = "Option::is_none")]
@@ -1307,34 +1232,19 @@ pub struct SavingsPlanOrderAliasProperties {
     #[serde(rename = "savingsPlanOrderId", default, skip_serializing_if = "Option::is_none")]
     pub savings_plan_order_id: Option<String>,
     #[doc = "Provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Subscription that will be charged for purchasing the benefit"]
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,
     #[doc = "Represent benefit term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<Term>,
     #[doc = "Represents the billing plan in ISO 8601 format. Required only for monthly billing plans."]
-    #[serde(
-        rename = "billingPlan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<BillingPlan>,
     #[doc = "Type of the Applied Scope."]
-    #[serde(
-        rename = "appliedScopeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
     #[doc = "Properties specific to applied scope type. Not required if not applicable."]
     #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1401,12 +1311,7 @@ pub struct SavingsPlanOrderModelProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<DisplayName>,
     #[doc = "Provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Subscription that will be charged for purchasing the benefit"]
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
@@ -1421,15 +1326,10 @@ pub struct SavingsPlanOrderModelProperties {
     #[serde(rename = "billingAccountId", default, skip_serializing_if = "Option::is_none")]
     pub billing_account_id: Option<BillingAccountId>,
     #[doc = "Represent benefit term in ISO 8601 format."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<Term>,
     #[doc = "Represents the billing plan in ISO 8601 format. Required only for monthly billing plans."]
-    #[serde(
-        rename = "billingPlan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<BillingPlan>,
     #[doc = "Expiry date time"]
     #[serde(rename = "expiryDateTime", default, skip_serializing_if = "Option::is_none")]
@@ -1539,12 +1439,7 @@ pub struct SavingsPlanUpdateRequestProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<DisplayName>,
     #[doc = "Type of the Applied Scope."]
-    #[serde(
-        rename = "appliedScopeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
     #[doc = "Properties specific to applied scope type. Not required if not applicable."]
     #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1712,12 +1607,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1726,12 +1616,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -243,7 +243,7 @@ pub struct OperationResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Operation status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_resource::Status>,
     #[doc = "Operation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -407,7 +407,7 @@ impl SqlDatabaseListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlDatabaseProperties {
     #[doc = "The status of the database."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<sql_database_properties::Status>,
     #[doc = "The collation of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -416,12 +416,7 @@ pub struct SqlDatabaseProperties {
     #[serde(rename = "databaseGuid", default, skip_serializing_if = "Option::is_none")]
     pub database_guid: Option<String>,
     #[doc = "The storage redundancy of the database."]
-    #[serde(
-        rename = "storageRedundancy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "storageRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub storage_redundancy: Option<sql_database_properties::StorageRedundancy>,
     #[doc = "Sql database data retention."]
     #[serde(rename = "dataRetention", default, skip_serializing_if = "Option::is_none")]
@@ -599,7 +594,7 @@ impl SqlPoolListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolProperties {
     #[doc = "The status of the sql pool."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<sql_pool_properties::Status>,
     #[doc = "The Guid of the sql pool."]
     #[serde(rename = "sqlPoolGuid", default, skip_serializing_if = "Option::is_none")]
@@ -739,12 +734,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource: <User|Application|ManagedIdentity|Key>"]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -753,12 +743,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource: <User|Application|ManagedIdentity|Key>"]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of last modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

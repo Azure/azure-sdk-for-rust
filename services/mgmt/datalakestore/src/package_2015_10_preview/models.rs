@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAsyncOperationResult {
     #[doc = "the status of the AzureAsyncOperation"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<azure_async_operation_result::Status>,
     #[doc = "Data Lake Store error information"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -89,34 +89,19 @@ impl DataLakeStoreAccountListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountProperties {
     #[doc = "the status of the Data Lake Store account while being provisioned."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_lake_store_account_properties::ProvisioningState>,
     #[doc = "the status of the Data Lake Store account after provisioning has completed."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<data_lake_store_account_properties::State>,
     #[doc = "the account creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The current state of encryption for this Data Lake store account."]
-    #[serde(
-        rename = "encryptionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_state: Option<data_lake_store_account_properties::EncryptionState>,
     #[doc = "The current state of encryption provisioning for this Data Lake store account."]
-    #[serde(
-        rename = "encryptionProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_provisioning_state: Option<data_lake_store_account_properties::EncryptionProvisioningState>,
     #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<EncryptionConfig>,
@@ -202,12 +187,7 @@ impl DataLakeStoreFirewallRuleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionConfig {
     #[doc = "The type of encryption configuration being used. Currently the only supported types are 'UserManaged' and 'ServiceManaged'."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_config::Type>,
     #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
@@ -229,12 +209,7 @@ pub mod encryption_config {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionIdentity {
     #[doc = "The type of encryption being used. Currently the only supported type is 'SystemAssigned'."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_identity::Type>,
     #[doc = "The principal identifier associated with the encryption."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]

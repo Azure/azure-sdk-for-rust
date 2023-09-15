@@ -34,7 +34,7 @@ impl EndpointAccessResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointProperties {
     #[doc = "The type of endpoint."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: endpoint_properties::Type,
     #[doc = "The resource Id of the connectivity endpoint (optional)."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -235,12 +235,7 @@ impl IngressProfileProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListCredentialsRequest {
     #[doc = "The name of the service. If not provided, the request will by pass the generation of service configuration token "]
-    #[serde(
-        rename = "serviceName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<list_credentials_request::ServiceName>,
 }
 impl ListCredentialsRequest {
@@ -294,12 +289,7 @@ pub mod list_credentials_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListIngressGatewayCredentialsRequest {
     #[doc = "The name of the service."]
-    #[serde(
-        rename = "serviceName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<list_ingress_gateway_credentials_request::ServiceName>,
 }
 impl ListIngressGatewayCredentialsRequest {
@@ -358,12 +348,7 @@ pub struct ManagedProxyRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
     #[doc = "The name of the service. It is an optional property, if not provided, service configuration tokens issue code would be by passed."]
-    #[serde(
-        rename = "serviceName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<managed_proxy_request::ServiceName>,
 }
 impl ManagedProxyRequest {
@@ -444,15 +429,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -681,7 +661,7 @@ impl ServiceConfigurationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceConfigurationProperties {
     #[doc = "Name of the service."]
-    #[serde(rename = "serviceName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "serviceName")]
     pub service_name: service_configuration_properties::ServiceName,
     #[doc = "The resource Id of the connectivity endpoint (optional)."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -690,12 +670,7 @@ pub struct ServiceConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
     #[doc = "The resource provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<service_configuration_properties::ProvisioningState>,
 }
 impl ServiceConfigurationProperties {
@@ -841,12 +816,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -855,12 +825,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

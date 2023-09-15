@@ -148,7 +148,7 @@ pub struct ImportJob {
     #[serde(rename = "outputBlobUri")]
     pub output_blob_uri: String,
     #[doc = "Status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<import_job::Status>,
     #[doc = "Start time of the job. The timestamp is in RFC3339 format: `yyyy-MM-ddTHH:mm:ssZ`."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]

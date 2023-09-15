@@ -28,12 +28,7 @@ impl AssociatedWorkspace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableServiceTier {
     #[doc = "The name of the Service Tier."]
-    #[serde(
-        rename = "serviceTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceTier", default, skip_serializing_if = "Option::is_none")]
     pub service_tier: Option<available_service_tier::ServiceTier>,
     #[doc = "True if the Service Tier is enabled for the workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -217,12 +212,7 @@ pub struct ClusterPatchProperties {
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
     #[doc = "Configures whether billing will be only on the cluster or each workspace will be billed by its proportional use. This does not change the overall billing, only how it will be distributed. Default value is 'Cluster'"]
-    #[serde(
-        rename = "billingType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
     pub billing_type: Option<BillingType>,
 }
 impl ClusterPatchProperties {
@@ -237,12 +227,7 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The provisioning state of the cluster."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
     #[doc = "Configures whether cluster will use double encryption. This Property can not be modified after cluster creation. Default value is 'true'"]
     #[serde(rename = "isDoubleEncryptionEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -251,12 +236,7 @@ pub struct ClusterProperties {
     #[serde(rename = "isAvailabilityZonesEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_availability_zones_enabled: Option<bool>,
     #[doc = "Configures whether billing will be only on the cluster or each workspace will be billed by its proportional use. This does not change the overall billing, only how it will be distributed. Default value is 'Cluster'"]
-    #[serde(
-        rename = "billingType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
     pub billing_type: Option<BillingType>,
     #[doc = "The key vault properties."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -338,10 +318,10 @@ pub mod cluster_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterSku {
     #[doc = "The capacity value"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<cluster_sku::Capacity>,
     #[doc = "The name of the SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<cluster_sku::Name>,
 }
 impl ClusterSku {
@@ -397,20 +377,10 @@ pub struct Column {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Column data type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<column::Type>,
     #[doc = "Column data type logical hint."]
-    #[serde(
-        rename = "dataTypeHint",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataTypeHint", default, skip_serializing_if = "Option::is_none")]
     pub data_type_hint: Option<column::DataTypeHint>,
     #[doc = "Column display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -634,7 +604,6 @@ pub struct DataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "The kind of the DataSource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DataSourceKind,
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -655,7 +624,7 @@ impl DataSource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceFilter {
     #[doc = "The kind of the DataSource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<DataSourceKind>,
 }
 impl DataSourceFilter {
@@ -809,12 +778,7 @@ pub struct Destination {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
     #[doc = "The type of the destination resource"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<destination::Type>,
     #[doc = "Destination meta data."]
     #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
@@ -957,7 +921,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: identity::Type,
     #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1053,12 +1017,7 @@ pub struct LinkedServiceProperties {
     #[serde(rename = "writeAccessResourceId", default, skip_serializing_if = "Option::is_none")]
     pub write_access_resource_id: Option<String>,
     #[doc = "The provisioning state of the linked service."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<linked_service_properties::ProvisioningState>,
 }
 impl LinkedServiceProperties {
@@ -1136,12 +1095,7 @@ impl LinkedStorageAccountsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedStorageAccountsProperties {
     #[doc = "Linked storage accounts type."]
-    #[serde(
-        rename = "dataSourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataSourceType", default, skip_serializing_if = "Option::is_none")]
     pub data_source_type: Option<linked_storage_accounts_properties::DataSourceType>,
     #[doc = "Linked storage accounts resources ids."]
     #[serde(
@@ -1581,23 +1535,13 @@ pub struct Schema {
     )]
     pub labels: Vec<String>,
     #[doc = "Table's creator."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<schema::Source>,
     #[doc = "Table's creator."]
-    #[serde(
-        rename = "tableType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "tableType", default, skip_serializing_if = "Option::is_none")]
     pub table_type: Option<schema::TableType>,
     #[doc = "The subtype describes what APIs can be used to interact with the table, and what features are available against it."]
-    #[serde(
-        rename = "tableSubType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "tableSubType", default, skip_serializing_if = "Option::is_none")]
     pub table_sub_type: Option<schema::TableSubType>,
     #[doc = "List of solutions the table is affiliated with"]
     #[serde(
@@ -1917,7 +1861,7 @@ pub struct SearchSort {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The sort order of the search."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<search_sort::Order>,
 }
 impl SearchSort {
@@ -2078,7 +2022,6 @@ impl StorageInsightProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageInsightStatus {
     #[doc = "The state of the storage insight connection to the workspace"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: storage_insight_status::State,
     #[doc = "Description of the state of the storage insight."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2170,7 +2113,7 @@ pub struct TableProperties {
     #[serde(rename = "resultStatistics", default, skip_serializing_if = "Option::is_none")]
     pub result_statistics: Option<ResultStatistics>,
     #[doc = "Instruct the system how to handle and charge the logs ingested to this table."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<table_properties::Plan>,
     #[doc = "The timestamp that table plan was last modified (UTC)."]
     #[serde(rename = "lastPlanModifiedDate", default, skip_serializing_if = "Option::is_none")]
@@ -2179,12 +2122,7 @@ pub struct TableProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<Schema>,
     #[doc = "Table's current provisioning state. If set to 'updating', indicates a resource lock due to ongoing operation, forbidding any update to the table until the ongoing operation is concluded."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<table_properties::ProvisioningState>,
 }
 impl TableProperties {
@@ -2403,12 +2341,7 @@ pub struct WorkspaceCapping {
     #[serde(rename = "quotaNextResetTime", default, skip_serializing_if = "Option::is_none")]
     pub quota_next_reset_time: Option<String>,
     #[doc = "The status of data ingestion for this workspace."]
-    #[serde(
-        rename = "dataIngestionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataIngestionStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_ingestion_status: Option<workspace_capping::DataIngestionStatus>,
 }
 impl WorkspaceCapping {
@@ -2579,12 +2512,7 @@ impl WorkspacePatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceProperties {
     #[doc = "The provisioning state of the workspace."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
     #[doc = "This is a read-only property. Represents the ID associated with the workspace."]
     #[serde(rename = "customerId", default, skip_serializing_if = "Option::is_none")]
@@ -2605,20 +2533,10 @@ pub struct WorkspaceProperties {
     #[serde(rename = "modifiedDate", default, skip_serializing_if = "Option::is_none")]
     pub modified_date: Option<String>,
     #[doc = "The network access type for operating on the Log Analytics Workspace. By default it is Enabled"]
-    #[serde(
-        rename = "publicNetworkAccessForIngestion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
     #[doc = "The network access type for operating on the Log Analytics Workspace. By default it is Enabled"]
-    #[serde(
-        rename = "publicNetworkAccessForQuery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccessForQuery", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
     #[doc = "Indicates whether customer managed storage is mandatory for query management."]
     #[serde(rename = "forceCmkForQuery", default, skip_serializing_if = "Option::is_none")]
@@ -2743,7 +2661,6 @@ impl WorkspacePurgeResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePurgeStatusResponse {
     #[doc = "Status of the operation represented by the requested Id."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: workspace_purge_status_response::Status,
 }
 impl WorkspacePurgeStatusResponse {
@@ -2797,15 +2714,9 @@ pub mod workspace_purge_status_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceSku {
     #[doc = "The name of the SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: workspace_sku::Name,
     #[doc = "The capacity reservation level in GB for this workspace, when CapacityReservation sku is selected."]
-    #[serde(
-        rename = "capacityReservationLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "capacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
     pub capacity_reservation_level: Option<workspace_sku::CapacityReservationLevel>,
     #[doc = "The last time when the sku was updated."]
     #[serde(rename = "lastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
@@ -2942,12 +2853,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2956,12 +2862,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

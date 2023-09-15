@@ -215,7 +215,7 @@ impl ApplicationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AsyncOperationResult {
     #[doc = "The async operation state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<async_operation_result::Status>,
     #[doc = "The error message associated with the cluster creation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -664,15 +664,10 @@ pub struct ClusterCreateProperties {
     #[serde(rename = "clusterVersion", default, skip_serializing_if = "Option::is_none")]
     pub cluster_version: Option<String>,
     #[doc = "The type of operating system."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<cluster_create_properties::OsType>,
     #[doc = "The cluster tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<cluster_create_properties::Tier>,
     #[doc = "The cluster definition."]
     #[serde(rename = "clusterDefinition", default, skip_serializing_if = "Option::is_none")]
@@ -908,15 +903,10 @@ pub struct ClusterGetProperties {
     #[serde(rename = "clusterHdpVersion", default, skip_serializing_if = "Option::is_none")]
     pub cluster_hdp_version: Option<String>,
     #[doc = "The type of operating system."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<cluster_get_properties::OsType>,
     #[doc = "The cluster tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<cluster_get_properties::Tier>,
     #[doc = "The cluster id."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
@@ -934,12 +924,7 @@ pub struct ClusterGetProperties {
     #[serde(rename = "computeProfile", default, skip_serializing_if = "Option::is_none")]
     pub compute_profile: Option<ComputeProfile>,
     #[doc = "The provisioning state, which only appears in the response."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_get_properties::ProvisioningState>,
     #[doc = "The date on which the cluster was created."]
     #[serde(rename = "createdDate", default, skip_serializing_if = "Option::is_none")]
@@ -1163,12 +1148,7 @@ pub struct ClusterIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the cluster. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<cluster_identity::Type>,
     #[doc = "The list of user identities associated with the cluster. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1426,7 +1406,7 @@ pub struct DiskBillingMeters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
     #[doc = "The managed disk billing tier, Standard or Premium."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<disk_billing_meters::Tier>,
 }
 impl DiskBillingMeters {
@@ -1487,12 +1467,7 @@ pub struct DiskEncryptionProperties {
     #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
     #[doc = "Algorithm identifier for encryption, default RSA-OAEP."]
-    #[serde(
-        rename = "encryptionAlgorithm",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub encryption_algorithm: Option<disk_encryption_properties::EncryptionAlgorithm>,
     #[doc = "Resource ID of Managed Identity that is used to access the key vault."]
     #[serde(rename = "msiResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1730,12 +1705,7 @@ impl IpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpConfigurationProperties {
     #[doc = "The private link configuration provisioning state, which only appears in the response."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ip_configuration_properties::ProvisioningState>,
     #[doc = "Indicates whether this IP configuration is primary for the corresponding NIC."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1744,12 +1714,7 @@ pub struct IpConfigurationProperties {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "The method that private IP address is allocated."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<ip_configuration_properties::PrivateIpAllocationMethod>,
     #[doc = "The azure resource id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2004,20 +1969,10 @@ impl NameAvailabilityCheckResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProperties {
     #[doc = "The direction for the resource provider connection."]
-    #[serde(
-        rename = "resourceProviderConnection",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceProviderConnection", default, skip_serializing_if = "Option::is_none")]
     pub resource_provider_connection: Option<network_properties::ResourceProviderConnection>,
     #[doc = "Indicates whether or not private link is enabled."]
-    #[serde(
-        rename = "privateLink",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateLink", default, skip_serializing_if = "Option::is_none")]
     pub private_link: Option<network_properties::PrivateLink>,
 }
 impl NetworkProperties {
@@ -2260,12 +2215,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "linkIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub link_identifier: Option<String>,
     #[doc = "The provisioning state, which only appears in the response."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -2357,12 +2307,7 @@ pub struct PrivateLinkConfigurationProperties {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "The private link configuration provisioning state, which only appears in the response."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_link_configuration_properties::ProvisioningState>,
     #[doc = "The IP configurations for the private link service."]
     #[serde(rename = "ipConfigurations")]
@@ -2488,7 +2433,6 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The concrete private link service connection."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: private_link_service_connection_state::Status,
     #[doc = "The optional description of the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2898,12 +2842,7 @@ impl ScriptActionsList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityProfile {
     #[doc = "The directory type."]
-    #[serde(
-        rename = "directoryType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "directoryType", default, skip_serializing_if = "Option::is_none")]
     pub directory_type: Option<security_profile::DirectoryType>,
     #[doc = "The organization's active directory domain."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3274,12 +3213,7 @@ impl VirtualNetworkProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmSizeCompatibilityFilterV2 {
     #[doc = "The filtering mode. Effectively this can enabling or disabling the VM sizes in a particular set."]
-    #[serde(
-        rename = "filterMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "filterMode", default, skip_serializing_if = "Option::is_none")]
     pub filter_mode: Option<vm_size_compatibility_filter_v2::FilterMode>,
     #[doc = "The list of regions under the effect of the filter."]
     #[serde(
@@ -3430,12 +3364,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3444,12 +3373,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

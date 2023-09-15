@@ -172,7 +172,7 @@ impl CodeSigningAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CodeSigningSubmissionOptions {
     #[doc = "Algorithms supported for signing."]
-    #[serde(rename = "signatureAlgorithm", with = "azure_core::xml::text_content")]
+    #[serde(rename = "signatureAlgorithm")]
     pub signature_algorithm: SignatureAlgorithm,
     #[doc = "Content digest to codesign."]
     pub digest: String,

@@ -283,12 +283,7 @@ pub struct DeviceConfiguration {
     #[serde(rename = "deviceVersion", default, skip_serializing_if = "Option::is_none")]
     pub device_version: Option<String>,
     #[doc = "Identity system of the device."]
-    #[serde(
-        rename = "identitySystem",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "identitySystem", default, skip_serializing_if = "Option::is_none")]
     pub identity_system: Option<device_configuration::IdentitySystem>,
 }
 impl DeviceConfiguration {
@@ -557,12 +552,7 @@ impl OperationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsDiskImage {
     #[doc = "Operating system type (Windows or Linux)."]
-    #[serde(
-        rename = "operatingSystem",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operatingSystem", default, skip_serializing_if = "Option::is_none")]
     pub operating_system: Option<OperatingSystem>,
     #[doc = "SAS key for source blob."]
     #[serde(rename = "sourceBlobSasUri", default, skip_serializing_if = "Option::is_none")]
@@ -804,7 +794,6 @@ pub struct RegistrationParameter {
     #[doc = "Properties of the Azure Stack registration resource"]
     pub properties: RegistrationParameterProperties,
     #[doc = "Location of the resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub location: registration_parameter::Location,
 }
 impl RegistrationParameter {
@@ -915,7 +904,6 @@ pub struct TrackedResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "Location of the resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub location: tracked_resource::Location,
     #[doc = "Custom tags for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -991,12 +979,7 @@ impl Uri {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionProductProperties {
     #[doc = "Compute role type (IaaS or PaaS)."]
-    #[serde(
-        rename = "computeRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "computeRole", default, skip_serializing_if = "Option::is_none")]
     pub compute_role: Option<ComputeRole>,
     #[doc = "Specifies if product is a Virtual Machine Extension."]
     #[serde(rename = "isSystemExtension", default, skip_serializing_if = "Option::is_none")]
@@ -1011,12 +994,7 @@ pub struct VirtualMachineExtensionProductProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Operating system type (Windows or Linux)."]
-    #[serde(
-        rename = "vmOsType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmOsType", default, skip_serializing_if = "Option::is_none")]
     pub vm_os_type: Option<OperatingSystem>,
     #[doc = "Indicates if virtual machine Scale Set is enabled in the specified product."]
     #[serde(rename = "vmScaleSetEnabled", default, skip_serializing_if = "Option::is_none")]

@@ -64,12 +64,7 @@ impl AccountListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
     #[doc = "Gets the status of the cognitive services account at the time the operation was called."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
     #[doc = "Endpoint of the created account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -119,12 +114,7 @@ pub struct AccountProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Whether or not public endpoint access is allowed for this account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<account_properties::PublicNetworkAccess>,
     #[doc = "The api properties for special APIs."]
     #[serde(rename = "apiProperties", default, skip_serializing_if = "Option::is_none")]
@@ -425,12 +415,7 @@ pub struct Encryption {
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
     #[doc = "Enumerates the possible value of keySource for Encryption"]
-    #[serde(
-        rename = "keySource",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
 }
 impl Encryption {
@@ -555,12 +540,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
     #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -640,12 +620,7 @@ impl MetricName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSet {
     #[doc = "The default action when no rule from ipRules and from virtualNetworkRules match. This is only used after the bypass property has been evaluated."]
-    #[serde(
-        rename = "defaultAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<network_rule_set::DefaultAction>,
     #[doc = "The list of IP address rules."]
     #[serde(
@@ -722,15 +697,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -922,12 +892,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
     #[doc = "The private link resource group ids."]
     #[serde(
@@ -1093,7 +1058,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1129,7 +1094,7 @@ impl QuotaLimit {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyParameters {
     #[doc = "key name to generate (Key1|Key2)"]
-    #[serde(rename = "keyName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "keyName")]
     pub key_name: regenerate_key_parameters::KeyName,
 }
 impl RegenerateKeyParameters {
@@ -1257,12 +1222,7 @@ impl ResourceSkuRestrictionInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictions {
     #[doc = "The type of restrictions."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_sku_restrictions::Type>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
@@ -1274,12 +1234,7 @@ pub struct ResourceSkuRestrictions {
     #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
     pub restriction_info: Option<ResourceSkuRestrictionInfo>,
     #[doc = "The reason for restriction."]
-    #[serde(
-        rename = "reasonCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
 impl ResourceSkuRestrictions {
@@ -1339,7 +1294,7 @@ pub struct Sku {
     #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
     pub name: String,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
     #[doc = "The SKU size. When the name field is the combination of tier and some other value, this would be the standalone code. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1561,7 +1516,7 @@ impl Serialize for UnitType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<UnitType>,
     #[doc = "A metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1579,7 +1534,7 @@ pub struct Usage {
     #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
     pub next_reset_time: Option<String>,
     #[doc = "Cognitive Services account quota usage status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<usage::Status>,
 }
 impl Usage {
@@ -1704,12 +1659,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1718,12 +1668,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

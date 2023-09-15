@@ -82,12 +82,7 @@ impl AdministratorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdministratorProperties {
     #[doc = "The principal type used to represent the type of Active Directory Administrator."]
-    #[serde(
-        rename = "principalType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<administrator_properties::PrincipalType>,
     #[doc = "Active Directory administrator principal name."]
     #[serde(rename = "principalName", default, skip_serializing_if = "Option::is_none")]
@@ -152,12 +147,7 @@ pub mod administrator_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdministratorPropertiesForAdd {
     #[doc = "The principal type used to represent the type of Active Directory Administrator."]
-    #[serde(
-        rename = "principalType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<administrator_properties_for_add::PrincipalType>,
     #[doc = "Active Directory administrator principal name."]
     #[serde(rename = "principalName", default, skip_serializing_if = "Option::is_none")]
@@ -219,20 +209,10 @@ pub mod administrator_properties_for_add {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthConfig {
     #[doc = "If Enabled, Azure Active Directory authentication is enabled."]
-    #[serde(
-        rename = "activeDirectoryAuth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "activeDirectoryAuth", default, skip_serializing_if = "Option::is_none")]
     pub active_directory_auth: Option<auth_config::ActiveDirectoryAuth>,
     #[doc = "If Enabled, Password authentication is enabled."]
-    #[serde(
-        rename = "passwordAuth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "passwordAuth", default, skip_serializing_if = "Option::is_none")]
     pub password_auth: Option<auth_config::PasswordAuth>,
     #[doc = "Tenant id of the server."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -332,12 +312,7 @@ pub struct Backup {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "A value indicating whether Geo-Redundant backup is enabled on the server."]
-    #[serde(
-        rename = "geoRedundantBackup",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<backup::GeoRedundantBackup>,
     #[doc = "The earliest restore point time (ISO8601 format) for server."]
     #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
@@ -458,7 +433,7 @@ impl CapabilitiesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilityBase {
     #[doc = "The status of the capability."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<capability_base::Status>,
     #[doc = "The reason for the capability not being available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -502,7 +477,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -620,12 +595,7 @@ pub struct ConfigurationProperties {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
     #[doc = "Data type of the configuration."]
-    #[serde(
-        rename = "dataType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<configuration_properties::DataType>,
     #[doc = "Allowed values of the configuration."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
@@ -714,28 +684,13 @@ pub struct DataEncryption {
     #[serde(rename = "geoBackupUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_user_assigned_identity_id: Option<String>,
     #[doc = "Data encryption type to depict if it is System Managed vs Azure Key vault."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<data_encryption::Type>,
     #[doc = "Primary encryption key status for Data encryption enabled server."]
-    #[serde(
-        rename = "primaryEncryptionKeyStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryEncryptionKeyStatus", default, skip_serializing_if = "Option::is_none")]
     pub primary_encryption_key_status: Option<data_encryption::PrimaryEncryptionKeyStatus>,
     #[doc = "Geo-backup encryption key status for Data encryption enabled server."]
-    #[serde(
-        rename = "geoBackupEncryptionKeyStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "geoBackupEncryptionKeyStatus", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_encryption_key_status: Option<data_encryption::GeoBackupEncryptionKeyStatus>,
 }
 impl DataEncryption {
@@ -1127,12 +1082,7 @@ pub struct FlexibleServerCapability {
     )]
     pub supported_server_versions: Vec<ServerVersionCapability>,
     #[doc = "Gets a value indicating whether fast provisioning is supported. \"Enabled\" means fast provisioning is supported. \"Disabled\" stands for fast provisioning is not supported."]
-    #[serde(
-        rename = "fastProvisioningSupported",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fastProvisioningSupported", default, skip_serializing_if = "Option::is_none")]
     pub fast_provisioning_supported: Option<flexible_server_capability::FastProvisioningSupported>,
     #[doc = "List of supported server editions for fast provisioning"]
     #[serde(
@@ -1143,47 +1093,22 @@ pub struct FlexibleServerCapability {
     )]
     pub supported_fast_provisioning_editions: Vec<FastProvisioningEditionCapability>,
     #[doc = "Determines if geo-backup is supported in this region. \"Enabled\" means geo-backup is supported. \"Disabled\" stands for geo-back is not supported."]
-    #[serde(
-        rename = "geoBackupSupported",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "geoBackupSupported", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_supported: Option<flexible_server_capability::GeoBackupSupported>,
     #[doc = "A value indicating whether Zone Redundant HA is supported in this region. \"Enabled\" means zone redundant HA is supported. \"Disabled\" stands for zone redundant HA is not supported."]
-    #[serde(
-        rename = "zoneRedundantHaSupported",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundantHaSupported", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant_ha_supported: Option<flexible_server_capability::ZoneRedundantHaSupported>,
     #[doc = "A value indicating whether Zone Redundant HA and Geo-backup is supported in this region. \"Enabled\" means zone redundant HA and geo-backup is supported. \"Disabled\" stands for zone redundant HA and geo-backup is not supported."]
-    #[serde(
-        rename = "zoneRedundantHaAndGeoBackupSupported",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundantHaAndGeoBackupSupported", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant_ha_and_geo_backup_supported: Option<flexible_server_capability::ZoneRedundantHaAndGeoBackupSupported>,
     #[doc = "A value indicating whether storage auto-grow is supported in this region. \"Enabled\" means storage auto-grow is supported. \"Disabled\" stands for storage auto-grow is not supported."]
-    #[serde(
-        rename = "storageAutoGrowthSupported",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "storageAutoGrowthSupported", default, skip_serializing_if = "Option::is_none")]
     pub storage_auto_growth_supported: Option<flexible_server_capability::StorageAutoGrowthSupported>,
     #[doc = "A value indicating whether online resize is supported in this region for the given subscription. \"Enabled\" means storage online resize is supported. \"Disabled\" means storage online resize is not supported."]
-    #[serde(
-        rename = "onlineResizeSupported",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "onlineResizeSupported", default, skip_serializing_if = "Option::is_none")]
     pub online_resize_supported: Option<flexible_server_capability::OnlineResizeSupported>,
     #[doc = "A value indicating whether this region is restricted. \"Enabled\" means region is restricted. \"Disabled\" stands for region is not restricted."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub restricted: Option<flexible_server_capability::Restricted>,
 }
 impl FlexibleServerCapability {
@@ -1490,10 +1415,10 @@ impl FlexibleServerEditionCapability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HighAvailability {
     #[doc = "The HA mode for the server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<high_availability::Mode>,
     #[doc = "A state of a HA server that is visible to user."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<high_availability::State>,
     #[doc = "availability zone information of the standby."]
     #[serde(rename = "standbyAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
@@ -1675,7 +1600,6 @@ pub struct LtrBackupOperationResponseProperties {
     #[serde(rename = "backupMetadata", default, skip_serializing_if = "Option::is_none")]
     pub backup_metadata: Option<String>,
     #[doc = "Service-set extensible enum indicating the status of operation"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: ltr_backup_operation_response_properties::Status,
     #[doc = "Start time of the operation."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
@@ -2004,7 +1928,7 @@ pub struct MigrationNameAvailabilityResource {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Migration name availability reason."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<MigrationNameAvailabilityReason>,
     #[doc = "Migration name availability message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2088,12 +2012,7 @@ pub struct MigrationResourceProperties {
     #[serde(rename = "currentStatus", default, skip_serializing_if = "Option::is_none")]
     pub current_status: Option<MigrationStatus>,
     #[doc = "There are two types of migration modes Online and Offline"]
-    #[serde(
-        rename = "migrationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "migrationMode", default, skip_serializing_if = "Option::is_none")]
     pub migration_mode: Option<MigrationMode>,
     #[doc = "Database server metadata."]
     #[serde(rename = "sourceDbServerMetadata", default, skip_serializing_if = "Option::is_none")]
@@ -2136,17 +2055,11 @@ pub struct MigrationResourceProperties {
     #[serde(
         rename = "setupLogicalReplicationOnSourceDbIfNeeded",
         default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
+        skip_serializing_if = "Option::is_none"
     )]
     pub setup_logical_replication_on_source_db_if_needed: Option<migration_resource_properties::SetupLogicalReplicationOnSourceDbIfNeeded>,
     #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to False, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
-    #[serde(
-        rename = "overwriteDbsInTarget",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "overwriteDbsInTarget", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_dbs_in_target: Option<migration_resource_properties::OverwriteDbsInTarget>,
     #[doc = "Start time in UTC for migration window"]
     #[serde(rename = "migrationWindowStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -2155,20 +2068,10 @@ pub struct MigrationResourceProperties {
     #[serde(rename = "migrationWindowEndTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
     pub migration_window_end_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "Indicates whether the data migration should start right away"]
-    #[serde(
-        rename = "startDataMigration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<migration_resource_properties::StartDataMigration>,
     #[doc = "To trigger cutover for entire migration we need to send this flag as True"]
-    #[serde(
-        rename = "triggerCutover",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "triggerCutover", default, skip_serializing_if = "Option::is_none")]
     pub trigger_cutover: Option<migration_resource_properties::TriggerCutover>,
     #[doc = "When you want to trigger cutover for specific databases send triggerCutover flag as True and database names in this array"]
     #[serde(
@@ -2179,7 +2082,7 @@ pub struct MigrationResourceProperties {
     )]
     pub dbs_to_trigger_cutover_on: Vec<String>,
     #[doc = "To trigger cancel for entire migration we need to send this flag as True"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cancel: Option<migration_resource_properties::Cancel>,
     #[doc = "When you want to trigger cancel for specific databases send cancel flag as True and database names in this array"]
     #[serde(
@@ -2418,37 +2321,21 @@ pub struct MigrationResourcePropertiesForPatch {
     #[serde(
         rename = "setupLogicalReplicationOnSourceDbIfNeeded",
         default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
+        skip_serializing_if = "Option::is_none"
     )]
     pub setup_logical_replication_on_source_db_if_needed:
         Option<migration_resource_properties_for_patch::SetupLogicalReplicationOnSourceDbIfNeeded>,
     #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to False, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
-    #[serde(
-        rename = "overwriteDbsInTarget",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "overwriteDbsInTarget", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_dbs_in_target: Option<migration_resource_properties_for_patch::OverwriteDbsInTarget>,
     #[doc = "Start time in UTC for migration window"]
     #[serde(rename = "migrationWindowStartTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
     pub migration_window_start_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "Indicates whether the data migration should start right away"]
-    #[serde(
-        rename = "startDataMigration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<migration_resource_properties_for_patch::StartDataMigration>,
     #[doc = "To trigger cutover for entire migration we need to send this flag as True"]
-    #[serde(
-        rename = "triggerCutover",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "triggerCutover", default, skip_serializing_if = "Option::is_none")]
     pub trigger_cutover: Option<migration_resource_properties_for_patch::TriggerCutover>,
     #[doc = "When you want to trigger cutover for specific databases send triggerCutover flag as True and database names in this array"]
     #[serde(
@@ -2459,7 +2346,7 @@ pub struct MigrationResourcePropertiesForPatch {
     )]
     pub dbs_to_trigger_cutover_on: Vec<String>,
     #[doc = "To trigger cancel for entire migration we need to send this flag as True"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cancel: Option<migration_resource_properties_for_patch::Cancel>,
     #[doc = "When you want to trigger cancel for specific databases send cancel flag as True and database names in this array"]
     #[serde(
@@ -2470,12 +2357,7 @@ pub struct MigrationResourcePropertiesForPatch {
     )]
     pub dbs_to_cancel_migration_on: Vec<String>,
     #[doc = "There are two types of migration modes Online and Offline"]
-    #[serde(
-        rename = "migrationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "migrationMode", default, skip_serializing_if = "Option::is_none")]
     pub migration_mode: Option<MigrationMode>,
 }
 impl MigrationResourcePropertiesForPatch {
@@ -2740,7 +2622,7 @@ impl Serialize for MigrationState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrationStatus {
     #[doc = "Migration state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<MigrationState>,
     #[doc = "Error message, if any, for the migration state"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2825,12 +2707,7 @@ impl Serialize for MigrationSubState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrationSubStateDetails {
     #[doc = "Migration sub state."]
-    #[serde(
-        rename = "currentSubState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "currentSubState", default, skip_serializing_if = "Option::is_none")]
     pub current_sub_state: Option<MigrationSubState>,
 }
 impl MigrationSubStateDetails {
@@ -2859,12 +2736,7 @@ impl NameAvailability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[doc = "public network access is enabled or not"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<network::PublicNetworkAccess>,
     #[doc = "Delegated subnet arm resource id. This is required to be passed during create, in case we want the server to be VNET injected, i.e. Private access server. During update, pass this only if we want to update the value for Private DNS zone."]
     #[serde(rename = "delegatedSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2931,7 +2803,7 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3107,12 +2979,7 @@ pub struct RestartParameter {
     #[serde(rename = "restartWithFailover", default, skip_serializing_if = "Option::is_none")]
     pub restart_with_failover: Option<bool>,
     #[doc = "Failover mode."]
-    #[serde(
-        rename = "failoverMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "failoverMode", default, skip_serializing_if = "Option::is_none")]
     pub failover_mode: Option<restart_parameter::FailoverMode>,
 }
 impl RestartParameter {
@@ -3239,12 +3106,7 @@ impl ServerBackupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBackupProperties {
     #[doc = "Backup type."]
-    #[serde(
-        rename = "backupType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
     pub backup_type: Option<server_backup_properties::BackupType>,
     #[doc = "Backup completed time (ISO8601 format)."]
     #[serde(rename = "completedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -3351,13 +3213,13 @@ pub struct ServerProperties {
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
     #[doc = "The minor version of the server."]
     #[serde(rename = "minorVersion", default, skip_serializing_if = "Option::is_none")]
     pub minor_version: Option<String>,
     #[doc = "A state of a server that is visible to user."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<server_properties::State>,
     #[doc = "The fully qualified domain name of a server."]
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
@@ -3393,23 +3255,13 @@ pub struct ServerProperties {
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
     #[doc = "Used to indicate role of the server in replication set."]
-    #[serde(
-        rename = "replicationRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
     #[doc = "Replicas allowed for a server."]
     #[serde(rename = "replicaCapacity", default, skip_serializing_if = "Option::is_none")]
     pub replica_capacity: Option<i32>,
     #[doc = "The mode to create a new PostgreSQL server."]
-    #[serde(
-        rename = "createMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties::CreateMode>,
 }
 impl ServerProperties {
@@ -3520,7 +3372,7 @@ pub struct ServerPropertiesForUpdate {
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
     #[doc = "Storage properties of a server"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3541,20 +3393,10 @@ pub struct ServerPropertiesForUpdate {
     #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
     pub data_encryption: Option<DataEncryption>,
     #[doc = "The mode to update a new PostgreSQL server."]
-    #[serde(
-        rename = "createMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties_for_update::CreateMode>,
     #[doc = "Used to indicate role of the server in replication set."]
-    #[serde(
-        rename = "replicationRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
     #[doc = "Network properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3611,7 +3453,6 @@ pub struct ServerSku {
     #[doc = "The name of the sku, typically, tier + family + cores, e.g. Standard_D4s_v3."]
     pub name: String,
     #[doc = "The tier of the particular SKU, e.g. Burstable."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: server_sku::Tier,
 }
 impl ServerSku {
@@ -3776,7 +3617,6 @@ pub struct Sku {
     #[doc = "The name of the sku, typically, tier + family + cores, e.g. Standard_D4s_v3."]
     pub name: String,
     #[doc = "The tier of the particular SKU, e.g. Burstable."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: sku::Tier,
 }
 impl Sku {
@@ -3833,15 +3673,10 @@ pub struct Storage {
     #[serde(rename = "storageSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub storage_size_gb: Option<i32>,
     #[doc = "Flag to enable / disable Storage Auto grow for flexible server."]
-    #[serde(
-        rename = "autoGrow",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoGrow", default, skip_serializing_if = "Option::is_none")]
     pub auto_grow: Option<storage::AutoGrow>,
     #[doc = "Name of storage tier for IOPS."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<storage::Tier>,
     #[doc = "Storage tier IOPS quantity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4050,7 +3885,7 @@ pub struct UserAssignedIdentity {
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentityMap>,
     #[doc = "the types of identities associated with this resource; currently restricted to 'None and UserAssigned'"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: user_assigned_identity::Type,
     #[doc = "Tenant id of the server."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -4169,12 +4004,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -4183,12 +4013,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

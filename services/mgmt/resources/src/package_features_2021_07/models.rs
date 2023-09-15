@@ -237,7 +237,7 @@ pub mod subscription_feature_registration {
         #[serde(rename = "providerNamespace", default, skip_serializing_if = "Option::is_none")]
         pub provider_namespace: Option<String>,
         #[doc = "The state."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub state: Option<properties::State>,
         #[doc = "Authorization Profile"]
         #[serde(rename = "authorizationProfile", default, skip_serializing_if = "Option::is_none")]
@@ -255,12 +255,7 @@ pub mod subscription_feature_registration {
         #[serde(rename = "documentationLink", default, skip_serializing_if = "Option::is_none")]
         pub documentation_link: Option<String>,
         #[doc = "The feature approval type."]
-        #[serde(
-            rename = "approvalType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "approvalType", default, skip_serializing_if = "Option::is_none")]
         pub approval_type: Option<properties::ApprovalType>,
         #[doc = "Indicates whether feature should be displayed in Portal."]
         #[serde(rename = "shouldFeatureDisplayInPortal", default, skip_serializing_if = "Option::is_none")]

@@ -300,12 +300,7 @@ pub struct ContainerGroupIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the container group. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the container group."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<container_group_identity::Type>,
     #[doc = "The list of user identities associated with the container group."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -389,18 +384,13 @@ pub mod container_group_properties {
         )]
         pub image_registry_credentials: Vec<ImageRegistryCredential>,
         #[doc = "Restart policy for all containers within the container group. \n- `Always` Always restart\n- `OnFailure` Restart on failure\n- `Never` Never restart\n"]
-        #[serde(
-            rename = "restartPolicy",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "restartPolicy", default, skip_serializing_if = "Option::is_none")]
         pub restart_policy: Option<properties::RestartPolicy>,
         #[doc = "IP address for the container group."]
         #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
         pub ip_address: Option<IpAddress>,
         #[doc = "The operating system type required by the containers in the container group."]
-        #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+        #[serde(rename = "osType")]
         pub os_type: properties::OsType,
         #[doc = "The list of volumes that can be mounted by containers in this container group."]
         #[serde(
@@ -427,7 +417,7 @@ pub mod container_group_properties {
         #[serde(rename = "dnsConfig", default, skip_serializing_if = "Option::is_none")]
         pub dns_config: Option<DnsConfiguration>,
         #[doc = "The container group SKU."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub sku: Option<ContainerGroupSku>,
         #[doc = "The container group encryption properties."]
         #[serde(rename = "encryptionProperties", default, skip_serializing_if = "Option::is_none")]
@@ -620,7 +610,7 @@ pub struct ContainerHttpGet {
     #[doc = "The port number to probe."]
     pub port: i32,
     #[doc = "The scheme."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scheme: Option<container_http_get::Scheme>,
     #[doc = "The HTTP headers."]
     #[serde(
@@ -687,7 +677,7 @@ pub mod container_http_get {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerPort {
     #[doc = "The protocol associated with the port."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<container_port::Protocol>,
     #[doc = "The port number exposed within the container group."]
     pub port: i32,
@@ -1010,7 +1000,6 @@ pub struct GpuResource {
     #[doc = "The count of the GPU resource."]
     pub count: i32,
     #[doc = "The SKU of the GPU resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub sku: gpu_resource::Sku,
 }
 impl GpuResource {
@@ -1189,7 +1178,7 @@ pub struct IpAddress {
     #[doc = "The list of ports exposed on the container group."]
     pub ports: Vec<Port>,
     #[doc = "Specifies if the IP is exposed to the public internet or private VNET."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ip_address::Type,
     #[doc = "The IP exposed to the public internet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1198,12 +1187,7 @@ pub struct IpAddress {
     #[serde(rename = "dnsNameLabel", default, skip_serializing_if = "Option::is_none")]
     pub dns_name_label: Option<String>,
     #[doc = "The value representing the security enum. The 'Unsecure' value is the default value if not selected and means the object's domain name label is not secured against subdomain takeover. The 'TenantReuse' value is the default value if selected and means the object's domain name label can be reused within the same tenant. The 'SubscriptionReuse' value means the object's domain name label can be reused within the same subscription. The 'ResourceGroupReuse' value means the object's domain name label can be reused within the same resource group. The 'NoReuse' value means the object's domain name label cannot be reused within the same resource group, subscription, or tenant."]
-    #[serde(
-        rename = "autoGeneratedDomainNameLabelScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoGeneratedDomainNameLabelScope", default, skip_serializing_if = "Option::is_none")]
     pub auto_generated_domain_name_label_scope: Option<ip_address::AutoGeneratedDomainNameLabelScope>,
     #[doc = "The FQDN for the IP."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1323,12 +1307,7 @@ pub struct LogAnalytics {
     #[serde(rename = "workspaceKey")]
     pub workspace_key: String,
     #[doc = "The log type to be used."]
-    #[serde(
-        rename = "logType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logType", default, skip_serializing_if = "Option::is_none")]
     pub log_type: Option<log_analytics::LogType>,
     #[doc = "Metadata for log analytics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1412,7 +1391,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
 }
 impl Operation {
@@ -1515,7 +1494,7 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Port {
     #[doc = "The protocol associated with the port."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<port::Protocol>,
     #[doc = "The port number."]
     pub port: i32,

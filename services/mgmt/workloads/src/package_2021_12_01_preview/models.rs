@@ -101,12 +101,7 @@ impl Serialize for CentralServerVirtualMachineType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CentralServerVmDetails {
     #[doc = "Defines the type of central server VM."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<CentralServerVirtualMachineType>,
     #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_id: Option<String>,
@@ -212,12 +207,7 @@ pub struct Db2ProviderInstanceProperties {
     #[serde(rename = "sapSid", default, skip_serializing_if = "Option::is_none")]
     pub sap_sid: Option<String>,
     #[doc = "Gets or sets certificate preference if secure communication is enabled."]
-    #[serde(
-        rename = "sslPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
     pub ssl_preference: Option<SslPreference>,
     #[doc = "Gets or sets the blob URI to SSL certificate for the DB2 Database."]
     #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
@@ -243,12 +233,7 @@ impl Db2ProviderInstanceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseConfiguration {
     #[doc = "Defines the supported SAP Database types."]
-    #[serde(
-        rename = "databaseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "databaseType", default, skip_serializing_if = "Option::is_none")]
     pub database_type: Option<SapDatabaseType>,
     #[doc = "The subnet id."]
     #[serde(rename = "subnetId")]
@@ -315,7 +300,7 @@ pub struct DatabaseVmDetails {
     #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_id: Option<String>,
     #[doc = "Defines the SAP Instance status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
     #[doc = "Storage details of all the Storage Accounts attached to the Database Virtual Machine. For e.g. NFS on AFS Shared Storage."]
     #[serde(
@@ -474,7 +459,7 @@ impl DiskConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskSku {
     #[doc = "Defines the disk sku name."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<DiskSkuName>,
 }
 impl DiskSku {
@@ -558,12 +543,7 @@ impl DiskVolumeConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnqueueReplicationServerProperties {
     #[doc = "Defines the type of Enqueue Replication Server."]
-    #[serde(
-        rename = "ersVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ersVersion", default, skip_serializing_if = "Option::is_none")]
     pub ers_version: Option<EnqueueReplicationServerType>,
     #[doc = "ERS Instance Number."]
     #[serde(rename = "instanceNo", default, skip_serializing_if = "Option::is_none")]
@@ -581,7 +561,7 @@ pub struct EnqueueReplicationServerProperties {
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
 impl EnqueueReplicationServerProperties {
@@ -639,7 +619,7 @@ pub struct EnqueueServerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
 impl EnqueueServerProperties {
@@ -836,7 +816,7 @@ impl ExternalInstallationSoftwareConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileShareConfiguration {
     #[doc = "The type of file share config."]
-    #[serde(rename = "configurationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "configurationType")]
     pub configuration_type: FileShareConfigurationType,
 }
 impl FileShareConfiguration {
@@ -890,7 +870,7 @@ pub struct GatewayServerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
 impl GatewayServerProperties {
@@ -934,12 +914,7 @@ pub struct HanaDbProviderInstanceProperties {
     #[serde(rename = "sslHostNameInCertificate", default, skip_serializing_if = "Option::is_none")]
     pub ssl_host_name_in_certificate: Option<String>,
     #[doc = "Gets or sets certificate preference if secure communication is enabled."]
-    #[serde(
-        rename = "sslPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
     pub ssl_preference: Option<SslPreference>,
 }
 impl HanaDbProviderInstanceProperties {
@@ -1005,7 +980,7 @@ impl Serialize for HealthState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HighAvailabilityConfiguration {
     #[doc = "The high availability Type. AvailabilitySet guarantees 99.95% availability. Availability Zone guarantees 99.99% availability."]
-    #[serde(rename = "highAvailabilityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "highAvailabilityType")]
     pub high_availability_type: HighAvailabilityType,
 }
 impl HighAvailabilityConfiguration {
@@ -1099,7 +1074,7 @@ impl ImageReference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InfrastructureConfiguration {
     #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "The application resource group where SAP system resources will be deployed."]
     #[serde(rename = "appResourceGroup")]
@@ -1220,7 +1195,7 @@ pub struct MessageServerProperties {
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
 }
 impl MessageServerProperties {
@@ -1278,12 +1253,7 @@ impl MonitorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorProperties {
     #[doc = "State of provisioning of the SAP monitor."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<monitor_properties::ProvisioningState>,
     #[doc = "Defines the SAP monitor errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1292,12 +1262,7 @@ pub struct MonitorProperties {
     #[serde(rename = "appLocation", default, skip_serializing_if = "Option::is_none")]
     pub app_location: Option<String>,
     #[doc = "Sets the routing preference of the SAP monitor. By default only RFC1918 traffic is routed to the customer VNET."]
-    #[serde(
-        rename = "routingPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingPreference", default, skip_serializing_if = "Option::is_none")]
     pub routing_preference: Option<monitor_properties::RoutingPreference>,
     #[doc = "Sets the preference for zone redundancy on resources created for the SAP monitor. By default resources will be created which do not support zone redundancy."]
     #[serde(rename = "zoneRedundancyPreference", default, skip_serializing_if = "Option::is_none")]
@@ -1454,12 +1419,7 @@ pub struct MsSqlServerProviderInstanceProperties {
     #[serde(rename = "sapSid", default, skip_serializing_if = "Option::is_none")]
     pub sap_sid: Option<String>,
     #[doc = "Gets or sets certificate preference if secure communication is enabled."]
-    #[serde(
-        rename = "sslPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
     pub ssl_preference: Option<SslPreference>,
     #[doc = "Gets or sets the blob URI to SSL certificate for the SQL Database."]
     #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
@@ -1496,7 +1456,7 @@ impl NetworkConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsConfiguration {
     #[doc = "The OS Type"]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: os_configuration::OsType,
 }
 impl OsConfiguration {
@@ -1575,15 +1535,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1785,17 +1740,12 @@ pub struct OperationsDefinition {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "Defines the workload operation origin."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operations_definition::Origin>,
     #[doc = "Display information of the operation."]
     pub display: serde_json::Value,
     #[doc = "Defines the action type of workload operation."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operations_definition::ActionType>,
     #[doc = "Defines the workload operation properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1980,12 +1930,7 @@ pub struct PrometheusHaClusterProviderInstanceProperties {
     #[serde(rename = "clusterName", default, skip_serializing_if = "Option::is_none")]
     pub cluster_name: Option<String>,
     #[doc = "Gets or sets certificate preference if secure communication is enabled."]
-    #[serde(
-        rename = "sslPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
     pub ssl_preference: Option<SslPreference>,
     #[doc = "Gets or sets the blob URI to SSL certificate for the HA cluster exporter."]
     #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
@@ -2013,12 +1958,7 @@ pub struct PrometheusOsProviderInstanceProperties {
     #[serde(rename = "prometheusUrl", default, skip_serializing_if = "Option::is_none")]
     pub prometheus_url: Option<String>,
     #[doc = "Gets or sets certificate preference if secure communication is enabled."]
-    #[serde(
-        rename = "sslPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
     pub ssl_preference: Option<SslPreference>,
     #[doc = "Gets or sets the blob URI to SSL certificate for the prometheus node exporter."]
     #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
@@ -2080,12 +2020,7 @@ impl ProviderInstanceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderInstanceProperties {
     #[doc = "State of provisioning of the provider instance"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<provider_instance_properties::ProvisioningState>,
     #[doc = "Defines the provider instance errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2335,7 +2270,7 @@ pub struct SapApplicationServerProperties {
     #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_id: Option<String>,
     #[doc = "Defines the SAP Instance status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
     #[doc = "Storage details of all the Storage Accounts attached to the App Virtual Machine. For e.g. NFS on AFS Shared Storage."]
     #[serde(
@@ -2346,15 +2281,10 @@ pub struct SapApplicationServerProperties {
     )]
     pub storage_details: Vec<StorageInformation>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
     #[doc = "Defines the provisioning states."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An error response from the Virtual Instance for SAP Workload service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2372,10 +2302,10 @@ pub struct SapAvailabilityZoneDetailsRequest {
     #[serde(rename = "appLocation")]
     pub app_location: String,
     #[doc = "Defines the SAP Product type."]
-    #[serde(rename = "sapProduct", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
     #[doc = "Defines the supported SAP Database types."]
-    #[serde(rename = "databaseType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "databaseType")]
     pub database_type: SapDatabaseType,
 }
 impl SapAvailabilityZoneDetailsRequest {
@@ -2500,18 +2430,13 @@ pub struct SapCentralServerProperties {
     )]
     pub vm_details: Vec<CentralServerVmDetails>,
     #[doc = "Defines the SAP Instance status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
     #[doc = "Defines the provisioning states."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An error response from the Virtual Instance for SAP Workload service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2526,7 +2451,7 @@ impl SapCentralServerProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapConfiguration {
     #[doc = "The configuration Type."]
-    #[serde(rename = "configurationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "configurationType")]
     pub configuration_type: ConfigurationType,
 }
 impl SapConfiguration {
@@ -2603,15 +2528,10 @@ pub struct SapDatabaseProperties {
     )]
     pub vm_details: Vec<DatabaseVmDetails>,
     #[doc = "Defines the SAP Instance status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
     #[doc = "Defines the provisioning states."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An error response from the Virtual Instance for SAP Workload service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2698,16 +2618,15 @@ pub struct SapDiskConfigurationsRequest {
     #[serde(rename = "appLocation")]
     pub app_location: String,
     #[doc = "Defines the environment type - Production/Non Production."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub environment: EnvironmentType,
     #[doc = "Defines the SAP Product type."]
-    #[serde(rename = "sapProduct", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
     #[doc = "Defines the supported SAP Database types."]
-    #[serde(rename = "databaseType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "databaseType")]
     pub database_type: SapDatabaseType,
     #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "The VM SKU for database instance."]
     #[serde(rename = "dbVmSku")]
@@ -2831,13 +2750,12 @@ pub struct SapSizingRecommendationRequest {
     #[serde(rename = "appLocation")]
     pub app_location: String,
     #[doc = "Defines the environment type - Production/Non Production."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub environment: EnvironmentType,
     #[doc = "Defines the SAP Product type."]
-    #[serde(rename = "sapProduct", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
     #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "The SAP Application Performance Standard measurement."]
     pub saps: i64,
@@ -2845,23 +2763,13 @@ pub struct SapSizingRecommendationRequest {
     #[serde(rename = "dbMemory")]
     pub db_memory: i64,
     #[doc = "Defines the supported SAP Database types."]
-    #[serde(rename = "databaseType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "databaseType")]
     pub database_type: SapDatabaseType,
     #[doc = "The database scale method."]
-    #[serde(
-        rename = "dbScaleMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dbScaleMethod", default, skip_serializing_if = "Option::is_none")]
     pub db_scale_method: Option<DatabaseScaleMethod>,
     #[doc = "The high availability Type. AvailabilitySet guarantees 99.95% availability. Availability Zone guarantees 99.99% availability."]
-    #[serde(
-        rename = "highAvailabilityType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "highAvailabilityType", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_type: Option<HighAvailabilityType>,
 }
 impl SapSizingRecommendationRequest {
@@ -2891,7 +2799,7 @@ impl SapSizingRecommendationRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapSizingRecommendationResult {
     #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
 }
 impl SapSizingRecommendationResult {
@@ -2983,24 +2891,18 @@ pub struct SapSupportedSkusRequest {
     #[serde(rename = "appLocation")]
     pub app_location: String,
     #[doc = "Defines the environment type - Production/Non Production."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub environment: EnvironmentType,
     #[doc = "Defines the SAP Product type."]
-    #[serde(rename = "sapProduct", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
     #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "Defines the supported SAP Database types."]
-    #[serde(rename = "databaseType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "databaseType")]
     pub database_type: SapDatabaseType,
     #[doc = "The high availability Type. AvailabilitySet guarantees 99.95% availability. Availability Zone guarantees 99.99% availability."]
-    #[serde(
-        rename = "highAvailabilityType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "highAvailabilityType", default, skip_serializing_if = "Option::is_none")]
     pub high_availability_type: Option<HighAvailabilityType>,
 }
 impl SapSupportedSkusRequest {
@@ -3082,10 +2984,9 @@ impl SapVirtualInstanceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapVirtualInstanceProperties {
     #[doc = "Defines the environment type - Production/Non Production."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub environment: EnvironmentType,
     #[doc = "Defines the SAP Product type."]
-    #[serde(rename = "sapProduct", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
     #[doc = "The SAP Configuration."]
     pub configuration: SapConfiguration,
@@ -3093,21 +2994,16 @@ pub struct SapVirtualInstanceProperties {
     #[serde(rename = "managedResourceGroupConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_group_configuration: Option<ManagedRgConfiguration>,
     #[doc = "Defines the SAP Instance status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<SapVirtualInstanceStatus>,
     #[doc = "Defines the health of SAP Instances."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<HealthState>,
     #[doc = "Defines the Virtual Instance for SAP state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<SapVirtualInstanceState>,
     #[doc = "Defines the provisioning states."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An error response from the Virtual Instance for SAP Workload service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3288,12 +3184,7 @@ pub struct SapNetWeaverProviderInstanceProperties {
     #[serde(rename = "sslCertificateUri", default, skip_serializing_if = "Option::is_none")]
     pub ssl_certificate_uri: Option<String>,
     #[doc = "Gets or sets certificate preference if secure communication is enabled."]
-    #[serde(
-        rename = "sslPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslPreference", default, skip_serializing_if = "Option::is_none")]
     pub ssl_preference: Option<SslPreference>,
 }
 impl SapNetWeaverProviderInstanceProperties {
@@ -3368,12 +3259,7 @@ pub struct SingleServerConfiguration {
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
     #[doc = "Defines the supported SAP Database types."]
-    #[serde(
-        rename = "databaseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "databaseType", default, skip_serializing_if = "Option::is_none")]
     pub database_type: Option<SapDatabaseType>,
     #[doc = "The subnet id."]
     #[serde(rename = "subnetId")]
@@ -3435,7 +3321,7 @@ pub struct Sku {
     #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
     pub name: String,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SkuTier>,
     #[doc = "The SKU size. When the name field is the combination of tier and some other value, this would be the standalone code. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3486,12 +3372,7 @@ pub struct SkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i32>,
     #[doc = "Scale type of the SKU capacity."]
-    #[serde(
-        rename = "scaleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
 impl SkuCapacity {
@@ -3667,12 +3548,7 @@ pub struct SkuLocationAndZones {
     )]
     pub extended_locations: Vec<String>,
     #[doc = "Type of the extended location."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_location_and_zones::Type>,
 }
 impl SkuLocationAndZones {
@@ -3724,12 +3600,7 @@ pub mod sku_location_and_zones {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuRestriction {
     #[doc = "The SKU restriction type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_restriction::Type>,
     #[doc = "Restriction values."]
     #[serde(
@@ -3742,12 +3613,7 @@ pub struct SkuRestriction {
     #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
     pub restriction_info: Option<serde_json::Value>,
     #[doc = "The SKU restriction reason code."]
-    #[serde(
-        rename = "reasonCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<sku_restriction::ReasonCode>,
 }
 impl SkuRestriction {
@@ -3896,7 +3762,7 @@ impl SkusListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SoftwareConfiguration {
     #[doc = "The SAP software installation Type."]
-    #[serde(rename = "softwareInstallationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "softwareInstallationType")]
     pub software_installation_type: SapSoftwareInstallationType,
 }
 impl SoftwareConfiguration {
@@ -4228,7 +4094,7 @@ impl UserAssignedIdentity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedServiceIdentity {
     #[doc = "Type of managed service identity (only None, UserAssigned types are allowed)."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -4279,7 +4145,7 @@ impl WindowsConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupProfile {
     #[doc = "Whether to enable Azure backup for the workload"]
-    #[serde(rename = "backupEnabled", with = "azure_core::xml::text_content")]
+    #[serde(rename = "backupEnabled")]
     pub backup_enabled: backup_profile::BackupEnabled,
     #[doc = "Backup vault resource Id"]
     #[serde(rename = "vaultResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -4343,7 +4209,6 @@ pub struct CacheProfile {
     #[serde(rename = "skuName")]
     pub sku_name: String,
     #[doc = "Cache family"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub family: cache_profile::Family,
     #[doc = "Cache capacity"]
     pub capacity: i64,
@@ -4406,7 +4271,7 @@ pub mod cache_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseProfile {
     #[doc = "Database type"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: database_profile::Type,
     #[doc = "Database server name"]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
@@ -4417,15 +4282,9 @@ pub struct DatabaseProfile {
     #[doc = "The name of the server SKU, e.g. Standard_D32s_v4"]
     pub sku: String,
     #[doc = "Tier of the server SKU"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: database_profile::Tier,
     #[doc = "Whether to enable HA for the server"]
-    #[serde(
-        rename = "haEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "haEnabled", default, skip_serializing_if = "Option::is_none")]
     pub ha_enabled: Option<database_profile::HaEnabled>,
     #[doc = "SKU name for database storage"]
     #[serde(rename = "storageSku", default, skip_serializing_if = "Option::is_none")]
@@ -4440,12 +4299,7 @@ pub struct DatabaseProfile {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "Whether to enable SSL enforcement on the database"]
-    #[serde(
-        rename = "sslEnforcementEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslEnforcementEnabled", default, skip_serializing_if = "Option::is_none")]
     pub ssl_enforcement_enabled: Option<database_profile::SslEnforcementEnabled>,
     #[doc = "Azure Database Server resource Id"]
     #[serde(rename = "serverResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -4592,7 +4446,7 @@ pub mod database_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskInfo {
     #[doc = "Storage type"]
-    #[serde(rename = "storageType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "storageType")]
     pub storage_type: disk_info::StorageType,
     #[doc = "Disk size in GB"]
     #[serde(rename = "sizeInGB", default, skip_serializing_if = "Option::is_none")]
@@ -4623,10 +4477,10 @@ pub mod disk_info {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileshareProfile {
     #[doc = "Share type"]
-    #[serde(rename = "shareType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "shareType")]
     pub share_type: fileshare_profile::ShareType,
     #[doc = "File share backing storage type"]
-    #[serde(rename = "storageType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "storageType")]
     pub storage_type: fileshare_profile::StorageType,
     #[doc = "File share size in GB"]
     #[serde(rename = "shareSizeInGB", default, skip_serializing_if = "Option::is_none")]
@@ -4738,7 +4592,7 @@ pub mod fileshare_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkProfile {
     #[doc = "Load balancer type"]
-    #[serde(rename = "loadBalancerType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "loadBalancerType")]
     pub load_balancer_type: network_profile::LoadBalancerType,
     #[doc = "Load balancer SKU"]
     #[serde(rename = "loadBalancerSku", default, skip_serializing_if = "Option::is_none")]
@@ -4750,12 +4604,7 @@ pub struct NetworkProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
     #[doc = "Whether to enable Azure front door"]
-    #[serde(
-        rename = "azureFrontDoorEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "azureFrontDoorEnabled", default, skip_serializing_if = "Option::is_none")]
     pub azure_front_door_enabled: Option<network_profile::AzureFrontDoorEnabled>,
     #[doc = "Virtual network resource Id"]
     #[serde(rename = "vNetResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -4919,16 +4768,16 @@ impl NodeProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsImageProfile {
     #[doc = "OS image publisher"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<os_image_profile::Publisher>,
     #[doc = "OS image offer"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offer: Option<os_image_profile::Offer>,
     #[doc = "OS image sku"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<os_image_profile::Sku>,
     #[doc = "OS image version"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<os_image_profile::Version>,
 }
 impl OsImageProfile {
@@ -5088,7 +4937,6 @@ pub mod os_image_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PhpProfile {
     #[doc = "PHP version"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub version: php_profile::Version,
 }
 impl PhpProfile {
@@ -5150,7 +4998,6 @@ pub struct PhpWorkloadResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PhpWorkloadResourceProperties>,
     #[doc = "Indicates which kind of php workload this resource represent e.g WordPress"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: php_workload_resource::Kind,
     #[doc = "The resource model definition representing SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5276,12 +5123,7 @@ pub struct PhpWorkloadResourceProperties {
     #[serde(rename = "backupProfile", default, skip_serializing_if = "Option::is_none")]
     pub backup_profile: Option<BackupProfile>,
     #[doc = "Php workload resource provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<php_workload_resource_properties::ProvisioningState>,
 }
 impl PhpWorkloadResourceProperties {
@@ -5368,7 +5210,7 @@ pub struct SearchProfile {
     #[serde(flatten)]
     pub node_profile: NodeProfile,
     #[doc = "Search type"]
-    #[serde(rename = "searchType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "searchType")]
     pub search_type: search_profile::SearchType,
 }
 impl SearchProfile {
@@ -5433,12 +5275,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -5447,12 +5284,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -5627,7 +5459,6 @@ impl WordpressInstanceResourceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WordpressInstanceResourceProperties {
     #[doc = "Application version"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub version: wordpress_instance_resource_properties::Version,
     #[doc = "Database name used by the application"]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
@@ -5639,12 +5470,7 @@ pub struct WordpressInstanceResourceProperties {
     #[serde(rename = "siteUrl", default, skip_serializing_if = "Option::is_none")]
     pub site_url: Option<String>,
     #[doc = "WordPress instance provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<wordpress_instance_resource_properties::ProvisioningState>,
 }
 impl WordpressInstanceResourceProperties {

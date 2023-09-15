@@ -17,12 +17,7 @@ pub struct Alias {
     )]
     pub paths: Vec<AliasPath>,
     #[doc = "The type of the alias."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<alias::Type>,
     #[doc = "The default path for an alias."]
     #[serde(rename = "defaultPath", default, skip_serializing_if = "Option::is_none")]
@@ -76,15 +71,10 @@ impl AliasPath {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AliasPathMetadata {
     #[doc = "The type of the token that the alias path is referring to."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<alias_path_metadata::Type>,
     #[doc = "The attributes of the token that the alias path is referring to."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<alias_path_metadata::Attributes>,
 }
 impl AliasPathMetadata {
@@ -191,12 +181,7 @@ pub struct AliasPattern {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variable: Option<String>,
     #[doc = "The type of alias pattern"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<alias_pattern::Type>,
 }
 impl AliasPattern {
@@ -420,12 +405,7 @@ impl DeploymentOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentOperationProperties {
     #[doc = "The name of the current provisioning operation."]
-    #[serde(
-        rename = "provisioningOperation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningOperation", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_operation: Option<deployment_operation_properties::ProvisioningOperation>,
     #[doc = "The state of the provisioning."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -518,7 +498,6 @@ pub struct DeploymentProperties {
     #[serde(rename = "parametersLink", default, skip_serializing_if = "Option::is_none")]
     pub parameters_link: Option<ParametersLink>,
     #[doc = "The mode that is used to deploy resources. This value can be either Incremental or Complete. In Incremental mode, resources are deployed without deleting existing resources that are not included in the template. In Complete mode, resources are deployed and existing resources in the resource group that are not included in the template are deleted. Be careful when using Complete mode as you may unintentionally delete resources."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: deployment_properties::Mode,
     #[doc = "The debug setting."]
     #[serde(rename = "debugSetting", default, skip_serializing_if = "Option::is_none")]
@@ -557,12 +536,7 @@ pub mod deployment_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentPropertiesExtended {
     #[doc = "Denotes the state of provisioning."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<deployment_properties_extended::ProvisioningState>,
     #[doc = "The correlation ID of the deployment."]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
@@ -600,7 +574,7 @@ pub struct DeploymentPropertiesExtended {
     #[serde(rename = "parametersLink", default, skip_serializing_if = "Option::is_none")]
     pub parameters_link: Option<ParametersLink>,
     #[doc = "The deployment mode. Possible values are Incremental and Complete."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<deployment_properties_extended::Mode>,
     #[doc = "The debug setting."]
     #[serde(rename = "debugSetting", default, skip_serializing_if = "Option::is_none")]
@@ -755,12 +729,7 @@ impl DeploymentWhatIfProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentWhatIfSettings {
     #[doc = "The format of the What-If results"]
-    #[serde(
-        rename = "resultFormat",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resultFormat", default, skip_serializing_if = "Option::is_none")]
     pub result_format: Option<deployment_what_if_settings::ResultFormat>,
 }
 impl DeploymentWhatIfSettings {
@@ -848,7 +817,7 @@ impl ExportTemplateRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressionEvaluationOptions {
     #[doc = "The scope to be used for evaluation of parameters, variables and functions in a nested template."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<expression_evaluation_options::Scope>,
 }
 impl ExpressionEvaluationOptions {
@@ -902,12 +871,7 @@ pub mod expression_evaluation_options {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedLocation {
     #[doc = "The extended location type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<extended_location::Type>,
     #[doc = "The extended location name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1045,12 +1009,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
     #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1077,12 +1036,7 @@ pub mod identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OnErrorDeployment {
     #[doc = "The deployment on error behavior type. Possible values are LastSuccessful and SpecificDeployment."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<on_error_deployment::Type>,
     #[doc = "The deployment to be used on error case."]
     #[serde(rename = "deploymentName", default, skip_serializing_if = "Option::is_none")]
@@ -1109,12 +1063,7 @@ pub struct OnErrorDeploymentExtended {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The deployment on error behavior type. Possible values are LastSuccessful and SpecificDeployment."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<on_error_deployment_extended::Type>,
     #[doc = "The deployment to be used on error case."]
     #[serde(rename = "deploymentName", default, skip_serializing_if = "Option::is_none")]
@@ -1303,12 +1252,7 @@ pub struct Provider {
     )]
     pub resource_types: Vec<ProviderResourceType>,
     #[doc = "The provider authorization consent state."]
-    #[serde(
-        rename = "providerAuthorizationConsentState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "providerAuthorizationConsentState", default, skip_serializing_if = "Option::is_none")]
     pub provider_authorization_consent_state: Option<provider::ProviderAuthorizationConsentState>,
 }
 impl Provider {
@@ -1433,12 +1377,7 @@ pub struct ProviderPermission {
     #[serde(rename = "managedByRoleDefinition", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_role_definition: Option<RoleDefinition>,
     #[doc = "The provider authorization consent state."]
-    #[serde(
-        rename = "providerAuthorizationConsentState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "providerAuthorizationConsentState", default, skip_serializing_if = "Option::is_none")]
     pub provider_authorization_consent_state: Option<provider_permission::ProviderAuthorizationConsentState>,
 }
 impl ProviderPermission {
@@ -2055,7 +1994,7 @@ impl TagsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsPatchResource {
     #[doc = "The operation type for the patch API."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<tags_patch_resource::Operation>,
     #[doc = "A dictionary of name and value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2197,7 +2136,7 @@ pub struct WhatIfChange {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
     #[doc = "Type of change that will be made to the resource when the deployment is executed."]
-    #[serde(rename = "changeType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "changeType")]
     pub change_type: what_if_change::ChangeType,
     #[doc = "The explanation about why the resource is unsupported by What-If."]
     #[serde(rename = "unsupportedReason", default, skip_serializing_if = "Option::is_none")]
@@ -2282,7 +2221,7 @@ pub struct WhatIfPropertyChange {
     #[doc = "The path of the property."]
     pub path: String,
     #[doc = "The type of property change."]
-    #[serde(rename = "propertyChangeType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "propertyChangeType")]
     pub property_change_type: what_if_property_change::PropertyChangeType,
     #[doc = "The value of the property before the deployment is executed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

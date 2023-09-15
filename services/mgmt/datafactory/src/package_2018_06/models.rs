@@ -33,15 +33,10 @@ pub struct Activity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Activity state. This is an optional property and if not provided, the state will be Active by default."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<activity::State>,
     #[doc = "Status result of the activity when the state is set to Inactive. This is an optional property and if not provided when the activity is inactive, the status will be Succeeded by default."]
-    #[serde(
-        rename = "onInactiveMarkAs",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "onInactiveMarkAs", default, skip_serializing_if = "Option::is_none")]
     pub on_inactive_mark_as: Option<activity::OnInactiveMarkAs>,
     #[doc = "Activity depends on condition."]
     #[serde(
@@ -1784,12 +1779,7 @@ pub struct AzureBlobStorageLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<CredentialReference>,
     #[doc = "The type used for authentication. Type: string."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<azure_blob_storage_linked_service_type_properties::AuthenticationType>,
     #[doc = "Container uri of the Azure Blob Storage resource only support for anonymous access. Type: string (or Expression with resultType string)."]
     #[serde(rename = "containerUri", default, skip_serializing_if = "Option::is_none")]
@@ -2863,7 +2853,6 @@ impl Serialize for AzureFunctionActivityMethod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionActivityTypeProperties {
     #[doc = "The list of HTTP methods supported by a AzureFunctionActivity."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub method: AzureFunctionActivityMethod,
     #[doc = "Name of the Function that the Azure Function Activity will call. Type: string (or Expression with resultType string)"]
     #[serde(rename = "functionName")]
@@ -3585,12 +3574,7 @@ pub struct AzureSearchIndexSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "Specify the write behavior when upserting documents into Azure Search Index."]
-    #[serde(
-        rename = "writeBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<azure_search_index_sink::WriteBehavior>,
 }
 impl AzureSearchIndexSink {
@@ -4235,7 +4219,7 @@ impl AzureTableStorageLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BigDataPoolParametrizationReference {
     #[doc = "Big data pool reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: big_data_pool_parametrization_reference::Type,
     #[doc = "Reference big data pool name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "referenceName")]
@@ -4597,12 +4581,7 @@ pub struct CassandraSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<serde_json::Value>,
     #[doc = "The consistency level specifies how many Cassandra servers must respond to a read request before returning data to the client application. Cassandra checks the specified number of Cassandra servers for data to satisfy the read request. Must be one of cassandraSourceReadConsistencyLevels. The default value is 'ONE'. It is case-insensitive."]
-    #[serde(
-        rename = "consistencyLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "consistencyLevel", default, skip_serializing_if = "Option::is_none")]
     pub consistency_level: Option<cassandra_source::ConsistencyLevel>,
 }
 impl CassandraSource {
@@ -5036,7 +5015,7 @@ pub struct CommonDataServiceForAppsSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "Defines values for DynamicsSinkWriteBehavior."]
-    #[serde(rename = "writeBehavior", with = "azure_core::xml::text_content")]
+    #[serde(rename = "writeBehavior")]
     pub write_behavior: DynamicsSinkWriteBehavior,
     #[doc = "The flag indicating whether to ignore null values from input dataset (except key fields) during write operation. Default is false. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "ignoreNullValues", default, skip_serializing_if = "Option::is_none")]
@@ -5633,12 +5612,7 @@ pub struct CosmosDbLinkedServiceTypeProperties {
     #[serde(rename = "azureCloudType", default, skip_serializing_if = "Option::is_none")]
     pub azure_cloud_type: Option<serde_json::Value>,
     #[doc = "The connection mode used to access CosmosDB account. Type: string."]
-    #[serde(
-        rename = "connectionMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionMode", default, skip_serializing_if = "Option::is_none")]
     pub connection_mode: Option<cosmos_db_linked_service_type_properties::ConnectionMode>,
     #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
@@ -6069,7 +6043,7 @@ impl CredentialListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CredentialReference {
     #[doc = "Credential reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: credential_reference::Type,
     #[doc = "Reference credential name."]
     #[serde(rename = "referenceName")]
@@ -6419,7 +6393,7 @@ pub struct DataFlowDebugCommandRequest {
     #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
     #[doc = "The command type."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub command: Option<data_flow_debug_command_request::Command>,
     #[doc = "Structure of command payload."]
     #[serde(rename = "commandPayload", default, skip_serializing_if = "Option::is_none")]
@@ -6636,7 +6610,7 @@ impl DataFlowListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFlowReference {
     #[doc = "Data flow reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: data_flow_reference::Type,
     #[doc = "Reference data flow name."]
     #[serde(rename = "referenceName")]
@@ -7173,7 +7147,7 @@ impl DatasetLocation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetReference {
     #[doc = "Dataset reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: dataset_reference::Type,
     #[doc = "Reference dataset name."]
     #[serde(rename = "referenceName")]
@@ -7328,12 +7302,7 @@ pub struct Db2LinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub database: Option<serde_json::Value>,
     #[doc = "AuthenticationType to be used for connection. It is mutually exclusive with connectionString property."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<db2_linked_service_type_properties::AuthenticationType>,
     #[doc = "Username for authentication. It is mutually exclusive with connectionString property. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8118,7 +8087,7 @@ pub struct DynamicsCrmSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "Defines values for DynamicsSinkWriteBehavior."]
-    #[serde(rename = "writeBehavior", with = "azure_core::xml::text_content")]
+    #[serde(rename = "writeBehavior")]
     pub write_behavior: DynamicsSinkWriteBehavior,
     #[doc = "The flag indicating whether to ignore null values from input dataset (except key fields) during write operation. Default is false. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "ignoreNullValues", default, skip_serializing_if = "Option::is_none")]
@@ -8309,7 +8278,7 @@ pub struct DynamicsSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "Defines values for DynamicsSinkWriteBehavior."]
-    #[serde(rename = "writeBehavior", with = "azure_core::xml::text_content")]
+    #[serde(rename = "writeBehavior")]
     pub write_behavior: DynamicsSinkWriteBehavior,
     #[doc = "The flag indicating whether ignore null values from input dataset (except key fields) during write operation. Default is false. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "ignoreNullValues", default, skip_serializing_if = "Option::is_none")]
@@ -8501,12 +8470,7 @@ impl EncryptionConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityReference {
     #[doc = "The type of this referenced entity."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<entity_reference::Type>,
     #[doc = "The name of this referenced entity."]
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
@@ -9012,7 +8976,7 @@ impl ExposureControlResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Expression {
     #[doc = "Expression type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: expression::Type,
     #[doc = "Expression value."]
     pub value: String,
@@ -9076,7 +9040,7 @@ impl FactoryGitHubConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryIdentity {
     #[doc = "The identity type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: factory_identity::Type,
     #[doc = "The principal id of the identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -9186,12 +9150,7 @@ pub struct FactoryProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<EncryptionConfiguration>,
     #[doc = "Whether or not public network access is allowed for the data factory."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<factory_properties::PublicNetworkAccess>,
 }
 impl FactoryProperties {
@@ -9314,12 +9273,7 @@ impl FactoryUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FactoryUpdateProperties {
     #[doc = "Whether or not public network access is allowed for the data factory."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<factory_update_properties::PublicNetworkAccess>,
 }
 impl FactoryUpdateProperties {
@@ -9849,12 +9803,7 @@ pub struct FtpServerLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<serde_json::Value>,
     #[doc = "The authentication type to be used to connect to the FTP server."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<ftp_server_linked_service_type_properties::AuthenticationType>,
     #[doc = "Username to logon the FTP server. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -10129,7 +10078,7 @@ impl GlobalParameterResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GlobalParameterSpecification {
     #[doc = "Global Parameter type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: global_parameter_specification::Type,
     #[doc = "Value of parameter."]
     pub value: serde_json::Value,
@@ -10217,12 +10166,7 @@ pub struct GoogleAdWordsLinkedServiceTypeProperties {
     #[serde(rename = "developerToken", default, skip_serializing_if = "Option::is_none")]
     pub developer_token: Option<SecretBase>,
     #[doc = "The OAuth 2.0 authentication mechanism used for authentication. ServiceAuthentication can only be used on self-hosted IR."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<google_ad_words_linked_service_type_properties::AuthenticationType>,
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
@@ -10375,7 +10319,7 @@ pub struct GoogleBigQueryLinkedServiceTypeProperties {
     #[serde(rename = "requestGoogleDriveScope", default, skip_serializing_if = "Option::is_none")]
     pub request_google_drive_scope: Option<serde_json::Value>,
     #[doc = "The OAuth 2.0 authentication mechanism used for authentication. ServiceAuthentication can only be used on self-hosted IR."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: google_big_query_linked_service_type_properties::AuthenticationType,
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
@@ -10760,7 +10704,7 @@ pub struct HBaseLinkedServiceTypeProperties {
     #[serde(rename = "httpPath", default, skip_serializing_if = "Option::is_none")]
     pub http_path: Option<serde_json::Value>,
     #[doc = "The authentication mechanism to use to connect to the HBase server."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: h_base_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name used to connect to the HBase instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10950,12 +10894,7 @@ pub struct HdInsightHiveActivityTypeProperties {
     )]
     pub arguments: Vec<serde_json::Value>,
     #[doc = "The HDInsightActivityDebugInfoOption settings to use."]
-    #[serde(
-        rename = "getDebugInfo",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "getDebugInfo", default, skip_serializing_if = "Option::is_none")]
     pub get_debug_info: Option<HdInsightActivityDebugInfoOption>,
     #[doc = "Script path. Type: string (or Expression with resultType string)."]
     #[serde(rename = "scriptPath", default, skip_serializing_if = "Option::is_none")]
@@ -11073,12 +11012,7 @@ pub struct HdInsightMapReduceActivityTypeProperties {
     )]
     pub arguments: Vec<serde_json::Value>,
     #[doc = "The HDInsightActivityDebugInfoOption settings to use."]
-    #[serde(
-        rename = "getDebugInfo",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "getDebugInfo", default, skip_serializing_if = "Option::is_none")]
     pub get_debug_info: Option<HdInsightActivityDebugInfoOption>,
     #[doc = "Class name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "className")]
@@ -11326,12 +11260,7 @@ pub struct HdInsightPigActivityTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arguments: Option<serde_json::Value>,
     #[doc = "The HDInsightActivityDebugInfoOption settings to use."]
-    #[serde(
-        rename = "getDebugInfo",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "getDebugInfo", default, skip_serializing_if = "Option::is_none")]
     pub get_debug_info: Option<HdInsightActivityDebugInfoOption>,
     #[doc = "Script path. Type: string (or Expression with resultType string)."]
     #[serde(rename = "scriptPath", default, skip_serializing_if = "Option::is_none")]
@@ -11382,12 +11311,7 @@ pub struct HdInsightSparkActivityTypeProperties {
     )]
     pub arguments: Vec<serde_json::Value>,
     #[doc = "The HDInsightActivityDebugInfoOption settings to use."]
-    #[serde(
-        rename = "getDebugInfo",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "getDebugInfo", default, skip_serializing_if = "Option::is_none")]
     pub get_debug_info: Option<HdInsightActivityDebugInfoOption>,
     #[doc = "Linked service reference type."]
     #[serde(rename = "sparkJobLinkedService", default, skip_serializing_if = "Option::is_none")]
@@ -11452,12 +11376,7 @@ pub struct HdInsightStreamingActivityTypeProperties {
     )]
     pub arguments: Vec<serde_json::Value>,
     #[doc = "The HDInsightActivityDebugInfoOption settings to use."]
-    #[serde(
-        rename = "getDebugInfo",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "getDebugInfo", default, skip_serializing_if = "Option::is_none")]
     pub get_debug_info: Option<HdInsightActivityDebugInfoOption>,
     #[doc = "Mapper executable name. Type: string (or Expression with resultType string)."]
     pub mapper: serde_json::Value,
@@ -11726,23 +11645,13 @@ pub struct HiveLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<serde_json::Value>,
     #[doc = "The type of Hive server."]
-    #[serde(
-        rename = "serverType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serverType", default, skip_serializing_if = "Option::is_none")]
     pub server_type: Option<hive_linked_service_type_properties::ServerType>,
     #[doc = "The transport protocol to use in the Thrift layer."]
-    #[serde(
-        rename = "thriftTransportProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "thriftTransportProtocol", default, skip_serializing_if = "Option::is_none")]
     pub thrift_transport_protocol: Option<hive_linked_service_type_properties::ThriftTransportProtocol>,
     #[doc = "The authentication method used to access the Hive server."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: hive_linked_service_type_properties::AuthenticationType,
     #[doc = "true to indicate using the ZooKeeper service, false not."]
     #[serde(rename = "serviceDiscoveryMode", default, skip_serializing_if = "Option::is_none")]
@@ -12032,12 +11941,7 @@ pub struct HttpLinkedServiceTypeProperties {
     #[doc = "The base URL of the HTTP endpoint, e.g. https://www.microsoft.com. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
     #[doc = "The authentication type to be used to connect to the HTTP server."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<http_linked_service_type_properties::AuthenticationType>,
     #[doc = "User name for Basic, Digest, or Windows authentication. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -12374,7 +12278,7 @@ pub struct ImpalaLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<serde_json::Value>,
     #[doc = "The authentication type to use."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: impala_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name used to access the Impala server. The default value is anonymous when using SASLUsername."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12625,7 +12529,7 @@ impl InformixTableDatasetTypeProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
     #[doc = "The type of integration runtime."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12783,12 +12687,7 @@ impl IntegrationRuntimeCustomerVirtualNetwork {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeDataFlowProperties {
     #[doc = "Compute type of the cluster which will execute data flow job."]
-    #[serde(
-        rename = "computeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "computeType", default, skip_serializing_if = "Option::is_none")]
     pub compute_type: Option<integration_runtime_data_flow_properties::ComputeType>,
     #[doc = "Core count of the cluster which will execute data flow job. Supported values are: 8, 16, 32, 48, 80, 144 and 272."]
     #[serde(rename = "coreCount", default, skip_serializing_if = "Option::is_none")]
@@ -13044,7 +12943,7 @@ impl IntegrationRuntimeOutboundNetworkDependenciesEndpointsResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeReference {
     #[doc = "Type of integration runtime."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: integration_runtime_reference::Type,
     #[doc = "Reference integration runtime name."]
     #[serde(rename = "referenceName")]
@@ -13074,12 +12973,7 @@ pub mod integration_runtime_reference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeRegenerateKeyParameters {
     #[doc = "The name of the authentication key to regenerate."]
-    #[serde(
-        rename = "keyName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<integration_runtime_regenerate_key_parameters::KeyName>,
 }
 impl IntegrationRuntimeRegenerateKeyParameters {
@@ -13158,12 +13052,7 @@ pub struct IntegrationRuntimeSsisCatalogInfo {
     #[serde(rename = "catalogAdminPassword", default, skip_serializing_if = "Option::is_none")]
     pub catalog_admin_password: Option<SecureString>,
     #[doc = "The pricing tier for the catalog database. The valid values could be found in https://azure.microsoft.com/en-us/pricing/details/sql-database/"]
-    #[serde(
-        rename = "catalogPricingTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "catalogPricingTier", default, skip_serializing_if = "Option::is_none")]
     pub catalog_pricing_tier: Option<integration_runtime_ssis_catalog_info::CatalogPricingTier>,
     #[doc = "The dual standby pair name of Azure-SSIS Integration Runtimes to support SSISDB failover."]
     #[serde(rename = "dualStandbyPairName", default, skip_serializing_if = "Option::is_none")]
@@ -13226,12 +13115,7 @@ pub struct IntegrationRuntimeSsisProperties {
     #[serde(rename = "catalogInfo", default, skip_serializing_if = "Option::is_none")]
     pub catalog_info: Option<IntegrationRuntimeSsisCatalogInfo>,
     #[doc = "License type for bringing your own license scenario."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<integration_runtime_ssis_properties::LicenseType>,
     #[doc = "Custom setup script properties for a managed dedicated integration runtime."]
     #[serde(rename = "customSetupScriptProperties", default, skip_serializing_if = "Option::is_none")]
@@ -13240,7 +13124,7 @@ pub struct IntegrationRuntimeSsisProperties {
     #[serde(rename = "dataProxyProperties", default, skip_serializing_if = "Option::is_none")]
     pub data_proxy_properties: Option<IntegrationRuntimeDataProxyProperties>,
     #[doc = "The edition for the SSIS Integration Runtime"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<integration_runtime_ssis_properties::Edition>,
     #[doc = "Custom setup without script properties for a SSIS integration runtime."]
     #[serde(
@@ -13401,13 +13285,13 @@ impl Serialize for IntegrationRuntimeState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatus {
     #[doc = "The type of integration runtime."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: IntegrationRuntimeType,
     #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
     #[doc = "The state of integration runtime."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
@@ -14007,7 +13891,7 @@ impl LinkedServiceListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceReference {
     #[doc = "Linked service reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: linked_service_reference::Type,
     #[doc = "Reference LinkedService name."]
     #[serde(rename = "referenceName")]
@@ -14317,7 +14201,7 @@ pub struct ManagedIntegrationRuntime {
     #[serde(flatten)]
     pub integration_runtime: IntegrationRuntime,
     #[doc = "The state of integration runtime."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<IntegrationRuntimeState>,
     #[doc = "Managed integration runtime type properties."]
     #[serde(rename = "typeProperties")]
@@ -14368,7 +14252,7 @@ pub struct ManagedIntegrationRuntimeNode {
     #[serde(rename = "nodeId", default, skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
     #[doc = "The managed integration runtime node status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<managed_integration_runtime_node::Status>,
     #[doc = "The errors that occurred on this integration runtime node."]
     #[serde(
@@ -14612,7 +14496,7 @@ impl ManagedVirtualNetworkListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedVirtualNetworkReference {
     #[doc = "Managed Virtual Network reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: managed_virtual_network_reference::Type,
     #[doc = "Reference ManagedVirtualNetwork name."]
     #[serde(rename = "referenceName")]
@@ -14684,12 +14568,7 @@ pub struct MapperAttributeMapping {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Type of the CDC attribute mapping. Note: 'Advanced' mapping type is also saved as 'Derived'."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<mapper_attribute_mapping::Type>,
     #[doc = "Name of the function used for 'Aggregate' and 'Derived' (except 'Advanced') type mapping."]
     #[serde(rename = "functionName", default, skip_serializing_if = "Option::is_none")]
@@ -14801,7 +14680,7 @@ pub struct MapperConnection {
     #[serde(rename = "linkedServiceType", default, skip_serializing_if = "Option::is_none")]
     pub linked_service_type: Option<String>,
     #[doc = "Type of connection via linked service or dataset."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: mapper_connection::Type,
     #[doc = "A boolean indicating whether linked service is of type inline dataset. Currently only inline datasets are supported."]
     #[serde(rename = "isInlineDataset", default, skip_serializing_if = "Option::is_none")]
@@ -14872,12 +14751,7 @@ pub struct MapperConnectionReference {
     #[serde(rename = "connectionName", default, skip_serializing_if = "Option::is_none")]
     pub connection_name: Option<String>,
     #[doc = "Type of connection via linked service or dataset."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<mapper_connection_reference::Type>,
 }
 impl MapperConnectionReference {
@@ -14958,7 +14832,7 @@ impl MapperPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapperPolicyRecurrence {
     #[doc = "Frequency of period in terms of 'Hour', 'Minute' or 'Second'."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<mapper_policy_recurrence::Frequency>,
     #[doc = "Actual interval value as per chosen frequency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15651,12 +15525,7 @@ pub struct MongoDbLinkedServiceTypeProperties {
     #[doc = "The IP address or server name of the MongoDB server. Type: string (or Expression with resultType string)."]
     pub server: serde_json::Value,
     #[doc = "The authentication type to be used to connect to the MongoDB database."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<mongo_db_linked_service_type_properties::AuthenticationType>,
     #[doc = "The name of the MongoDB database that you want to access. Type: string (or Expression with resultType string)."]
     #[serde(rename = "databaseName")]
@@ -16134,12 +16003,7 @@ pub struct NotebookParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
     #[doc = "Notebook parameter type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<NotebookParameterType>,
 }
 impl NotebookParameter {
@@ -16215,12 +16079,7 @@ pub struct ODataLinkedServiceTypeProperties {
     #[doc = "The URL of the OData service endpoint. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
     #[doc = "Type of authentication used to connect to the OData service."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<o_data_linked_service_type_properties::AuthenticationType>,
     #[doc = "User name of the OData service. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -16244,12 +16103,7 @@ pub struct ODataLinkedServiceTypeProperties {
     #[serde(rename = "aadResourceId", default, skip_serializing_if = "Option::is_none")]
     pub aad_resource_id: Option<serde_json::Value>,
     #[doc = "Specify the credential type (key or cert) is used for service principal."]
-    #[serde(
-        rename = "aadServicePrincipalCredentialType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "aadServicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
     pub aad_service_principal_credential_type: Option<o_data_linked_service_type_properties::AadServicePrincipalCredentialType>,
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
@@ -17450,7 +17304,7 @@ impl ParameterDefinitionSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterSpecification {
     #[doc = "Parameter type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: parameter_specification::Type,
     #[doc = "Default value of parameter."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
@@ -17765,7 +17619,7 @@ pub struct PhoenixLinkedServiceTypeProperties {
     #[serde(rename = "httpPath", default, skip_serializing_if = "Option::is_none")]
     pub http_path: Option<serde_json::Value>,
     #[doc = "The authentication mechanism used to connect to the Phoenix server."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: phoenix_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name used to connect to the Phoenix server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18008,7 +17862,7 @@ impl PipelinePolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineReference {
     #[doc = "Pipeline reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: pipeline_reference::Type,
     #[doc = "Reference pipeline name."]
     #[serde(rename = "referenceName")]
@@ -18143,12 +17997,7 @@ impl PipelineRunsQueryResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolybaseSettings {
     #[doc = "Indicates whether the RejectValue property is specified as a literal value or a percentage."]
-    #[serde(
-        rename = "rejectType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "rejectType", default, skip_serializing_if = "Option::is_none")]
     pub reject_type: Option<PolybaseSettingsRejectType>,
     #[doc = "Specifies the value or the percentage of rows that can be rejected before the query fails. Type: number (or Expression with resultType number), minimum: 0."]
     #[serde(rename = "rejectValue", default, skip_serializing_if = "Option::is_none")]
@@ -18420,7 +18269,7 @@ pub struct PrestoLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<serde_json::Value>,
     #[doc = "The authentication mechanism used to connect to the Presto server."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: presto_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name used to connect to the Presto server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18955,7 +18804,7 @@ impl RecurrenceSchedule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecurrenceScheduleOccurrence {
     #[doc = "The days of the week."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<DayOfWeek>,
     #[doc = "The occurrence."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19299,7 +19148,7 @@ pub struct RestServiceLinkedServiceTypeProperties {
     #[serde(rename = "enableServerCertificateValidation", default, skip_serializing_if = "Option::is_none")]
     pub enable_server_certificate_validation: Option<serde_json::Value>,
     #[doc = "Type of authentication used to connect to the REST service."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: rest_service_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name used in Basic authentication type. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -19549,10 +19398,8 @@ impl RunFilterParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunQueryFilter {
     #[doc = "Parameter name to be used for filter. The allowed operands to query pipeline runs are PipelineName, RunStart, RunEnd and Status; to query activity runs are ActivityName, ActivityRunStart, ActivityRunEnd, ActivityType and Status, and to query trigger runs are TriggerName, TriggerRunTimestamp and Status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operand: run_query_filter::Operand,
     #[doc = "Operator to be used for filter."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: run_query_filter::Operator,
     #[doc = "List of filter values."]
     pub values: Vec<String>,
@@ -19667,10 +19514,9 @@ pub mod run_query_filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunQueryOrderBy {
     #[doc = "Parameter name to be used for order by. The allowed parameters to order by for pipeline runs are PipelineName, RunStart, RunEnd and Status; for activity runs are ActivityName, ActivityRunStart, ActivityRunEnd and Status; for trigger runs are TriggerName, TriggerRunTimestamp and Status."]
-    #[serde(rename = "orderBy", with = "azure_core::xml::text_content")]
+    #[serde(rename = "orderBy")]
     pub order_by: run_query_order_by::OrderBy,
     #[doc = "Sorting order of the parameter."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub order: run_query_order_by::Order,
 }
 impl RunQueryOrderBy {
@@ -19863,7 +19709,7 @@ pub struct SsisLogLocation {
     #[serde(rename = "logPath")]
     pub log_path: serde_json::Value,
     #[doc = "The type of SSIS log location."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ssis_log_location::Type,
     #[doc = "SSIS package execution log location properties."]
     #[serde(rename = "typeProperties")]
@@ -19938,12 +19784,7 @@ pub struct SsisPackageLocation {
     #[serde(rename = "packagePath", default, skip_serializing_if = "Option::is_none")]
     pub package_path: Option<serde_json::Value>,
     #[doc = "The type of SSIS package location."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ssis_package_location::Type>,
     #[doc = "SSIS package location properties."]
     #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
@@ -20287,12 +20128,7 @@ pub struct SalesforceServiceCloudSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "The write behavior for the operation. Default is Insert."]
-    #[serde(
-        rename = "writeBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<salesforce_service_cloud_sink::WriteBehavior>,
     #[doc = "The name of the external ID field for upsert operation. Default value is 'Id' column. Type: string (or Expression with resultType string)."]
     #[serde(rename = "externalIdFieldName", default, skip_serializing_if = "Option::is_none")]
@@ -20382,12 +20218,7 @@ pub struct SalesforceSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "The write behavior for the operation. Default is Insert."]
-    #[serde(
-        rename = "writeBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<salesforce_sink::WriteBehavior>,
     #[doc = "The name of the external ID field for upsert operation. Default value is 'Id' column. Type: string (or Expression with resultType string)."]
     #[serde(rename = "externalIdFieldName", default, skip_serializing_if = "Option::is_none")]
@@ -20655,12 +20486,7 @@ pub struct SapCloudForCustomerSink {
     #[serde(flatten)]
     pub copy_sink: CopySink,
     #[doc = "The write behavior for the operation. Default is 'Insert'."]
-    #[serde(
-        rename = "writeBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<sap_cloud_for_customer_sink::WriteBehavior>,
     #[doc = "The timeout (TimeSpan) to get an HTTP response. It is the timeout to get a response, not the timeout to read response data. Default value: 00:05:00. Type: string (or Expression with resultType string), pattern: ((\\d+)\\.)?(\\d\\d):(60|([0-5][0-9])):(60|([0-5][0-9]))."]
     #[serde(rename = "httpRequestTimeout", default, skip_serializing_if = "Option::is_none")]
@@ -20851,12 +20677,7 @@ pub struct SapHanaLinkedServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<serde_json::Value>,
     #[doc = "The authentication type to be used to connect to the SAP HANA server."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<sap_hana_linked_service_properties::AuthenticationType>,
     #[doc = "Username to access the SAP HANA server. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -21540,7 +21361,7 @@ pub mod schedule_trigger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleTriggerRecurrence {
     #[doc = "Enumerates possible frequency option for the schedule trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<RecurrenceFrequency>,
     #[doc = "The interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -21610,18 +21431,13 @@ pub struct ScriptActivityParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<serde_json::Value>,
     #[doc = "The type of the parameter."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<script_activity_parameter::Type>,
     #[doc = "The value of the parameter. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
     #[doc = "The direction of the parameter."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<script_activity_parameter::Direction>,
     #[doc = "The size of the output direction parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -21737,7 +21553,7 @@ pub struct ScriptActivityScriptBlock {
     #[doc = "The query text. Type: string (or Expression with resultType string)."]
     pub text: serde_json::Value,
     #[doc = "The type of the query. Type: string."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: script_activity_script_block::Type,
     #[doc = "Array of script parameters. Type: array."]
     #[serde(
@@ -21824,7 +21640,7 @@ pub mod script_activity_type_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct LogSettings {
         #[doc = "The destination of logs. Type: string."]
-        #[serde(rename = "logDestination", with = "azure_core::xml::text_content")]
+        #[serde(rename = "logDestination")]
         pub log_destination: log_settings::LogDestination,
         #[doc = "Log location settings."]
         #[serde(rename = "logLocationSettings", default, skip_serializing_if = "Option::is_none")]
@@ -21969,7 +21785,7 @@ pub struct SelfHostedIntegrationRuntimeNode {
     #[serde(rename = "hostServiceUri", default, skip_serializing_if = "Option::is_none")]
     pub host_service_uri: Option<String>,
     #[doc = "Status of the integration runtime node."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<self_hosted_integration_runtime_node::Status>,
     #[doc = "The integration runtime capabilities dictionary"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -21996,12 +21812,7 @@ pub struct SelfHostedIntegrationRuntimeNode {
     #[serde(rename = "lastStopTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_stop_time: Option<time::OffsetDateTime>,
     #[doc = "The result of the last integration runtime node update."]
-    #[serde(
-        rename = "lastUpdateResult",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
     #[doc = "The last time for the integration runtime node update start."]
     #[serde(rename = "lastStartUpdateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -22143,12 +21954,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[serde(rename = "taskQueueId", default, skip_serializing_if = "Option::is_none")]
     pub task_queue_id: Option<String>,
     #[doc = "It is used to set the encryption mode for node-node communication channel (when more than 2 self-hosted integration runtime nodes exist)."]
-    #[serde(
-        rename = "internalChannelEncryption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "internalChannelEncryption", default, skip_serializing_if = "Option::is_none")]
     pub internal_channel_encryption: Option<self_hosted_integration_runtime_status_type_properties::InternalChannelEncryption>,
     #[doc = "Version of the integration runtime."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22181,12 +21987,7 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     )]
     pub service_urls: Vec<String>,
     #[doc = "The state of integration runtime auto update."]
-    #[serde(
-        rename = "autoUpdate",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoUpdate", default, skip_serializing_if = "Option::is_none")]
     pub auto_update: Option<IntegrationRuntimeAutoUpdate>,
     #[doc = "Status of the integration runtime version."]
     #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
@@ -22290,7 +22091,7 @@ pub struct ServiceNowLinkedServiceTypeProperties {
     #[doc = "The endpoint of the ServiceNow server. (i.e. <instance>.service-now.com)"]
     pub endpoint: serde_json::Value,
     #[doc = "The authentication type to use."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: service_now_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name used to connect to the ServiceNow server for Basic and OAuth2 authentication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22573,12 +22374,7 @@ pub struct SftpServerLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<serde_json::Value>,
     #[doc = "The authentication type to be used to connect to the FTP server."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<sftp_server_linked_service_type_properties::AuthenticationType>,
     #[doc = "The username used to log on to the SFTP server. Type: string (or Expression with resultType string)."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -23077,7 +22873,7 @@ impl SnowflakeSource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkConfigurationParametrizationReference {
     #[doc = "Spark configuration reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: spark_configuration_parametrization_reference::Type,
     #[doc = "Reference spark configuration name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "referenceName")]
@@ -23169,23 +22965,13 @@ pub struct SparkLinkedServiceTypeProperties {
     #[doc = "The TCP port that the Spark server uses to listen for client connections."]
     pub port: serde_json::Value,
     #[doc = "The type of Spark server."]
-    #[serde(
-        rename = "serverType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serverType", default, skip_serializing_if = "Option::is_none")]
     pub server_type: Option<spark_linked_service_type_properties::ServerType>,
     #[doc = "The transport protocol to use in the Thrift layer."]
-    #[serde(
-        rename = "thriftTransportProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "thriftTransportProtocol", default, skip_serializing_if = "Option::is_none")]
     pub thrift_transport_protocol: Option<spark_linked_service_type_properties::ThriftTransportProtocol>,
     #[doc = "The authentication method used to access the Spark server."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: spark_linked_service_type_properties::AuthenticationType,
     #[doc = "The user name that you use to access Spark Server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -23404,7 +23190,7 @@ impl SparkSource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlAlwaysEncryptedProperties {
     #[doc = "Sql always encrypted AKV authentication type. Type: string."]
-    #[serde(rename = "alwaysEncryptedAkvAuthType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "alwaysEncryptedAkvAuthType")]
     pub always_encrypted_akv_auth_type: sql_always_encrypted_properties::AlwaysEncryptedAkvAuthType,
     #[doc = "The client ID of the application in Azure Active Directory used for Azure Key Vault authentication. Type: string (or Expression with resultType string)."]
     #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
@@ -24253,7 +24039,7 @@ impl SsisFolder {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SsisObjectMetadata {
     #[doc = "The type of SSIS object metadata."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: SsisObjectMetadataType,
     #[doc = "Metadata id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -24579,12 +24365,7 @@ pub struct StoredProcedureParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
     #[doc = "Stored procedure parameter type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<StoredProcedureParameterType>,
 }
 impl StoredProcedureParameter {
@@ -24766,12 +24547,7 @@ pub struct SybaseLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<serde_json::Value>,
     #[doc = "AuthenticationType to be used for connection."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<sybase_linked_service_type_properties::AuthenticationType>,
     #[doc = "Username for authentication. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -24923,12 +24699,7 @@ pub struct SynapseNotebookActivityTypeProperties {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<serde_json::Value>,
     #[doc = "The type of the spark config."]
-    #[serde(
-        rename = "configurationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "configurationType", default, skip_serializing_if = "Option::is_none")]
     pub configuration_type: Option<synapse_notebook_activity_type_properties::ConfigurationType>,
     #[doc = "Spark configuration reference."]
     #[serde(rename = "targetSparkConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -24999,7 +24770,7 @@ pub mod synapse_notebook_activity_type_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseNotebookReference {
     #[doc = "Synapse notebook reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: synapse_notebook_reference::Type,
     #[doc = "Reference notebook name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "referenceName")]
@@ -25109,12 +24880,7 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<serde_json::Value>,
     #[doc = "The type of the spark config."]
-    #[serde(
-        rename = "configurationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "configurationType", default, skip_serializing_if = "Option::is_none")]
     pub configuration_type: Option<synapse_spark_job_activity_type_properties::ConfigurationType>,
     #[doc = "Spark configuration reference."]
     #[serde(rename = "targetSparkConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -25208,7 +24974,7 @@ impl SynapseSparkJobDefinitionActivity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseSparkJobReference {
     #[doc = "Synapse spark job reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: synapse_spark_job_reference::Type,
     #[doc = "Reference spark job name. Expression with resultType string."]
     #[serde(rename = "referenceName")]
@@ -25374,7 +25140,7 @@ impl TeamDeskLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TeamDeskLinkedServiceTypeProperties {
     #[doc = "The authentication type to use."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: team_desk_linked_service_type_properties::AuthenticationType,
     #[doc = "The url to connect TeamDesk source. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
@@ -25470,12 +25236,7 @@ pub struct TeradataLinkedServiceTypeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub server: Option<serde_json::Value>,
     #[doc = "AuthenticationType to be used for connection."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<teradata_linked_service_type_properties::AuthenticationType>,
     #[doc = "Username for authentication. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -25734,12 +25495,7 @@ pub struct Trigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Enumerates possible state of Triggers."]
-    #[serde(
-        rename = "runtimeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runtimeState", default, skip_serializing_if = "Option::is_none")]
     pub runtime_state: Option<TriggerRuntimeState>,
     #[doc = "List of tags that can be used for describing the trigger."]
     #[serde(
@@ -25847,7 +25603,7 @@ impl TriggerQueryResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerReference {
     #[doc = "Trigger reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: trigger_reference::Type,
     #[doc = "Reference trigger name."]
     #[serde(rename = "referenceName")]
@@ -25928,7 +25684,7 @@ pub struct TriggerRun {
     #[serde(rename = "triggerRunTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub trigger_run_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Trigger run status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_run::Status>,
     #[doc = "Trigger error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -26056,7 +25812,7 @@ pub struct TriggerSubscriptionOperationStatus {
     #[serde(rename = "triggerName", default, skip_serializing_if = "Option::is_none")]
     pub trigger_name: Option<String>,
     #[doc = "Event Subscription Status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_subscription_operation_status::Status>,
 }
 impl TriggerSubscriptionOperationStatus {
@@ -26175,7 +25931,6 @@ pub mod tumbling_window_trigger {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct TypeProperties {
         #[doc = "Enumerates possible frequency option for the tumbling window trigger."]
-        #[serde(with = "azure_core::xml::text_content")]
         pub frequency: TumblingWindowFrequency,
         #[doc = "The interval of the time windows. The minimum interval allowed is 15 Minutes."]
         pub interval: i32,
@@ -26350,12 +26105,7 @@ impl UpdateIntegrationRuntimeNodeRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateIntegrationRuntimeRequest {
     #[doc = "The state of integration runtime auto update."]
-    #[serde(
-        rename = "autoUpdate",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoUpdate", default, skip_serializing_if = "Option::is_none")]
     pub auto_update: Option<IntegrationRuntimeAutoUpdate>,
     #[doc = "The time offset (in hours) in the day, e.g., PT03H is 3 hours. The integration runtime auto update will happen on that time."]
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]
@@ -26477,7 +26227,7 @@ impl VariableDefinitionSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VariableSpecification {
     #[doc = "Variable type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: variable_specification::Type,
     #[doc = "Default value of variable."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
@@ -26745,7 +26495,6 @@ impl Serialize for WebActivityMethod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebActivityTypeProperties {
     #[doc = "The list of HTTP methods supported by a WebActivity."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub method: WebActivityMethod,
     #[doc = "Web activity target endpoint and path. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
@@ -26907,7 +26656,6 @@ impl Serialize for WebHookActivityMethod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookActivityTypeProperties {
     #[doc = "The list of HTTP methods supported by a WebHook activity."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub method: WebHookActivityMethod,
     #[doc = "WebHook activity target endpoint and path. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
@@ -26963,7 +26711,7 @@ pub struct WebLinkedServiceTypeProperties {
     #[doc = "The URL of the web service endpoint, e.g. https://www.microsoft.com . Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
     #[doc = "Type of authentication used to connect to the web table source."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: web_linked_service_type_properties::AuthenticationType,
 }
 impl WebLinkedServiceTypeProperties {
@@ -27280,7 +27028,7 @@ impl ZendeskLinkedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ZendeskLinkedServiceTypeProperties {
     #[doc = "The authentication type to use."]
-    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationType")]
     pub authentication_type: zendesk_linked_service_type_properties::AuthenticationType,
     #[doc = "The url to connect Zendesk source. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,

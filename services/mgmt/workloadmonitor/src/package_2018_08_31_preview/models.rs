@@ -30,12 +30,7 @@ pub struct ComponentProperties {
     #[serde(rename = "solutionId", default, skip_serializing_if = "Option::is_none")]
     pub solution_id: Option<String>,
     #[doc = "Type of the workload."]
-    #[serde(
-        rename = "workloadType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<component_properties::WorkloadType>,
     #[doc = "Name of the component."]
     #[serde(rename = "componentName", default, skip_serializing_if = "Option::is_none")]
@@ -50,20 +45,10 @@ pub struct ComponentProperties {
     #[serde(rename = "componentTypeGroupCategory", default, skip_serializing_if = "Option::is_none")]
     pub component_type_group_category: Option<String>,
     #[doc = "Health state of the component."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<component_properties::HealthState>,
     #[doc = "Category of component's health state."]
-    #[serde(
-        rename = "healthStateCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthStateCategory", default, skip_serializing_if = "Option::is_none")]
     pub health_state_category: Option<component_properties::HealthStateCategory>,
     #[doc = "Start time for health state changes."]
     #[serde(rename = "healthStateChangesStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -267,12 +252,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthStateChange {
     #[doc = "Health state of monitor instance."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<health_state_change::HealthState>,
     #[doc = "Time at which this Health state was reached."]
     #[serde(rename = "healthStateChangeTime", default, with = "azure_core::date::rfc3339::option")]
@@ -316,23 +296,13 @@ impl Monitor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorCriteria {
     #[doc = "Target health state of the criteria"]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<monitor_criteria::HealthState>,
     #[doc = "Threshold value for this criteria"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<f64>,
     #[doc = "Comparison enum on threshold of this criteria"]
-    #[serde(
-        rename = "comparisonOperator",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "comparisonOperator", default, skip_serializing_if = "Option::is_none")]
     pub comparison_operator: Option<monitor_criteria::ComparisonOperator>,
 }
 impl MonitorCriteria {
@@ -389,12 +359,7 @@ pub struct MonitorInstanceProperties {
     #[serde(rename = "solutionId", default, skip_serializing_if = "Option::is_none")]
     pub solution_id: Option<String>,
     #[doc = "Type of the workload."]
-    #[serde(
-        rename = "workloadType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<monitor_instance_properties::WorkloadType>,
     #[doc = "ID of the component."]
     #[serde(rename = "componentId", default, skip_serializing_if = "Option::is_none")]
@@ -415,36 +380,16 @@ pub struct MonitorInstanceProperties {
     #[serde(rename = "monitorName", default, skip_serializing_if = "Option::is_none")]
     pub monitor_name: Option<String>,
     #[doc = "Type of the monitor. The qualifier for the health criteria depending on the functionality it performs such as Unit, Aggregate, Dependency."]
-    #[serde(
-        rename = "monitorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitorType", default, skip_serializing_if = "Option::is_none")]
     pub monitor_type: Option<monitor_instance_properties::MonitorType>,
     #[doc = "Monitor type category. Indicates the attribute of the component that the health criteria monitors such as Performance, Availability, etc."]
-    #[serde(
-        rename = "monitorCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitorCategory", default, skip_serializing_if = "Option::is_none")]
     pub monitor_category: Option<monitor_instance_properties::MonitorCategory>,
     #[doc = "Health state of monitor instance."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<monitor_instance_properties::HealthState>,
     #[doc = "Category of monitor instance's health state."]
-    #[serde(
-        rename = "healthStateCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthStateCategory", default, skip_serializing_if = "Option::is_none")]
     pub health_state_category: Option<monitor_instance_properties::HealthStateCategory>,
     #[doc = "Health state changes."]
     #[serde(
@@ -464,12 +409,7 @@ pub struct MonitorInstanceProperties {
     #[serde(rename = "lastHealthStateChangeTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_health_state_change_time: Option<time::OffsetDateTime>,
     #[doc = "Generates alert or not."]
-    #[serde(
-        rename = "alertGeneration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "alertGeneration", default, skip_serializing_if = "Option::is_none")]
     pub alert_generation: Option<monitor_instance_properties::AlertGeneration>,
     #[doc = "Properties requested in aggregation queries."]
     #[serde(rename = "aggregateProperties", default, skip_serializing_if = "Option::is_none")]
@@ -680,20 +620,10 @@ pub struct MonitorProperties {
     #[serde(rename = "parentMonitorDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub parent_monitor_display_name: Option<String>,
     #[doc = "Type of the monitor"]
-    #[serde(
-        rename = "monitorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitorType", default, skip_serializing_if = "Option::is_none")]
     pub monitor_type: Option<monitor_properties::MonitorType>,
     #[doc = "Category of the monitor"]
-    #[serde(
-        rename = "monitorCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitorCategory", default, skip_serializing_if = "Option::is_none")]
     pub monitor_category: Option<monitor_properties::MonitorCategory>,
     #[doc = "Component Type Id of monitor"]
     #[serde(rename = "componentTypeId", default, skip_serializing_if = "Option::is_none")]
@@ -705,12 +635,7 @@ pub struct MonitorProperties {
     #[serde(rename = "componentTypeDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub component_type_display_name: Option<String>,
     #[doc = "Is the monitor state enabled or disabled"]
-    #[serde(
-        rename = "monitorState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitorState", default, skip_serializing_if = "Option::is_none")]
     pub monitor_state: Option<monitor_properties::MonitorState>,
     #[doc = "Collection of MonitorCriteria. For PATCH calls, instead of partial list, complete list of expected criteria should be passed for proper updating."]
     #[serde(
@@ -720,12 +645,7 @@ pub struct MonitorProperties {
     )]
     pub criteria: Vec<MonitorCriteria>,
     #[doc = "Generates alerts or not"]
-    #[serde(
-        rename = "alertGeneration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "alertGeneration", default, skip_serializing_if = "Option::is_none")]
     pub alert_generation: Option<monitor_properties::AlertGeneration>,
     #[doc = "Frequency at which monitor condition is evaluated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

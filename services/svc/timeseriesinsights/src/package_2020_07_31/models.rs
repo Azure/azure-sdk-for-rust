@@ -136,12 +136,7 @@ pub struct EventProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of the property that is either stored in events or computed by a calculation."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<PropertyType>,
 }
 impl EventProperty {
@@ -361,7 +356,7 @@ impl HierarchiesBatchResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesExpandParameter {
     #[doc = "Kind of the expansion of hierarchy nodes. When it is set to 'UntilChildren', the hierarchy nodes are expanded recursively until there is more than one child. When it is set to 'OneLevel', the hierarchies are expanded only at the single level matching path search instances parameter. Optional, default is 'UntilChildren'."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<hierarchies_expand_parameter::Kind>,
 }
 impl HierarchiesExpandParameter {
@@ -437,7 +432,7 @@ impl HierarchiesRequestBatchGetDelete {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesSortParameter {
     #[doc = "Value to use for hierarchy node sorting. When it is set to 'CumulativeInstanceCount', the returned hierarchies are sorted based on the total instances belonging to the hierarchy node and its child hierarchy nodes. When it is set to 'Name', the returned hierarchies are sorted based on the hierarchy name. Optional, default is 'CumulativeInstanceCount'."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub by: Option<hierarchies_sort_parameter::By>,
 }
 impl HierarchiesSortParameter {
@@ -717,7 +712,7 @@ impl InstancesSearchStringSuggestion {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesSortParameter {
     #[doc = "Value to use for sorting of the time series instances before being returned by search instances call. When it is set to 'Rank', the returned instances are sorted based on the relevance. When it is set to 'DisplayName', the returned results are sorted based on the display name. Display name is the name of the instance if it exists, otherwise, display name is the time series ID. Default is 'Rank'."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub by: Option<instances_sort_parameter::By>,
 }
 impl InstancesSortParameter {
@@ -800,7 +795,7 @@ impl InstancesSuggestResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Interpolation {
     #[doc = "The type of interpolation technique : \"Linear\" or \"Step\"."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<interpolation::Kind>,
     #[doc = "The time range to the left and right of the search span to be used for Interpolation. This is helpful in scenarios where the data points are missing close to the start or end of the input search span. Can be null."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1230,12 +1225,7 @@ pub struct TimeSeriesIdProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of the property. Currently, only \"String\" is supported."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<time_series_id_property::Type>,
 }
 impl TimeSeriesIdProperty {

@@ -284,12 +284,7 @@ pub struct NamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub critical: Option<bool>,
     #[doc = "Gets or sets the namespace type."]
-    #[serde(
-        rename = "namespaceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "namespaceType", default, skip_serializing_if = "Option::is_none")]
     pub namespace_type: Option<namespace_properties::NamespaceType>,
 }
 impl NamespaceProperties {

@@ -60,12 +60,7 @@ pub struct ChangeProperties {
     )]
     pub initiated_by_list: Vec<String>,
     #[doc = "The type of the change."]
-    #[serde(
-        rename = "changeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
     pub change_type: Option<ChangeType>,
     #[doc = "The list of detailed changes at json property level."]
     #[serde(
@@ -260,20 +255,10 @@ impl Serialize for Level {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropertyChange {
     #[doc = "The type of the change."]
-    #[serde(
-        rename = "changeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
     pub change_type: Option<ChangeType>,
     #[doc = "The change category."]
-    #[serde(
-        rename = "changeCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "changeCategory", default, skip_serializing_if = "Option::is_none")]
     pub change_category: Option<property_change::ChangeCategory>,
     #[doc = "The json path of the changed property."]
     #[serde(rename = "jsonPath", default, skip_serializing_if = "Option::is_none")]
@@ -281,7 +266,7 @@ pub struct PropertyChange {
     #[doc = "The enhanced display name of the json path. E.g., the json path value[0].properties will be translated to something meaningful like slots[\"Staging\"].properties."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<Level>,
     #[doc = "The description of the changed property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -355,12 +340,7 @@ pub struct ResourceGraphChangeData {
     #[serde(rename = "afterSnapshot", default, skip_serializing_if = "Option::is_none")]
     pub after_snapshot: Option<serde_json::Value>,
     #[doc = "The change type for snapshot. PropertyChanges will be provided in case of Update change type"]
-    #[serde(
-        rename = "changeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
     pub change_type: Option<resource_graph_change_data::ChangeType>,
 }
 impl ResourceGraphChangeData {

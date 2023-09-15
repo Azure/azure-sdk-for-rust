@@ -13,12 +13,7 @@ pub struct AadBasedSecurityPrincipal {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "LedgerRole associated with the Security Principal of Ledger"]
-    #[serde(
-        rename = "ledgerRoleName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
     pub ledger_role_name: Option<LedgerRoleName>,
 }
 impl AadBasedSecurityPrincipal {
@@ -33,12 +28,7 @@ pub struct CertBasedSecurityPrincipal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
     #[doc = "LedgerRole associated with the Security Principal of Ledger"]
-    #[serde(
-        rename = "ledgerRoleName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
     pub ledger_role_name: Option<LedgerRoleName>,
 }
 impl CertBasedSecurityPrincipal {
@@ -68,7 +58,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -283,20 +273,10 @@ pub struct LedgerProperties {
     #[serde(rename = "ledgerInternalNamespace", default, skip_serializing_if = "Option::is_none")]
     pub ledger_internal_namespace: Option<String>,
     #[doc = "Type of the ledger. Private means transaction data is encrypted."]
-    #[serde(
-        rename = "ledgerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
     pub ledger_type: Option<ConfidentialLedgerType>,
     #[doc = "Object representing ProvisioningState for Confidential Ledger."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Array of all AAD based Security Principals."]
     #[serde(
@@ -522,12 +502,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -536,12 +511,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

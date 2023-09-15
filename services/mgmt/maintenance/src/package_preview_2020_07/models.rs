@@ -21,7 +21,7 @@ impl ApplyUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplyUpdateProperties {
     #[doc = "The status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<apply_update_properties::Status>,
     #[doc = "The resourceId"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -224,18 +224,13 @@ pub struct MaintenanceConfigurationProperties {
     #[serde(rename = "extensionProperties", default, skip_serializing_if = "Option::is_none")]
     pub extension_properties: Option<serde_json::Value>,
     #[doc = "Gets or sets maintenanceScope of the configuration"]
-    #[serde(
-        rename = "maintenanceScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "maintenanceScope", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_scope: Option<maintenance_configuration_properties::MaintenanceScope>,
     #[doc = "Definition of a MaintenanceWindow"]
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
     #[doc = "Gets or sets the visibility of the configuration"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<maintenance_configuration_properties::Visibility>,
 }
 impl MaintenanceConfigurationProperties {
@@ -465,23 +460,13 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Update {
     #[doc = "The impact area"]
-    #[serde(
-        rename = "maintenanceScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "maintenanceScope", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_scope: Option<update::MaintenanceScope>,
     #[doc = "The impact type"]
-    #[serde(
-        rename = "impactType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "impactType", default, skip_serializing_if = "Option::is_none")]
     pub impact_type: Option<update::ImpactType>,
     #[doc = "The status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<update::Status>,
     #[doc = "Duration of impact in seconds"]
     #[serde(rename = "impactDurationInSec", default, skip_serializing_if = "Option::is_none")]

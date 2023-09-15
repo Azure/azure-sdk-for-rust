@@ -84,12 +84,7 @@ impl ClusterScopeSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceStatus {
     #[doc = "The compliance state of the configuration."]
-    #[serde(
-        rename = "complianceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<compliance_status::ComplianceState>,
     #[doc = "Datetime the configuration was last applied."]
     #[serde(rename = "lastConfigApplied", default, with = "azure_core::date::rfc3339::option")]
@@ -98,12 +93,7 @@ pub struct ComplianceStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Level of the message."]
-    #[serde(
-        rename = "messageLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "messageLevel", default, skip_serializing_if = "Option::is_none")]
     pub message_level: Option<compliance_status::MessageLevel>,
 }
 impl ComplianceStatus {
@@ -329,12 +319,7 @@ pub mod extension {
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
         #[doc = "The provisioning state of the resource."]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningStateDefinition>,
         #[doc = "Status from this extension."]
         #[serde(
@@ -373,12 +358,7 @@ pub mod extension {
             #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
             pub tenant_id: Option<String>,
             #[doc = "The identity type."]
-            #[serde(
-                rename = "type",
-                default,
-                skip_serializing_if = "Option::is_none",
-                with = "azure_core::xml::text_content"
-            )]
+            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
             pub type_: Option<aks_assigned_identity::Type>,
         }
         impl AksAssignedIdentity {
@@ -406,7 +386,7 @@ pub struct ExtensionStatus {
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
     #[doc = "Level of the status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<extension_status::Level>,
     #[doc = "Detailed message of the status from the Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -665,18 +645,13 @@ pub mod flux_configuration {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Scope at which the configuration will be installed."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub scope: Option<ScopeDefinition>,
         #[doc = "The namespace to which this configuration is installed to. Maximum of 253 lower case alphanumeric characters, hyphen and period only."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub namespace: Option<String>,
         #[doc = "Source Kind to pull the configuration data from."]
-        #[serde(
-            rename = "sourceKind",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "sourceKind", default, skip_serializing_if = "Option::is_none")]
         pub source_kind: Option<SourceKindDefinition>,
         #[doc = "Whether this configuration should suspend its reconciliation of its kustomizations and sources."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -710,20 +685,10 @@ pub mod flux_configuration {
         #[serde(rename = "lastSourceUpdatedAt", default, with = "azure_core::date::rfc3339::option")]
         pub last_source_updated_at: Option<time::OffsetDateTime>,
         #[doc = "Compliance state of the cluster object."]
-        #[serde(
-            rename = "complianceState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
         pub compliance_state: Option<FluxComplianceStateDefinition>,
         #[doc = "The provisioning state of the resource."]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningStateDefinition>,
         #[doc = "Error message returned to the user in the case of provisioning failure."]
         #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -753,12 +718,7 @@ pub mod flux_configuration_patch {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Source Kind to pull the configuration data from."]
-        #[serde(
-            rename = "sourceKind",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "sourceKind", default, skip_serializing_if = "Option::is_none")]
         pub source_kind: Option<SourceKindDefinition>,
         #[doc = "Whether this configuration should suspend its reconciliation of its kustomizations and sources."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -921,12 +881,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
 impl Identity {
@@ -1111,12 +1066,7 @@ pub struct ObjectStatusDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
     #[doc = "Compliance state of the cluster object."]
-    #[serde(
-        rename = "complianceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<FluxComplianceStateDefinition>,
     #[doc = "Object reference to a Kubernetes object on a cluster"]
     #[serde(rename = "appliedBy", default, skip_serializing_if = "Option::is_none")]
@@ -1550,12 +1500,7 @@ pub mod source_control_configuration {
         #[serde(rename = "operatorInstanceName", default, skip_serializing_if = "Option::is_none")]
         pub operator_instance_name: Option<String>,
         #[doc = "Type of the operator"]
-        #[serde(
-            rename = "operatorType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "operatorType", default, skip_serializing_if = "Option::is_none")]
         pub operator_type: Option<OperatorTypeDefinition>,
         #[doc = "Any Parameters for the Operator instance in string format."]
         #[serde(rename = "operatorParams", default, skip_serializing_if = "Option::is_none")]
@@ -1564,12 +1509,7 @@ pub mod source_control_configuration {
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<ConfigurationProtectedSettings>,
         #[doc = "Scope at which the operator will be installed."]
-        #[serde(
-            rename = "operatorScope",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "operatorScope", default, skip_serializing_if = "Option::is_none")]
         pub operator_scope: Option<OperatorScopeDefinition>,
         #[doc = "Public Key associated with this SourceControl configuration (either generated within the cluster or provided by the user)."]
         #[serde(rename = "repositoryPublicKey", default, skip_serializing_if = "Option::is_none")]
@@ -1584,12 +1524,7 @@ pub mod source_control_configuration {
         #[serde(rename = "helmOperatorProperties", default, skip_serializing_if = "Option::is_none")]
         pub helm_operator_properties: Option<HelmOperatorProperties>,
         #[doc = "The provisioning state of the resource provider."]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Compliance Status details"]
         #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1770,12 +1705,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1784,12 +1714,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

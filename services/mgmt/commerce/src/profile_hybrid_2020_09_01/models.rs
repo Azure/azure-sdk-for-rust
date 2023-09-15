@@ -144,7 +144,7 @@ impl MonetaryCredit {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferTermInfo {
     #[doc = "Name of the offer term"]
-    #[serde(rename = "Name", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Name")]
     pub name: offer_term_info::Name,
     #[doc = "Indicates the date from which the offer term is effective."]
     #[serde(rename = "EffectiveDate", default, with = "azure_core::date::rfc3339::option")]

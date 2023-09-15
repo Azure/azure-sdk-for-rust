@@ -216,7 +216,7 @@ impl DatasetListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetReference {
     #[doc = "Dataset reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: dataset_reference::Type,
     #[doc = "Reference dataset name."]
     #[serde(rename = "referenceName")]
@@ -296,7 +296,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Expression {
     #[doc = "Expression type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: expression::Type,
     #[doc = "Expression value."]
     pub value: String,
@@ -335,7 +335,7 @@ impl Factory {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryIdentity {
     #[doc = "The identity type. Currently the only supported type is 'SystemAssigned'."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: factory_identity::Type,
     #[doc = "The principal id of the identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -469,7 +469,7 @@ impl FactoryVstsConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
     #[doc = "The type of integration runtime."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -647,7 +647,7 @@ impl IntegrationRuntimeNodeMonitoringData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeReference {
     #[doc = "Type of integration runtime."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: integration_runtime_reference::Type,
     #[doc = "Reference integration runtime name."]
     #[serde(rename = "referenceName")]
@@ -677,12 +677,7 @@ pub mod integration_runtime_reference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeRegenerateKeyParameters {
     #[doc = "The name of the authentication key to regenerate."]
-    #[serde(
-        rename = "keyName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<integration_runtime_regenerate_key_parameters::KeyName>,
 }
 impl IntegrationRuntimeRegenerateKeyParameters {
@@ -815,18 +810,13 @@ impl Serialize for IntegrationRuntimeState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeStatus {
     #[doc = "The type of integration runtime."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IntegrationRuntimeType>,
     #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
     #[doc = "The state of integration runtime."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
@@ -957,7 +947,7 @@ impl LinkedServiceListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceReference {
     #[doc = "Linked service reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: linked_service_reference::Type,
     #[doc = "Reference LinkedService name."]
     #[serde(rename = "referenceName")]
@@ -1185,7 +1175,7 @@ impl ParameterDefinitionSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterSpecification {
     #[doc = "Parameter type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: parameter_specification::Type,
     #[doc = "Default value of parameter."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
@@ -1313,7 +1303,7 @@ impl PipelineListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineReference {
     #[doc = "Pipeline reference type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: pipeline_reference::Type,
     #[doc = "Reference pipeline name."]
     #[serde(rename = "referenceName")]
@@ -1452,10 +1442,8 @@ impl PipelineRunInvokedBy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunQueryFilter {
     #[doc = "Parameter name to be used for filter."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operand: pipeline_run_query_filter::Operand,
     #[doc = "Operator to be used for filter."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: pipeline_run_query_filter::Operator,
     #[doc = "List of filter values."]
     pub values: Vec<String>,
@@ -1554,10 +1542,9 @@ pub mod pipeline_run_query_filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunQueryOrderBy {
     #[doc = "Parameter name to be used for order by."]
-    #[serde(rename = "orderBy", with = "azure_core::xml::text_content")]
+    #[serde(rename = "orderBy")]
     pub order_by: pipeline_run_query_order_by::OrderBy,
     #[doc = "Sorting order of the parameter."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub order: pipeline_run_query_order_by::Order,
 }
 impl PipelineRunQueryOrderBy {
@@ -1723,7 +1710,7 @@ pub struct SelfHostedIntegrationRuntimeNode {
     #[serde(rename = "hostServiceUri", default, skip_serializing_if = "Option::is_none")]
     pub host_service_uri: Option<String>,
     #[doc = "Status of the integration runtime node."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<self_hosted_integration_runtime_node::Status>,
     #[doc = "The integration runtime capabilities dictionary"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1750,12 +1737,7 @@ pub struct SelfHostedIntegrationRuntimeNode {
     #[serde(rename = "lastStopTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_stop_time: Option<time::OffsetDateTime>,
     #[doc = "The result of the last integration runtime node update."]
-    #[serde(
-        rename = "lastUpdateResult",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
     #[doc = "The last time for the integration runtime node update start."]
     #[serde(rename = "lastStartUpdateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1896,12 +1878,7 @@ pub struct Trigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Enumerates possible state of Triggers."]
-    #[serde(
-        rename = "runtimeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runtimeState", default, skip_serializing_if = "Option::is_none")]
     pub runtime_state: Option<TriggerRuntimeState>,
 }
 impl Trigger {
@@ -1980,7 +1957,7 @@ pub struct TriggerRun {
     #[serde(rename = "triggerRunTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub trigger_run_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Trigger run status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_run::Status>,
     #[doc = "Trigger error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2114,12 +2091,7 @@ impl UpdateIntegrationRuntimeNodeRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateIntegrationRuntimeRequest {
     #[doc = "The state of integration runtime auto update."]
-    #[serde(
-        rename = "autoUpdate",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoUpdate", default, skip_serializing_if = "Option::is_none")]
     pub auto_update: Option<IntegrationRuntimeAutoUpdate>,
     #[doc = "The time offset (in hours) in the day, e.g., PT03H is 3 hours. The integration runtime auto update will happen on that time."]
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]

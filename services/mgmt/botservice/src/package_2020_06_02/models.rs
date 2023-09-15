@@ -869,7 +869,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "Indicates the type of bot service"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<Kind>,
     #[doc = "Entity Tag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -976,7 +976,6 @@ pub struct SiteInfo {
     #[serde(rename = "siteName")]
     pub site_name: String,
     #[doc = "Determines which key is to be regenerated"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub key: site_info::Key,
 }
 impl SiteInfo {
@@ -999,10 +998,9 @@ pub mod site_info {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "Gets the sku tier. This is based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {

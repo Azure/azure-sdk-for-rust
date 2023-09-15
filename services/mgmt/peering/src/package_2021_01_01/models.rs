@@ -25,20 +25,10 @@ pub struct BgpSession {
     #[serde(rename = "peerSessionIPv6Address", default, skip_serializing_if = "Option::is_none")]
     pub peer_session_i_pv6_address: Option<String>,
     #[doc = "The state of the IPv4 session."]
-    #[serde(
-        rename = "sessionStateV4",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sessionStateV4", default, skip_serializing_if = "Option::is_none")]
     pub session_state_v4: Option<bgp_session::SessionStateV4>,
     #[doc = "The state of the IPv6 session."]
-    #[serde(
-        rename = "sessionStateV6",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sessionStateV6", default, skip_serializing_if = "Option::is_none")]
     pub session_state_v6: Option<bgp_session::SessionStateV6>,
     #[doc = "The maximum number of prefixes advertised over the IPv4 session."]
     #[serde(rename = "maxPrefixesAdvertisedV4", default, skip_serializing_if = "Option::is_none")]
@@ -250,7 +240,7 @@ impl CheckServiceProviderAvailabilityInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContactDetail {
     #[doc = "The role of the contact."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<contact_detail::Role>,
     #[doc = "The e-mail address of the contact."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -322,12 +312,7 @@ pub struct DirectConnection {
     #[serde(rename = "provisionedBandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
     pub provisioned_bandwidth_in_mbps: Option<i32>,
     #[doc = "The field indicating if Microsoft provides session ip addresses."]
-    #[serde(
-        rename = "sessionAddressProvider",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sessionAddressProvider", default, skip_serializing_if = "Option::is_none")]
     pub session_address_provider: Option<direct_connection::SessionAddressProvider>,
     #[doc = "The flag that indicates whether or not the connection is used for peering service."]
     #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
@@ -339,12 +324,7 @@ pub struct DirectConnection {
     #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
     pub peering_db_facility_id: Option<i32>,
     #[doc = "The state of the connection."]
-    #[serde(
-        rename = "connectionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<direct_connection::ConnectionState>,
     #[doc = "The properties that define a BGP session."]
     #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
@@ -457,12 +437,7 @@ pub struct DirectPeeringFacility {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
     #[doc = "The type of the direct peering."]
-    #[serde(
-        rename = "directPeeringType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "directPeeringType", default, skip_serializing_if = "Option::is_none")]
     pub direct_peering_type: Option<direct_peering_facility::DirectPeeringType>,
     #[doc = "The PeeringDB.com ID of the facility."]
     #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
@@ -566,12 +541,7 @@ pub struct ExchangeConnection {
     #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
     pub peering_db_facility_id: Option<i32>,
     #[doc = "The state of the connection."]
-    #[serde(
-        rename = "connectionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<exchange_connection::ConnectionState>,
     #[doc = "The properties that define a BGP session."]
     #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
@@ -794,12 +764,7 @@ pub struct PeerAsnProperties {
     #[serde(rename = "peerName", default, skip_serializing_if = "Option::is_none")]
     pub peer_name: Option<String>,
     #[doc = "The validation state of the ASN associated with the peer."]
-    #[serde(
-        rename = "validationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "validationState", default, skip_serializing_if = "Option::is_none")]
     pub validation_state: Option<peer_asn_properties::ValidationState>,
     #[doc = "The error message for the validation state"]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -862,7 +827,6 @@ pub struct Peering {
     #[doc = "The SKU that defines the tier and kind of the peering."]
     pub sku: PeeringSku,
     #[doc = "The kind of the peering."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: peering::Kind,
     #[doc = "The properties that define connectivity to the Microsoft Cloud Edge."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -971,7 +935,7 @@ pub struct PeeringLocation {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "The kind of peering that the peering location supports."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<peering_location::Kind>,
     #[doc = "The properties that define a peering location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1126,12 +1090,7 @@ pub struct PeeringProperties {
     #[serde(rename = "peeringLocation", default, skip_serializing_if = "Option::is_none")]
     pub peering_location: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_properties::ProvisioningState>,
 }
 impl PeeringProperties {
@@ -1200,12 +1159,7 @@ pub struct PeeringPropertiesDirect {
     #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<SubResource>,
     #[doc = "The type of direct peering."]
-    #[serde(
-        rename = "directPeeringType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "directPeeringType", default, skip_serializing_if = "Option::is_none")]
     pub direct_peering_type: Option<peering_properties_direct::DirectPeeringType>,
 }
 impl PeeringPropertiesDirect {
@@ -1386,12 +1340,7 @@ pub struct PeeringRegisteredAsnProperties {
     #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_prefix_key: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_registered_asn_properties::ProvisioningState>,
 }
 impl PeeringRegisteredAsnProperties {
@@ -1489,12 +1438,7 @@ pub struct PeeringRegisteredPrefixProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
     #[doc = "The prefix validation state."]
-    #[serde(
-        rename = "prefixValidationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "prefixValidationState", default, skip_serializing_if = "Option::is_none")]
     pub prefix_validation_state: Option<peering_registered_prefix_properties::PrefixValidationState>,
     #[doc = "The peering service prefix key that is to be shared with the customer."]
     #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
@@ -1503,12 +1447,7 @@ pub struct PeeringRegisteredPrefixProperties {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_registered_prefix_properties::ProvisioningState>,
 }
 impl PeeringRegisteredPrefixProperties {
@@ -1823,20 +1762,10 @@ pub struct PeeringServicePrefixProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
     #[doc = "The prefix validation state"]
-    #[serde(
-        rename = "prefixValidationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "prefixValidationState", default, skip_serializing_if = "Option::is_none")]
     pub prefix_validation_state: Option<peering_service_prefix_properties::PrefixValidationState>,
     #[doc = "The prefix learned type"]
-    #[serde(
-        rename = "learnedType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "learnedType", default, skip_serializing_if = "Option::is_none")]
     pub learned_type: Option<peering_service_prefix_properties::LearnedType>,
     #[doc = "The error message for validation state"]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1852,12 +1781,7 @@ pub struct PeeringServicePrefixProperties {
     #[serde(rename = "peeringServicePrefixKey", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_prefix_key: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_service_prefix_properties::ProvisioningState>,
 }
 impl PeeringServicePrefixProperties {
@@ -2005,12 +1929,7 @@ pub struct PeeringServiceProperties {
     #[serde(rename = "peeringServiceProvider", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_provider: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<peering_service_properties::ProvisioningState>,
     #[doc = "The primary peering (Microsoft/service provider) location to be used for customer traffic."]
     #[serde(rename = "providerPrimaryPeeringLocation", default, skip_serializing_if = "Option::is_none")]
@@ -2146,13 +2065,13 @@ pub struct PeeringSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The tier of the peering SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<peering_sku::Tier>,
     #[doc = "The family of the peering SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<peering_sku::Family>,
     #[doc = "The size of the peering SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<peering_sku::Size>,
 }
 impl PeeringSku {

@@ -161,12 +161,7 @@ pub struct ExtendedLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of extendedLocation."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ExtendedLocationType>,
 }
 impl ExtendedLocation {
@@ -219,12 +214,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
 impl Identity {
@@ -350,7 +340,7 @@ pub struct Operation {
     #[doc = "Display metadata associated with the operation."]
     pub display: OperationDisplay,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction")]
@@ -590,7 +580,7 @@ pub struct PostgresInstanceSku {
     #[serde(flatten)]
     pub common_sku: CommonSku,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<postgres_instance_sku::Tier>,
 }
 impl PostgresInstanceSku {
@@ -759,7 +749,7 @@ pub struct SqlManagedInstanceSku {
     #[serde(flatten)]
     pub common_sku: CommonSku,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sql_managed_instance_sku::Tier>,
 }
 impl SqlManagedInstanceSku {
@@ -922,12 +912,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -936,12 +921,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

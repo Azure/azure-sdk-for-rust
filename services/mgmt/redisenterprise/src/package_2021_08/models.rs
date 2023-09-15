@@ -75,31 +75,16 @@ impl ClusterList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
     #[doc = "The minimum TLS version for the cluster to support, e.g. '1.2'"]
-    #[serde(
-        rename = "minimumTlsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<cluster_properties::MinimumTlsVersion>,
     #[doc = "DNS name of the cluster endpoint"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     #[doc = "Current provisioning status"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Current resource status"]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<ResourceState>,
     #[doc = "Version of redis the cluster supports, e.g. '6'"]
     #[serde(rename = "redisVersion", default, skip_serializing_if = "Option::is_none")]
@@ -224,47 +209,22 @@ impl DatabaseList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProperties {
     #[doc = "Specifies whether redis clients can connect using TLS-encrypted or plaintext redis protocols. Default is TLS-encrypted."]
-    #[serde(
-        rename = "clientProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "clientProtocol", default, skip_serializing_if = "Option::is_none")]
     pub client_protocol: Option<database_properties::ClientProtocol>,
     #[doc = "TCP port of the database endpoint. Specified at create time. Defaults to an available port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[doc = "Current provisioning status"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Current resource status"]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<ResourceState>,
     #[doc = "Clustering policy - default is OSSCluster. Specified at create time."]
-    #[serde(
-        rename = "clusteringPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "clusteringPolicy", default, skip_serializing_if = "Option::is_none")]
     pub clustering_policy: Option<database_properties::ClusteringPolicy>,
     #[doc = "Redis eviction policy - default is VolatileLRU"]
-    #[serde(
-        rename = "evictionPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub eviction_policy: Option<database_properties::EvictionPolicy>,
     #[doc = "Persistence-related configuration for the RedisEnterprise database"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -550,15 +510,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -729,20 +684,10 @@ pub struct Persistence {
     #[serde(rename = "rdbEnabled", default, skip_serializing_if = "Option::is_none")]
     pub rdb_enabled: Option<bool>,
     #[doc = "Sets the frequency at which data is written to disk."]
-    #[serde(
-        rename = "aofFrequency",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "aofFrequency", default, skip_serializing_if = "Option::is_none")]
     pub aof_frequency: Option<persistence::AofFrequency>,
     #[doc = "Sets the frequency at which a snapshot of the database is created."]
-    #[serde(
-        rename = "rdbFrequency",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "rdbFrequency", default, skip_serializing_if = "Option::is_none")]
     pub rdb_frequency: Option<persistence::RdbFrequency>,
 }
 impl Persistence {
@@ -892,12 +837,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -1057,7 +997,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1131,7 +1071,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyParameters {
     #[doc = "Which access key to regenerate."]
-    #[serde(rename = "keyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "keyType")]
     pub key_type: regenerate_key_parameters::KeyType,
 }
 impl RegenerateKeyParameters {
@@ -1227,7 +1167,6 @@ impl Serialize for ResourceState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The type of RedisEnterprise cluster to deploy. Possible values: (Enterprise_E10, EnterpriseFlash_F300 etc.)"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The size of the RedisEnterprise cluster. Defaults to 2 or 3 depending on SKU. Valid values are (2, 4, 6, ...) for Enterprise SKUs and (3, 9, 15, ...) for Flash SKUs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

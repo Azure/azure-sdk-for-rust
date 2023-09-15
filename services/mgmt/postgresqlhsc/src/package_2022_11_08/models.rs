@@ -289,7 +289,7 @@ pub struct ClusterServerProperties {
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub fully_qualified_domain_name: Option<String>,
     #[doc = "The role of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<ServerRole>,
     #[doc = "A state of a cluster/server that is visible to user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -333,12 +333,7 @@ pub struct ConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Data type of the configuration."]
-    #[serde(
-        rename = "dataType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<configuration_properties::DataType>,
     #[doc = "Allowed values of the configuration."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
@@ -350,12 +345,7 @@ pub struct ConfigurationProperties {
     #[serde(rename = "serverRoleGroupConfigurations")]
     pub server_role_group_configurations: Vec<ServerRoleGroupConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ConfigurationProperties {
@@ -528,12 +518,7 @@ pub struct FirewallRuleProperties {
     #[serde(rename = "endIpAddress")]
     pub end_ip_address: String,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl FirewallRuleProperties {
@@ -593,7 +578,7 @@ pub struct NameAvailabilityRequest {
     #[doc = "Cluster name to verify."]
     pub name: String,
     #[doc = "Resource type used for verification."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: name_availability_request::Type,
 }
 impl NameAvailabilityRequest {
@@ -623,7 +608,7 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -790,12 +775,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -991,7 +971,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1122,12 +1102,7 @@ pub struct RoleProperties {
     #[doc = "The password of the cluster role."]
     pub password: String,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RoleProperties {
@@ -1192,12 +1167,7 @@ pub struct ServerConfigurationProperties {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
     #[doc = "Data type of the configuration."]
-    #[serde(
-        rename = "dataType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<server_configuration_properties::DataType>,
     #[doc = "Allowed values of the configuration."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
@@ -1206,12 +1176,7 @@ pub struct ServerConfigurationProperties {
     #[serde(rename = "requiresRestart", default, skip_serializing_if = "Option::is_none")]
     pub requires_restart: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ServerConfigurationProperties {
@@ -1358,7 +1323,6 @@ impl Serialize for ServerRole {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerRoleGroupConfiguration {
     #[doc = "The role of a server."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub role: ServerRole,
     #[doc = "Value of the configuration."]
     pub value: String,
@@ -1420,12 +1384,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1434,12 +1393,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

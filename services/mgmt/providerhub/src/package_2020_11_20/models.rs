@@ -131,12 +131,7 @@ impl CustomRolloutArrayResponseWithContinuation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRolloutProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<custom_rollout_properties::ProvisioningState>,
     pub specification: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -290,12 +285,7 @@ impl DefaultRolloutArrayResponseWithContinuation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRolloutProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<default_rollout_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub specification: Option<serde_json::Value>,
@@ -401,21 +391,11 @@ impl DefaultRolloutSpecification {
 pub struct DefaultRolloutStatus {
     #[serde(flatten)]
     pub rollout_status_base: RolloutStatusBase,
-    #[serde(
-        rename = "nextTrafficRegion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nextTrafficRegion", default, skip_serializing_if = "Option::is_none")]
     pub next_traffic_region: Option<default_rollout_status::NextTrafficRegion>,
     #[serde(rename = "nextTrafficRegionScheduledTime", default, with = "azure_core::date::rfc3339::option")]
     pub next_traffic_region_scheduled_time: Option<time::OffsetDateTime>,
-    #[serde(
-        rename = "subscriptionReregistrationResult",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "subscriptionReregistrationResult", default, skip_serializing_if = "Option::is_none")]
     pub subscription_reregistration_result: Option<default_rollout_status::SubscriptionReregistrationResult>,
 }
 impl DefaultRolloutStatus {
@@ -621,7 +601,7 @@ impl ExtensionOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeaturesRule {
-    #[serde(rename = "requiredFeaturesPolicy", with = "azure_core::xml::text_content")]
+    #[serde(rename = "requiredFeaturesPolicy")]
     pub required_features_policy: features_rule::RequiredFeaturesPolicy,
 }
 impl FeaturesRule {
@@ -670,12 +650,7 @@ pub mod features_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityManagement {
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_management::Type>,
 }
 impl IdentityManagement {
@@ -730,12 +705,7 @@ pub mod identity_management {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityManagementProperties {
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_management_properties::Type>,
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
@@ -840,9 +810,9 @@ impl LinkedAccessCheck {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedOperationRule {
-    #[serde(rename = "linkedOperation", with = "azure_core::xml::text_content")]
+    #[serde(rename = "linkedOperation")]
     pub linked_operation: linked_operation_rule::LinkedOperation,
-    #[serde(rename = "linkedAction", with = "azure_core::xml::text_content")]
+    #[serde(rename = "linkedAction")]
     pub linked_action: linked_operation_rule::LinkedAction,
 }
 impl LinkedOperationRule {
@@ -963,9 +933,8 @@ impl LoggingHiddenPropertyPath {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoggingRule {
     pub action: String,
-    #[serde(with = "azure_core::xml::text_content")]
     pub direction: logging_rule::Direction,
-    #[serde(rename = "detailLevel", with = "azure_core::xml::text_content")]
+    #[serde(rename = "detailLevel")]
     pub detail_level: logging_rule::DetailLevel,
     #[serde(rename = "hiddenPropertyPaths", default, skip_serializing_if = "Option::is_none")]
     pub hidden_property_paths: Option<serde_json::Value>,
@@ -1111,19 +1080,9 @@ impl NotificationRegistrationArrayResponseWithContinuation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistrationProperties {
-    #[serde(
-        rename = "notificationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "notificationMode", default, skip_serializing_if = "Option::is_none")]
     pub notification_mode: Option<notification_registration_properties::NotificationMode>,
-    #[serde(
-        rename = "messageScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "messageScope", default, skip_serializing_if = "Option::is_none")]
     pub message_scope: Option<notification_registration_properties::MessageScope>,
     #[serde(
         rename = "includedEvents",
@@ -1139,12 +1098,7 @@ pub struct NotificationRegistrationProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub notification_endpoints: Vec<NotificationEndpoint>,
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<notification_registration_properties::ProvisioningState>,
 }
 impl NotificationRegistrationProperties {
@@ -1308,16 +1262,11 @@ pub struct OperationsDefinition {
     #[doc = "Indicates whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operations_definition::Origin>,
     #[doc = "Display information of the operation."]
     pub display: serde_json::Value,
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operations_definition::ActionType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
@@ -1457,12 +1406,7 @@ pub struct ProviderRegistrationProperties {
     pub resource_provider_manifest_properties: ResourceProviderManifestProperties,
     #[serde(rename = "providerHubMetadata", default, skip_serializing_if = "Option::is_none")]
     pub provider_hub_metadata: Option<serde_json::Value>,
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<provider_registration_properties::ProvisioningState>,
     #[serde(
         rename = "subscriptionLifecycleNotificationSpecifications",
@@ -1564,12 +1508,7 @@ impl ReRegisterSubscriptionMetadata {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHeaderOptions {
-    #[serde(
-        rename = "optInHeaders",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "optInHeaders", default, skip_serializing_if = "Option::is_none")]
     pub opt_in_headers: Option<request_header_options::OptInHeaders>,
 }
 impl RequestHeaderOptions {
@@ -1684,7 +1623,6 @@ impl ResourceProviderAuthorization {
 pub struct ResourceProviderCapabilities {
     #[serde(rename = "quotaId")]
     pub quota_id: String,
-    #[serde(with = "azure_core::xml::text_content")]
     pub effect: resource_provider_capabilities::Effect,
     #[serde(
         rename = "requiredFeatures",
@@ -1809,12 +1747,7 @@ pub struct ResourceProviderManagement {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub service_tree_infos: Vec<ServiceTreeInfo>,
-    #[serde(
-        rename = "resourceAccessPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceAccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_access_policy: Option<resource_provider_management::ResourceAccessPolicy>,
     #[serde(
         rename = "resourceAccessRoles",
@@ -1853,12 +1786,7 @@ pub struct ResourceProviderManifest {
     pub namespace: Option<String>,
     #[serde(rename = "providerVersion", default, skip_serializing_if = "Option::is_none")]
     pub provider_version: Option<String>,
-    #[serde(
-        rename = "providerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<resource_provider_manifest::ProviderType>,
     #[serde(
         rename = "requiredFeatures",
@@ -1969,12 +1897,7 @@ pub struct ResourceProviderManifestProperties {
     pub namespace: Option<String>,
     #[serde(rename = "providerVersion", default, skip_serializing_if = "Option::is_none")]
     pub provider_version: Option<String>,
-    #[serde(
-        rename = "providerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<resource_provider_manifest_properties::ProviderType>,
     #[serde(
         rename = "requiredFeatures",
@@ -2060,19 +1983,9 @@ pub mod resource_provider_manifest_properties {
 pub struct ResourceType {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(
-        rename = "routingType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<resource_type::RoutingType>,
-    #[serde(
-        rename = "resourceValidation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceValidation", default, skip_serializing_if = "Option::is_none")]
     pub resource_validation: Option<resource_type::ResourceValidation>,
     #[serde(
         rename = "allowedUnauthorizedActions",
@@ -2117,12 +2030,7 @@ pub struct ResourceType {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<ResourceProviderEndpoint>,
-    #[serde(
-        rename = "marketplaceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "marketplaceType", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_type: Option<resource_type::MarketplaceType>,
     #[serde(rename = "identityManagement", default, skip_serializing_if = "Option::is_none")]
     pub identity_management: Option<serde_json::Value>,
@@ -2178,12 +2086,7 @@ pub struct ResourceType {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub linked_operation_rules: Vec<LinkedOperationRule>,
-    #[serde(
-        rename = "resourceDeletionPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceDeletionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_deletion_policy: Option<resource_type::ResourceDeletionPolicy>,
 }
 impl ResourceType {
@@ -2433,14 +2336,9 @@ impl ResourceTypeRegistrationArrayResponseWithContinuation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeRegistrationProperties {
-    #[serde(
-        rename = "routingType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<resource_type_registration_properties::RoutingType>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub regionality: Option<resource_type_registration_properties::Regionality>,
     #[serde(
         default,
@@ -2450,12 +2348,7 @@ pub struct ResourceTypeRegistrationProperties {
     pub endpoints: Vec<ResourceTypeEndpoint>,
     #[serde(rename = "extensionOptions", default, skip_serializing_if = "Option::is_none")]
     pub extension_options: Option<serde_json::Value>,
-    #[serde(
-        rename = "marketplaceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "marketplaceType", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_type: Option<resource_type_registration_properties::MarketplaceType>,
     #[serde(
         rename = "swaggerSpecifications",
@@ -2512,12 +2405,7 @@ pub struct ResourceTypeRegistrationProperties {
     pub features_rule: Option<serde_json::Value>,
     #[serde(rename = "enableAsyncOperation", default, skip_serializing_if = "Option::is_none")]
     pub enable_async_operation: Option<bool>,
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<resource_type_registration_properties::ProvisioningState>,
     #[serde(rename = "enableThirdPartyS2S", default, skip_serializing_if = "Option::is_none")]
     pub enable_third_party_s2s: Option<bool>,
@@ -2567,12 +2455,7 @@ pub struct ResourceTypeRegistrationProperties {
     pub extended_locations: Vec<ExtendedLocationOptions>,
     #[serde(rename = "resourceMovePolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_move_policy: Option<serde_json::Value>,
-    #[serde(
-        rename = "resourceDeletionPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceDeletionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_deletion_policy: Option<resource_type_registration_properties::ResourceDeletionPolicy>,
 }
 impl ResourceTypeRegistrationProperties {
@@ -2780,12 +2663,7 @@ pub mod resource_type_registration_properties {
 pub struct ResourceTypeSku {
     #[serde(rename = "skuSettings")]
     pub sku_settings: Vec<SkuSetting>,
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<resource_type_sku::ProvisioningState>,
 }
 impl ResourceTypeSku {
@@ -2903,12 +2781,7 @@ pub struct SkuCapacity {
     pub maximum: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i32>,
-    #[serde(
-        rename = "scaleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
 impl SkuCapacity {
@@ -3003,12 +2876,7 @@ pub struct SkuLocationInfo {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub extended_locations: Vec<String>,
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_location_info::Type>,
 }
 impl SkuLocationInfo {
@@ -3176,9 +3044,7 @@ impl SubscriptionLifecycleNotificationSpecifications {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionStateOverrideAction {
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: subscription_state_override_action::State,
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: subscription_state_override_action::Action,
 }
 impl SubscriptionStateOverrideAction {
@@ -3293,7 +3159,7 @@ pub mod subscription_state_override_action {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionStateRule {
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription_state_rule::State>,
     #[serde(
         rename = "allowedActions",
@@ -3391,9 +3257,8 @@ impl TemplateDeploymentOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateDeploymentPolicy {
-    #[serde(with = "azure_core::xml::text_content")]
     pub capabilities: template_deployment_policy::Capabilities,
-    #[serde(rename = "preflightOptions", with = "azure_core::xml::text_content")]
+    #[serde(rename = "preflightOptions")]
     pub preflight_options: template_deployment_policy::PreflightOptions,
 }
 impl TemplateDeploymentPolicy {
@@ -3506,7 +3371,7 @@ impl ThirdPartyProviderAuthorization {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThrottlingMetric {
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: throttling_metric::Type,
     pub limit: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -132,12 +132,7 @@ pub struct ApplicationGatewayAuthenticationCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayAuthenticationCertificatePropertiesFormat {
@@ -192,12 +187,7 @@ pub struct ApplicationGatewayAvailableSslOptionsPropertiesFormat {
     )]
     pub predefined_policies: Vec<SubResource>,
     #[doc = "Ssl predefined policy name enums."]
-    #[serde(
-        rename = "defaultPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultPolicy", default, skip_serializing_if = "Option::is_none")]
     pub default_policy: Option<PolicyNameEnum>,
     #[doc = "List of available Ssl cipher suites."]
     #[serde(
@@ -320,12 +310,7 @@ pub struct ApplicationGatewayBackendAddressPoolPropertiesFormat {
     )]
     pub backend_addresses: Vec<ApplicationGatewayBackendAddress>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayBackendAddressPoolPropertiesFormat {
@@ -414,7 +399,7 @@ pub struct ApplicationGatewayBackendHealthServer {
     #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ip_configuration: Option<NetworkInterfaceIpConfiguration>,
     #[doc = "Health of backend server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<application_gateway_backend_health_server::Health>,
     #[doc = "Health Probe Log."]
     #[serde(rename = "healthProbeLog", default, skip_serializing_if = "Option::is_none")]
@@ -501,15 +486,10 @@ pub struct ApplicationGatewayBackendHttpSettingsPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[doc = "Application Gateway protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
     #[doc = "Cookie based affinity."]
-    #[serde(
-        rename = "cookieBasedAffinity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "cookieBasedAffinity", default, skip_serializing_if = "Option::is_none")]
     pub cookie_based_affinity: Option<application_gateway_backend_http_settings_properties_format::CookieBasedAffinity>,
     #[doc = "Request timeout in seconds. Application Gateway will fail the request if response is not received within RequestTimeout. Acceptable values are from 1 second to 86400 seconds."]
     #[serde(rename = "requestTimeout", default, skip_serializing_if = "Option::is_none")]
@@ -552,12 +532,7 @@ pub struct ApplicationGatewayBackendHttpSettingsPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayBackendHttpSettingsPropertiesFormat {
@@ -635,7 +610,7 @@ pub struct ApplicationGatewayBackendSettingsPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[doc = "Application Gateway protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
     #[doc = "Connection timeout in seconds. Application Gateway will fail the request if response is not received within ConnectionTimeout. Acceptable values are from 1 second to 86400 seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -658,12 +633,7 @@ pub struct ApplicationGatewayBackendSettingsPropertiesFormat {
     #[serde(rename = "pickHostNameFromBackendAddress", default, skip_serializing_if = "Option::is_none")]
     pub pick_host_name_from_backend_address: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayBackendSettingsPropertiesFormat {
@@ -704,12 +674,7 @@ impl ApplicationGatewayConnectionDraining {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayCustomError {
     #[doc = "Status code of the application gateway customer error."]
-    #[serde(
-        rename = "statusCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<application_gateway_custom_error::StatusCode>,
     #[doc = "Error page URL of the application gateway customer error."]
     #[serde(rename = "customErrorPageUrl", default, skip_serializing_if = "Option::is_none")]
@@ -860,12 +825,7 @@ impl ApplicationGatewayFirewallRuleSet {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGatewayFirewallRuleSetPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The type of the web application firewall rule set."]
     #[serde(rename = "ruleSetType")]
@@ -917,12 +877,7 @@ pub struct ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "Reference to another subresource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -934,12 +889,7 @@ pub struct ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "privateLinkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub private_link_configuration: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
@@ -977,12 +927,7 @@ pub struct ApplicationGatewayFrontendPortPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayFrontendPortPropertiesFormat {
@@ -1053,7 +998,7 @@ pub struct ApplicationGatewayHttpListenerPropertiesFormat {
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
     pub frontend_port: Option<SubResource>,
     #[doc = "Application Gateway protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
     #[doc = "Host name of HTTP listener."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
@@ -1068,12 +1013,7 @@ pub struct ApplicationGatewayHttpListenerPropertiesFormat {
     #[serde(rename = "requireServerNameIndication", default, skip_serializing_if = "Option::is_none")]
     pub require_server_name_indication: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Custom error configurations of the HTTP listener."]
     #[serde(
@@ -1130,12 +1070,7 @@ pub struct ApplicationGatewayIpConfigurationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayIpConfigurationPropertiesFormat {
@@ -1201,7 +1136,7 @@ pub struct ApplicationGatewayListenerPropertiesFormat {
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
     pub frontend_port: Option<SubResource>,
     #[doc = "Application Gateway protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "sslCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -1210,12 +1145,7 @@ pub struct ApplicationGatewayListenerPropertiesFormat {
     #[serde(rename = "sslProfile", default, skip_serializing_if = "Option::is_none")]
     pub ssl_profile: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayListenerPropertiesFormat {
@@ -1299,20 +1229,10 @@ pub struct ApplicationGatewayLoadDistributionPolicyPropertiesFormat {
     )]
     pub load_distribution_targets: Vec<ApplicationGatewayLoadDistributionTarget>,
     #[doc = "Load Distribution Algorithm enums."]
-    #[serde(
-        rename = "loadDistributionAlgorithm",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "loadDistributionAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub load_distribution_algorithm: Option<ApplicationGatewayLoadDistributionAlgorithmEnum>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayLoadDistributionPolicyPropertiesFormat {
@@ -1360,7 +1280,7 @@ impl ApplicationGatewayLoadDistributionTargetPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayOnDemandProbe {
     #[doc = "Application Gateway protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
     #[doc = "Host name to send the probe to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1438,12 +1358,7 @@ pub struct ApplicationGatewayPathRulePropertiesFormat {
     #[serde(rename = "loadDistributionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub load_distribution_policy: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "firewallPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -1512,12 +1427,7 @@ pub struct ApplicationGatewayPrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The consumer link id."]
     #[serde(rename = "linkIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -1563,12 +1473,7 @@ pub struct ApplicationGatewayPrivateLinkConfigurationProperties {
     )]
     pub ip_configurations: Vec<ApplicationGatewayPrivateLinkIpConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayPrivateLinkConfigurationProperties {
@@ -1606,12 +1511,7 @@ pub struct ApplicationGatewayPrivateLinkIpConfigurationProperties {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "Reference to another subresource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1620,12 +1520,7 @@ pub struct ApplicationGatewayPrivateLinkIpConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayPrivateLinkIpConfigurationProperties {
@@ -1756,7 +1651,7 @@ impl ApplicationGatewayProbeHealthResponseMatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayProbePropertiesFormat {
     #[doc = "Application Gateway protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ApplicationGatewayProtocol>,
     #[doc = "Host name to send the probe to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1786,12 +1681,7 @@ pub struct ApplicationGatewayProbePropertiesFormat {
     #[serde(rename = "match", default, skip_serializing_if = "Option::is_none")]
     pub match_: Option<ApplicationGatewayProbeHealthResponseMatch>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Custom port which will be used for probing the backend servers. The valid value ranges from 1 to 65535. In case not set, port from http settings will be used. This property is valid for Standard_v2 and WAF_v2 only."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1812,12 +1702,7 @@ pub struct ApplicationGatewayPropertiesFormat {
     #[serde(rename = "sslPolicy", default, skip_serializing_if = "Option::is_none")]
     pub ssl_policy: Option<ApplicationGatewaySslPolicy>,
     #[doc = "Operational state of the application gateway resource."]
-    #[serde(
-        rename = "operationalState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<application_gateway_properties_format::OperationalState>,
     #[doc = "Subnets of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits)."]
     #[serde(
@@ -2004,12 +1889,7 @@ pub struct ApplicationGatewayPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Custom error configurations of the application gateway resource."]
     #[serde(
@@ -2151,12 +2031,7 @@ impl ApplicationGatewayRedirectConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRedirectConfigurationPropertiesFormat {
     #[doc = "Redirect type enum."]
-    #[serde(
-        rename = "redirectType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "redirectType", default, skip_serializing_if = "Option::is_none")]
     pub redirect_type: Option<RedirectTypeEnum>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "targetListener", default, skip_serializing_if = "Option::is_none")]
@@ -2227,12 +2102,7 @@ impl ApplicationGatewayRequestRoutingRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRequestRoutingRulePropertiesFormat {
     #[doc = "Rule type."]
-    #[serde(
-        rename = "ruleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<application_gateway_request_routing_rule_properties_format::RuleType>,
     #[doc = "Priority of the request routing rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2259,12 +2129,7 @@ pub struct ApplicationGatewayRequestRoutingRulePropertiesFormat {
     #[serde(rename = "loadDistributionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub load_distribution_policy: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayRequestRoutingRulePropertiesFormat {
@@ -2418,12 +2283,7 @@ pub struct ApplicationGatewayRewriteRuleSetPropertiesFormat {
     )]
     pub rewrite_rules: Vec<ApplicationGatewayRewriteRule>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayRewriteRuleSetPropertiesFormat {
@@ -2458,12 +2318,7 @@ impl ApplicationGatewayRoutingRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGatewayRoutingRulePropertiesFormat {
     #[doc = "Rule type."]
-    #[serde(
-        rename = "ruleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<application_gateway_routing_rule_properties_format::RuleType>,
     #[doc = "Priority of the routing rule."]
     pub priority: i32,
@@ -2477,12 +2332,7 @@ pub struct ApplicationGatewayRoutingRulePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub listener: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayRoutingRulePropertiesFormat {
@@ -2541,10 +2391,10 @@ pub mod application_gateway_routing_rule_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySku {
     #[doc = "Name of an application gateway SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<application_gateway_sku::Name>,
     #[doc = "Tier of an application gateway."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<application_gateway_sku::Tier>,
     #[doc = "Capacity (instance count) of an application gateway."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2695,12 +2545,7 @@ pub struct ApplicationGatewaySslCertificatePropertiesFormat {
     #[serde(rename = "keyVaultSecretId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_id: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewaySslCertificatePropertiesFormat {
@@ -2720,20 +2565,10 @@ pub struct ApplicationGatewaySslPolicy {
     )]
     pub disabled_ssl_protocols: Vec<ProtocolsEnum>,
     #[doc = "Type of Ssl Policy."]
-    #[serde(
-        rename = "policyType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
     pub policy_type: Option<application_gateway_ssl_policy::PolicyType>,
     #[doc = "Ssl predefined policy name enums."]
-    #[serde(
-        rename = "policyName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<PolicyNameEnum>,
     #[doc = "Ssl cipher suites to be enabled in the specified order to application gateway."]
     #[serde(
@@ -2744,12 +2579,7 @@ pub struct ApplicationGatewaySslPolicy {
     )]
     pub cipher_suites: Vec<CipherSuitesEnum>,
     #[doc = "Ssl protocol enums."]
-    #[serde(
-        rename = "minProtocolVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minProtocolVersion", default, skip_serializing_if = "Option::is_none")]
     pub min_protocol_version: Option<ProtocolsEnum>,
 }
 impl ApplicationGatewaySslPolicy {
@@ -2826,12 +2656,7 @@ pub struct ApplicationGatewaySslPredefinedPolicyPropertiesFormat {
     )]
     pub cipher_suites: Vec<CipherSuitesEnum>,
     #[doc = "Ssl protocol enums."]
-    #[serde(
-        rename = "minProtocolVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minProtocolVersion", default, skip_serializing_if = "Option::is_none")]
     pub min_protocol_version: Option<ProtocolsEnum>,
 }
 impl ApplicationGatewaySslPredefinedPolicyPropertiesFormat {
@@ -2880,12 +2705,7 @@ pub struct ApplicationGatewaySslProfilePropertiesFormat {
     #[serde(rename = "clientAuthConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub client_auth_configuration: Option<ApplicationGatewayClientAuthConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewaySslProfilePropertiesFormat {
@@ -2929,12 +2749,7 @@ pub struct ApplicationGatewayTrustedClientCertificatePropertiesFormat {
     #[serde(rename = "clientCertIssuerDN", default, skip_serializing_if = "Option::is_none")]
     pub client_cert_issuer_dn: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayTrustedClientCertificatePropertiesFormat {
@@ -2975,12 +2790,7 @@ pub struct ApplicationGatewayTrustedRootCertificatePropertiesFormat {
     #[serde(rename = "keyVaultSecretId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_id: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayTrustedRootCertificatePropertiesFormat {
@@ -3056,12 +2866,7 @@ pub struct ApplicationGatewayUrlPathMapPropertiesFormat {
     )]
     pub path_rules: Vec<ApplicationGatewayPathRule>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationGatewayUrlPathMapPropertiesFormat {
@@ -3075,7 +2880,7 @@ pub struct ApplicationGatewayWebApplicationFirewallConfiguration {
     #[doc = "Whether the web application firewall is enabled or not."]
     pub enabled: bool,
     #[doc = "Web application firewall mode."]
-    #[serde(rename = "firewallMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "firewallMode")]
     pub firewall_mode: application_gateway_web_application_firewall_configuration::FirewallMode,
     #[doc = "The type of the web application firewall rule set. Possible values are: 'OWASP'."]
     #[serde(rename = "ruleSetType")]
@@ -3309,12 +3114,7 @@ pub struct ApplicationSecurityGroupPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ApplicationSecurityGroupPropertiesFormat {
@@ -3393,20 +3193,10 @@ pub struct AuthorizationPropertiesFormat {
     #[serde(rename = "authorizationKey", default, skip_serializing_if = "Option::is_none")]
     pub authorization_key: Option<String>,
     #[doc = "The authorization use status."]
-    #[serde(
-        rename = "authorizationUseStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authorizationUseStatus", default, skip_serializing_if = "Option::is_none")]
     pub authorization_use_status: Option<authorization_properties_format::AuthorizationUseStatus>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AuthorizationPropertiesFormat {
@@ -3769,7 +3559,7 @@ impl AvailableServiceAliasesResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAsyncOperationResult {
     #[doc = "Status of the Azure async operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<azure_async_operation_result::Status>,
     #[doc = "Common error representation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3945,12 +3735,7 @@ pub struct AzureFirewallApplicationRuleCollectionPropertiesFormat {
     )]
     pub rules: Vec<AzureFirewallApplicationRule>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AzureFirewallApplicationRuleCollectionPropertiesFormat {
@@ -3962,12 +3747,7 @@ impl AzureFirewallApplicationRuleCollectionPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallApplicationRuleProtocol {
     #[doc = "The protocol type of a Application Rule resource."]
-    #[serde(
-        rename = "protocolType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
     pub protocol_type: Option<AzureFirewallApplicationRuleProtocolType>,
     #[doc = "Port number for the protocol, cannot be greater than 64000. This field is optional."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4063,12 +3843,7 @@ impl AzureFirewallFqdnTagListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallFqdnTagPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The name of this FQDN Tag."]
     #[serde(rename = "fqdnTagName", default, skip_serializing_if = "Option::is_none")]
@@ -4115,12 +3890,7 @@ pub struct AzureFirewallIpConfigurationPropertiesFormat {
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AzureFirewallIpConfigurationPropertiesFormat {
@@ -4172,12 +3942,7 @@ impl AzureFirewallListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallNatRcAction {
     #[doc = "The action type of a NAT rule collection."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<AzureFirewallNatRcActionType>,
 }
 impl AzureFirewallNatRcAction {
@@ -4322,12 +4087,7 @@ pub struct AzureFirewallNatRuleCollectionProperties {
     )]
     pub rules: Vec<AzureFirewallNatRule>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AzureFirewallNatRuleCollectionProperties {
@@ -4442,12 +4202,7 @@ pub struct AzureFirewallNetworkRuleCollectionPropertiesFormat {
     )]
     pub rules: Vec<AzureFirewallNetworkRule>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AzureFirewallNetworkRuleCollectionPropertiesFormat {
@@ -4538,20 +4293,10 @@ pub struct AzureFirewallPropertiesFormat {
     #[serde(rename = "managementIpConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub management_ip_configuration: Option<AzureFirewallIpConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The operation mode for Threat Intel."]
-    #[serde(
-        rename = "threatIntelMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "threatIntelMode", default, skip_serializing_if = "Option::is_none")]
     pub threat_intel_mode: Option<AzureFirewallThreatIntelMode>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
@@ -4593,12 +4338,7 @@ impl AzureFirewallPublicIpAddress {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallRcAction {
     #[doc = "The action type of a rule collection."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<AzureFirewallRcActionType>,
 }
 impl AzureFirewallRcAction {
@@ -4647,10 +4387,10 @@ impl Serialize for AzureFirewallRcActionType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFirewallSku {
     #[doc = "Name of an Azure Firewall SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<azure_firewall_sku::Name>,
     #[doc = "Tier of an Azure Firewall."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<azure_firewall_sku::Tier>,
 }
 impl AzureFirewallSku {
@@ -5096,12 +4836,7 @@ pub struct BackendAddressPoolPropertiesFormat {
     )]
     pub inbound_nat_rules: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Amount of seconds Load Balancer waits for before sending RESET to client and backend address."]
     #[serde(rename = "drainPeriodInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -5140,7 +4875,7 @@ pub struct BastionActiveSession {
     #[serde(rename = "targetIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub target_ip_address: Option<String>,
     #[doc = "The protocol used to connect to the target."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<bastion_active_session::Protocol>,
     #[doc = "The resource id of the target."]
     #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -5273,20 +5008,10 @@ pub struct BastionHostIpConfigurationPropertiesFormat {
     #[serde(rename = "publicIPAddress")]
     pub public_ip_address: SubResource,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
 }
 impl BastionHostIpConfigurationPropertiesFormat {
@@ -5339,12 +5064,7 @@ pub struct BastionHostPropertiesFormat {
     #[serde(rename = "dnsName", default, skip_serializing_if = "Option::is_none")]
     pub dns_name: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The scale units for the Bastion Host resource."]
     #[serde(rename = "scaleUnits", default, skip_serializing_if = "Option::is_none")]
@@ -5515,20 +5235,10 @@ pub struct BgpConnectionProperties {
     #[serde(rename = "hubVirtualNetworkConnection", default, skip_serializing_if = "Option::is_none")]
     pub hub_virtual_network_connection: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The current state of the VirtualHub to Peer."]
-    #[serde(
-        rename = "connectionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<bgp_connection_properties::ConnectionState>,
 }
 impl BgpConnectionProperties {
@@ -5593,7 +5303,7 @@ pub struct BgpPeerStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asn: Option<i64>,
     #[doc = "The BGP peer state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<bgp_peer_status::State>,
     #[doc = "For how long the peering has been up."]
     #[serde(rename = "connectedDuration", default, skip_serializing_if = "Option::is_none")]
@@ -6084,12 +5794,7 @@ pub struct ConnectionMonitorEndpoint {
     #[doc = "The name of the connection monitor endpoint."]
     pub name: String,
     #[doc = "The endpoint type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_endpoint::Type>,
     #[doc = "Resource ID of the connection monitor endpoint."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -6104,12 +5809,7 @@ pub struct ConnectionMonitorEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<ConnectionMonitorEndpointScope>,
     #[doc = "Test coverage for the endpoint."]
-    #[serde(
-        rename = "coverageLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "coverageLevel", default, skip_serializing_if = "Option::is_none")]
     pub coverage_level: Option<connection_monitor_endpoint::CoverageLevel>,
 }
 impl ConnectionMonitorEndpoint {
@@ -6225,12 +5925,7 @@ pub mod connection_monitor_endpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointFilter {
     #[doc = "The behavior of the endpoint filter. Currently only 'Include' is supported."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_endpoint_filter::Type>,
     #[doc = "List of items in the filter."]
     #[serde(
@@ -6287,12 +5982,7 @@ pub mod connection_monitor_endpoint_filter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorEndpointFilterItem {
     #[doc = "The type of item included in the filter. Currently only 'AgentAddress' is supported."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_endpoint_filter_item::Type>,
     #[doc = "The address of the filter item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6383,7 +6073,7 @@ pub struct ConnectionMonitorHttpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[doc = "The HTTP method to use."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<connection_monitor_http_configuration::Method>,
     #[doc = "The path component of the URI. For instance, \"/dir1/dir2\"."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6491,12 +6181,7 @@ impl ConnectionMonitorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorOutput {
     #[doc = "Connection monitor output destination type. Currently, only \"Workspace\" is supported."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_monitor_output::Type>,
     #[doc = "Describes the settings for producing output into a log analytics workspace."]
     #[serde(rename = "workspaceSettings", default, skip_serializing_if = "Option::is_none")]
@@ -6603,12 +6288,7 @@ impl ConnectionMonitorParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionMonitorQueryResult {
     #[doc = "Status of connection monitor source."]
-    #[serde(
-        rename = "sourceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceStatus", default, skip_serializing_if = "Option::is_none")]
     pub source_status: Option<connection_monitor_query_result::SourceStatus>,
     #[doc = "Information about connection states."]
     #[serde(
@@ -6701,12 +6381,7 @@ pub struct ConnectionMonitorResultProperties {
     #[serde(flatten)]
     pub connection_monitor_parameters: ConnectionMonitorParameters,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The date and time when the connection monitor was started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -6715,12 +6390,7 @@ pub struct ConnectionMonitorResultProperties {
     #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<String>,
     #[doc = "Type of connection monitor."]
-    #[serde(
-        rename = "connectionMonitorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionMonitorType", default, skip_serializing_if = "Option::is_none")]
     pub connection_monitor_type: Option<connection_monitor_result_properties::ConnectionMonitorType>,
 }
 impl ConnectionMonitorResultProperties {
@@ -6810,12 +6480,7 @@ pub struct ConnectionMonitorTcpConfiguration {
     #[serde(rename = "disableTraceRoute", default, skip_serializing_if = "Option::is_none")]
     pub disable_trace_route: Option<bool>,
     #[doc = "Destination port behavior."]
-    #[serde(
-        rename = "destinationPortBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "destinationPortBehavior", default, skip_serializing_if = "Option::is_none")]
     pub destination_port_behavior: Option<connection_monitor_tcp_configuration::DestinationPortBehavior>,
 }
 impl ConnectionMonitorTcpConfiguration {
@@ -6872,15 +6537,9 @@ pub struct ConnectionMonitorTestConfiguration {
     #[serde(rename = "testFrequencySec", default, skip_serializing_if = "Option::is_none")]
     pub test_frequency_sec: Option<i32>,
     #[doc = "The protocol to use in test evaluation."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: connection_monitor_test_configuration::Protocol,
     #[doc = "The preferred IP version to use in test evaluation. The connection monitor may choose to use a different version depending on other parameters."]
-    #[serde(
-        rename = "preferredIPVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "preferredIPVersion", default, skip_serializing_if = "Option::is_none")]
     pub preferred_ip_version: Option<connection_monitor_test_configuration::PreferredIpVersion>,
     #[doc = "Describes the HTTP configuration."]
     #[serde(rename = "httpConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -7098,12 +6757,7 @@ impl ConnectionSharedKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionStateSnapshot {
     #[doc = "The connection state."]
-    #[serde(
-        rename = "connectionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<connection_state_snapshot::ConnectionState>,
     #[doc = "The start time of the connection snapshot."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -7112,12 +6766,7 @@ pub struct ConnectionStateSnapshot {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Connectivity analysis evaluation state."]
-    #[serde(
-        rename = "evaluationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "evaluationState", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_state: Option<connection_state_snapshot::EvaluationState>,
     #[doc = "Average latency in ms."]
     #[serde(rename = "avgLatencyInMs", default, skip_serializing_if = "Option::is_none")]
@@ -7316,12 +6965,7 @@ pub struct ConnectivityInformation {
     )]
     pub hops: Vec<ConnectivityHop>,
     #[doc = "The connection status."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<connectivity_information::ConnectionStatus>,
     #[doc = "Average latency in milliseconds."]
     #[serde(rename = "avgLatencyInMs", default, skip_serializing_if = "Option::is_none")]
@@ -7392,18 +7036,13 @@ pub mod connectivity_information {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityIssue {
     #[doc = "The origin of the issue."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<connectivity_issue::Origin>,
     #[doc = "The severity of the issue."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<connectivity_issue::Severity>,
     #[doc = "The type of issue."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connectivity_issue::Type>,
     #[doc = "Provides additional context on the issue."]
     #[serde(
@@ -7556,18 +7195,13 @@ pub struct ConnectivityParameters {
     #[doc = "Parameters that define destination of connection."]
     pub destination: ConnectivityDestination,
     #[doc = "Network protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<connectivity_parameters::Protocol>,
     #[doc = "Configuration of the protocol."]
     #[serde(rename = "protocolConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub protocol_configuration: Option<ProtocolConfiguration>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "preferredIPVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "preferredIPVersion", default, skip_serializing_if = "Option::is_none")]
     pub preferred_ip_version: Option<IpVersion>,
 }
 impl ConnectivityParameters {
@@ -7717,12 +7351,7 @@ pub struct ContainerNetworkInterfaceConfigurationPropertiesFormat {
     )]
     pub container_network_interfaces: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ContainerNetworkInterfaceConfigurationPropertiesFormat {
@@ -7755,12 +7384,7 @@ impl ContainerNetworkInterfaceIpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerNetworkInterfaceIpConfigurationPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ContainerNetworkInterfaceIpConfigurationPropertiesFormat {
@@ -7790,12 +7414,7 @@ pub struct ContainerNetworkInterfacePropertiesFormat {
     )]
     pub ip_configurations: Vec<ContainerNetworkInterfaceIpConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ContainerNetworkInterfacePropertiesFormat {
@@ -7899,12 +7518,7 @@ pub struct CustomIpPrefixPropertiesFormat {
     )]
     pub child_custom_ip_prefixes: Vec<SubResource>,
     #[doc = "The commissioned state of the Custom IP Prefix."]
-    #[serde(
-        rename = "commissionedState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "commissionedState", default, skip_serializing_if = "Option::is_none")]
     pub commissioned_state: Option<custom_ip_prefix_properties_format::CommissionedState>,
     #[doc = "The list of all referenced PublicIpPrefixes."]
     #[serde(
@@ -7921,12 +7535,7 @@ pub struct CustomIpPrefixPropertiesFormat {
     #[serde(rename = "failedReason", default, skip_serializing_if = "Option::is_none")]
     pub failed_reason: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl CustomIpPrefixPropertiesFormat {
@@ -8006,12 +7615,7 @@ pub struct DdosCustomPolicyPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The list of public IPs associated with the DDoS custom policy resource. This list is read-only."]
     #[serde(
@@ -8097,12 +7701,7 @@ pub struct DdosProtectionPlanPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The list of virtual networks associated with the DDoS protection plan resource. This list is read-only."]
     #[serde(
@@ -8125,12 +7724,7 @@ pub struct DdosSettings {
     #[serde(rename = "ddosCustomPolicy", default, skip_serializing_if = "Option::is_none")]
     pub ddos_custom_policy: Option<SubResource>,
     #[doc = "The DDoS protection policy customizability of the public IP. Only standard coverage will have the ability to be customized."]
-    #[serde(
-        rename = "protectionCoverage",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "protectionCoverage", default, skip_serializing_if = "Option::is_none")]
     pub protection_coverage: Option<ddos_settings::ProtectionCoverage>,
     #[doc = "Enables DDoS protection on the public IP."]
     #[serde(rename = "protectedIP", default, skip_serializing_if = "Option::is_none")]
@@ -8469,7 +8063,7 @@ pub struct DscpConfigurationPropertiesFormat {
     )]
     pub destination_port_ranges: Vec<QosPortRange>,
     #[doc = "RNM supported protocol types."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<dscp_configuration_properties_format::Protocol>,
     #[doc = "QoS object definitions"]
     #[serde(
@@ -8494,12 +8088,7 @@ pub struct DscpConfigurationPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl DscpConfigurationPropertiesFormat {
@@ -8631,7 +8220,7 @@ pub struct EffectiveNetworkSecurityRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The network protocol this rule applies to."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<effective_network_security_rule::Protocol>,
     #[doc = "The source port or range."]
     #[serde(rename = "sourcePortRange", default, skip_serializing_if = "Option::is_none")]
@@ -8694,13 +8283,13 @@ pub struct EffectiveNetworkSecurityRule {
     )]
     pub expanded_destination_address_prefix: Vec<String>,
     #[doc = "Whether network traffic is allowed or denied."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access: Option<SecurityRuleAccess>,
     #[doc = "The priority of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "The direction of the rule. The direction specifies if rule will be evaluated on incoming or outgoing traffic."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<SecurityRuleDirection>,
 }
 impl EffectiveNetworkSecurityRule {
@@ -8760,10 +8349,10 @@ pub struct EffectiveRoute {
     #[serde(rename = "disableBgpRoutePropagation", default, skip_serializing_if = "Option::is_none")]
     pub disable_bgp_route_propagation: Option<bool>,
     #[doc = "Who created the route."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<effective_route::Source>,
     #[doc = "The value of effective route."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<effective_route::State>,
     #[doc = "The address prefixes of the effective routes in CIDR notation."]
     #[serde(
@@ -8782,12 +8371,7 @@ pub struct EffectiveRoute {
     )]
     pub next_hop_ip_address: Vec<String>,
     #[doc = "The type of Azure hop the packet should be sent to."]
-    #[serde(
-        rename = "nextHopType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nextHopType", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_type: Option<RouteNextHopType>,
 }
 impl EffectiveRoute {
@@ -9264,20 +8848,10 @@ pub struct ExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "ipv6CircuitConnectionConfig", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_circuit_connection_config: Option<Ipv6CircuitConnectionConfig>,
     #[doc = "Express Route Circuit connection state."]
-    #[serde(
-        rename = "circuitConnectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "circuitConnectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub circuit_connection_status: Option<CircuitConnectionStatus>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ExpressRouteCircuitConnectionPropertiesFormat {
@@ -9353,12 +8927,7 @@ pub struct ExpressRouteCircuitPeeringConfig {
     )]
     pub advertised_communities: Vec<String>,
     #[doc = "The advertised public prefix state of the Peering resource."]
-    #[serde(
-        rename = "advertisedPublicPrefixesState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "advertisedPublicPrefixesState", default, skip_serializing_if = "Option::is_none")]
     pub advertised_public_prefixes_state: Option<express_route_circuit_peering_config::AdvertisedPublicPrefixesState>,
     #[doc = "The legacy mode of the peering."]
     #[serde(rename = "legacyMode", default, skip_serializing_if = "Option::is_none")]
@@ -9460,15 +9029,10 @@ impl ExpressRouteCircuitPeeringListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringPropertiesFormat {
     #[doc = "The peering type."]
-    #[serde(
-        rename = "peeringType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "peeringType", default, skip_serializing_if = "Option::is_none")]
     pub peering_type: Option<ExpressRoutePeeringType>,
     #[doc = "The state of peering."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ExpressRoutePeeringState>,
     #[doc = "The Azure ASN."]
     #[serde(rename = "azureASN", default, skip_serializing_if = "Option::is_none")]
@@ -9501,12 +9065,7 @@ pub struct ExpressRouteCircuitPeeringPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<ExpressRouteCircuitStats>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The GatewayManager Etag."]
     #[serde(rename = "gatewayManagerEtag", default, skip_serializing_if = "Option::is_none")]
@@ -9554,12 +9113,7 @@ pub struct ExpressRouteCircuitPropertiesFormat {
     #[serde(rename = "circuitProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub circuit_provisioning_state: Option<String>,
     #[doc = "The ServiceProviderProvisioningState state of the resource."]
-    #[serde(
-        rename = "serviceProviderProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceProviderProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_provisioning_state: Option<ServiceProviderProvisioningState>,
     #[doc = "The list of authorizations."]
     #[serde(
@@ -9594,12 +9148,7 @@ pub struct ExpressRouteCircuitPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stag: Option<i32>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The GatewayManager Etag."]
     #[serde(rename = "gatewayManagerEtag", default, skip_serializing_if = "Option::is_none")]
@@ -9701,10 +9250,10 @@ pub struct ExpressRouteCircuitSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The tier of the SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<express_route_circuit_sku::Tier>,
     #[doc = "The family of the SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<express_route_circuit_sku::Family>,
 }
 impl ExpressRouteCircuitSku {
@@ -9923,12 +9472,7 @@ impl ExpressRouteConnectionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExpressRouteConnectionProperties {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "ExpressRoute circuit peering identifier."]
     #[serde(rename = "expressRouteCircuitPeering")]
@@ -10053,15 +9597,10 @@ impl ExpressRouteCrossConnectionPeeringList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCrossConnectionPeeringProperties {
     #[doc = "The peering type."]
-    #[serde(
-        rename = "peeringType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "peeringType", default, skip_serializing_if = "Option::is_none")]
     pub peering_type: Option<ExpressRoutePeeringType>,
     #[doc = "The state of peering."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ExpressRoutePeeringState>,
     #[doc = "The Azure ASN."]
     #[serde(rename = "azureASN", default, skip_serializing_if = "Option::is_none")]
@@ -10091,12 +9630,7 @@ pub struct ExpressRouteCrossConnectionPeeringProperties {
     #[serde(rename = "microsoftPeeringConfig", default, skip_serializing_if = "Option::is_none")]
     pub microsoft_peering_config: Option<ExpressRouteCircuitPeeringConfig>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The GatewayManager Etag."]
     #[serde(rename = "gatewayManagerEtag", default, skip_serializing_if = "Option::is_none")]
@@ -10135,23 +9669,13 @@ pub struct ExpressRouteCrossConnectionProperties {
     #[serde(rename = "expressRouteCircuit", default, skip_serializing_if = "Option::is_none")]
     pub express_route_circuit: Option<ExpressRouteCircuitReference>,
     #[doc = "The ServiceProviderProvisioningState state of the resource."]
-    #[serde(
-        rename = "serviceProviderProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceProviderProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_provisioning_state: Option<ServiceProviderProvisioningState>,
     #[doc = "Additional read only notes set by the connectivity provider."]
     #[serde(rename = "serviceProviderNotes", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_notes: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The list of peerings."]
     #[serde(
@@ -10254,12 +9778,7 @@ pub struct ExpressRouteGatewayProperties {
     )]
     pub express_route_connections: Vec<ExpressRouteConnection>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Virtual Hub identifier."]
     #[serde(rename = "virtualHub")]
@@ -10363,15 +9882,10 @@ pub struct ExpressRouteLinkMacSecConfig {
     #[serde(rename = "cakSecretIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub cak_secret_identifier: Option<String>,
     #[doc = "Mac security cipher."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cipher: Option<express_route_link_mac_sec_config::Cipher>,
     #[doc = "Sci mode enabled/disabled."]
-    #[serde(
-        rename = "sciState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sciState", default, skip_serializing_if = "Option::is_none")]
     pub sci_state: Option<express_route_link_mac_sec_config::SciState>,
 }
 impl ExpressRouteLinkMacSecConfig {
@@ -10476,28 +9990,13 @@ pub struct ExpressRouteLinkPropertiesFormat {
     #[serde(rename = "rackId", default, skip_serializing_if = "Option::is_none")]
     pub rack_id: Option<String>,
     #[doc = "Physical fiber port type."]
-    #[serde(
-        rename = "connectorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectorType", default, skip_serializing_if = "Option::is_none")]
     pub connector_type: Option<express_route_link_properties_format::ConnectorType>,
     #[doc = "Administrative state of the physical port."]
-    #[serde(
-        rename = "adminState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "adminState", default, skip_serializing_if = "Option::is_none")]
     pub admin_state: Option<express_route_link_properties_format::AdminState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "ExpressRouteLink Mac Security Configuration."]
     #[serde(rename = "macSecConfig", default, skip_serializing_if = "Option::is_none")]
@@ -10738,23 +10237,13 @@ pub struct ExpressRoutePortAuthorizationPropertiesFormat {
     #[serde(rename = "authorizationKey", default, skip_serializing_if = "Option::is_none")]
     pub authorization_key: Option<String>,
     #[doc = "The authorization use status."]
-    #[serde(
-        rename = "authorizationUseStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authorizationUseStatus", default, skip_serializing_if = "Option::is_none")]
     pub authorization_use_status: Option<express_route_port_authorization_properties_format::AuthorizationUseStatus>,
     #[doc = "The reference to the ExpressRoute circuit resource using the authorization."]
     #[serde(rename = "circuitResourceUri", default, skip_serializing_if = "Option::is_none")]
     pub circuit_resource_uri: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ExpressRoutePortAuthorizationPropertiesFormat {
@@ -10843,7 +10332,7 @@ pub struct ExpressRoutePortPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mtu: Option<String>,
     #[doc = "Encapsulation method on physical ports."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encapsulation: Option<express_route_port_properties_format::Encapsulation>,
     #[doc = "Ether type of the physical port."]
     #[serde(rename = "etherType", default, skip_serializing_if = "Option::is_none")]
@@ -10866,12 +10355,7 @@ pub struct ExpressRoutePortPropertiesFormat {
     )]
     pub circuits: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The resource GUID property of the express route port resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -10994,12 +10478,7 @@ pub struct ExpressRoutePortsLocationPropertiesFormat {
     )]
     pub available_bandwidths: Vec<ExpressRoutePortsLocationBandwidths>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ExpressRoutePortsLocationPropertiesFormat {
@@ -11081,12 +10560,7 @@ pub struct ExpressRouteServiceProviderPropertiesFormat {
     )]
     pub bandwidths_offered: Vec<ExpressRouteServiceProviderBandwidthsOffered>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ExpressRouteServiceProviderPropertiesFormat {
@@ -11101,12 +10575,7 @@ pub struct ExtendedLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The supported ExtendedLocation types. Currently only EdgeZone is supported in Microsoft.Network resources."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ExtendedLocationType>,
 }
 impl ExtendedLocation {
@@ -11233,12 +10702,7 @@ impl FirewallPolicyFilterRuleCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyFilterRuleCollectionAction {
     #[doc = "The action type of a rule."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<FirewallPolicyFilterRuleCollectionActionType>,
 }
 impl FirewallPolicyFilterRuleCollectionAction {
@@ -11305,7 +10769,7 @@ impl FirewallPolicyInsights {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyIntrusionDetection {
     #[doc = "Possible state values."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<FirewallPolicyIntrusionDetectionStateOptions>,
     #[doc = "The operation for configuring intrusion detection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11371,7 +10835,7 @@ pub struct FirewallPolicyIntrusionDetectionBypassTrafficSpecifications {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Possible intrusion detection bypass traffic protocols."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<FirewallPolicyIntrusionDetectionBypassTrafficProtocol>,
     #[doc = "List of source IP addresses or ranges for this rule."]
     #[serde(
@@ -11459,7 +10923,7 @@ pub struct FirewallPolicyIntrusionDetectionSignatureSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Possible state values."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<FirewallPolicyIntrusionDetectionStateOptions>,
 }
 impl FirewallPolicyIntrusionDetectionSignatureSpecification {
@@ -11594,12 +11058,7 @@ impl FirewallPolicyNatRuleCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyNatRuleCollectionAction {
     #[doc = "The action type of a rule."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<FirewallPolicyNatRuleCollectionActionType>,
 }
 impl FirewallPolicyNatRuleCollectionAction {
@@ -11655,12 +11114,7 @@ pub struct FirewallPolicyPropertiesFormat {
     )]
     pub rule_collection_groups: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "basePolicy", default, skip_serializing_if = "Option::is_none")]
@@ -11681,12 +11135,7 @@ pub struct FirewallPolicyPropertiesFormat {
     )]
     pub child_policies: Vec<SubResource>,
     #[doc = "The operation mode for Threat Intel."]
-    #[serde(
-        rename = "threatIntelMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "threatIntelMode", default, skip_serializing_if = "Option::is_none")]
     pub threat_intel_mode: Option<AzureFirewallThreatIntelMode>,
     #[doc = "ThreatIntel Whitelist for Firewall Policy."]
     #[serde(rename = "threatIntelWhitelist", default, skip_serializing_if = "Option::is_none")]
@@ -11731,7 +11180,7 @@ pub struct FirewallPolicyRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Rule Type."]
-    #[serde(rename = "ruleType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ruleType")]
     pub rule_type: firewall_policy_rule::RuleType,
 }
 impl FirewallPolicyRule {
@@ -11789,12 +11238,7 @@ pub mod firewall_policy_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleApplicationProtocol {
     #[doc = "The application protocol type of a Rule."]
-    #[serde(
-        rename = "protocolType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
     pub protocol_type: Option<FirewallPolicyRuleApplicationProtocolType>,
     #[doc = "Port number for the protocol, cannot be greater than 64000."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11846,7 +11290,7 @@ impl Serialize for FirewallPolicyRuleApplicationProtocolType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallPolicyRuleCollection {
     #[doc = "The type of the rule collection."]
-    #[serde(rename = "ruleCollectionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ruleCollectionType")]
     pub rule_collection_type: firewall_policy_rule_collection::RuleCollectionType,
     #[doc = "The name of the rule collection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11971,12 +11415,7 @@ pub struct FirewallPolicyRuleCollectionGroupProperties {
     )]
     pub rule_collections: Vec<FirewallPolicyRuleCollection>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl FirewallPolicyRuleCollectionGroupProperties {
@@ -12061,7 +11500,7 @@ impl FirewallPolicySql {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicySku {
     #[doc = "Tier of Firewall Policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<firewall_policy_sku::Tier>,
 }
 impl FirewallPolicySku {
@@ -12168,12 +11607,7 @@ impl FlowLog {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowLogFormatParameters {
     #[doc = "The file type of flow log."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<flow_log_format_parameters::Type>,
     #[doc = "The version (revision) of the flow log."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12319,12 +11753,7 @@ pub struct FlowLogPropertiesFormat {
     #[serde(rename = "flowAnalyticsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub flow_analytics_configuration: Option<TrafficAnalyticsProperties>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl FlowLogPropertiesFormat {
@@ -12422,20 +11851,10 @@ pub struct FrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "privateIPAddressVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address_version: Option<IpVersion>,
     #[doc = "Subnet in a virtual network resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12450,12 +11869,7 @@ pub struct FrontendIpConfigurationPropertiesFormat {
     #[serde(rename = "gatewayLoadBalancer", default, skip_serializing_if = "Option::is_none")]
     pub gateway_load_balancer: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl FrontendIpConfigurationPropertiesFormat {
@@ -12491,15 +11905,10 @@ pub struct GatewayLoadBalancerTunnelInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<i32>,
     #[doc = "Protocol of gateway load balancer tunnel interface."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<gateway_load_balancer_tunnel_interface::Protocol>,
     #[doc = "Traffic type of gateway load balancer tunnel interface."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<gateway_load_balancer_tunnel_interface::Type>,
 }
 impl GatewayLoadBalancerTunnelInterface {
@@ -12686,7 +12095,7 @@ impl GetVpnSitesConfigurationRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpConfiguration {
     #[doc = "HTTP method."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<http_configuration::Method>,
     #[doc = "List of HTTP headers."]
     #[serde(
@@ -12833,12 +12242,7 @@ pub struct HubIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "Subnet in a virtual network resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12847,12 +12251,7 @@ pub struct HubIpConfigurationPropertiesFormat {
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<PublicIpAddress>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl HubIpConfigurationPropertiesFormat {
@@ -12987,12 +12386,7 @@ pub struct HubRouteTableProperties {
     )]
     pub propagating_connections: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl HubRouteTableProperties {
@@ -13079,12 +12473,7 @@ pub struct HubVirtualNetworkConnectionProperties {
     #[serde(rename = "routingConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub routing_configuration: Option<RoutingConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl HubVirtualNetworkConnectionProperties {
@@ -13303,12 +12692,7 @@ pub struct IpConfigurationProfilePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<Subnet>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl IpConfigurationProfilePropertiesFormat {
@@ -13323,12 +12707,7 @@ pub struct IpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "Subnet in a virtual network resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13337,12 +12716,7 @@ pub struct IpConfigurationPropertiesFormat {
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Box<Option<PublicIpAddress>>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl IpConfigurationPropertiesFormat {
@@ -13522,7 +12896,6 @@ pub struct InboundNatPoolPropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub frontend_ip_configuration: Option<SubResource>,
     #[doc = "The transport protocol for the endpoint."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: TransportProtocol,
     #[doc = "The first port number in the range of external ports that will be used to provide Inbound Nat to NICs associated with a load balancer. Acceptable values range between 1 and 65534."]
     #[serde(rename = "frontendPortRangeStart")]
@@ -13543,12 +12916,7 @@ pub struct InboundNatPoolPropertiesFormat {
     #[serde(rename = "enableTcpReset", default, skip_serializing_if = "Option::is_none")]
     pub enable_tcp_reset: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl InboundNatPoolPropertiesFormat {
@@ -13621,7 +12989,7 @@ pub struct InboundNatRulePortMapping {
     #[serde(rename = "inboundNatRuleName", default, skip_serializing_if = "Option::is_none")]
     pub inbound_nat_rule_name: Option<String>,
     #[doc = "The transport protocol for the endpoint."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<TransportProtocol>,
     #[doc = "Frontend port."]
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
@@ -13645,7 +13013,7 @@ pub struct InboundNatRulePropertiesFormat {
     #[serde(rename = "backendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub backend_ip_configuration: Option<NetworkInterfaceIpConfiguration>,
     #[doc = "The transport protocol for the endpoint."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<TransportProtocol>,
     #[doc = "The port for the external endpoint. Port numbers for each rule must be unique within the Load Balancer. Acceptable values range from 1 to 65534."]
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
@@ -13672,12 +13040,7 @@ pub struct InboundNatRulePropertiesFormat {
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
     pub backend_address_pool: Option<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl InboundNatRulePropertiesFormat {
@@ -13719,12 +13082,7 @@ pub struct InboundSecurityRuleProperties {
     )]
     pub rules: Vec<InboundSecurityRules>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl InboundSecurityRuleProperties {
@@ -13736,7 +13094,7 @@ impl InboundSecurityRuleProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundSecurityRules {
     #[doc = "Protocol. This should be either TCP or UDP."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<inbound_security_rules::Protocol>,
     #[doc = "The CIDR or source IP range. Only /30, /31 and /32 Ip ranges are allowed."]
     #[serde(rename = "sourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -13844,12 +13202,7 @@ pub struct IpAllocationPropertiesFormat {
     #[serde(rename = "virtualNetwork", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network: Option<SubResource>,
     #[doc = "IpAllocation type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IpAllocationType>,
     #[doc = "The address prefix for the IpAllocation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13858,12 +13211,7 @@ pub struct IpAllocationPropertiesFormat {
     #[serde(rename = "prefixLength", default, skip_serializing_if = "Option::is_none")]
     pub prefix_length: Option<i64>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "prefixType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "prefixType", default, skip_serializing_if = "Option::is_none")]
     pub prefix_type: Option<IpVersion>,
     #[doc = "The IPAM allocation ID."]
     #[serde(rename = "ipamAllocationId", default, skip_serializing_if = "Option::is_none")]
@@ -13960,12 +13308,7 @@ impl IpGroupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpGroupPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "IpAddresses/IpAddressPrefixes in the IpGroups resource."]
     #[serde(
@@ -14132,22 +13475,22 @@ pub struct IpsecPolicy {
     #[serde(rename = "saDataSizeKilobytes")]
     pub sa_data_size_kilobytes: i32,
     #[doc = "The IPSec encryption algorithm (IKE phase 1)."]
-    #[serde(rename = "ipsecEncryption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ipsecEncryption")]
     pub ipsec_encryption: IpsecEncryption,
     #[doc = "The IPSec integrity algorithm (IKE phase 1)."]
-    #[serde(rename = "ipsecIntegrity", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ipsecIntegrity")]
     pub ipsec_integrity: IpsecIntegrity,
     #[doc = "The IKE encryption algorithm (IKE phase 2)."]
-    #[serde(rename = "ikeEncryption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ikeEncryption")]
     pub ike_encryption: IkeEncryption,
     #[doc = "The IKE integrity algorithm (IKE phase 2)."]
-    #[serde(rename = "ikeIntegrity", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ikeIntegrity")]
     pub ike_integrity: IkeIntegrity,
     #[doc = "The DH Groups used in IKE Phase 1 for initial SA."]
-    #[serde(rename = "dhGroup", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dhGroup")]
     pub dh_group: DhGroup,
     #[doc = "The Pfs Groups used in IKE Phase 2 for new child SA."]
-    #[serde(rename = "pfsGroup", with = "azure_core::xml::text_content")]
+    #[serde(rename = "pfsGroup")]
     pub pfs_group: PfsGroup,
 }
 impl IpsecPolicy {
@@ -14180,12 +13523,7 @@ pub struct Ipv6CircuitConnectionConfig {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
     #[doc = "Express Route Circuit connection state."]
-    #[serde(
-        rename = "circuitConnectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "circuitConnectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub circuit_connection_status: Option<CircuitConnectionStatus>,
 }
 impl Ipv6CircuitConnectionConfig {
@@ -14209,7 +13547,7 @@ pub struct Ipv6ExpressRouteCircuitPeeringConfig {
     #[serde(rename = "routeFilter", default, skip_serializing_if = "Option::is_none")]
     pub route_filter: Option<SubResource>,
     #[doc = "The state of peering."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ipv6_express_route_circuit_peering_config::State>,
 }
 impl Ipv6ExpressRouteCircuitPeeringConfig {
@@ -14805,12 +14143,7 @@ pub struct LoadBalancerBackendAddressPropertiesFormat {
     )]
     pub inbound_nat_rules_port_mapping: Vec<NatRulePortMapping>,
     #[doc = "A list of administrative states which once set can override health probe so that Load Balancer will always forward new connections to backend, or deny new connections and reset existing connections."]
-    #[serde(
-        rename = "adminState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "adminState", default, skip_serializing_if = "Option::is_none")]
     pub admin_state: Option<load_balancer_backend_address_properties_format::AdminState>,
 }
 impl LoadBalancerBackendAddressPropertiesFormat {
@@ -15049,12 +14382,7 @@ pub struct LoadBalancerPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl LoadBalancerPropertiesFormat {
@@ -15066,10 +14394,10 @@ impl LoadBalancerPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerSku {
     #[doc = "Name of a load balancer SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<load_balancer_sku::Name>,
     #[doc = "Tier of a load balancer SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<load_balancer_sku::Tier>,
 }
 impl LoadBalancerSku {
@@ -15244,15 +14572,9 @@ pub struct LoadBalancingRulePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub probe: Option<SubResource>,
     #[doc = "The transport protocol for the endpoint."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: TransportProtocol,
     #[doc = "The load distribution policy for this rule."]
-    #[serde(
-        rename = "loadDistribution",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "loadDistribution", default, skip_serializing_if = "Option::is_none")]
     pub load_distribution: Option<load_balancing_rule_properties_format::LoadDistribution>,
     #[doc = "The port for the external endpoint. Port numbers for each rule must be unique within the Load Balancer. Acceptable values are between 0 and 65534. Note that value 0 enables \"Any Port\"."]
     #[serde(rename = "frontendPort")]
@@ -15273,12 +14595,7 @@ pub struct LoadBalancingRulePropertiesFormat {
     #[serde(rename = "disableOutboundSnat", default, skip_serializing_if = "Option::is_none")]
     pub disable_outbound_snat: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl LoadBalancingRulePropertiesFormat {
@@ -15408,12 +14725,7 @@ pub struct LocalNetworkGatewayPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl LocalNetworkGatewayPropertiesFormat {
@@ -15468,7 +14780,7 @@ pub struct ManagedRuleOverride {
     #[serde(rename = "ruleId")]
     pub rule_id: String,
     #[doc = "The state of the managed rule. Defaults to Disabled if not specified."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<managed_rule_override::State>,
 }
 impl ManagedRuleOverride {
@@ -15573,12 +14885,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the resource. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the virtual machine."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_service_identity::Type>,
     #[doc = "The list of user identities associated with resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -15608,7 +14915,6 @@ pub struct MatchCondition {
     #[serde(rename = "matchVariables")]
     pub match_variables: Vec<MatchVariable>,
     #[doc = "The operator to be matched."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: match_condition::Operator,
     #[doc = "Whether this is negate condition or not."]
     #[serde(rename = "negationConditon", default, skip_serializing_if = "Option::is_none")]
@@ -15698,7 +15004,7 @@ pub mod match_condition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MatchVariable {
     #[doc = "Match Variable."]
-    #[serde(rename = "variableName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "variableName")]
     pub variable_name: match_variable::VariableName,
     #[doc = "The selector of match variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15923,12 +15229,7 @@ pub struct NatGatewayPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NatGatewayPropertiesFormat {
@@ -15940,7 +15241,7 @@ impl NatGatewayPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NatGatewaySku {
     #[doc = "Name of Nat Gateway SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<nat_gateway_sku::Name>,
 }
 impl NatGatewaySku {
@@ -16081,12 +15382,7 @@ pub struct NetworkConfigurationDiagnosticParameters {
     #[serde(rename = "targetResourceId")]
     pub target_resource_id: String,
     #[doc = "Verbosity level."]
-    #[serde(
-        rename = "verbosityLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "verbosityLevel", default, skip_serializing_if = "Option::is_none")]
     pub verbosity_level: Option<network_configuration_diagnostic_parameters::VerbosityLevel>,
     #[doc = "List of network configuration diagnostic profiles."]
     pub profiles: Vec<NetworkConfigurationDiagnosticProfile>,
@@ -16146,7 +15442,6 @@ pub mod network_configuration_diagnostic_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkConfigurationDiagnosticProfile {
     #[doc = "The direction of the traffic."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub direction: Direction,
     #[doc = "Protocol to be verified on. Accepted values are '*', TCP, UDP."]
     pub protocol: String,
@@ -16415,20 +15710,10 @@ pub struct NetworkInterfaceIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "privateIPAddressVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address_version: Option<IpVersion>,
     #[doc = "Subnet in a virtual network resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16448,12 +15733,7 @@ pub struct NetworkInterfaceIpConfigurationPropertiesFormat {
     )]
     pub application_security_groups: Vec<ApplicationSecurityGroup>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "PrivateLinkConnection properties for the network interface."]
     #[serde(rename = "privateLinkConnectionProperties", default, skip_serializing_if = "Option::is_none")]
@@ -16575,42 +15855,22 @@ pub struct NetworkInterfacePropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "WorkloadType of the NetworkInterface for BareMetal resources"]
     #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<String>,
     #[doc = "Type of Network Interface resource."]
-    #[serde(
-        rename = "nicType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nicType", default, skip_serializing_if = "Option::is_none")]
     pub nic_type: Option<network_interface_properties_format::NicType>,
     #[doc = "Private link service resource."]
     #[serde(rename = "privateLinkService", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service: Option<PrivateLinkService>,
     #[doc = "Migration phase of Network Interface resource."]
-    #[serde(
-        rename = "migrationPhase",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "migrationPhase", default, skip_serializing_if = "Option::is_none")]
     pub migration_phase: Option<network_interface_properties_format::MigrationPhase>,
     #[doc = "Auxiliary mode of Network Interface resource."]
-    #[serde(
-        rename = "auxiliaryMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "auxiliaryMode", default, skip_serializing_if = "Option::is_none")]
     pub auxiliary_mode: Option<network_interface_properties_format::AuxiliaryMode>,
 }
 impl NetworkInterfacePropertiesFormat {
@@ -16795,12 +16055,7 @@ pub struct NetworkInterfaceTapConfigurationPropertiesFormat {
     #[serde(rename = "virtualNetworkTap", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_tap: Option<VirtualNetworkTap>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkInterfaceTapConfigurationPropertiesFormat {
@@ -16873,12 +16128,7 @@ pub struct NetworkProfilePropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkProfilePropertiesFormat {
@@ -17050,12 +16300,7 @@ pub struct NetworkSecurityGroupPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkSecurityGroupPropertiesFormat {
@@ -17067,12 +16312,7 @@ impl NetworkSecurityGroupPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupResult {
     #[doc = "Whether network traffic is allowed or denied."]
-    #[serde(
-        rename = "securityRuleAccessResult",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "securityRuleAccessResult", default, skip_serializing_if = "Option::is_none")]
     pub security_rule_access_result: Option<SecurityRuleAccess>,
     #[doc = "List of results network security groups diagnostic."]
     #[serde(
@@ -17222,12 +16462,7 @@ pub struct NetworkVirtualAppliancePropertiesFormat {
     )]
     pub inbound_security_rules: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkVirtualAppliancePropertiesFormat {
@@ -17388,12 +16623,7 @@ impl NetworkWatcherListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkWatcherPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkWatcherPropertiesFormat {
@@ -17431,12 +16661,7 @@ impl NextHopParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NextHopResult {
     #[doc = "Next hop type."]
-    #[serde(
-        rename = "nextHopType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nextHopType", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_type: Option<next_hop_result::NextHopType>,
     #[doc = "Next hop IP Address."]
     #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Option::is_none")]
@@ -17698,7 +16923,7 @@ pub struct OrderBy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
     #[doc = "Describes if results should be in ascending/descending order"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<order_by::Order>,
 }
 impl OrderBy {
@@ -17782,15 +17007,9 @@ pub struct OutboundRulePropertiesFormat {
     #[serde(rename = "backendAddressPool")]
     pub backend_address_pool: SubResource,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The protocol for the outbound rule in load balancer."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: outbound_rule_properties_format::Protocol,
     #[doc = "Receive bidirectional TCP Reset on TCP flow idle timeout or unexpected connection termination. This element is only used when the protocol is set to TCP."]
     #[serde(rename = "enableTcpReset", default, skip_serializing_if = "Option::is_none")]
@@ -17862,10 +17081,10 @@ pub mod outbound_rule_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OwaspCrsExclusionEntry {
     #[doc = "The variable to be excluded."]
-    #[serde(rename = "matchVariable", with = "azure_core::xml::text_content")]
+    #[serde(rename = "matchVariable")]
     pub match_variable: owasp_crs_exclusion_entry::MatchVariable,
     #[doc = "When matchVariable is a collection, operate on the selector to specify which elements in the collection this exclusion applies to."]
-    #[serde(rename = "selectorMatchOperator", with = "azure_core::xml::text_content")]
+    #[serde(rename = "selectorMatchOperator")]
     pub selector_match_operator: owasp_crs_exclusion_entry::SelectorMatchOperator,
     #[doc = "When matchVariable is a collection, operator used to specify which elements in the collection this exclusion applies to."]
     pub selector: String,
@@ -18038,12 +17257,7 @@ pub struct P2sConnectionConfigurationProperties {
     )]
     pub previous_configuration_policy_group_associations: Vec<VpnServerConfigurationPolicyGroup>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl P2sConnectionConfigurationProperties {
@@ -18136,12 +17350,7 @@ pub struct P2sVpnGatewayProperties {
     )]
     pub p2_s_connection_configurations: Vec<P2sConnectionConfiguration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The scale unit for this p2s vpn gateway."]
     #[serde(rename = "vpnGatewayScaleUnit", default, skip_serializing_if = "Option::is_none")]
@@ -18173,12 +17382,7 @@ impl P2sVpnGatewayProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct P2sVpnProfileParameters {
     #[doc = "VPN client authentication method."]
-    #[serde(
-        rename = "authenticationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
     pub authentication_method: Option<AuthenticationMethod>,
 }
 impl P2sVpnProfileParameters {
@@ -18201,7 +17405,7 @@ impl PacketCapture {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureFilter {
     #[doc = "Protocol to be filtered on."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<packet_capture_filter::Protocol>,
     #[doc = "Local IP Address to be filtered on. Notation: \"127.0.0.1\" for single address entry. \"127.0.0.1-127.0.0.255\" for range. \"127.0.0.1;127.0.0.5\"? for multiple entries. Multiple ranges not currently supported. Mixing ranges with multiple entries not currently supported. Default = null."]
     #[serde(rename = "localIPAddress", default, skip_serializing_if = "Option::is_none")]
@@ -18342,12 +17546,7 @@ pub struct PacketCaptureQueryStatusResult {
     #[serde(rename = "captureStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub capture_start_time: Option<time::OffsetDateTime>,
     #[doc = "The status of the packet capture session."]
-    #[serde(
-        rename = "packetCaptureStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "packetCaptureStatus", default, skip_serializing_if = "Option::is_none")]
     pub packet_capture_status: Option<packet_capture_query_status_result::PacketCaptureStatus>,
     #[doc = "The reason the current packet capture session was stopped."]
     #[serde(rename = "stopReason", default, skip_serializing_if = "Option::is_none")]
@@ -18439,12 +17638,7 @@ pub struct PacketCaptureResultProperties {
     #[serde(flatten)]
     pub packet_capture_parameters: PacketCaptureParameters,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl PacketCaptureResultProperties {
@@ -18580,12 +17774,7 @@ pub struct PeerExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
     #[doc = "Express Route Circuit connection state."]
-    #[serde(
-        rename = "circuitConnectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "circuitConnectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub circuit_connection_status: Option<CircuitConnectionStatus>,
     #[doc = "The name of the express route circuit connection resource."]
     #[serde(rename = "connectionName", default, skip_serializing_if = "Option::is_none")]
@@ -18594,12 +17783,7 @@ pub struct PeerExpressRouteCircuitConnectionPropertiesFormat {
     #[serde(rename = "authResourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub auth_resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl PeerExpressRouteCircuitConnectionPropertiesFormat {
@@ -18755,10 +17939,10 @@ impl Serialize for PolicyNameEnum {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySettings {
     #[doc = "The state of the policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<policy_settings::State>,
     #[doc = "The mode of the policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<policy_settings::Mode>,
     #[doc = "Whether to allow WAF to check request Body."]
     #[serde(rename = "requestBodyCheck", default, skip_serializing_if = "Option::is_none")]
@@ -18976,12 +18160,7 @@ impl PrivateDnsZoneGroupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateDnsZoneGroupPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A collection of private dns zone configurations of the private dns zone group."]
     #[serde(
@@ -19095,12 +18274,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The consumer link id."]
     #[serde(rename = "linkIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -19190,12 +18364,7 @@ pub struct PrivateEndpointProperties {
     )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A grouping of information about the connection to the remote resource."]
     #[serde(
@@ -19293,12 +18462,7 @@ impl PrivateLinkServiceConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionProperties {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The resource id of private link service."]
     #[serde(rename = "privateLinkServiceId", default, skip_serializing_if = "Option::is_none")]
@@ -19371,12 +18535,7 @@ pub struct PrivateLinkServiceIpConfigurationProperties {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "Subnet in a virtual network resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19385,20 +18544,10 @@ pub struct PrivateLinkServiceIpConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "privateIPAddressVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address_version: Option<IpVersion>,
 }
 impl PrivateLinkServiceIpConfigurationProperties {
@@ -19459,12 +18608,7 @@ pub struct PrivateLinkServiceProperties {
     )]
     pub network_interfaces: Vec<NetworkInterface>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An array of list about connections to the private endpoint."]
     #[serde(
@@ -19546,7 +18690,6 @@ pub struct ProbePropertiesFormat {
     )]
     pub load_balancing_rules: Vec<SubResource>,
     #[doc = "The protocol of the end point. If 'Tcp' is specified, a received ACK is required for the probe to be successful. If 'Http' or 'Https' is specified, a 200 OK response from the specifies URI is required for the probe to be successful."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: probe_properties_format::Protocol,
     #[doc = "The port for communicating the probe. Possible values range from 1 to 65535, inclusive."]
     pub port: i32,
@@ -19560,12 +18703,7 @@ pub struct ProbePropertiesFormat {
     #[serde(rename = "requestPath", default, skip_serializing_if = "Option::is_none")]
     pub request_path: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ProbePropertiesFormat {
@@ -19662,7 +18800,7 @@ impl ProtocolConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtocolCustomSettingsFormat {
     #[doc = "The protocol for which the DDoS protection policy is being customized."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<protocol_custom_settings_format::Protocol>,
     #[doc = "The customized DDoS protection trigger rate."]
     #[serde(rename = "triggerRateOverride", default, skip_serializing_if = "Option::is_none")]
@@ -19671,12 +18809,7 @@ pub struct ProtocolCustomSettingsFormat {
     #[serde(rename = "sourceRateOverride", default, skip_serializing_if = "Option::is_none")]
     pub source_rate_override: Option<String>,
     #[doc = "The customized DDoS protection trigger rate sensitivity degrees. High: Trigger rate set with most sensitivity w.r.t. normal traffic. Default: Trigger rate set with moderate sensitivity w.r.t. normal traffic. Low: Trigger rate set with less sensitivity w.r.t. normal traffic. Relaxed: Trigger rate set with least sensitivity w.r.t. normal traffic."]
-    #[serde(
-        rename = "triggerSensitivityOverride",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "triggerSensitivityOverride", default, skip_serializing_if = "Option::is_none")]
     pub trigger_sensitivity_override: Option<protocol_custom_settings_format::TriggerSensitivityOverride>,
 }
 impl ProtocolCustomSettingsFormat {
@@ -19927,20 +19060,10 @@ impl PublicIpAddressListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressPropertiesFormat {
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "publicIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "publicIPAddressVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address_version: Option<IpVersion>,
     #[doc = "IP configuration."]
     #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -19972,12 +19095,7 @@ pub struct PublicIpAddressPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Public IP address resource."]
     #[serde(rename = "servicePublicIPAddress", default, skip_serializing_if = "Option::is_none")]
@@ -19986,23 +19104,13 @@ pub struct PublicIpAddressPropertiesFormat {
     #[serde(rename = "natGateway", default, skip_serializing_if = "Option::is_none")]
     pub nat_gateway: Option<NatGateway>,
     #[doc = "Migration phase of Public IP Address."]
-    #[serde(
-        rename = "migrationPhase",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "migrationPhase", default, skip_serializing_if = "Option::is_none")]
     pub migration_phase: Option<public_ip_address_properties_format::MigrationPhase>,
     #[doc = "Public IP address resource."]
     #[serde(rename = "linkedPublicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub linked_public_ip_address: Option<PublicIpAddress>,
     #[doc = "Specify what happens to the public IP address when the VM using it is deleted"]
-    #[serde(
-        rename = "deleteOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOption", default, skip_serializing_if = "Option::is_none")]
     pub delete_option: Option<public_ip_address_properties_format::DeleteOption>,
 }
 impl PublicIpAddressPropertiesFormat {
@@ -20097,10 +19205,10 @@ pub mod public_ip_address_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressSku {
     #[doc = "Name of a public IP address SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<public_ip_address_sku::Name>,
     #[doc = "Tier of a public IP address SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<public_ip_address_sku::Tier>,
 }
 impl PublicIpAddressSku {
@@ -20244,12 +19352,7 @@ impl PublicIpPrefixListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefixPropertiesFormat {
     #[doc = "IP address version."]
-    #[serde(
-        rename = "publicIPAddressVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address_version: Option<IpVersion>,
     #[doc = "The list of tags associated with the public IP prefix."]
     #[serde(
@@ -20283,12 +19386,7 @@ pub struct PublicIpPrefixPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Nat Gateway resource."]
     #[serde(rename = "natGateway", default, skip_serializing_if = "Option::is_none")]
@@ -20303,10 +19401,10 @@ impl PublicIpPrefixPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpPrefixSku {
     #[doc = "Name of a public IP prefix SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<public_ip_prefix_sku::Name>,
     #[doc = "Tier of a public IP prefix SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<public_ip_prefix_sku::Tier>,
 }
 impl PublicIpPrefixSku {
@@ -20432,7 +19530,7 @@ pub struct QosDefinition {
     )]
     pub destination_port_ranges: Vec<QosPortRange>,
     #[doc = "RNM supported protocol types."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<qos_definition::Protocol>,
 }
 impl QosDefinition {
@@ -20605,12 +19703,7 @@ pub struct RecordSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Recordset time to live."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -20742,12 +19835,7 @@ pub struct ResourceNavigationLinkFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ResourceNavigationLinkFormat {
@@ -20900,12 +19988,7 @@ pub struct RouteFilterPropertiesFormat {
     )]
     pub ipv6_peerings: Vec<ExpressRouteCircuitPeering>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RouteFilterPropertiesFormat {
@@ -20965,20 +20048,14 @@ impl RouteFilterRuleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RouteFilterRulePropertiesFormat {
     #[doc = "Access to be allowed or denied."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub access: Access,
     #[doc = "The rule type of the rule."]
-    #[serde(rename = "routeFilterRuleType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "routeFilterRuleType")]
     pub route_filter_rule_type: route_filter_rule_properties_format::RouteFilterRuleType,
     #[doc = "The collection for bgp community values to filter on. e.g. ['12076:5010','12076:5020']."]
     pub communities: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RouteFilterRulePropertiesFormat {
@@ -21108,18 +20185,13 @@ pub struct RoutePropertiesFormat {
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
     #[doc = "The type of Azure hop the packet should be sent to."]
-    #[serde(rename = "nextHopType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "nextHopType")]
     pub next_hop_type: RouteNextHopType,
     #[doc = "The IP address packets should be forwarded to. Next hop values are only allowed in routes where the next hop type is VirtualAppliance."]
     #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_ip_address: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A value indicating whether this route overrides overlapping BGP routes regardless of LPM."]
     #[serde(rename = "hasBgpOverride", default, skip_serializing_if = "Option::is_none")]
@@ -21199,12 +20271,7 @@ pub struct RouteTablePropertiesFormat {
     #[serde(rename = "disableBgpRoutePropagation", default, skip_serializing_if = "Option::is_none")]
     pub disable_bgp_route_propagation: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The resource GUID property of the route table."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -21268,12 +20335,7 @@ pub struct RoutingIntentProperties {
     )]
     pub routing_policies: Vec<RoutingPolicy>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RoutingIntentProperties {
@@ -21475,28 +20537,13 @@ impl SecurityPartnerProviderListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPartnerProviderPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Security Providers."]
-    #[serde(
-        rename = "securityProviderName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "securityProviderName", default, skip_serializing_if = "Option::is_none")]
     pub security_provider_name: Option<SecurityPartnerProvidersecurityProviderName>,
     #[doc = "The current state of the connection with Security Partner Provider."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<SecurityPartnerProviderConnectionStatus>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
@@ -21706,7 +20753,6 @@ pub struct SecurityRulePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Network protocol this rule applies to."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: security_rule_properties_format::Protocol,
     #[doc = "The source port or range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports."]
     #[serde(rename = "sourcePortRange", default, skip_serializing_if = "Option::is_none")]
@@ -21769,21 +20815,14 @@ pub struct SecurityRulePropertiesFormat {
     )]
     pub destination_port_ranges: Vec<String>,
     #[doc = "Whether network traffic is allowed or denied."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub access: SecurityRuleAccess,
     #[doc = "The priority of the rule. The value can be between 100 and 4096. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[doc = "The direction of the rule. The direction specifies if rule will be evaluated on incoming or outgoing traffic."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub direction: SecurityRuleDirection,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl SecurityRulePropertiesFormat {
@@ -21890,12 +20929,7 @@ pub struct ServiceAssociationLinkPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "If true, the resource can be deleted."]
     #[serde(rename = "allowDelete", default, skip_serializing_if = "Option::is_none")]
@@ -21946,12 +20980,7 @@ pub struct ServiceDelegationPropertiesFormat {
     )]
     pub actions: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ServiceDelegationPropertiesFormat {
@@ -22045,12 +21074,7 @@ pub struct ServiceEndpointPolicyDefinitionPropertiesFormat {
     )]
     pub service_resources: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ServiceEndpointPolicyDefinitionPropertiesFormat {
@@ -22105,12 +21129,7 @@ pub struct ServiceEndpointPolicyPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The alias indicating if the policy belongs to a service"]
     #[serde(rename = "serviceAlias", default, skip_serializing_if = "Option::is_none")]
@@ -22143,12 +21162,7 @@ pub struct ServiceEndpointPropertiesFormat {
     )]
     pub locations: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ServiceEndpointPropertiesFormat {
@@ -22416,13 +21430,13 @@ pub struct SingleQueryResult {
     #[serde(rename = "signatureId", default, skip_serializing_if = "Option::is_none")]
     pub signature_id: Option<i32>,
     #[doc = "The current mode enforced, 0 - Disabled, 1 - Alert, 2 -Deny"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<single_query_result::Mode>,
     #[doc = "Describes the severity of signature: 1 - Low, 2 - Medium, 3 - High"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<single_query_result::Severity>,
     #[doc = "Describes in which direction signature is being enforced: 0 - Inbound, 1 - OutBound, 2 - Bidirectional"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<single_query_result::Direction>,
     #[doc = "Describes the groups the signature belongs to"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22477,7 +21491,7 @@ pub mod single_query_result {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "The name of this Bastion Host."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
 impl Sku {
@@ -22731,28 +21745,13 @@ pub struct SubnetPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purpose: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Enable or Disable apply network policies on private end point in the subnet."]
-    #[serde(
-        rename = "privateEndpointNetworkPolicies",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateEndpointNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_network_policies: Option<subnet_properties_format::PrivateEndpointNetworkPolicies>,
     #[doc = "Enable or Disable apply network policies on private link service in the subnet."]
-    #[serde(
-        rename = "privateLinkServiceNetworkPolicies",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateLinkServiceNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_network_policies: Option<subnet_properties_format::PrivateLinkServiceNetworkPolicies>,
     #[doc = "Application gateway IP configurations of virtual network resource."]
     #[serde(
@@ -22902,12 +21901,7 @@ pub struct TopologyAssociation {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "The association type of the child resource to the parent resource."]
-    #[serde(
-        rename = "associationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "associationType", default, skip_serializing_if = "Option::is_none")]
     pub association_type: Option<topology_association::AssociationType>,
 }
 impl TopologyAssociation {
@@ -23254,12 +22248,7 @@ pub struct TunnelConnectionHealth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tunnel: Option<String>,
     #[doc = "Virtual Network Gateway connection status."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VirtualNetworkGatewayConnectionStatus>,
     #[doc = "The Ingress Bytes Transferred in this connection."]
     #[serde(rename = "ingressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
@@ -23336,7 +22325,6 @@ pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "An enum describing the unit of measurement."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub unit: usage::Unit,
     #[doc = "The current value of the usage."]
     #[serde(rename = "currentValue")]
@@ -23453,10 +22441,8 @@ pub struct VerificationIpFlowParameters {
     #[serde(rename = "targetResourceId")]
     pub target_resource_id: String,
     #[doc = "The direction of the traffic."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub direction: Direction,
     #[doc = "Protocol to be verified on."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: verification_ip_flow_parameters::Protocol,
     #[doc = "The local port. Acceptable values are a single integer in the range (0-65535). Support for * for the source port, which depends on the direction."]
     #[serde(rename = "localPort")]
@@ -23542,7 +22528,7 @@ pub mod verification_ip_flow_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VerificationIpFlowResult {
     #[doc = "Access to be allowed or denied."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access: Option<Access>,
     #[doc = "Name of the rule. If input is not matched against any security rule, it is not displayed."]
     #[serde(rename = "ruleName", default, skip_serializing_if = "Option::is_none")]
@@ -23604,12 +22590,7 @@ pub struct VirtualApplianceSiteProperties {
     #[serde(rename = "o365Policy", default, skip_serializing_if = "Option::is_none")]
     pub o365_policy: Option<Office365PolicyProperties>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualApplianceSiteProperties {
@@ -23750,12 +22731,7 @@ pub struct VirtualHubProperties {
     #[serde(rename = "routeTable", default, skip_serializing_if = "Option::is_none")]
     pub route_table: Option<VirtualHubRouteTable>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Security Provider name."]
     #[serde(rename = "securityProviderName", default, skip_serializing_if = "Option::is_none")]
@@ -23772,12 +22748,7 @@ pub struct VirtualHubProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
     #[doc = "The current routing state of the VirtualHub."]
-    #[serde(
-        rename = "routingState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingState", default, skip_serializing_if = "Option::is_none")]
     pub routing_state: Option<RoutingState>,
     #[doc = "List of references to Bgp Connections."]
     #[serde(
@@ -23810,20 +22781,10 @@ pub struct VirtualHubProperties {
     #[serde(rename = "allowBranchToBranchTraffic", default, skip_serializing_if = "Option::is_none")]
     pub allow_branch_to_branch_traffic: Option<bool>,
     #[doc = "The preferred routing gateway types"]
-    #[serde(
-        rename = "preferredRoutingGateway",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "preferredRoutingGateway", default, skip_serializing_if = "Option::is_none")]
     pub preferred_routing_gateway: Option<PreferredRoutingGateway>,
     #[doc = "The hub routing preference gateway types"]
-    #[serde(
-        rename = "hubRoutingPreference",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hubRoutingPreference", default, skip_serializing_if = "Option::is_none")]
     pub hub_routing_preference: Option<HubRoutingPreference>,
 }
 impl VirtualHubProperties {
@@ -23906,12 +22867,7 @@ pub struct VirtualHubRouteTableV2Properties {
     )]
     pub attached_connections: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualHubRouteTableV2Properties {
@@ -24004,7 +22960,7 @@ pub struct VirtualNetworkEncryption {
     #[doc = "Indicates if encryption is enabled on the virtual network."]
     pub enabled: bool,
     #[doc = "If the encrypted VNet allows VM that does not support encryption"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enforcement: Option<virtual_network_encryption::Enforcement>,
 }
 impl VirtualNetworkEncryption {
@@ -24135,37 +23091,22 @@ pub struct VirtualNetworkGatewayConnectionListEntityPropertiesFormat {
     #[serde(rename = "localNetworkGateway2", default, skip_serializing_if = "Option::is_none")]
     pub local_network_gateway2: Option<VirtualNetworkConnectionGatewayReference>,
     #[doc = "Gateway connection type."]
-    #[serde(rename = "connectionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "connectionType")]
     pub connection_type: VirtualNetworkGatewayConnectionType,
     #[doc = "Gateway connection protocol."]
-    #[serde(
-        rename = "connectionProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionProtocol", default, skip_serializing_if = "Option::is_none")]
     pub connection_protocol: Option<ConnectionProtocol>,
     #[doc = "The routing weight."]
     #[serde(rename = "routingWeight", default, skip_serializing_if = "Option::is_none")]
     pub routing_weight: Option<i32>,
     #[doc = "Gateway connection type."]
-    #[serde(
-        rename = "connectionMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionMode", default, skip_serializing_if = "Option::is_none")]
     pub connection_mode: Option<VirtualNetworkGatewayConnectionMode>,
     #[doc = "The IPSec shared key."]
     #[serde(rename = "sharedKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_key: Option<String>,
     #[doc = "Virtual Network Gateway connection status."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VirtualNetworkGatewayConnectionStatus>,
     #[doc = "Collection of all tunnels' connection health status."]
     #[serde(
@@ -24218,12 +23159,7 @@ pub struct VirtualNetworkGatewayConnectionListEntityPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Bypass ExpressRoute Gateway for data forwarding."]
     #[serde(rename = "expressRouteGatewayBypass", default, skip_serializing_if = "Option::is_none")]
@@ -24356,15 +23292,10 @@ pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
     )]
     pub egress_nat_rules: Vec<SubResource>,
     #[doc = "Gateway connection type."]
-    #[serde(rename = "connectionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "connectionType")]
     pub connection_type: VirtualNetworkGatewayConnectionType,
     #[doc = "Gateway connection protocol."]
-    #[serde(
-        rename = "connectionProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionProtocol", default, skip_serializing_if = "Option::is_none")]
     pub connection_protocol: Option<ConnectionProtocol>,
     #[doc = "The routing weight."]
     #[serde(rename = "routingWeight", default, skip_serializing_if = "Option::is_none")]
@@ -24373,23 +23304,13 @@ pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
     #[serde(rename = "dpdTimeoutSeconds", default, skip_serializing_if = "Option::is_none")]
     pub dpd_timeout_seconds: Option<i32>,
     #[doc = "Gateway connection type."]
-    #[serde(
-        rename = "connectionMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionMode", default, skip_serializing_if = "Option::is_none")]
     pub connection_mode: Option<VirtualNetworkGatewayConnectionMode>,
     #[doc = "The IPSec shared key."]
     #[serde(rename = "sharedKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_key: Option<String>,
     #[doc = "Virtual Network Gateway connection status."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VirtualNetworkGatewayConnectionStatus>,
     #[doc = "Collection of all tunnels' connection health status."]
     #[serde(
@@ -24445,12 +23366,7 @@ pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Bypass ExpressRoute Gateway for data forwarding."]
     #[serde(rename = "expressRouteGatewayBypass", default, skip_serializing_if = "Option::is_none")]
@@ -24595,12 +23511,7 @@ impl VirtualNetworkGatewayIpConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayIpConfigurationPropertiesFormat {
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "privateIPAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<IpAllocationMethod>,
     #[doc = "Reference to another subresource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -24612,12 +23523,7 @@ pub struct VirtualNetworkGatewayIpConfigurationPropertiesFormat {
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualNetworkGatewayIpConfigurationPropertiesFormat {
@@ -24702,23 +23608,13 @@ impl VirtualNetworkGatewayNatRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayNatRuleProperties {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The type of NAT rule for VPN NAT."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<virtual_network_gateway_nat_rule_properties::Type>,
     #[doc = "The Source NAT direction of a VPN NAT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<virtual_network_gateway_nat_rule_properties::Mode>,
     #[doc = "The private IP address internal mapping for NAT."]
     #[serde(
@@ -24834,28 +23730,13 @@ pub struct VirtualNetworkGatewayPropertiesFormat {
     )]
     pub ip_configurations: Vec<VirtualNetworkGatewayIpConfiguration>,
     #[doc = "The type of this virtual network gateway."]
-    #[serde(
-        rename = "gatewayType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "gatewayType", default, skip_serializing_if = "Option::is_none")]
     pub gateway_type: Option<virtual_network_gateway_properties_format::GatewayType>,
     #[doc = "The type of this virtual network gateway."]
-    #[serde(
-        rename = "vpnType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vpnType", default, skip_serializing_if = "Option::is_none")]
     pub vpn_type: Option<virtual_network_gateway_properties_format::VpnType>,
     #[doc = "The generation for this VirtualNetworkGateway. Must be None if gatewayType is not VPN."]
-    #[serde(
-        rename = "vpnGatewayGeneration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vpnGatewayGeneration", default, skip_serializing_if = "Option::is_none")]
     pub vpn_gateway_generation: Option<virtual_network_gateway_properties_format::VpnGatewayGeneration>,
     #[doc = "Whether BGP is enabled for this virtual network gateway or not."]
     #[serde(rename = "enableBgp", default, skip_serializing_if = "Option::is_none")]
@@ -24888,12 +23769,7 @@ pub struct VirtualNetworkGatewayPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Whether dns forwarding is enabled or not."]
     #[serde(rename = "enableDnsForwarding", default, skip_serializing_if = "Option::is_none")]
@@ -25043,10 +23919,10 @@ pub mod virtual_network_gateway_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewaySku {
     #[doc = "Gateway SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<virtual_network_gateway_sku::Name>,
     #[doc = "Gateway SKU tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<virtual_network_gateway_sku::Tier>,
     #[doc = "The capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -25339,28 +24215,13 @@ pub struct VirtualNetworkPeeringPropertiesFormat {
     #[serde(rename = "remoteVirtualNetworkEncryption", default, skip_serializing_if = "Option::is_none")]
     pub remote_virtual_network_encryption: Option<VirtualNetworkEncryption>,
     #[doc = "The status of the virtual network peering."]
-    #[serde(
-        rename = "peeringState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "peeringState", default, skip_serializing_if = "Option::is_none")]
     pub peering_state: Option<virtual_network_peering_properties_format::PeeringState>,
     #[doc = "The peering sync status of the virtual network peering."]
-    #[serde(
-        rename = "peeringSyncLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "peeringSyncLevel", default, skip_serializing_if = "Option::is_none")]
     pub peering_sync_level: Option<virtual_network_peering_properties_format::PeeringSyncLevel>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "If we need to verify the provisioning state of the remote gateway."]
     #[serde(rename = "doNotVerifyRemoteGateways", default, skip_serializing_if = "Option::is_none")]
@@ -25488,12 +24349,7 @@ pub struct VirtualNetworkPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Indicates if DDoS protection is enabled for all the protected resources in the virtual network. It requires a DDoS protection plan associated with the resource."]
     #[serde(rename = "enableDdosProtection", default, skip_serializing_if = "Option::is_none")]
@@ -25581,12 +24437,7 @@ pub struct VirtualNetworkTapPropertiesFormat {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "IPConfiguration in a network interface."]
     #[serde(
@@ -25750,12 +24601,7 @@ pub struct VirtualRouterPeeringProperties {
     #[serde(rename = "peerIp", default, skip_serializing_if = "Option::is_none")]
     pub peer_ip: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualRouterPeeringProperties {
@@ -25791,12 +24637,7 @@ pub struct VirtualRouterPropertiesFormat {
     )]
     pub peerings: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualRouterPropertiesFormat {
@@ -25854,20 +24695,10 @@ pub struct VirtualWanProperties {
     #[serde(rename = "allowVnetToVnetTraffic", default, skip_serializing_if = "Option::is_none")]
     pub allow_vnet_to_vnet_traffic: Option<bool>,
     #[doc = "The office traffic category."]
-    #[serde(
-        rename = "office365LocalBreakoutCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "office365LocalBreakoutCategory", default, skip_serializing_if = "Option::is_none")]
     pub office365_local_breakout_category: Option<OfficeTrafficCategory>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The type of the VirtualWAN."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -25888,12 +24719,7 @@ pub struct VirtualWanSecurityProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[doc = "The virtual wan security provider type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<VirtualWanSecurityProviderType>,
 }
 impl VirtualWanSecurityProvider {
@@ -25962,12 +24788,7 @@ pub struct VirtualWanVpnProfileParameters {
     #[serde(rename = "vpnServerConfigurationResourceId", default, skip_serializing_if = "Option::is_none")]
     pub vpn_server_configuration_resource_id: Option<String>,
     #[doc = "VPN client authentication method."]
-    #[serde(
-        rename = "authenticationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
     pub authentication_method: Option<AuthenticationMethod>,
 }
 impl VirtualWanVpnProfileParameters {
@@ -26172,22 +24993,22 @@ pub struct VpnClientIPsecParameters {
     #[serde(rename = "saDataSizeKilobytes")]
     pub sa_data_size_kilobytes: i32,
     #[doc = "The IPSec encryption algorithm (IKE phase 1)."]
-    #[serde(rename = "ipsecEncryption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ipsecEncryption")]
     pub ipsec_encryption: IpsecEncryption,
     #[doc = "The IPSec integrity algorithm (IKE phase 1)."]
-    #[serde(rename = "ipsecIntegrity", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ipsecIntegrity")]
     pub ipsec_integrity: IpsecIntegrity,
     #[doc = "The IKE encryption algorithm (IKE phase 2)."]
-    #[serde(rename = "ikeEncryption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ikeEncryption")]
     pub ike_encryption: IkeEncryption,
     #[doc = "The IKE integrity algorithm (IKE phase 2)."]
-    #[serde(rename = "ikeIntegrity", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ikeIntegrity")]
     pub ike_integrity: IkeIntegrity,
     #[doc = "The DH Groups used in IKE Phase 1 for initial SA."]
-    #[serde(rename = "dhGroup", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dhGroup")]
     pub dh_group: DhGroup,
     #[doc = "The Pfs Groups used in IKE Phase 2 for new child SA."]
-    #[serde(rename = "pfsGroup", with = "azure_core::xml::text_content")]
+    #[serde(rename = "pfsGroup")]
     pub pfs_group: PfsGroup,
 }
 impl VpnClientIPsecParameters {
@@ -26217,20 +25038,10 @@ impl VpnClientIPsecParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnClientParameters {
     #[doc = "VPN client Processor Architecture."]
-    #[serde(
-        rename = "processorArchitecture",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "processorArchitecture", default, skip_serializing_if = "Option::is_none")]
     pub processor_architecture: Option<vpn_client_parameters::ProcessorArchitecture>,
     #[doc = "VPN client authentication method."]
-    #[serde(
-        rename = "authenticationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
     pub authentication_method: Option<AuthenticationMethod>,
     #[doc = "The public certificate data for the radius server authentication certificate as a Base-64 encoded string. Required only if external radius authentication has been configured with EAPTLS authentication."]
     #[serde(rename = "radiusServerAuthCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -26316,12 +25127,7 @@ pub struct VpnClientRevokedCertificatePropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VpnClientRevokedCertificatePropertiesFormat {
@@ -26360,12 +25166,7 @@ pub struct VpnClientRootCertificatePropertiesFormat {
     #[serde(rename = "publicCertData")]
     pub public_cert_data: String,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VpnClientRootCertificatePropertiesFormat {
@@ -26449,20 +25250,10 @@ pub struct VpnConnectionProperties {
     #[serde(rename = "dpdTimeoutSeconds", default, skip_serializing_if = "Option::is_none")]
     pub dpd_timeout_seconds: Option<i32>,
     #[doc = "The current state of the vpn connection."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VpnConnectionStatus>,
     #[doc = "Gateway connection protocol."]
-    #[serde(
-        rename = "vpnConnectionProtocolType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vpnConnectionProtocolType", default, skip_serializing_if = "Option::is_none")]
     pub vpn_connection_protocol_type: Option<ConnectionProtocol>,
     #[doc = "Ingress bytes transferred."]
     #[serde(rename = "ingressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
@@ -26508,12 +25299,7 @@ pub struct VpnConnectionProperties {
     #[serde(rename = "useLocalAzureIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub use_local_azure_ip_address: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "List of all vpn site link connections to the gateway."]
     #[serde(
@@ -26657,23 +25443,13 @@ impl VpnGatewayNatRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VpnGatewayNatRuleProperties {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The type of NAT rule for VPN NAT."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<vpn_gateway_nat_rule_properties::Type>,
     #[doc = "The Source NAT direction of a VPN NAT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<vpn_gateway_nat_rule_properties::Mode>,
     #[doc = "The private IP address internal mapping for NAT."]
     #[serde(
@@ -26834,12 +25610,7 @@ pub struct VpnGatewayProperties {
     #[serde(rename = "bgpSettings", default, skip_serializing_if = "Option::is_none")]
     pub bgp_settings: Option<BgpSettings>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The scale unit for this vpn gateway."]
     #[serde(rename = "vpnGatewayScaleUnit", default, skip_serializing_if = "Option::is_none")]
@@ -27063,12 +25834,7 @@ pub struct VpnServerConfigurationPolicyGroupMember {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The Vpn Policy member attribute type."]
-    #[serde(
-        rename = "attributeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "attributeType", default, skip_serializing_if = "Option::is_none")]
     pub attribute_type: Option<vpn_server_configuration_policy_group_member::AttributeType>,
     #[doc = "The value of Attribute used for this VpnServerConfigurationPolicyGroupMember."]
     #[serde(rename = "attributeValue", default, skip_serializing_if = "Option::is_none")]
@@ -27148,12 +25914,7 @@ pub struct VpnServerConfigurationPolicyGroupProperties {
     )]
     pub p2_s_connection_configurations: Vec<SubResource>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VpnServerConfigurationPolicyGroupProperties {
@@ -27374,28 +26135,13 @@ pub struct VpnSiteLinkConnectionProperties {
     #[serde(rename = "routingWeight", default, skip_serializing_if = "Option::is_none")]
     pub routing_weight: Option<i32>,
     #[doc = "Vpn link connection mode."]
-    #[serde(
-        rename = "vpnLinkConnectionMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vpnLinkConnectionMode", default, skip_serializing_if = "Option::is_none")]
     pub vpn_link_connection_mode: Option<vpn_site_link_connection_properties::VpnLinkConnectionMode>,
     #[doc = "The current state of the vpn connection."]
-    #[serde(
-        rename = "connectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<VpnConnectionStatus>,
     #[doc = "Gateway connection protocol."]
-    #[serde(
-        rename = "vpnConnectionProtocolType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vpnConnectionProtocolType", default, skip_serializing_if = "Option::is_none")]
     pub vpn_connection_protocol_type: Option<ConnectionProtocol>,
     #[doc = "Ingress bytes transferred."]
     #[serde(rename = "ingressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
@@ -27438,12 +26184,7 @@ pub struct VpnSiteLinkConnectionProperties {
     #[serde(rename = "useLocalAzureIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub use_local_azure_ip_address: Option<bool>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "List of ingress NatRules."]
     #[serde(
@@ -27525,12 +26266,7 @@ pub struct VpnSiteLinkProperties {
     #[serde(rename = "bgpProperties", default, skip_serializing_if = "Option::is_none")]
     pub bgp_properties: Option<VpnLinkBgpSettings>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VpnSiteLinkProperties {
@@ -27560,12 +26296,7 @@ pub struct VpnSiteProperties {
     #[serde(rename = "bgpProperties", default, skip_serializing_if = "Option::is_none")]
     pub bgp_properties: Option<BgpSettings>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "IsSecuritySite flag."]
     #[serde(rename = "isSecuritySite", default, skip_serializing_if = "Option::is_none")]
@@ -27599,13 +26330,12 @@ pub struct WebApplicationFirewallCustomRule {
     #[doc = "Priority of the rule. Rules with a lower value will be evaluated before rules with a higher value."]
     pub priority: i64,
     #[doc = "The rule type."]
-    #[serde(rename = "ruleType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ruleType")]
     pub rule_type: web_application_firewall_custom_rule::RuleType,
     #[doc = "List of match conditions."]
     #[serde(rename = "matchConditions")]
     pub match_conditions: Vec<MatchCondition>,
     #[doc = "Type of Actions."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: web_application_firewall_custom_rule::Action,
 }
 impl WebApplicationFirewallCustomRule {
@@ -27769,20 +26499,10 @@ pub struct WebApplicationFirewallPolicyPropertiesFormat {
     )]
     pub application_gateways: Vec<ApplicationGateway>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Resource status of the policy."]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<web_application_firewall_policy_properties_format::ResourceState>,
     #[doc = "Allow to exclude some variable satisfy the condition for the WAF check."]
     #[serde(rename = "managedRules")]

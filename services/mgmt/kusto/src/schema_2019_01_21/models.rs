@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCapacity {
     #[doc = "Scale type."]
-    #[serde(rename = "scaleType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "scaleType")]
     pub scale_type: azure_capacity::ScaleType,
     #[doc = "Minimum allowed instances count."]
     pub minimum: i64,
@@ -93,13 +93,11 @@ impl AzureResourceSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSku {
     #[doc = "SKU name."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: azure_sku::Name,
     #[doc = "The number of instances of the cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
     #[doc = "SKU tier."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: azure_sku::Tier,
 }
 impl AzureSku {
@@ -233,7 +231,7 @@ pub struct CheckNameResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Message providing the reason why the given name is invalid."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_result::Reason>,
 }
 impl CheckNameResult {
@@ -350,7 +348,7 @@ pub struct ClusterCheckNameRequest {
     #[doc = "Cluster name."]
     pub name: String,
     #[doc = "The type of resource, Microsoft.Kusto/clusters."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: cluster_check_name_request::Type,
 }
 impl ClusterCheckNameRequest {
@@ -393,15 +391,10 @@ impl ClusterListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterProperties {
     #[doc = "The state of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<cluster_properties::State>,
     #[doc = "The provisioned state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
     #[doc = "The cluster URI."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -552,7 +545,6 @@ pub struct DataConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Kind of the endpoint for the data connection"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: data_connection::Kind,
 }
 impl DataConnection {
@@ -610,7 +602,7 @@ pub struct DataConnectionCheckNameRequest {
     #[doc = "Data Connection name."]
     pub name: String,
     #[doc = "The type of resource, Microsoft.Kusto/clusters/databases/dataConnections."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: data_connection_check_name_request::Type,
 }
 impl DataConnectionCheckNameRequest {
@@ -781,7 +773,7 @@ pub struct DatabaseCheckNameRequest {
     #[doc = "Database name."]
     pub name: String,
     #[doc = "The type of resource, Microsoft.Kusto/clusters/databases."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: database_check_name_request::Type,
 }
 impl DatabaseCheckNameRequest {
@@ -824,12 +816,11 @@ impl DatabaseListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabasePrincipal {
     #[doc = "Database principal role."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub role: database_principal::Role,
     #[doc = "Database principal name."]
     pub name: String,
     #[doc = "Database principal type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: database_principal::Type,
     #[doc = "Database principal fully qualified name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -982,12 +973,7 @@ impl DatabasePrincipalListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProperties {
     #[doc = "The provisioned state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<database_properties::ProvisioningState>,
     #[doc = "The time the data should be kept before it stops being accessible to queries in TimeSpan."]
     #[serde(rename = "softDeletePeriod", default, skip_serializing_if = "Option::is_none")]
@@ -1098,7 +1084,7 @@ pub struct EventGridConnectionProperties {
     #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
     pub mapping_rule_name: Option<String>,
     #[doc = "The data format of the message. Optionally the data format can be added to each message."]
-    #[serde(rename = "dataFormat", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataFormat")]
     pub data_format: DataFormat,
 }
 impl EventGridConnectionProperties {
@@ -1152,12 +1138,7 @@ pub struct EventHubConnectionProperties {
     #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
     pub mapping_rule_name: Option<String>,
     #[doc = "The data format of the message. Optionally the data format can be added to each message."]
-    #[serde(
-        rename = "dataFormat",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
     pub data_format: Option<DataFormat>,
 }
 impl EventHubConnectionProperties {

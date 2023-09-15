@@ -89,12 +89,7 @@ impl ControllerList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ControllerProperties {
     #[doc = "Provisioning state of the Azure Dev Spaces Controller."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<controller_properties::ProvisioningState>,
     #[doc = "DNS suffix for public endpoints running in the Azure Dev Spaces Controller."]
     #[serde(rename = "hostSuffix", default, skip_serializing_if = "Option::is_none")]
@@ -352,10 +347,9 @@ impl ResourceProviderOperationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of the SKU for Azure Dev Spaces Controller."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The tier of the SKU for Azure Dev Spaces Controller."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {

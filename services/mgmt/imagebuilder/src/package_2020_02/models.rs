@@ -141,12 +141,7 @@ impl ImageTemplateFileCustomizer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageTemplateIdentity {
     #[doc = "The type of identity used for the image template. The type 'None' will remove any identities from the image template."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<image_template_identity::Type>,
     #[doc = "The list of user identities associated with the image template. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -176,20 +171,10 @@ pub struct ImageTemplateLastRunStatus {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "State of the last run"]
-    #[serde(
-        rename = "runState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runState", default, skip_serializing_if = "Option::is_none")]
     pub run_state: Option<image_template_last_run_status::RunState>,
     #[doc = "Sub-state of the last run"]
-    #[serde(
-        rename = "runSubState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runSubState", default, skip_serializing_if = "Option::is_none")]
     pub run_sub_state: Option<image_template_last_run_status::RunSubState>,
     #[doc = "Verbose information about the last run state"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -377,12 +362,7 @@ pub struct ImageTemplateProperties {
     #[doc = "The distribution targets where the image output needs to go to."]
     pub distribute: Vec<ImageTemplateDistributor>,
     #[doc = "Provisioning state of the resource"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Describes the error happened when create or update an image template"]
     #[serde(rename = "provisioningError", default, skip_serializing_if = "Option::is_none")]
@@ -451,12 +431,7 @@ pub struct ImageTemplateSharedImageDistributor {
     #[serde(rename = "excludeFromLatest", default, skip_serializing_if = "Option::is_none")]
     pub exclude_from_latest: Option<bool>,
     #[doc = "Storage account type to be used to store the shared image. Omit to use the default (Standard_LRS)."]
-    #[serde(
-        rename = "storageAccountType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<image_template_shared_image_distributor::StorageAccountType>,
 }
 impl ImageTemplateSharedImageDistributor {
@@ -747,12 +722,7 @@ impl PlatformImagePurchasePlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProvisioningError {
     #[doc = "Error code of the provisioning failure"]
-    #[serde(
-        rename = "provisioningErrorCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningErrorCode", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_error_code: Option<provisioning_error::ProvisioningErrorCode>,
     #[doc = "Verbose error message about the provisioning failure"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -918,12 +888,7 @@ pub struct RunOutputProperties {
     #[serde(rename = "artifactUri", default, skip_serializing_if = "Option::is_none")]
     pub artifact_uri: Option<String>,
     #[doc = "Provisioning state of the resource"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RunOutputProperties {

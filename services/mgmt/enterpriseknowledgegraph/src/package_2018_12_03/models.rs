@@ -27,12 +27,7 @@ pub struct EnterpriseKnowledgeGraphProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The state of EnterpriseKnowledgeGraph provisioning"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<enterprise_knowledge_graph_properties::ProvisioningState>,
 }
 impl EnterpriseKnowledgeGraphProperties {
@@ -205,7 +200,6 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
 }
 impl Sku {

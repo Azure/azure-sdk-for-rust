@@ -132,7 +132,6 @@ pub struct DiskPoolCreateProperties {
     )]
     pub additional_capabilities: Vec<AdditionalCapability>,
     #[doc = "SKU of the VM host part of the Disk pool deployment"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: DiskPoolTier,
 }
 impl DiskPoolCreateProperties {
@@ -170,13 +169,12 @@ impl DiskPoolListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
     #[doc = "Provisioning state of the iSCSI target."]
-    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
     #[doc = "Logical zone for Disk pool resource; example: [\"1\"]."]
     #[serde(rename = "availabilityZones")]
     pub availability_zones: Vec<AvailabilityZone>,
     #[doc = "Operational status of the resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationalStatus,
     #[doc = "List of Azure Managed Disks to attach to a Disk pool. Can attach 8 disks at most."]
     #[serde(
@@ -197,7 +195,6 @@ pub struct DiskPoolProperties {
     )]
     pub additional_capabilities: Vec<AdditionalCapability>,
     #[doc = "SKU of the VM host part of the Disk pool deployment"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: DiskPoolTier,
 }
 impl DiskPoolProperties {
@@ -454,10 +451,9 @@ impl IscsiTargetList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetProperties {
     #[doc = "Provisioning state of the iSCSI target."]
-    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
     #[doc = "Operational status of the resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationalStatus,
     #[doc = "List of iSCSI target portal groups. Can have 1 portal group at most."]
     pub tpgs: Vec<TargetPortalGroup>,

@@ -579,12 +579,7 @@ pub struct RoleAssignmentProperties {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(
-        rename = "principalType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<role_assignment_properties::PrincipalType>,
     #[doc = "Description of role assignment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

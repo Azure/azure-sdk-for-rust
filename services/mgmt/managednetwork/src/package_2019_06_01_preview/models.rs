@@ -98,7 +98,7 @@ pub struct ManagedNetworkGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedNetworkGroupProperties>,
     #[doc = "Responsibility role under which this Managed Network Group will be created"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<managed_network_group::Kind>,
 }
 impl ManagedNetworkGroup {
@@ -280,7 +280,7 @@ pub struct ManagedNetworkPeeringPolicyProperties {
     #[serde(flatten)]
     pub resource_properties: ResourceProperties,
     #[doc = "Gets or sets the connectivity type of a network structure policy"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: managed_network_peering_policy_properties::Type,
     #[doc = "Generic pointer to a resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -510,12 +510,7 @@ impl ResourceId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProperties {
     #[doc = "Provisioning state of the ManagedNetwork resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<resource_properties::ProvisioningState>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

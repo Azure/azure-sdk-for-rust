@@ -187,12 +187,7 @@ pub mod availability_status {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Availability status of the resource. When it is null, this availabilityStatus object represents an availability impacting event"]
-        #[serde(
-            rename = "availabilityState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Title description of the availability status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -237,12 +232,7 @@ pub mod availability_status {
         #[serde(rename = "occuredTime", default, with = "azure_core::date::rfc3339::option")]
         pub occured_time: Option<time::OffsetDateTime>,
         #[doc = "Chronicity of the availability transition."]
-        #[serde(
-            rename = "reasonChronicity",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "reasonChronicity", default, skip_serializing_if = "Option::is_none")]
         pub reason_chronicity: Option<properties::ReasonChronicity>,
         #[doc = "Timestamp for when the health was last checked. "]
         #[serde(rename = "reportedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -501,23 +491,13 @@ pub mod event {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Type of event."]
-        #[serde(
-            rename = "eventType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
         pub event_type: Option<properties::EventType>,
         #[doc = "Source of event."]
-        #[serde(
-            rename = "eventSource",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "eventSource", default, skip_serializing_if = "Option::is_none")]
         pub event_source: Option<properties::EventSource>,
         #[doc = "Current status of event."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<properties::Status>,
         #[doc = "Title text of event."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -529,15 +509,10 @@ pub mod event {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub header: Option<String>,
         #[doc = "Level of insight."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub level: Option<properties::Level>,
         #[doc = "Level of event."]
-        #[serde(
-            rename = "eventLevel",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "eventLevel", default, skip_serializing_if = "Option::is_none")]
         pub event_level: Option<properties::EventLevel>,
         #[doc = "The id of the Incident"]
         #[serde(rename = "externalIncidentId", default, skip_serializing_if = "Option::is_none")]
@@ -1026,12 +1001,7 @@ pub mod impacted_resource_status {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Impacted resource status of the resource."]
-        #[serde(
-            rename = "availabilityState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Title description of the impacted resource status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1040,12 +1010,7 @@ pub mod impacted_resource_status {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub summary: Option<String>,
         #[doc = "When the resource's availabilityState is Unavailable, it describes where the health impacting event was originated."]
-        #[serde(
-            rename = "reasonType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
         pub reason_type: Option<properties::ReasonType>,
         #[doc = "Timestamp for when last change in health status occurred."]
         #[serde(rename = "occurredTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1147,7 +1112,7 @@ pub struct ImpactedServiceRegion {
     #[serde(rename = "impactedRegion", default, skip_serializing_if = "Option::is_none")]
     pub impacted_region: Option<String>,
     #[doc = "Current status of event in the region."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<impacted_service_region::Status>,
     #[doc = "List subscription impacted by the service health event."]
     #[serde(
@@ -1240,12 +1205,7 @@ impl KeyValueItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Link {
     #[doc = "Type of link."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<link::Type>,
     #[doc = "Display text of link."]
     #[serde(rename = "displayText", default, skip_serializing_if = "Option::is_none")]
@@ -1470,10 +1430,10 @@ pub struct StatusActiveEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cloud: Option<String>,
     #[doc = "The severity level of this active event."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<status_active_event::Severity>,
     #[doc = "The stage of this active event."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stage: Option<status_active_event::Stage>,
     #[doc = "The boolean value of this active event if published or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1603,12 +1563,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1617,12 +1572,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -109,12 +109,7 @@ pub struct BotProperties {
     #[serde(rename = "manifestUrl", default, skip_serializing_if = "Option::is_none")]
     pub manifest_url: Option<String>,
     #[doc = "Microsoft App Type for the bot"]
-    #[serde(
-        rename = "msaAppType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "msaAppType", default, skip_serializing_if = "Option::is_none")]
     pub msa_app_type: Option<bot_properties::MsaAppType>,
     #[doc = "Microsoft App Id for the bot"]
     #[serde(rename = "msaAppId")]
@@ -174,12 +169,7 @@ pub struct BotProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Whether the bot is in an isolated network"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<bot_properties::PublicNetworkAccess>,
     #[doc = "Whether the bot is streaming supported"]
     #[serde(rename = "isStreamingSupported", default, skip_serializing_if = "Option::is_none")]
@@ -755,12 +745,7 @@ pub struct EmailChannelProperties {
     #[serde(rename = "emailAddress")]
     pub email_address: String,
     #[doc = "Email channel auth method. 0 Password (Default); 1 Graph."]
-    #[serde(
-        rename = "authMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authMethod", default, skip_serializing_if = "Option::is_none")]
     pub auth_method: Option<EmailChannelAuthMethod>,
     #[doc = "The password for the email address. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1228,7 +1213,7 @@ pub struct OperationResultsDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The status of the operation being performed."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_results_description::Status>,
     #[doc = "The time that the operation was started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1354,12 +1339,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
     #[doc = "Group ids"]
     #[serde(
@@ -1540,7 +1520,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1612,7 +1592,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "Indicates the type of bot service"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<Kind>,
     #[doc = "Entity Tag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1861,7 +1841,6 @@ pub struct SiteInfo {
     #[serde(rename = "siteName")]
     pub site_name: String,
     #[doc = "Determines which key is to be regenerated"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub key: site_info::Key,
 }
 impl SiteInfo {
@@ -1884,10 +1863,9 @@ pub mod site_info {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "Gets the sku tier. This is based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {

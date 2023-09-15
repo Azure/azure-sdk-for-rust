@@ -124,7 +124,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JustInTimeAccessPolicy {
     #[doc = "The multi-factor authorization provider to be used for just-in-time access requests."]
-    #[serde(rename = "multiFactorAuthProvider", with = "azure_core::xml::text_content")]
+    #[serde(rename = "multiFactorAuthProvider")]
     pub multi_factor_auth_provider: just_in_time_access_policy::MultiFactorAuthProvider,
     #[doc = "The maximum access duration in ISO 8601 format for just-in-time access requests."]
     #[serde(rename = "maximumActivationDuration", default, skip_serializing_if = "Option::is_none")]
@@ -411,12 +411,7 @@ pub struct RegistrationAssignmentProperties {
     #[serde(rename = "registrationDefinitionId")]
     pub registration_definition_id: String,
     #[doc = "The current provisioning state of the registration assignment."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_assignment_properties::ProvisioningState>,
     #[doc = "The registration definition associated with the registration assignment."]
     #[serde(rename = "registrationDefinition", default, skip_serializing_if = "Option::is_none")]
@@ -544,12 +539,7 @@ pub mod registration_assignment_properties {
             #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
             pub registration_definition_name: Option<String>,
             #[doc = "The current provisioning state of the registration definition."]
-            #[serde(
-                rename = "provisioningState",
-                default,
-                skip_serializing_if = "Option::is_none",
-                with = "azure_core::xml::text_content"
-            )]
+            #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
             pub provisioning_state: Option<properties::ProvisioningState>,
             #[doc = "The identifier of the managed tenant."]
             #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
@@ -706,12 +696,7 @@ pub struct RegistrationDefinitionProperties {
     #[serde(rename = "managedByTenantId")]
     pub managed_by_tenant_id: String,
     #[doc = "The current provisioning state of the registration definition."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
     #[doc = "The identifier of the managed tenant."]
     #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
@@ -805,12 +790,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -819,12 +799,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

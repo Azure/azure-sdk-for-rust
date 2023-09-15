@@ -283,12 +283,7 @@ pub struct RegistrationAssignmentProperties {
     #[serde(rename = "registrationDefinitionId")]
     pub registration_definition_id: String,
     #[doc = "Current state of the registration assignment."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_assignment_properties::ProvisioningState>,
     #[doc = "Registration definition inside registration assignment."]
     #[serde(rename = "registrationDefinition", default, skip_serializing_if = "Option::is_none")]
@@ -405,12 +400,7 @@ pub mod registration_assignment_properties {
             #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
             pub registration_definition_name: Option<String>,
             #[doc = "Current state of the registration definition."]
-            #[serde(
-                rename = "provisioningState",
-                default,
-                skip_serializing_if = "Option::is_none",
-                with = "azure_core::xml::text_content"
-            )]
+            #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
             pub provisioning_state: Option<properties::ProvisioningState>,
             #[doc = "Id of the home tenant."]
             #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
@@ -556,12 +546,7 @@ pub struct RegistrationDefinitionProperties {
     #[serde(rename = "managedByTenantId")]
     pub managed_by_tenant_id: String,
     #[doc = "Current state of the registration definition."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
     #[doc = "Name of the managedBy tenant."]
     #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]

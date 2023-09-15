@@ -12,9 +12,9 @@ pub struct BatchQueryRequest {
     pub headers: Option<serde_json::Value>,
     #[doc = "The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
     pub body: QueryBody,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<batch_query_request::Path>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<batch_query_request::Method>,
     #[doc = "Workspace Id to be included in the query"]
     pub workspace: String,
@@ -119,12 +119,7 @@ pub struct Column {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The data type of this column."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<LogsColumnType>,
 }
 impl Column {

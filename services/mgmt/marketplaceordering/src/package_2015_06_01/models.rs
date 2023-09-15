@@ -128,7 +128,7 @@ pub struct OldAgreementProperties {
     #[serde(rename = "cancelDate", default, with = "azure_core::date::rfc3339::option")]
     pub cancel_date: Option<time::OffsetDateTime>,
     #[doc = "Whether the agreement is active or cancelled"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<old_agreement_properties::State>,
 }
 impl OldAgreementProperties {

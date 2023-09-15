@@ -547,12 +547,7 @@ pub struct ZoneProperties {
     )]
     pub name_servers: Vec<String>,
     #[doc = "The type of this DNS zone (Public or Private)."]
-    #[serde(
-        rename = "zoneType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneType", default, skip_serializing_if = "Option::is_none")]
     pub zone_type: Option<zone_properties::ZoneType>,
     #[doc = "A list of references to virtual networks that register hostnames in this DNS zone. This is a only when ZoneType is Private."]
     #[serde(

@@ -201,7 +201,7 @@ pub struct PutAliasRequestProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The workload type of the subscription. It can be either Production or DevTest."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workload: Option<put_alias_request_properties::Workload>,
     #[doc = "Determines whether subscription is fieldLed, partnerLed or LegacyEA"]
     #[serde(rename = "billingScope", default, skip_serializing_if = "Option::is_none")]
@@ -286,12 +286,7 @@ pub struct PutAliasResponseProperties {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<put_alias_response_properties::ProvisioningState>,
 }
 impl PutAliasResponseProperties {
@@ -366,7 +361,7 @@ pub struct Subscription {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription::State>,
     #[doc = "The tenant ID. For example, 00000000-0000-0000-0000-000000000000."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -445,12 +440,7 @@ pub struct SubscriptionPolicies {
     #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
     pub quota_id: Option<String>,
     #[doc = "The subscription spending limit."]
-    #[serde(
-        rename = "spendingLimit",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
 }
 impl SubscriptionPolicies {

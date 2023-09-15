@@ -69,7 +69,7 @@ pub struct ItemDetails {
     #[doc = "The target identifier to run the job."]
     pub target: String,
     #[doc = "The type of item."]
-    #[serde(rename = "itemType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "itemType")]
     pub item_type: item_details::ItemType,
     #[doc = "The creation time of the item."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -168,12 +168,7 @@ pub struct JobDetails {
     #[serde(flatten)]
     pub item_details: ItemDetails,
     #[doc = "The type of job."]
-    #[serde(
-        rename = "jobType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
     pub job_type: Option<job_details::JobType>,
     #[doc = "The ID of the session that the job is part of."]
     #[serde(rename = "sessionId", default, skip_serializing_if = "Option::is_none")]
@@ -191,7 +186,7 @@ pub struct JobDetails {
     #[serde(rename = "inputParams", default, skip_serializing_if = "Option::is_none")]
     pub input_params: Option<serde_json::Value>,
     #[doc = "The status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_details::Status>,
     #[doc = "The job metadata. Metadata provides client the ability to store client-specific information"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -349,7 +344,6 @@ impl JobDetailsList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonPatchDocument {
     #[doc = "The operation to be performed."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub op: json_patch_document::Op,
     #[doc = "A JSON-Pointer."]
     pub path: String,
@@ -432,12 +426,7 @@ pub struct ProviderStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Provider availability."]
-    #[serde(
-        rename = "currentAvailability",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
     pub current_availability: Option<provider_status::CurrentAvailability>,
     #[serde(
         default,
@@ -536,7 +525,7 @@ pub struct Quota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<String>,
     #[doc = "The scope at which the quota is applied."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<quota::Scope>,
     #[doc = "The unique identifier for the provider."]
     #[serde(rename = "providerId", default, skip_serializing_if = "Option::is_none")]
@@ -551,7 +540,7 @@ pub struct Quota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
     #[doc = "The time period in which the quota's underlying meter is accumulated. Based on calendar year. 'None' is used for concurrent quotas."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub period: Option<quota::Period>,
 }
 impl Quota {
@@ -695,15 +684,10 @@ pub struct SessionDetails {
     #[serde(flatten)]
     pub item_details: ItemDetails,
     #[doc = "Policy controlling the behavior of the Session when a job in the session fails."]
-    #[serde(
-        rename = "jobFailurePolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "jobFailurePolicy", default, skip_serializing_if = "Option::is_none")]
     pub job_failure_policy: Option<session_details::JobFailurePolicy>,
     #[doc = "The status of the session."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<session_details::Status>,
 }
 impl SessionDetails {
@@ -837,12 +821,7 @@ pub struct TargetStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Target availability."]
-    #[serde(
-        rename = "currentAvailability",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
     pub current_availability: Option<target_status::CurrentAvailability>,
     #[doc = "Average queue time in seconds."]
     #[serde(rename = "averageQueueTime", default, skip_serializing_if = "Option::is_none")]

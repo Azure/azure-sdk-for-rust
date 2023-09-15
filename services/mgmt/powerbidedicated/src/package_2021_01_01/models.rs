@@ -61,12 +61,7 @@ pub struct AutoScaleVCoreProperties {
     #[serde(rename = "capacityObjectId", default, skip_serializing_if = "Option::is_none")]
     pub capacity_object_id: Option<String>,
     #[doc = "The current deployment state of an auto scale v-core resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<auto_scale_v_core_properties::ProvisioningState>,
 }
 impl AutoScaleVCoreProperties {
@@ -118,7 +113,7 @@ pub struct AutoScaleVCoreSku {
     #[doc = "Name of the SKU level."]
     pub name: String,
     #[doc = "The name of the Azure pricing tier to which the SKU applies."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<auto_scale_v_core_sku::Tier>,
     #[doc = "The capacity of an auto scale v-core resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -195,7 +190,7 @@ pub struct CapacitySku {
     #[doc = "Name of the SKU level."]
     pub name: String,
     #[doc = "The name of the Azure pricing tier to which the SKU applies."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<capacity_sku::Tier>,
     #[doc = "The capacity of the SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -346,7 +341,7 @@ pub struct DedicatedCapacityMutableProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub administration: Option<DedicatedCapacityAdministrators>,
     #[doc = "Specifies the generation of the Power BI Embedded capacity. If no value is specified, the default value 'Gen2' is used. [Learn More](https://docs.microsoft.com/power-bi/developer/embedded/power-bi-embedded-generation-2)"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<dedicated_capacity_mutable_properties::Mode>,
     #[doc = "Tenant ID for the capacity. Used for creating Pro Plus capacity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -406,15 +401,10 @@ pub struct DedicatedCapacityProperties {
     #[serde(flatten)]
     pub dedicated_capacity_mutable_properties: DedicatedCapacityMutableProperties,
     #[doc = "The current state of PowerBI Dedicated resource. The state is to indicate more states outside of resource provisioning."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<dedicated_capacity_properties::State>,
     #[doc = "The current deployment state of PowerBI Dedicated resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dedicated_capacity_properties::ProvisioningState>,
 }
 impl DedicatedCapacityProperties {
@@ -880,12 +870,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created/modified the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -894,12 +879,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that created/modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

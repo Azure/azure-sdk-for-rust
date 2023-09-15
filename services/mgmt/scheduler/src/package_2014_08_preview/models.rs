@@ -47,12 +47,7 @@ impl ClientCertAuthentication {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpAuthentication {
     #[doc = "Gets or sets the http authentication type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_authentication::Type>,
 }
 impl HttpAuthentication {
@@ -96,12 +91,7 @@ impl HttpRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobAction {
     #[doc = "Gets or sets the job action type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_action::Type>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<HttpRequest>,
@@ -187,7 +177,7 @@ pub struct JobCollectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "Gets or sets the state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<job_collection_properties::State>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quota: Option<JobCollectionQuota>,
@@ -246,12 +236,7 @@ impl JobDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorAction {
     #[doc = "Gets or sets the job error action type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_error_action::Type>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<HttpRequest>,
@@ -319,15 +304,10 @@ pub struct JobHistoryDefinitionProperties {
     #[serde(rename = "expectedExecutionTime", default, with = "azure_core::date::rfc3339::option")]
     pub expected_execution_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the job history action name."]
-    #[serde(
-        rename = "actionName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionName", default, skip_serializing_if = "Option::is_none")]
     pub action_name: Option<job_history_definition_properties::ActionName>,
     #[doc = "Gets the job execution status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobExecutionStatus>,
     #[doc = "Gets the message for the job history."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -356,7 +336,7 @@ pub mod job_history_definition_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryFilter {
     #[doc = "Gets the job execution status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobExecutionStatus>,
 }
 impl JobHistoryFilter {
@@ -415,7 +395,7 @@ impl JobListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobMaxRecurrence {
     #[doc = "Gets or sets the frequency of recurrence (second, minute, hour, day, week, month)."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<job_max_recurrence::Frequency>,
     #[doc = "Gets or sets the interval between retries."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -448,7 +428,7 @@ pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<JobRecurrence>,
     #[doc = "Gets or set the job state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<JobState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobStatus>,
@@ -461,7 +441,7 @@ impl JobProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrence {
     #[doc = "Gets or sets the frequency of recurrence (second, minute, hour, day, week, month)."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<job_recurrence::Frequency>,
     #[doc = "Gets or sets the interval between retries."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -541,7 +521,7 @@ impl JobRecurrenceSchedule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrenceScheduleMonthlyOccurrence {
     #[doc = "Gets or sets the day. Must be one of monday, tuesday, wednesday, thursday, friday, saturday, sunday."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<job_recurrence_schedule_monthly_occurrence::Day>,
     #[doc = "Gets or sets the occurrence. Must be between -5 and 5."]
     #[serde(rename = "Occurrence", default, skip_serializing_if = "Option::is_none")]
@@ -577,7 +557,7 @@ pub enum JobState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStateFilter {
     #[doc = "Gets or set the job state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<JobState>,
 }
 impl JobStateFilter {
@@ -642,12 +622,7 @@ pub enum RecurrenceFrequency {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetryPolicy {
     #[doc = "Gets or sets the retry strategy to be used."]
-    #[serde(
-        rename = "retryType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "retryType", default, skip_serializing_if = "Option::is_none")]
     pub retry_type: Option<retry_policy::RetryType>,
     #[doc = "Gets or sets the retry interval between retries."]
     #[serde(rename = "retryInterval", default, skip_serializing_if = "Option::is_none")]
@@ -679,12 +654,7 @@ pub struct ServiceBusAuthentication {
     #[serde(rename = "sasKeyName", default, skip_serializing_if = "Option::is_none")]
     pub sas_key_name: Option<String>,
     #[doc = "Gets or sets the authentication type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<service_bus_authentication::Type>,
 }
 impl ServiceBusAuthentication {
@@ -764,12 +734,7 @@ pub struct ServiceBusMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
     #[doc = "Gets or sets the transport type."]
-    #[serde(
-        rename = "transportType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "transportType", default, skip_serializing_if = "Option::is_none")]
     pub transport_type: Option<service_bus_message::TransportType>,
 }
 impl ServiceBusMessage {
@@ -817,7 +782,7 @@ impl ServiceBusTopicMessage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "Gets or set the SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
 impl Sku {

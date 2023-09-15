@@ -107,7 +107,7 @@ pub struct AppProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
     #[doc = "The current state of the application."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<AppState>,
 }
 impl AppProperties {
@@ -119,7 +119,6 @@ impl AppProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppSkuInfo {
     #[doc = "The name of the SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: app_sku_info::Name,
 }
 impl AppSkuInfo {
@@ -451,7 +450,7 @@ pub struct SystemAssignedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (either system assigned, or none)."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: SystemAssignedServiceIdentityType,
 }
 impl SystemAssignedServiceIdentity {

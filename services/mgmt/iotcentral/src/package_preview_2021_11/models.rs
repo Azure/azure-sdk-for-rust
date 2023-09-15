@@ -95,12 +95,7 @@ impl AppPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppProperties {
     #[doc = "The provisioning state of the application."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The ID of the application."]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
@@ -115,15 +110,10 @@ pub struct AppProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
     #[doc = "The current state of the application."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<AppState>,
     #[doc = "Whether requests from the public network are allowed."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccess>,
     #[doc = "Network Rule Set Properties of this IoT Central application."]
     #[serde(rename = "networkRuleSets", default, skip_serializing_if = "Option::is_none")]
@@ -146,7 +136,6 @@ impl AppProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppSkuInfo {
     #[doc = "The name of the SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: app_sku_info::Name,
 }
 impl AppSkuInfo {
@@ -427,7 +416,7 @@ impl Default for NetworkAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSetIpRule {
     #[doc = "The network action for the IP mask."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<network_rule_set_ip_rule::Action>,
     #[doc = "The readable name of the IP rule."]
     #[serde(rename = "filterName", default, skip_serializing_if = "Option::is_none")]
@@ -489,12 +478,7 @@ pub struct NetworkRuleSets {
     #[serde(rename = "applyToIoTCentral", default, skip_serializing_if = "Option::is_none")]
     pub apply_to_io_t_central: Option<bool>,
     #[doc = "Whether to allow or deny network traffic."]
-    #[serde(
-        rename = "defaultAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<NetworkAction>,
     #[doc = "List of IP rules."]
     #[serde(
@@ -657,12 +641,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -823,7 +802,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -955,7 +934,7 @@ pub struct SystemAssignedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (either system assigned, or none)."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: SystemAssignedServiceIdentityType,
 }
 impl SystemAssignedServiceIdentity {
@@ -1031,12 +1010,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1045,12 +1019,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

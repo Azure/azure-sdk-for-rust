@@ -122,7 +122,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "movedOnToNewDeployment")]
     pub moved_on_to_new_deployment: bool,
     #[doc = "Deployment state."]
-    #[serde(rename = "deviceState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
 impl DeploymentDeviceState {
@@ -146,12 +146,7 @@ pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "Deployment state."]
-    #[serde(
-        rename = "deviceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
     pub device_state: Option<DeviceDeploymentState>,
 }
 impl DeploymentDeviceStatesFilter {
@@ -241,7 +236,7 @@ pub struct DeploymentStatus {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentState")]
     pub deployment_state: DeploymentState,
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -299,12 +294,7 @@ pub struct Device {
     #[serde(rename = "lastAttemptedUpdate", default, skip_serializing_if = "Option::is_none")]
     pub last_attempted_update: Option<UpdateInfo>,
     #[doc = "Deployment state."]
-    #[serde(
-        rename = "deploymentStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<DeviceDeploymentState>,
     #[doc = "Update information."]
     #[serde(rename = "installedUpdate", default, skip_serializing_if = "Option::is_none")]
@@ -472,7 +462,7 @@ pub struct DeviceClassSubgroupDeploymentStatus {
     #[serde(rename = "deviceClassId")]
     pub device_class_id: String,
     #[doc = "Device class subgroup deployment state."]
-    #[serde(rename = "deploymentState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentState")]
     pub deployment_state: DeviceClassSubgroupDeploymentState,
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -659,12 +649,7 @@ pub struct DeviceFilter {
     #[serde(rename = "deviceClassId", default, skip_serializing_if = "Option::is_none")]
     pub device_class_id: Option<String>,
     #[doc = "Deployment state."]
-    #[serde(
-        rename = "deploymentStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<DeviceDeploymentState>,
 }
 impl DeviceFilter {
@@ -682,7 +667,6 @@ pub struct DeviceHealth {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "Device health states"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: DeviceHealthState,
     #[doc = "Digital twin model Id"]
     #[serde(rename = "digitalTwinModelId", default, skip_serializing_if = "Option::is_none")]
@@ -706,7 +690,7 @@ impl DeviceHealth {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceHealthFilter {
     #[doc = "Device health states"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<DeviceHealthState>,
     #[doc = "Device Id"]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
@@ -786,7 +770,6 @@ pub struct DeviceOperation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -953,7 +936,7 @@ pub struct Group {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "Supported group types."]
-    #[serde(rename = "groupType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "groupType")]
     pub group_type: GroupType,
     #[doc = "Date and time when the update was created."]
     #[serde(rename = "createdDateTime")]
@@ -1083,7 +1066,7 @@ pub struct HealthCheck {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Health check result"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<HealthCheckResult>,
 }
 impl HealthCheck {
@@ -1301,7 +1284,7 @@ pub struct LogCollection {
     #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_action_date_time: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
 }
 impl LogCollection {
@@ -1363,7 +1346,7 @@ pub struct LogCollectionOperationDetailedStatus {
     #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_action_date_time: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
     #[doc = "Status of the devices in the operation"]
     #[serde(
@@ -1392,7 +1375,6 @@ pub struct LogCollectionOperationDeviceStatus {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatusWithoutUndefinedOption,
     #[doc = "Log upload result code"]
     #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
@@ -1420,7 +1402,7 @@ impl LogCollectionOperationDeviceStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[doc = "Operation status filter."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
 }
 impl OperationFilter {
@@ -1563,12 +1545,7 @@ impl PatchBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Step {
     #[doc = "Step type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<step::Type>,
     #[doc = "Step description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1976,7 +1953,6 @@ pub struct UpdateOperation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Update information."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

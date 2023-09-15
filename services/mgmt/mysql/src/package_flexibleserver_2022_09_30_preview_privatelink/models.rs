@@ -32,12 +32,7 @@ impl AdministratorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdministratorProperties {
     #[doc = "Type of the sever administrator."]
-    #[serde(
-        rename = "administratorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administratorType", default, skip_serializing_if = "Option::is_none")]
     pub administrator_type: Option<administrator_properties::AdministratorType>,
     #[doc = "Login name of the server administrator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -119,12 +114,7 @@ pub struct Backup {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "geoRedundantBackup",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<EnableStatusEnum>,
     #[doc = "Earliest restore point creation time (ISO8601 format)"]
     #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
@@ -275,12 +265,7 @@ pub struct ConfigurationListForBatchUpdate {
     )]
     pub value: Vec<ConfigurationForBatchUpdate>,
     #[doc = "Whether to reset all server parameters to default."]
-    #[serde(
-        rename = "resetAllToDefault",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resetAllToDefault", default, skip_serializing_if = "Option::is_none")]
     pub reset_all_to_default: Option<configuration_list_for_batch_update::ResetAllToDefault>,
 }
 impl ConfigurationListForBatchUpdate {
@@ -378,31 +363,16 @@ pub struct ConfigurationProperties {
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
     pub allowed_values: Option<String>,
     #[doc = "Source of the configuration."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<configuration_properties::Source>,
     #[doc = "If is the configuration read only."]
-    #[serde(
-        rename = "isReadOnly",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub is_read_only: Option<configuration_properties::IsReadOnly>,
     #[doc = "If is the configuration pending restart or not."]
-    #[serde(
-        rename = "isConfigPendingRestart",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isConfigPendingRestart", default, skip_serializing_if = "Option::is_none")]
     pub is_config_pending_restart: Option<configuration_properties::IsConfigPendingRestart>,
     #[doc = "If is the configuration dynamic."]
-    #[serde(
-        rename = "isDynamicConfig",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isDynamicConfig", default, skip_serializing_if = "Option::is_none")]
     pub is_dynamic_config: Option<configuration_properties::IsDynamicConfig>,
 }
 impl ConfigurationProperties {
@@ -579,12 +549,7 @@ pub struct DataEncryption {
     #[serde(rename = "geoBackupKeyURI", default, skip_serializing_if = "Option::is_none")]
     pub geo_backup_key_uri: Option<String>,
     #[doc = "The key type, AzureKeyVault for enable cmk, SystemManaged for disable cmk."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<data_encryption::Type>,
 }
 impl DataEncryption {
@@ -870,10 +835,10 @@ impl GetPrivateDnsZoneSuffixResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HighAvailability {
     #[doc = "High availability mode for a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<high_availability::Mode>,
     #[doc = "The state of server high availability."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<high_availability::State>,
     #[doc = "Availability zone of the standby server."]
     #[serde(rename = "standbyAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
@@ -979,12 +944,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
     #[doc = "Metadata of user assigned identity."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1126,12 +1086,7 @@ impl NameAvailabilityRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<EnableStatusEnum>,
     #[doc = "Delegated subnet resource id used to setup vnet for a server."]
     #[serde(rename = "delegatedSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1272,12 +1227,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -1432,7 +1382,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1687,18 +1637,13 @@ pub struct ServerProperties {
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
     #[doc = "availability Zone information of the server."]
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
     #[doc = "The mode to create a new MySQL server."]
-    #[serde(
-        rename = "createMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<server_properties::CreateMode>,
     #[doc = "The source MySQL server id."]
     #[serde(rename = "sourceServerResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1707,12 +1652,7 @@ pub struct ServerProperties {
     #[serde(rename = "restorePointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub restore_point_in_time: Option<time::OffsetDateTime>,
     #[doc = "The replication role."]
-    #[serde(
-        rename = "replicationRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
     #[doc = "The maximum number of replicas that a primary server can have."]
     #[serde(rename = "replicaCapacity", default, skip_serializing_if = "Option::is_none")]
@@ -1721,7 +1661,7 @@ pub struct ServerProperties {
     #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
     pub data_encryption: Option<DataEncryption>,
     #[doc = "The state of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<server_properties::State>,
     #[doc = "The fully qualified domain name of a server."]
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
@@ -1845,7 +1785,7 @@ pub struct ServerPropertiesForUpdate {
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
     #[doc = "Storage Profile properties of a server"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1860,12 +1800,7 @@ pub struct ServerPropertiesForUpdate {
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
     #[doc = "The replication role."]
-    #[serde(
-        rename = "replicationRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
     #[doc = "The date encryption for cmk."]
     #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
@@ -1880,12 +1815,7 @@ impl ServerPropertiesForUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerRestartParameter {
     #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "restartWithFailover",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "restartWithFailover", default, skip_serializing_if = "Option::is_none")]
     pub restart_with_failover: Option<EnableStatusEnum>,
     #[doc = "The maximum allowed failover time in seconds."]
     #[serde(rename = "maxFailoverSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1961,7 +1891,6 @@ pub struct Sku {
     #[doc = "The name of the sku, e.g. Standard_D32s_v3."]
     pub name: String,
     #[doc = "The tier of the particular SKU, e.g. GeneralPurpose."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: sku::Tier,
 }
 impl Sku {
@@ -2042,31 +1971,16 @@ pub struct Storage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub iops: Option<i32>,
     #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "autoGrow",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoGrow", default, skip_serializing_if = "Option::is_none")]
     pub auto_grow: Option<EnableStatusEnum>,
     #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "logOnDisk",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logOnDisk", default, skip_serializing_if = "Option::is_none")]
     pub log_on_disk: Option<EnableStatusEnum>,
     #[doc = "The sku name of the server storage."]
     #[serde(rename = "storageSku", default, skip_serializing_if = "Option::is_none")]
     pub storage_sku: Option<String>,
     #[doc = "Enum to indicate whether value is 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "autoIoScaling",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoIoScaling", default, skip_serializing_if = "Option::is_none")]
     pub auto_io_scaling: Option<EnableStatusEnum>,
 }
 impl Storage {
@@ -2187,12 +2101,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2201,12 +2110,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

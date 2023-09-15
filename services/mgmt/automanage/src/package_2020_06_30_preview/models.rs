@@ -30,12 +30,7 @@ pub struct AccountIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the Automanage account. Currently, the only supported type is 'SystemAssigned', which implicitly creates an identity."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<account_identity::Type>,
 }
 impl AccountIdentity {
@@ -106,12 +101,7 @@ impl ConfigurationProfileAssignment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentCompliance {
     #[doc = "The state of compliance, which only appears in the response."]
-    #[serde(
-        rename = "updateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<configuration_profile_assignment_compliance::UpdateStatus>,
 }
 impl ConfigurationProfileAssignmentCompliance {
@@ -187,12 +177,7 @@ impl ConfigurationProfileAssignmentList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentProperties {
     #[doc = "A value indicating configuration profile."]
-    #[serde(
-        rename = "configurationProfile",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "configurationProfile", default, skip_serializing_if = "Option::is_none")]
     pub configuration_profile: Option<configuration_profile_assignment_properties::ConfigurationProfile>,
     #[doc = "The target VM resource URI"]
     #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
@@ -204,12 +189,7 @@ pub struct ConfigurationProfileAssignmentProperties {
     #[serde(rename = "configurationProfilePreferenceId", default, skip_serializing_if = "Option::is_none")]
     pub configuration_profile_preference_id: Option<String>,
     #[doc = "The state of onboarding, which only appears in the response."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<configuration_profile_assignment_properties::ProvisioningState>,
     #[doc = "The compliance status for the configuration profile assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -326,31 +306,16 @@ impl ConfigurationProfilePreference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfilePreferenceAntiMalware {
     #[doc = "Enables or disables Real Time Protection"]
-    #[serde(
-        rename = "enableRealTimeProtection",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enableRealTimeProtection", default, skip_serializing_if = "Option::is_none")]
     pub enable_real_time_protection: Option<configuration_profile_preference_anti_malware::EnableRealTimeProtection>,
     #[doc = "Extensions, Paths and Processes that must be excluded from scan"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exclusions: Option<serde_json::Value>,
     #[doc = "Enables or disables a periodic scan for antimalware"]
-    #[serde(
-        rename = "runScheduledScan",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runScheduledScan", default, skip_serializing_if = "Option::is_none")]
     pub run_scheduled_scan: Option<configuration_profile_preference_anti_malware::RunScheduledScan>,
     #[doc = "Type of scheduled scan"]
-    #[serde(
-        rename = "scanType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scanType", default, skip_serializing_if = "Option::is_none")]
     pub scan_type: Option<configuration_profile_preference_anti_malware::ScanType>,
     #[doc = "Schedule scan settings day"]
     #[serde(rename = "scanDay", default, skip_serializing_if = "Option::is_none")]

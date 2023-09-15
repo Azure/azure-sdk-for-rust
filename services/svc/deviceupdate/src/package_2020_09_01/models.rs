@@ -29,7 +29,7 @@ pub struct Deployment {
     #[serde(rename = "deploymentId")]
     pub deployment_id: String,
     #[doc = "Supported deployment types."]
-    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentType")]
     pub deployment_type: DeploymentType,
     #[doc = "Gets or sets the device class identifier."]
     #[serde(rename = "deviceClassId", default, skip_serializing_if = "Option::is_none")]
@@ -38,7 +38,7 @@ pub struct Deployment {
     #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339")]
     pub start_date_time: time::OffsetDateTime,
     #[doc = "Supported deployment group types."]
-    #[serde(rename = "deviceGroupType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceGroupType")]
     pub device_group_type: DeviceGroupType,
     #[doc = "Gets or sets the device group definition."]
     #[serde(rename = "deviceGroupDefinition")]
@@ -92,7 +92,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "movedOnToNewDeployment")]
     pub moved_on_to_new_deployment: bool,
     #[doc = "Deployment state."]
-    #[serde(rename = "deviceState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
 impl DeploymentDeviceState {
@@ -112,12 +112,7 @@ pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
     #[doc = "The deployment device state."]
-    #[serde(
-        rename = "deviceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
     pub device_state: Option<DeviceState>,
 }
 impl DeploymentDeviceStatesFilter {
@@ -186,7 +181,7 @@ impl Serialize for DeploymentState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentStatus {
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentState")]
     pub deployment_state: DeploymentState,
     #[doc = "Gets or sets the total number of devices in the deployment."]
     #[serde(rename = "totalDevices", default, skip_serializing_if = "Option::is_none")]
@@ -279,12 +274,7 @@ pub struct Device {
     #[serde(rename = "lastAttemptedUpdateId", default, skip_serializing_if = "Option::is_none")]
     pub last_attempted_update_id: Option<UpdateId>,
     #[doc = "Deployment state."]
-    #[serde(
-        rename = "deploymentStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<DeviceDeploymentState>,
     #[doc = "Update identifier."]
     #[serde(rename = "installedUpdateId", default, skip_serializing_if = "Option::is_none")]
@@ -581,7 +571,7 @@ pub struct Group {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "Supported group types."]
-    #[serde(rename = "groupType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "groupType")]
     pub group_type: GroupType,
     #[doc = "IoT Hub tags."]
     pub tags: Vec<String>,
@@ -722,7 +712,6 @@ pub struct Operation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Update identifier."]
     #[serde(rename = "updateId", default, skip_serializing_if = "Option::is_none")]
@@ -770,7 +759,7 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[doc = "Operation status filter."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
 }
 impl OperationFilter {

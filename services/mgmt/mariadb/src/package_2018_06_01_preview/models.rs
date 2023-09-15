@@ -366,7 +366,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -628,12 +628,7 @@ pub struct ResourceIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The identity type. Set this to 'SystemAssigned' in order to automatically create and assign an Azure Active Directory principal for the resource."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_identity::Type>,
     #[doc = "The Azure Active Directory tenant id."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -686,7 +681,6 @@ pub mod resource_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlertPolicyProperties {
     #[doc = "Specifies the state of the policy, whether it is enabled or disabled."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: security_alert_policy_properties::State,
     #[doc = "Specifies an array of alerts that are disabled. Allowed values are: Sql_Injection, Sql_Injection_Vulnerability, Access_Anomaly"]
     #[serde(
@@ -817,31 +811,16 @@ pub struct ServerProperties {
     #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
     #[doc = "Enable ssl enforcement or not when connect to server."]
-    #[serde(
-        rename = "sslEnforcement",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslEnforcement", default, skip_serializing_if = "Option::is_none")]
     pub ssl_enforcement: Option<SslEnforcement>,
     #[doc = "Enforce a minimal Tls version for the server."]
-    #[serde(
-        rename = "minimalTlsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<MinimalTlsVersion>,
     #[doc = "A state of a server that is visible to user."]
-    #[serde(
-        rename = "userVisibleState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userVisibleState", default, skip_serializing_if = "Option::is_none")]
     pub user_visible_state: Option<server_properties::UserVisibleState>,
     #[doc = "The fully qualified domain name of a server."]
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
@@ -913,29 +892,19 @@ pub mod server_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerPropertiesForCreate {
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<ServerVersion>,
     #[doc = "Enable ssl enforcement or not when connect to server."]
-    #[serde(
-        rename = "sslEnforcement",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sslEnforcement", default, skip_serializing_if = "Option::is_none")]
     pub ssl_enforcement: Option<SslEnforcement>,
     #[doc = "Enforce a minimal Tls version for the server."]
-    #[serde(
-        rename = "minimalTlsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<MinimalTlsVersion>,
     #[doc = "Storage Profile properties of a server"]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
     #[doc = "The mode to create a new server."]
-    #[serde(rename = "createMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "createMode")]
     pub create_mode: server_properties_for_create::CreateMode,
 }
 impl ServerPropertiesForCreate {
@@ -1146,23 +1115,13 @@ pub mod server_update_parameters {
         #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
         pub administrator_login_password: Option<String>,
         #[doc = "The version of a server."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<ServerVersion>,
         #[doc = "Enable ssl enforcement or not when connect to server."]
-        #[serde(
-            rename = "sslEnforcement",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "sslEnforcement", default, skip_serializing_if = "Option::is_none")]
         pub ssl_enforcement: Option<SslEnforcement>,
         #[doc = "Enforce a minimal Tls version for the server."]
-        #[serde(
-            rename = "minimalTlsVersion",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
         pub minimal_tls_version: Option<MinimalTlsVersion>,
         #[doc = "The replication role of the server."]
         #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
@@ -1219,7 +1178,7 @@ pub struct Sku {
     #[doc = "The name of the sku, typically, tier + family + cores, e.g. B_Gen4_1, GP_Gen5_8."]
     pub name: String,
     #[doc = "The tier of the particular SKU, e.g. Basic."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
     #[doc = "The scale up/out capacity, representing server's compute units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1297,23 +1256,13 @@ pub struct StorageProfile {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "Enable Geo-redundant or not for server backup."]
-    #[serde(
-        rename = "geoRedundantBackup",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
     pub geo_redundant_backup: Option<storage_profile::GeoRedundantBackup>,
     #[doc = "Max storage allowed for a server."]
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<i32>,
     #[doc = "Enable Storage Auto Grow."]
-    #[serde(
-        rename = "storageAutogrow",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "storageAutogrow", default, skip_serializing_if = "Option::is_none")]
     pub storage_autogrow: Option<storage_profile::StorageAutogrow>,
 }
 impl StorageProfile {
@@ -1467,7 +1416,7 @@ pub struct VirtualNetworkRuleProperties {
     #[serde(rename = "ignoreMissingVnetServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub ignore_missing_vnet_service_endpoint: Option<bool>,
     #[doc = "Virtual Network Rule State"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<virtual_network_rule_properties::State>,
 }
 impl VirtualNetworkRuleProperties {

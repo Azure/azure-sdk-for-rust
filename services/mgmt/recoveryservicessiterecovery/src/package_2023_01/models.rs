@@ -66,23 +66,13 @@ pub struct A2aContainerMappingInput {
     #[serde(flatten)]
     pub replication_provider_specific_container_mapping_input: ReplicationProviderSpecificContainerMappingInput,
     #[doc = "A value indicating whether the auto update is enabled."]
-    #[serde(
-        rename = "agentAutoUpdateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_container_mapping_input::AgentAutoUpdateStatus>,
     #[doc = "The automation account arm id."]
     #[serde(rename = "automationAccountArmId", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_arm_id: Option<String>,
     #[doc = "A value indicating the type authentication to use for automation Account."]
-    #[serde(
-        rename = "automationAccountAuthenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "automationAccountAuthenticationType", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_authentication_type: Option<a2a_container_mapping_input::AutomationAccountAuthenticationType>,
 }
 impl A2aContainerMappingInput {
@@ -197,7 +187,7 @@ pub struct A2aCreateProtectionIntentInput {
     #[serde(rename = "recoverySubscriptionId")]
     pub recovery_subscription_id: String,
     #[doc = "The recovery availability type of the virtual machine."]
-    #[serde(rename = "recoveryAvailabilityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryAvailabilityType")]
     pub recovery_availability_type: a2a_create_protection_intent_input::RecoveryAvailabilityType,
     #[doc = "Protection Profile custom input."]
     #[serde(rename = "protectionProfileCustomInput", default, skip_serializing_if = "Option::is_none")]
@@ -226,12 +216,7 @@ pub struct A2aCreateProtectionIntentInput {
     )]
     pub recovery_proximity_placement_group_custom_input: Option<RecoveryProximityPlacementGroupCustomDetails>,
     #[doc = "A value indicating whether the auto protection is enabled."]
-    #[serde(
-        rename = "autoProtectionOfDataDisk",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoProtectionOfDataDisk", default, skip_serializing_if = "Option::is_none")]
     pub auto_protection_of_data_disk: Option<a2a_create_protection_intent_input::AutoProtectionOfDataDisk>,
     #[doc = "The list of vm disk inputs."]
     #[serde(
@@ -265,20 +250,10 @@ pub struct A2aCreateProtectionIntentInput {
     #[serde(rename = "recoveryAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub recovery_availability_zone: Option<String>,
     #[doc = "A value indicating whether the auto update is enabled."]
-    #[serde(
-        rename = "agentAutoUpdateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_create_protection_intent_input::AgentAutoUpdateStatus>,
     #[doc = "A value indicating the authentication type for automation account. The default value is \"RunAsAccount\"."]
-    #[serde(
-        rename = "automationAccountAuthenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "automationAccountAuthenticationType", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_authentication_type: Option<a2a_create_protection_intent_input::AutomationAccountAuthenticationType>,
     #[doc = "The automation account arm id."]
     #[serde(rename = "automationAccountArmId", default, skip_serializing_if = "Option::is_none")]
@@ -740,7 +715,7 @@ pub struct A2aPolicyCreationInput {
     #[serde(rename = "appConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub app_consistent_frequency_in_minutes: Option<i32>,
     #[doc = "A value indicating whether multi-VM sync has to be enabled. Value should be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "multiVmSyncStatus", with = "azure_core::xml::text_content")]
+    #[serde(rename = "multiVmSyncStatus")]
     pub multi_vm_sync_status: a2a_policy_creation_input::MultiVmSyncStatus,
 }
 impl A2aPolicyCreationInput {
@@ -1025,23 +1000,13 @@ pub struct A2aProtectionContainerMappingDetails {
     #[serde(flatten)]
     pub protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails,
     #[doc = "A value indicating whether the auto update is enabled."]
-    #[serde(
-        rename = "agentAutoUpdateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_protection_container_mapping_details::AgentAutoUpdateStatus>,
     #[doc = "The automation account arm id."]
     #[serde(rename = "automationAccountArmId", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_arm_id: Option<String>,
     #[doc = "A value indicating the type authentication to use for automation Account."]
-    #[serde(
-        rename = "automationAccountAuthenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "automationAccountAuthenticationType", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_authentication_type: Option<a2a_protection_container_mapping_details::AutomationAccountAuthenticationType>,
     #[doc = "The schedule arm name."]
     #[serde(rename = "scheduleName", default, skip_serializing_if = "Option::is_none")]
@@ -1224,12 +1189,7 @@ pub struct A2aRecoveryPointDetails {
     #[serde(flatten)]
     pub provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails,
     #[doc = "A value indicating whether the recovery point is multi VM consistent."]
-    #[serde(
-        rename = "recoveryPointSyncType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryPointSyncType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_sync_type: Option<a2a_recovery_point_details::RecoveryPointSyncType>,
     #[doc = "List of disk ids representing a recovery point."]
     #[serde(
@@ -1354,12 +1314,7 @@ pub struct A2aReplicationDetails {
     #[serde(rename = "multiVmGroupName", default, skip_serializing_if = "Option::is_none")]
     pub multi_vm_group_name: Option<String>,
     #[doc = "Whether Multi VM group is auto created or specified by user."]
-    #[serde(
-        rename = "multiVmGroupCreateOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "multiVmGroupCreateOption", default, skip_serializing_if = "Option::is_none")]
     pub multi_vm_group_create_option: Option<a2a_replication_details::MultiVmGroupCreateOption>,
     #[doc = "The management Id."]
     #[serde(rename = "managementId", default, skip_serializing_if = "Option::is_none")]
@@ -1494,12 +1449,7 @@ pub struct A2aReplicationDetails {
     #[serde(rename = "recoveryExtendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub recovery_extended_location: Option<ExtendedLocation>,
     #[doc = "The encryption type of the VM."]
-    #[serde(
-        rename = "vmEncryptionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmEncryptionType", default, skip_serializing_if = "Option::is_none")]
     pub vm_encryption_type: Option<a2a_replication_details::VmEncryptionType>,
     #[doc = "The test failover vm name."]
     #[serde(rename = "tfoAzureVMName", default, skip_serializing_if = "Option::is_none")]
@@ -1511,12 +1461,7 @@ pub struct A2aReplicationDetails {
     #[serde(rename = "recoveryProximityPlacementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_proximity_placement_group_id: Option<String>,
     #[doc = "A value indicating whether the auto protection is enabled."]
-    #[serde(
-        rename = "autoProtectionOfDataDisk",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoProtectionOfDataDisk", default, skip_serializing_if = "Option::is_none")]
     pub auto_protection_of_data_disk: Option<a2a_replication_details::AutoProtectionOfDataDisk>,
     #[doc = "The recovery virtual machine scale set id."]
     #[serde(rename = "recoveryVirtualMachineScaleSetId", default, skip_serializing_if = "Option::is_none")]
@@ -1753,12 +1698,7 @@ pub struct A2aReplicationIntentDetails {
     #[serde(rename = "recoveryProximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
     pub recovery_proximity_placement_group: Option<RecoveryProximityPlacementGroupCustomDetails>,
     #[doc = "A value indicating whether the auto protection is enabled."]
-    #[serde(
-        rename = "autoProtectionOfDataDisk",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoProtectionOfDataDisk", default, skip_serializing_if = "Option::is_none")]
     pub auto_protection_of_data_disk: Option<a2a_replication_intent_details::AutoProtectionOfDataDisk>,
     #[doc = "The multi vm group name."]
     #[serde(rename = "multiVmGroupName", default, skip_serializing_if = "Option::is_none")]
@@ -1779,23 +1719,13 @@ pub struct A2aReplicationIntentDetails {
     #[serde(rename = "recoveryAvailabilityType")]
     pub recovery_availability_type: String,
     #[doc = "A value indicating whether the auto update is enabled."]
-    #[serde(
-        rename = "agentAutoUpdateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_replication_intent_details::AgentAutoUpdateStatus>,
     #[doc = "The automation account arm id."]
     #[serde(rename = "automationAccountArmId", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_arm_id: Option<String>,
     #[doc = "A value indicating the type authentication to use for automation Account."]
-    #[serde(
-        rename = "automationAccountAuthenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "automationAccountAuthenticationType", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_authentication_type: Option<a2a_replication_intent_details::AutomationAccountAuthenticationType>,
 }
 impl A2aReplicationIntentDetails {
@@ -2117,12 +2047,7 @@ pub struct A2aUnprotectedDiskDetails {
     #[serde(rename = "diskLunId", default, skip_serializing_if = "Option::is_none")]
     pub disk_lun_id: Option<i32>,
     #[doc = "A value indicating whether the disk auto protection is enabled."]
-    #[serde(
-        rename = "diskAutoProtectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskAutoProtectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub disk_auto_protection_status: Option<a2a_unprotected_disk_details::DiskAutoProtectionStatus>,
 }
 impl A2aUnprotectedDiskDetails {
@@ -2176,23 +2101,13 @@ pub struct A2aUpdateContainerMappingInput {
     #[serde(flatten)]
     pub replication_provider_specific_update_container_mapping_input: ReplicationProviderSpecificUpdateContainerMappingInput,
     #[doc = "A value indicating whether the auto update is enabled."]
-    #[serde(
-        rename = "agentAutoUpdateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_update_container_mapping_input::AgentAutoUpdateStatus>,
     #[doc = "The automation account arm id."]
     #[serde(rename = "automationAccountArmId", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_arm_id: Option<String>,
     #[doc = "A value indicating the type authentication to use for automation Account."]
-    #[serde(
-        rename = "automationAccountAuthenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "automationAccountAuthenticationType", default, skip_serializing_if = "Option::is_none")]
     pub automation_account_authentication_type: Option<a2a_update_container_mapping_input::AutomationAccountAuthenticationType>,
 }
 impl A2aUpdateContainerMappingInput {
@@ -3317,12 +3232,7 @@ pub struct CreateRecoveryPlanInputProperties {
     #[serde(rename = "recoveryFabricId")]
     pub recovery_fabric_id: String,
     #[doc = "The failover deployment model."]
-    #[serde(
-        rename = "failoverDeploymentModel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "failoverDeploymentModel", default, skip_serializing_if = "Option::is_none")]
     pub failover_deployment_model: Option<create_recovery_plan_input_properties::FailoverDeploymentModel>,
     #[doc = "The recovery plan groups."]
     pub groups: Vec<RecoveryPlanGroup>,
@@ -3484,12 +3394,7 @@ impl DisableProtectionInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DisableProtectionInputProperties {
     #[doc = "Disable protection reason. It can have values NotSpecified/MigrationComplete."]
-    #[serde(
-        rename = "disableProtectionReason",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "disableProtectionReason", default, skip_serializing_if = "Option::is_none")]
     pub disable_protection_reason: Option<disable_protection_input_properties::DisableProtectionReason>,
     #[doc = "Disable protection provider specific input."]
     #[serde(rename = "replicationProviderInput", default, skip_serializing_if = "Option::is_none")]
@@ -3688,7 +3593,7 @@ pub struct DraDetails {
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[doc = "The health."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<dra_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -4131,7 +4036,7 @@ pub struct ExtendedLocation {
     #[doc = "The name of the extended location."]
     pub name: String,
     #[doc = "The extended location type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: extended_location::Type,
 }
 impl ExtendedLocation {
@@ -4547,12 +4452,7 @@ pub struct HealthError {
     #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
     pub error_id: Option<String>,
     #[doc = "Value indicating whether the health error is customer resolvable."]
-    #[serde(
-        rename = "customerResolvability",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "customerResolvability", default, skip_serializing_if = "Option::is_none")]
     pub customer_resolvability: Option<health_error::CustomerResolvability>,
 }
 impl HealthError {
@@ -4607,10 +4507,10 @@ pub struct HealthErrorSummary {
     #[serde(rename = "summaryCode", default, skip_serializing_if = "Option::is_none")]
     pub summary_code: Option<String>,
     #[doc = "The category of the health error."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<health_error_summary::Category>,
     #[doc = "Severity of error."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<health_error_summary::Severity>,
     #[doc = "The summary message of the health error."]
     #[serde(rename = "summaryMessage", default, skip_serializing_if = "Option::is_none")]
@@ -4848,12 +4748,7 @@ pub struct HyperVReplicaAzureDiskInputDetails {
     #[serde(rename = "logStorageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub log_storage_account_id: Option<String>,
     #[doc = "The DiskType."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<hyper_v_replica_azure_disk_input_details::DiskType>,
     #[doc = "The DiskEncryptionSet ARM ID."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
@@ -4968,20 +4863,10 @@ pub struct HyperVReplicaAzureEnableProtectionInput {
     #[serde(rename = "targetAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub target_availability_zone: Option<String>,
     #[doc = "License type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<hyper_v_replica_azure_enable_protection_input::LicenseType>,
     #[doc = "The SQL Server license type."]
-    #[serde(
-        rename = "sqlServerLicenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_license_type: Option<hyper_v_replica_azure_enable_protection_input::SqlServerLicenseType>,
     #[doc = "The target VM size."]
     #[serde(rename = "targetVmSize", default, skip_serializing_if = "Option::is_none")]
@@ -4993,12 +4878,7 @@ pub struct HyperVReplicaAzureEnableProtectionInput {
     #[serde(rename = "useManagedDisksForReplication", default, skip_serializing_if = "Option::is_none")]
     pub use_managed_disks_for_replication: Option<String>,
     #[doc = "The DiskType."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<hyper_v_replica_azure_enable_protection_input::DiskType>,
     #[doc = "The disks to include list for managed disks."]
     #[serde(
@@ -5645,12 +5525,7 @@ pub struct HyperVReplicaAzureUpdateReplicationProtectedItemInput {
     #[serde(rename = "targetNicTags", default, skip_serializing_if = "Option::is_none")]
     pub target_nic_tags: Option<serde_json::Value>,
     #[doc = "The SQL Server license type."]
-    #[serde(
-        rename = "sqlServerLicenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_license_type: Option<hyper_v_replica_azure_update_replication_protected_item_input::SqlServerLicenseType>,
     #[doc = "The list of disk update properties."]
     #[serde(
@@ -6201,28 +6076,13 @@ pub struct HyperVVirtualMachineDetails {
     )]
     pub disk_details: Vec<DiskDetails>,
     #[doc = "A value indicating whether the VM has a physical disk attached. String value of SrsDataContract.PresenceStatus enum."]
-    #[serde(
-        rename = "hasPhysicalDisk",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hasPhysicalDisk", default, skip_serializing_if = "Option::is_none")]
     pub has_physical_disk: Option<hyper_v_virtual_machine_details::HasPhysicalDisk>,
     #[doc = "A value indicating whether the VM has a fibre channel adapter attached. String value of SrsDataContract.PresenceStatus enum."]
-    #[serde(
-        rename = "hasFibreChannelAdapter",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hasFibreChannelAdapter", default, skip_serializing_if = "Option::is_none")]
     pub has_fibre_channel_adapter: Option<hyper_v_virtual_machine_details::HasFibreChannelAdapter>,
     #[doc = "A value indicating whether the VM has a shared VHD attached. String value of SrsDataContract.PresenceStatus enum."]
-    #[serde(
-        rename = "hasSharedVhd",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hasSharedVhd", default, skip_serializing_if = "Option::is_none")]
     pub has_shared_vhd: Option<hyper_v_virtual_machine_details::HasSharedVhd>,
     #[doc = "The Id of the hyper-v host in fabric."]
     #[serde(rename = "hyperVHostId", default, skip_serializing_if = "Option::is_none")]
@@ -6548,12 +6408,7 @@ pub struct InMageAzureV2DiskInputDetails {
     #[serde(rename = "logStorageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub log_storage_account_id: Option<String>,
     #[doc = "The DiskType."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<in_mage_azure_v2_disk_input_details::DiskType>,
     #[doc = "The DiskEncryptionSet ARM ID."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
@@ -6662,12 +6517,7 @@ pub struct InMageAzureV2EnableProtectionInput {
     #[serde(rename = "targetAzureV2ResourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub target_azure_v2_resource_group_id: Option<String>,
     #[doc = "The DiskType."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<in_mage_azure_v2_enable_protection_input::DiskType>,
     #[doc = "The target availability set ARM Id for resource manager deployment."]
     #[serde(rename = "targetAvailabilitySetId", default, skip_serializing_if = "Option::is_none")]
@@ -6679,20 +6529,10 @@ pub struct InMageAzureV2EnableProtectionInput {
     #[serde(rename = "targetProximityPlacementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub target_proximity_placement_group_id: Option<String>,
     #[doc = "License type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<in_mage_azure_v2_enable_protection_input::LicenseType>,
     #[doc = "The SQL Server license type."]
-    #[serde(
-        rename = "sqlServerLicenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_license_type: Option<in_mage_azure_v2_enable_protection_input::SqlServerLicenseType>,
     #[doc = "The target VM size."]
     #[serde(rename = "targetVmSize", default, skip_serializing_if = "Option::is_none")]
@@ -6989,7 +6829,7 @@ pub struct InMageAzureV2PolicyInput {
     #[serde(rename = "appConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub app_consistent_frequency_in_minutes: Option<i32>,
     #[doc = "A value indicating whether multi-VM sync has to be enabled. Value should be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "multiVmSyncStatus", with = "azure_core::xml::text_content")]
+    #[serde(rename = "multiVmSyncStatus")]
     pub multi_vm_sync_status: in_mage_azure_v2_policy_input::MultiVmSyncStatus,
 }
 impl InMageAzureV2PolicyInput {
@@ -7645,12 +7485,7 @@ pub struct InMageAzureV2UpdateReplicationProtectedItemInput {
     #[serde(rename = "targetNicTags", default, skip_serializing_if = "Option::is_none")]
     pub target_nic_tags: Option<serde_json::Value>,
     #[doc = "The SQL Server license type."]
-    #[serde(
-        rename = "sqlServerLicenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_license_type: Option<in_mage_azure_v2_update_replication_protected_item_input::SqlServerLicenseType>,
     #[doc = "The list of disk update properties."]
     #[serde(
@@ -7975,7 +7810,7 @@ pub struct InMagePolicyInput {
     #[serde(rename = "appConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub app_consistent_frequency_in_minutes: Option<i32>,
     #[doc = "A value indicating whether multi-VM sync has to be enabled. Value should be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "multiVmSyncStatus", with = "azure_core::xml::text_content")]
+    #[serde(rename = "multiVmSyncStatus")]
     pub multi_vm_sync_status: in_mage_policy_input::MultiVmSyncStatus,
 }
 impl InMagePolicyInput {
@@ -8283,7 +8118,7 @@ pub struct InMageRcmDiskInput {
     #[serde(rename = "logStorageAccountId")]
     pub log_storage_account_id: String,
     #[doc = "The disk type."]
-    #[serde(rename = "diskType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "diskType")]
     pub disk_type: in_mage_rcm_disk_input::DiskType,
     #[doc = "The DiskEncryptionSet ARM Id."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
@@ -8351,7 +8186,7 @@ pub struct InMageRcmDisksDefaultInput {
     #[serde(rename = "logStorageAccountId")]
     pub log_storage_account_id: String,
     #[doc = "The disk type."]
-    #[serde(rename = "diskType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "diskType")]
     pub disk_type: in_mage_rcm_disks_default_input::DiskType,
     #[doc = "The DiskEncryptionSet ARM Id."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
@@ -8452,12 +8287,7 @@ pub struct InMageRcmEnableProtectionInput {
     #[serde(rename = "targetVmSize", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_size: Option<String>,
     #[doc = "The license type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<in_mage_rcm_enable_protection_input::LicenseType>,
     #[doc = "The target availability set ARM Id."]
     #[serde(rename = "targetAvailabilitySetId", default, skip_serializing_if = "Option::is_none")]
@@ -8926,7 +8756,7 @@ pub struct InMageRcmFailbackPlannedFailoverProviderInput {
     #[serde(flatten)]
     pub planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
-    #[serde(rename = "recoveryPointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: in_mage_rcm_failback_planned_failover_provider_input::RecoveryPointType,
 }
 impl InMageRcmFailbackPlannedFailoverProviderInput {
@@ -9109,12 +8939,7 @@ pub struct InMageRcmFailbackReplicationDetails {
     #[serde(rename = "initialReplicationTransferredBytes", default, skip_serializing_if = "Option::is_none")]
     pub initial_replication_transferred_bytes: Option<i64>,
     #[doc = "The initial replication progress health."]
-    #[serde(
-        rename = "initialReplicationProgressHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "initialReplicationProgressHealth", default, skip_serializing_if = "Option::is_none")]
     pub initial_replication_progress_health: Option<in_mage_rcm_failback_replication_details::InitialReplicationProgressHealth>,
     #[doc = "The resync progress percentage."]
     #[serde(rename = "resyncProgressPercentage", default, skip_serializing_if = "Option::is_none")]
@@ -9126,23 +8951,13 @@ pub struct InMageRcmFailbackReplicationDetails {
     #[serde(rename = "resyncTransferredBytes", default, skip_serializing_if = "Option::is_none")]
     pub resync_transferred_bytes: Option<i64>,
     #[doc = "The resync progress health."]
-    #[serde(
-        rename = "resyncProgressHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resyncProgressHealth", default, skip_serializing_if = "Option::is_none")]
     pub resync_progress_health: Option<in_mage_rcm_failback_replication_details::ResyncProgressHealth>,
     #[doc = "A value indicating whether resync is required."]
     #[serde(rename = "resyncRequired", default, skip_serializing_if = "Option::is_none")]
     pub resync_required: Option<String>,
     #[doc = "The resync state."]
-    #[serde(
-        rename = "resyncState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resyncState", default, skip_serializing_if = "Option::is_none")]
     pub resync_state: Option<in_mage_rcm_failback_replication_details::ResyncState>,
     #[doc = "The list of protected disks."]
     #[serde(
@@ -9167,12 +8982,7 @@ pub struct InMageRcmFailbackReplicationDetails {
     #[serde(rename = "lastPlannedFailoverStartTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_planned_failover_start_time: Option<time::OffsetDateTime>,
     #[doc = "The last planned failover status."]
-    #[serde(
-        rename = "lastPlannedFailoverStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastPlannedFailoverStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_planned_failover_status: Option<in_mage_rcm_failback_replication_details::LastPlannedFailoverStatus>,
     #[doc = "InMageRcmFailback discovered VM details."]
     #[serde(rename = "discoveredVmDetails", default, skip_serializing_if = "Option::is_none")]
@@ -9427,12 +9237,7 @@ impl InMageRcmFailbackReprotectInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InMageRcmFailbackSyncDetails {
     #[doc = "The progress health."]
-    #[serde(
-        rename = "progressHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "progressHealth", default, skip_serializing_if = "Option::is_none")]
     pub progress_health: Option<in_mage_rcm_failback_sync_details::ProgressHealth>,
     #[doc = "The transferred bytes from source VM to azure for the disk."]
     #[serde(rename = "transferredBytes", default, skip_serializing_if = "Option::is_none")]
@@ -9594,12 +9399,7 @@ pub struct InMageRcmNicDetails {
     #[serde(rename = "sourceIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub source_ip_address: Option<String>,
     #[doc = "The source IP address type."]
-    #[serde(
-        rename = "sourceIPAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceIPAddressType", default, skip_serializing_if = "Option::is_none")]
     pub source_ip_address_type: Option<in_mage_rcm_nic_details::SourceIpAddressType>,
     #[doc = "Source network Id."]
     #[serde(rename = "sourceNetworkId", default, skip_serializing_if = "Option::is_none")]
@@ -9611,12 +9411,7 @@ pub struct InMageRcmNicDetails {
     #[serde(rename = "targetIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub target_ip_address: Option<String>,
     #[doc = "The target IP address type."]
-    #[serde(
-        rename = "targetIPAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "targetIPAddressType", default, skip_serializing_if = "Option::is_none")]
     pub target_ip_address_type: Option<in_mage_rcm_nic_details::TargetIpAddressType>,
     #[doc = "Target subnet name."]
     #[serde(rename = "targetSubnetName", default, skip_serializing_if = "Option::is_none")]
@@ -9628,12 +9423,7 @@ pub struct InMageRcmNicDetails {
     #[serde(rename = "testIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub test_ip_address: Option<String>,
     #[doc = "The test IP address type."]
-    #[serde(
-        rename = "testIPAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "testIPAddressType", default, skip_serializing_if = "Option::is_none")]
     pub test_ip_address_type: Option<in_mage_rcm_nic_details::TestIpAddressType>,
 }
 impl InMageRcmNicDetails {
@@ -9882,12 +9672,7 @@ pub struct InMageRcmProtectedDiskDetails {
     #[serde(rename = "targetManagedDiskId", default, skip_serializing_if = "Option::is_none")]
     pub target_managed_disk_id: Option<String>,
     #[doc = "The disk type."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<in_mage_rcm_protected_disk_details::DiskType>,
     #[doc = "The data pending in log data store in MB."]
     #[serde(rename = "dataPendingInLogDataStoreInMB", default, skip_serializing_if = "Option::is_none")]
@@ -10094,12 +9879,7 @@ pub struct InMageRcmReplicationDetails {
     #[serde(rename = "initialReplicationTransferredBytes", default, skip_serializing_if = "Option::is_none")]
     pub initial_replication_transferred_bytes: Option<i64>,
     #[doc = "The initial replication progress health."]
-    #[serde(
-        rename = "initialReplicationProgressHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "initialReplicationProgressHealth", default, skip_serializing_if = "Option::is_none")]
     pub initial_replication_progress_health: Option<in_mage_rcm_replication_details::InitialReplicationProgressHealth>,
     #[doc = "The resync progress percentage. This is calculated based on total bytes processed for all disks in the source VM."]
     #[serde(rename = "resyncProgressPercentage", default, skip_serializing_if = "Option::is_none")]
@@ -10111,31 +9891,16 @@ pub struct InMageRcmReplicationDetails {
     #[serde(rename = "resyncTransferredBytes", default, skip_serializing_if = "Option::is_none")]
     pub resync_transferred_bytes: Option<i64>,
     #[doc = "The resync progress health."]
-    #[serde(
-        rename = "resyncProgressHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resyncProgressHealth", default, skip_serializing_if = "Option::is_none")]
     pub resync_progress_health: Option<in_mage_rcm_replication_details::ResyncProgressHealth>,
     #[doc = "A value indicating whether resync is required."]
     #[serde(rename = "resyncRequired", default, skip_serializing_if = "Option::is_none")]
     pub resync_required: Option<String>,
     #[doc = "The resync state."]
-    #[serde(
-        rename = "resyncState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resyncState", default, skip_serializing_if = "Option::is_none")]
     pub resync_state: Option<in_mage_rcm_replication_details::ResyncState>,
     #[doc = "The agent auto upgrade state."]
-    #[serde(
-        rename = "agentUpgradeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentUpgradeState", default, skip_serializing_if = "Option::is_none")]
     pub agent_upgrade_state: Option<in_mage_rcm_replication_details::AgentUpgradeState>,
     #[doc = "The last agent upgrade type."]
     #[serde(rename = "lastAgentUpgradeType", default, skip_serializing_if = "Option::is_none")]
@@ -10459,12 +10224,7 @@ impl InMageRcmReprotectInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InMageRcmSyncDetails {
     #[doc = "The progress health."]
-    #[serde(
-        rename = "progressHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "progressHealth", default, skip_serializing_if = "Option::is_none")]
     pub progress_health: Option<in_mage_rcm_sync_details::ProgressHealth>,
     #[doc = "The transferred bytes from source VM to azure for the disk."]
     #[serde(rename = "transferredBytes", default, skip_serializing_if = "Option::is_none")]
@@ -10662,12 +10422,7 @@ pub struct InMageRcmUpdateReplicationProtectedItemInput {
     )]
     pub vm_nics: Vec<InMageRcmNicInput>,
     #[doc = "The license type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<in_mage_rcm_update_replication_protected_item_input::LicenseType>,
 }
 impl InMageRcmUpdateReplicationProtectedItemInput {
@@ -10984,12 +10739,7 @@ pub struct InMageTestFailoverInput {
     #[serde(flatten)]
     pub test_failover_provider_specific_input: TestFailoverProviderSpecificInput,
     #[doc = "The recovery point type. Values from LatestTime, LatestTag or Custom. In the case of custom, the recovery point provided by RecoveryPointId will be used. In the other two cases, recovery point id will be ignored."]
-    #[serde(
-        rename = "recoveryPointType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<in_mage_test_failover_input::RecoveryPointType>,
     #[doc = "The recovery point id to be passed to test failover to a particular recovery point. In case of latest recovery point, null should be passed."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
@@ -11052,12 +10802,7 @@ pub struct InMageUnplannedFailoverInput {
     #[serde(flatten)]
     pub unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput,
     #[doc = "The recovery point type. Values from LatestTime, LatestTag or Custom. In the case of custom, the recovery point provided by RecoveryPointId will be used. In the other two cases, recovery point id will be ignored."]
-    #[serde(
-        rename = "recoveryPointType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<in_mage_unplanned_failover_input::RecoveryPointType>,
     #[doc = "The recovery point id to be passed to failover to a particular recovery point. In case of latest recovery point, null should be passed."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
@@ -11239,12 +10984,7 @@ pub struct InnerHealthError {
     #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
     pub error_id: Option<String>,
     #[doc = "Value indicating whether the health error is customer resolvable."]
-    #[serde(
-        rename = "customerResolvability",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "customerResolvability", default, skip_serializing_if = "Option::is_none")]
     pub customer_resolvability: Option<inner_health_error::CustomerResolvability>,
 }
 impl InnerHealthError {
@@ -11499,12 +11239,7 @@ pub struct JobQueryParameter {
     #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
     pub job_status: Option<String>,
     #[doc = "The output type of the jobs."]
-    #[serde(
-        rename = "jobOutputType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "jobOutputType", default, skip_serializing_if = "Option::is_none")]
     pub job_output_type: Option<job_query_parameter::JobOutputType>,
     #[doc = "The job Name."]
     #[serde(rename = "jobName", default, skip_serializing_if = "Option::is_none")]
@@ -11731,7 +11466,7 @@ pub struct MarsAgentDetails {
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[doc = "The health of the Mars agent."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<mars_agent_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -11967,12 +11702,7 @@ pub struct MigrationItemProperties {
     #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<String>,
     #[doc = "The migration status."]
-    #[serde(
-        rename = "migrationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<migration_item_properties::MigrationState>,
     #[doc = "The migration state description."]
     #[serde(rename = "migrationStateDescription", default, skip_serializing_if = "Option::is_none")]
@@ -11990,18 +11720,13 @@ pub struct MigrationItemProperties {
     #[serde(rename = "lastMigrationStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_migration_status: Option<String>,
     #[doc = "The test migrate state."]
-    #[serde(
-        rename = "testMigrateState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "testMigrateState", default, skip_serializing_if = "Option::is_none")]
     pub test_migrate_state: Option<migration_item_properties::TestMigrateState>,
     #[doc = "The test migrate state description."]
     #[serde(rename = "testMigrateStateDescription", default, skip_serializing_if = "Option::is_none")]
     pub test_migrate_state_description: Option<String>,
     #[doc = "The consolidated health."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<migration_item_properties::Health>,
     #[doc = "The list of health errors."]
     #[serde(
@@ -12286,12 +12011,7 @@ pub struct MigrationRecoveryPointProperties {
     #[serde(rename = "recoveryPointTime", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time: Option<time::OffsetDateTime>,
     #[doc = "The recovery point type."]
-    #[serde(
-        rename = "recoveryPointType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<migration_recovery_point_properties::RecoveryPointType>,
 }
 impl MigrationRecoveryPointProperties {
@@ -12528,7 +12248,7 @@ pub struct NewProtectionProfile {
     #[serde(rename = "appConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub app_consistent_frequency_in_minutes: Option<i32>,
     #[doc = "A value indicating whether multi-VM sync has to be enabled. Value should be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "multiVmSyncStatus", with = "azure_core::xml::text_content")]
+    #[serde(rename = "multiVmSyncStatus")]
     pub multi_vm_sync_status: new_protection_profile::MultiVmSyncStatus,
 }
 impl NewProtectionProfile {
@@ -12964,7 +12684,7 @@ pub struct ProcessServer {
     #[serde(rename = "agentVersionDetails", default, skip_serializing_if = "Option::is_none")]
     pub agent_version_details: Option<VersionDetails>,
     #[doc = "The health of Process Server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<process_server::Health>,
     #[doc = "The process server stats refresh time."]
     #[serde(rename = "psStatsRefreshTime", default, with = "azure_core::date::rfc3339::option")]
@@ -13103,50 +12823,25 @@ pub struct ProcessServerDetails {
     #[serde(rename = "processorUsagePercentage", default, skip_serializing_if = "Option::is_none")]
     pub processor_usage_percentage: Option<f64>,
     #[doc = "The throughput status."]
-    #[serde(
-        rename = "throughputStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "throughputStatus", default, skip_serializing_if = "Option::is_none")]
     pub throughput_status: Option<process_server_details::ThroughputStatus>,
     #[doc = "The system load."]
     #[serde(rename = "systemLoad", default, skip_serializing_if = "Option::is_none")]
     pub system_load: Option<i64>,
     #[doc = "The system load status."]
-    #[serde(
-        rename = "systemLoadStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "systemLoadStatus", default, skip_serializing_if = "Option::is_none")]
     pub system_load_status: Option<process_server_details::SystemLoadStatus>,
     #[doc = "The disk usage status."]
-    #[serde(
-        rename = "diskUsageStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskUsageStatus", default, skip_serializing_if = "Option::is_none")]
     pub disk_usage_status: Option<process_server_details::DiskUsageStatus>,
     #[doc = "The memory usage status."]
-    #[serde(
-        rename = "memoryUsageStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "memoryUsageStatus", default, skip_serializing_if = "Option::is_none")]
     pub memory_usage_status: Option<process_server_details::MemoryUsageStatus>,
     #[doc = "The processor usage status."]
-    #[serde(
-        rename = "processorUsageStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "processorUsageStatus", default, skip_serializing_if = "Option::is_none")]
     pub processor_usage_status: Option<process_server_details::ProcessorUsageStatus>,
     #[doc = "The health of the process server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<process_server_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -13160,12 +12855,7 @@ pub struct ProcessServerDetails {
     #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_count: Option<i32>,
     #[doc = "The historic health of the process server based on the health in last 24 hours."]
-    #[serde(
-        rename = "historicHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "historicHealth", default, skip_serializing_if = "Option::is_none")]
     pub historic_health: Option<process_server_details::HistoricHealth>,
 }
 impl ProcessServerDetails {
@@ -13576,12 +13266,7 @@ pub struct ProtectedItemsQueryParameter {
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
     #[doc = "Whether Multi VM group is auto created or specified by user."]
-    #[serde(
-        rename = "multiVmGroupCreateOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "multiVmGroupCreateOption", default, skip_serializing_if = "Option::is_none")]
     pub multi_vm_group_create_option: Option<protected_items_query_parameter::MultiVmGroupCreateOption>,
     #[doc = "The process server Id filter."]
     #[serde(rename = "processServerId", default, skip_serializing_if = "Option::is_none")]
@@ -13884,7 +13569,7 @@ pub struct PushInstallerDetails {
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[doc = "The health of the push installer."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<push_installer_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -13972,7 +13657,7 @@ pub struct RcmProxyDetails {
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[doc = "The health of the RCM proxy."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<rcm_proxy_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -14093,18 +13778,13 @@ pub struct RecoveryPlanA2aFailoverInput {
     #[serde(flatten)]
     pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
-    #[serde(rename = "recoveryPointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_a2a_failover_input::RecoveryPointType,
     #[doc = "A value indicating whether to use recovery cloud service for TFO or not."]
     #[serde(rename = "cloudServiceCreationOption", default, skip_serializing_if = "Option::is_none")]
     pub cloud_service_creation_option: Option<String>,
     #[doc = "A value indicating whether multi VM sync enabled VMs should use multi VM sync points for failover."]
-    #[serde(
-        rename = "multiVmSyncPointOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "multiVmSyncPointOption", default, skip_serializing_if = "Option::is_none")]
     pub multi_vm_sync_point_option: Option<recovery_plan_a2a_failover_input::MultiVmSyncPointOption>,
 }
 impl RecoveryPlanA2aFailoverInput {
@@ -14289,7 +13969,7 @@ pub struct RecoveryPlanAutomationRunbookActionDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
     #[doc = "The fabric location."]
-    #[serde(rename = "fabricLocation", with = "azure_core::xml::text_content")]
+    #[serde(rename = "fabricLocation")]
     pub fabric_location: recovery_plan_automation_runbook_action_details::FabricLocation,
 }
 impl RecoveryPlanAutomationRunbookActionDetails {
@@ -14374,7 +14054,7 @@ impl RecoveryPlanCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanGroup {
     #[doc = "The group type."]
-    #[serde(rename = "groupType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "groupType")]
     pub group_type: recovery_plan_group::GroupType,
     #[doc = "The list of protected items."]
     #[serde(
@@ -14484,10 +14164,10 @@ pub struct RecoveryPlanHyperVReplicaAzureFailbackInput {
     #[serde(flatten)]
     pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The data sync option."]
-    #[serde(rename = "dataSyncOption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataSyncOption")]
     pub data_sync_option: recovery_plan_hyper_v_replica_azure_failback_input::DataSyncOption,
     #[doc = "The ALR option."]
-    #[serde(rename = "recoveryVmCreationOption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryVmCreationOption")]
     pub recovery_vm_creation_option: recovery_plan_hyper_v_replica_azure_failback_input::RecoveryVmCreationOption,
 }
 impl RecoveryPlanHyperVReplicaAzureFailbackInput {
@@ -14592,12 +14272,7 @@ pub struct RecoveryPlanHyperVReplicaAzureFailoverInput {
     #[serde(rename = "secondaryKekCertificatePfx", default, skip_serializing_if = "Option::is_none")]
     pub secondary_kek_certificate_pfx: Option<String>,
     #[doc = "The recovery point type."]
-    #[serde(
-        rename = "recoveryPointType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<recovery_plan_hyper_v_replica_azure_failover_input::RecoveryPointType>,
 }
 impl RecoveryPlanHyperVReplicaAzureFailoverInput {
@@ -14660,7 +14335,7 @@ pub struct RecoveryPlanInMageAzureV2FailoverInput {
     #[serde(flatten)]
     pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
-    #[serde(rename = "recoveryPointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_azure_v2_failover_input::RecoveryPointType,
     #[doc = "A value indicating whether multi VM sync enabled VMs should use multi VM sync points for failover."]
     #[serde(rename = "useMultiVmSyncPoint", default, skip_serializing_if = "Option::is_none")]
@@ -14730,7 +14405,7 @@ pub struct RecoveryPlanInMageFailoverInput {
     #[serde(flatten)]
     pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
-    #[serde(rename = "recoveryPointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_failover_input::RecoveryPointType,
 }
 impl RecoveryPlanInMageFailoverInput {
@@ -14792,7 +14467,7 @@ pub struct RecoveryPlanInMageRcmFailbackFailoverInput {
     #[serde(flatten)]
     pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
-    #[serde(rename = "recoveryPointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_rcm_failback_failover_input::RecoveryPointType,
     #[doc = "A value indicating whether multi VM sync enabled VMs should use multi VM sync points for failover."]
     #[serde(rename = "useMultiVmSyncPoint", default, skip_serializing_if = "Option::is_none")]
@@ -14856,7 +14531,7 @@ pub struct RecoveryPlanInMageRcmFailoverInput {
     #[serde(flatten)]
     pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
-    #[serde(rename = "recoveryPointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_rcm_failover_input::RecoveryPointType,
     #[doc = "A value indicating whether multi VM sync enabled VMs should use multi VM sync points for failover."]
     #[serde(rename = "useMultiVmSyncPoint", default, skip_serializing_if = "Option::is_none")]
@@ -14952,7 +14627,7 @@ impl RecoveryPlanPlannedFailoverInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanPlannedFailoverInputProperties {
     #[doc = "The failover direction."]
-    #[serde(rename = "failoverDirection", with = "azure_core::xml::text_content")]
+    #[serde(rename = "failoverDirection")]
     pub failover_direction: recovery_plan_planned_failover_input_properties::FailoverDirection,
     #[doc = "The provider specific properties."]
     #[serde(
@@ -15149,7 +14824,7 @@ pub struct RecoveryPlanScriptActionDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
     #[doc = "The fabric location."]
-    #[serde(rename = "fabricLocation", with = "azure_core::xml::text_content")]
+    #[serde(rename = "fabricLocation")]
     pub fabric_location: recovery_plan_script_action_details::FabricLocation,
 }
 impl RecoveryPlanScriptActionDetails {
@@ -15257,7 +14932,7 @@ impl RecoveryPlanTestFailoverInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanTestFailoverInputProperties {
     #[doc = "The failover direction."]
-    #[serde(rename = "failoverDirection", with = "azure_core::xml::text_content")]
+    #[serde(rename = "failoverDirection")]
     pub failover_direction: recovery_plan_test_failover_input_properties::FailoverDirection,
     #[doc = "The network type to be used for test failover."]
     #[serde(rename = "networkType")]
@@ -15339,10 +15014,10 @@ impl RecoveryPlanUnplannedFailoverInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanUnplannedFailoverInputProperties {
     #[doc = "The failover direction."]
-    #[serde(rename = "failoverDirection", with = "azure_core::xml::text_content")]
+    #[serde(rename = "failoverDirection")]
     pub failover_direction: recovery_plan_unplanned_failover_input_properties::FailoverDirection,
     #[doc = "A value indicating whether source site operations are required."]
-    #[serde(rename = "sourceSiteOperations", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sourceSiteOperations")]
     pub source_site_operations: recovery_plan_unplanned_failover_input_properties::SourceSiteOperations,
     #[doc = "The provider specific properties."]
     #[serde(
@@ -15766,7 +15441,7 @@ pub struct ReplicationAgentDetails {
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[doc = "The health of the replication agent."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<replication_agent_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -16260,7 +15935,7 @@ pub struct ReprotectAgentDetails {
     #[serde(rename = "lastHeartbeatUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_heartbeat_utc: Option<time::OffsetDateTime>,
     #[doc = "The health of the reprotect agent."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<reprotect_agent_details::Health>,
     #[doc = "The health errors."]
     #[serde(
@@ -17581,12 +17256,7 @@ pub struct UpdateReplicationProtectedItemInputProperties {
     )]
     pub vm_nics: Vec<VmNicInputDetails>,
     #[doc = "License type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<update_replication_protected_item_input_properties::LicenseType>,
     #[doc = "The target availability set Id."]
     #[serde(rename = "recoveryAvailabilitySetId", default, skip_serializing_if = "Option::is_none")]
@@ -17964,12 +17634,7 @@ pub struct VMwareCbtDiskInput {
     #[serde(rename = "diskId")]
     pub disk_id: String,
     #[doc = "The disk type."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<v_mware_cbt_disk_input::DiskType>,
     #[doc = "A value indicating whether the disk is the OS disk."]
     #[serde(rename = "isOSDisk")]
@@ -18053,20 +17718,10 @@ pub struct VMwareCbtEnableMigrationInput {
     #[serde(rename = "disksToInclude")]
     pub disks_to_include: Vec<VMwareCbtDiskInput>,
     #[doc = "License type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<v_mware_cbt_enable_migration_input::LicenseType>,
     #[doc = "The SQL Server license type."]
-    #[serde(
-        rename = "sqlServerLicenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_license_type: Option<v_mware_cbt_enable_migration_input::SqlServerLicenseType>,
     #[doc = "A value indicating whether bulk SQL RP registration to be done."]
     #[serde(rename = "performSqlBulkRegistration", default, skip_serializing_if = "Option::is_none")]
@@ -18422,12 +18077,7 @@ pub struct VMwareCbtMigrationDetails {
     #[serde(rename = "resyncRequired", default, skip_serializing_if = "Option::is_none")]
     pub resync_required: Option<String>,
     #[doc = "The resync state."]
-    #[serde(
-        rename = "resyncState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resyncState", default, skip_serializing_if = "Option::is_none")]
     pub resync_state: Option<v_mware_cbt_migration_details::ResyncState>,
     #[doc = "A value indicating whether auto resync is to be done."]
     #[serde(rename = "performAutoResync", default, skip_serializing_if = "Option::is_none")]
@@ -18553,12 +18203,7 @@ pub struct VMwareCbtNicDetails {
     #[serde(rename = "sourceIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub source_ip_address: Option<String>,
     #[doc = "The source IP address type."]
-    #[serde(
-        rename = "sourceIPAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceIPAddressType", default, skip_serializing_if = "Option::is_none")]
     pub source_ip_address_type: Option<v_mware_cbt_nic_details::SourceIpAddressType>,
     #[doc = "Source network Id."]
     #[serde(rename = "sourceNetworkId", default, skip_serializing_if = "Option::is_none")]
@@ -18567,12 +18212,7 @@ pub struct VMwareCbtNicDetails {
     #[serde(rename = "targetIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub target_ip_address: Option<String>,
     #[doc = "The target IP address type."]
-    #[serde(
-        rename = "targetIPAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "targetIPAddressType", default, skip_serializing_if = "Option::is_none")]
     pub target_ip_address_type: Option<v_mware_cbt_nic_details::TargetIpAddressType>,
     #[doc = "Target subnet name."]
     #[serde(rename = "targetSubnetName", default, skip_serializing_if = "Option::is_none")]
@@ -18587,12 +18227,7 @@ pub struct VMwareCbtNicDetails {
     #[serde(rename = "testIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub test_ip_address: Option<String>,
     #[doc = "The test IP address type."]
-    #[serde(
-        rename = "testIPAddressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "testIPAddressType", default, skip_serializing_if = "Option::is_none")]
     pub test_ip_address_type: Option<v_mware_cbt_nic_details::TestIpAddressType>,
     #[doc = "Target NIC name."]
     #[serde(rename = "targetNicName", default, skip_serializing_if = "Option::is_none")]
@@ -18797,12 +18432,7 @@ pub struct VMwareCbtProtectedDiskDetails {
     #[serde(rename = "diskName", default, skip_serializing_if = "Option::is_none")]
     pub disk_name: Option<String>,
     #[doc = "The disk type."]
-    #[serde(
-        rename = "diskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<v_mware_cbt_protected_disk_details::DiskType>,
     #[doc = "The disk path."]
     #[serde(rename = "diskPath", default, skip_serializing_if = "Option::is_none")]
@@ -18976,12 +18606,7 @@ impl VMwareCbtResyncInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareCbtSecurityProfileProperties {
     #[doc = "The target VM security type."]
-    #[serde(
-        rename = "targetVmSecurityType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "targetVmSecurityType", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_security_type: Option<v_mware_cbt_security_profile_properties::TargetVmSecurityType>,
     #[doc = "A value indicating whether secure boot to be enabled."]
     #[serde(rename = "isTargetVmSecureBootEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -19157,20 +18782,10 @@ pub struct VMwareCbtUpdateMigrationItemInput {
     )]
     pub vm_disks: Vec<VMwareCbtUpdateDiskInput>,
     #[doc = "The license type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<v_mware_cbt_update_migration_item_input::LicenseType>,
     #[doc = "The SQL Server license type."]
-    #[serde(
-        rename = "sqlServerLicenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
     pub sql_server_license_type: Option<v_mware_cbt_update_migration_item_input::SqlServerLicenseType>,
     #[doc = "A value indicating whether auto resync is to be done."]
     #[serde(rename = "performAutoResync", default, skip_serializing_if = "Option::is_none")]
@@ -19723,7 +19338,7 @@ pub struct VersionDetails {
     #[serde(rename = "expiryDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiry_date: Option<time::OffsetDateTime>,
     #[doc = "A value indicating whether security update required."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<version_details::Status>,
 }
 impl VersionDetails {

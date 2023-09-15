@@ -138,7 +138,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -407,12 +407,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -572,7 +567,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -637,20 +632,10 @@ pub struct RedisCommonProperties {
     #[serde(rename = "shardCount", default, skip_serializing_if = "Option::is_none")]
     pub shard_count: Option<i32>,
     #[doc = "Optional: requires clients to use a specified TLS version (or higher) to connect (e,g, '1.0', '1.1', '1.2')"]
-    #[serde(
-        rename = "minimumTlsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<redis_common_properties::MinimumTlsVersion>,
     #[doc = "Whether or not public endpoint access is allowed for this cache.  Value is optional but if passed in, must be 'Enabled' or 'Disabled'. If 'Disabled', private endpoints are the exclusive access method. Default value is 'Enabled'"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<redis_common_properties::PublicNetworkAccess>,
 }
 impl RedisCommonProperties {
@@ -1001,7 +986,7 @@ pub struct RedisLinkedServerCreateProperties {
     #[serde(rename = "linkedRedisCacheLocation")]
     pub linked_redis_cache_location: String,
     #[doc = "Role of the linked server."]
-    #[serde(rename = "serverRole", with = "azure_core::xml::text_content")]
+    #[serde(rename = "serverRole")]
     pub server_role: redis_linked_server_create_properties::ServerRole,
 }
 impl RedisLinkedServerCreateProperties {
@@ -1158,12 +1143,7 @@ pub struct RedisProperties {
     #[serde(flatten)]
     pub redis_create_properties: RedisCreateProperties,
     #[doc = "Redis instance provisioning status."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<redis_properties::ProvisioningState>,
     #[doc = "Redis host name."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
@@ -1280,12 +1260,7 @@ pub mod redis_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisRebootParameters {
     #[doc = "Which Redis node(s) to reboot. Depending on this value data loss is possible."]
-    #[serde(
-        rename = "rebootType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "rebootType", default, skip_serializing_if = "Option::is_none")]
     pub reboot_type: Option<redis_reboot_parameters::RebootType>,
     #[doc = "If clustering is enabled, the ID of the shard to be rebooted."]
     #[serde(rename = "shardId", default, skip_serializing_if = "Option::is_none")]
@@ -1349,7 +1324,7 @@ pub mod redis_reboot_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisRegenerateKeyParameters {
     #[doc = "The Redis access key to regenerate."]
-    #[serde(rename = "keyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "keyType")]
     pub key_type: redis_regenerate_key_parameters::KeyType,
 }
 impl RedisRegenerateKeyParameters {
@@ -1460,7 +1435,7 @@ impl ScheduleEntries {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleEntry {
     #[doc = "Day of the week when a cache can be patched."]
-    #[serde(rename = "dayOfWeek", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dayOfWeek")]
     pub day_of_week: schedule_entry::DayOfWeek,
     #[doc = "Start hour after which cache patching can start."]
     #[serde(rename = "startHourUtc")]
@@ -1498,10 +1473,8 @@ pub mod schedule_entry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The type of Redis cache to deploy. Valid values: (Basic, Standard, Premium)"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The SKU family to use. Valid values: (C, P). (C = Basic/Standard, P = Premium)."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub family: sku::Family,
     #[doc = "The size of the Redis cache to deploy. Valid values: for C (Basic/Standard) family (0, 1, 2, 3, 4, 5, 6), for P (Premium) family (1, 2, 3, 4)."]
     pub capacity: i32,

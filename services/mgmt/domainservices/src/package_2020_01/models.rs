@@ -68,44 +68,19 @@ impl ContainerAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainSecuritySettings {
     #[doc = "A flag to determine whether or not NtlmV1 is enabled or disabled."]
-    #[serde(
-        rename = "ntlmV1",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ntlmV1", default, skip_serializing_if = "Option::is_none")]
     pub ntlm_v1: Option<domain_security_settings::NtlmV1>,
     #[doc = "A flag to determine whether or not TlsV1 is enabled or disabled."]
-    #[serde(
-        rename = "tlsV1",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "tlsV1", default, skip_serializing_if = "Option::is_none")]
     pub tls_v1: Option<domain_security_settings::TlsV1>,
     #[doc = "A flag to determine whether or not SyncNtlmPasswords is enabled or disabled."]
-    #[serde(
-        rename = "syncNtlmPasswords",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncNtlmPasswords", default, skip_serializing_if = "Option::is_none")]
     pub sync_ntlm_passwords: Option<domain_security_settings::SyncNtlmPasswords>,
     #[doc = "A flag to determine whether or not SyncKerberosPasswords is enabled or disabled."]
-    #[serde(
-        rename = "syncKerberosPasswords",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncKerberosPasswords", default, skip_serializing_if = "Option::is_none")]
     pub sync_kerberos_passwords: Option<domain_security_settings::SyncKerberosPasswords>,
     #[doc = "A flag to determine whether or not SyncOnPremPasswords is enabled or disabled."]
-    #[serde(
-        rename = "syncOnPremPasswords",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncOnPremPasswords", default, skip_serializing_if = "Option::is_none")]
     pub sync_on_prem_passwords: Option<domain_security_settings::SyncOnPremPasswords>,
 }
 impl DomainSecuritySettings {
@@ -407,12 +382,7 @@ pub struct DomainServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
     #[doc = "Enabled or Disabled flag to turn on Group-based filtered sync"]
-    #[serde(
-        rename = "filteredSync",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "filteredSync", default, skip_serializing_if = "Option::is_none")]
     pub filtered_sync: Option<domain_service_properties::FilteredSync>,
     #[doc = "Settings for notification"]
     #[serde(rename = "notificationSettings", default, skip_serializing_if = "Option::is_none")]
@@ -545,7 +515,7 @@ impl HealthMonitor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LdapsSettings {
     #[doc = "A flag to determine whether or not Secure LDAP is enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ldaps: Option<ldaps_settings::Ldaps>,
     #[doc = "The certificate required to configure Secure LDAP. The parameter passed here should be a base64encoded representation of the certificate pfx file."]
     #[serde(rename = "pfxCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -563,12 +533,7 @@ pub struct LdapsSettings {
     #[serde(rename = "certificateNotAfter", default, with = "azure_core::date::rfc3339::option")]
     pub certificate_not_after: Option<time::OffsetDateTime>,
     #[doc = "A flag to determine whether or not Secure LDAP access over the internet is enabled or disabled."]
-    #[serde(
-        rename = "externalAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "externalAccess", default, skip_serializing_if = "Option::is_none")]
     pub external_access: Option<ldaps_settings::ExternalAccess>,
 }
 impl LdapsSettings {
@@ -700,20 +665,10 @@ impl MigrationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettings {
     #[doc = "Should global admins be notified"]
-    #[serde(
-        rename = "notifyGlobalAdmins",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "notifyGlobalAdmins", default, skip_serializing_if = "Option::is_none")]
     pub notify_global_admins: Option<notification_settings::NotifyGlobalAdmins>,
     #[doc = "Should domain controller admins be notified"]
-    #[serde(
-        rename = "notifyDcAdmins",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "notifyDcAdmins", default, skip_serializing_if = "Option::is_none")]
     pub notify_dc_admins: Option<notification_settings::NotifyDcAdmins>,
     #[doc = "The list of additional recipients"]
     #[serde(

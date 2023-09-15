@@ -173,12 +173,7 @@ pub struct DedicatedHsmProperties {
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
     pub status_message: Option<String>,
     #[doc = "Provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dedicated_hsm_properties::ProvisioningState>,
 }
 impl DedicatedHsmProperties {
@@ -474,7 +469,7 @@ impl ResourceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "SKU of the dedicated HSM"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
 impl Sku {
@@ -546,12 +541,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of dedicated hsm resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -560,12 +550,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of dedicated hsm resource last modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

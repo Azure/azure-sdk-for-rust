@@ -54,12 +54,7 @@ pub struct BalanceProperties {
     #[serde(rename = "azureMarketplaceServiceCharges", default, skip_serializing_if = "Option::is_none")]
     pub azure_marketplace_service_charges: Option<f64>,
     #[doc = "The billing frequency."]
-    #[serde(
-        rename = "billingFrequency",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
     pub billing_frequency: Option<balance_properties::BillingFrequency>,
     #[doc = "Price is hidden or not."]
     #[serde(rename = "priceHidden", default, skip_serializing_if = "Option::is_none")]
@@ -146,12 +141,11 @@ impl Budget {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BudgetProperties {
     #[doc = "The category of the budget, whether the budget tracks cost or usage."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub category: budget_properties::Category,
     #[doc = "The total amount of cost to track with the budget"]
     pub amount: f64,
     #[doc = "The time covered by a budget. Tracking of the amount will be reset based on the time grain."]
-    #[serde(rename = "timeGrain", with = "azure_core::xml::text_content")]
+    #[serde(rename = "timeGrain")]
     pub time_grain: budget_properties::TimeGrain,
     #[doc = "The start and end date for a budget."]
     #[serde(rename = "timePeriod")]
@@ -484,7 +478,7 @@ pub struct ForecastProperties {
     #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
     pub usage_date: Option<String>,
     #[doc = "The granularity of forecast."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grain: Option<forecast_properties::Grain>,
     #[doc = "The amount of charge"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -493,12 +487,7 @@ pub struct ForecastProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
     #[doc = "The type of the charge. Could be actual or forecast"]
-    #[serde(
-        rename = "chargeType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "chargeType", default, skip_serializing_if = "Option::is_none")]
     pub charge_type: Option<forecast_properties::ChargeType>,
     #[doc = "The details about the forecast confidence levels. This is populated only when chargeType is Forecast."]
     #[serde(
@@ -871,7 +860,6 @@ pub struct Notification {
     #[doc = "The notification is enabled or not."]
     pub enabled: bool,
     #[doc = "The comparison operator."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: notification::Operator,
     #[doc = "Threshold value associated with a notification. Notification is sent when the cost exceeded the threshold. It is always percent and has to be between 0 and 1000."]
     pub threshold: f64,

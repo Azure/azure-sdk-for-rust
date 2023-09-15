@@ -24,7 +24,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Specifies the reason for the unavailability of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
 }
 impl CheckNameAvailabilityResult {
@@ -60,7 +60,7 @@ pub struct NwRuleSetIpRules {
     #[serde(rename = "ipMask", default, skip_serializing_if = "Option::is_none")]
     pub ip_mask: Option<String>,
     #[doc = "The IP Filter Action"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<nw_rule_set_ip_rules::Action>,
 }
 impl NwRuleSetIpRules {
@@ -126,12 +126,7 @@ pub mod network_rule_set {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Default Action for Network Rule Set"]
-        #[serde(
-            rename = "defaultAction",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
         pub default_action: Option<properties::DefaultAction>,
         #[doc = "List of IpRules"]
         #[serde(
@@ -340,12 +335,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -513,7 +503,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval or rejection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -576,12 +566,7 @@ impl RelayNamespaceListResult {
 #[doc = "Properties of the namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelayNamespaceProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<relay_namespace_properties::ProvisioningState>,
     #[doc = "The time the namespace was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -666,10 +651,9 @@ impl ResourceNamespacePatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Name of this SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The tier of this SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {

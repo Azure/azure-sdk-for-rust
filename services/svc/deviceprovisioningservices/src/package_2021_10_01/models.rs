@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationMechanism {
     #[doc = "Attestation Type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: attestation_mechanism::Type,
     #[doc = "Attestation via TPM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -51,7 +51,6 @@ pub struct BulkEnrollmentGroupOperation {
     #[serde(rename = "enrollmentGroups")]
     pub enrollment_groups: Vec<EnrollmentGroup>,
     #[doc = "Operation mode."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: bulk_enrollment_group_operation::Mode,
 }
 impl BulkEnrollmentGroupOperation {
@@ -124,7 +123,6 @@ pub struct BulkEnrollmentOperation {
     #[doc = "Enrollment items"]
     pub enrollments: Vec<IndividualEnrollment>,
     #[doc = "Operation mode."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: bulk_enrollment_operation::Mode,
 }
 impl BulkEnrollmentOperation {
@@ -234,10 +232,10 @@ pub struct DeviceRegistrationState {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
     #[doc = "Enrollment status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<device_registration_state::Status>,
     #[doc = "Substatus for 'Assigned' devices. Possible values include - 'initialAssignment': Device has been assigned to an IoT hub for the first time, 'deviceDataMigrated': Device has been assigned to a different IoT hub and its device data was migrated from the previously assigned IoT hub. Device data was removed from the previously assigned IoT hub, 'deviceDataReset':  Device has been assigned to a different IoT hub and its device data was populated from the initial state stored in the enrollment. Device data was removed from the previously assigned IoT hub, 'reprovisionedToInitialAssignment': Device has been re-provisioned to a previously assigned IoT hub."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub substatus: Option<device_registration_state::Substatus>,
     #[doc = "Error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
@@ -310,12 +308,7 @@ pub struct EnrollmentGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "The provisioning status."]
-    #[serde(
-        rename = "provisioningStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_status: Option<enrollment_group::ProvisioningStatus>,
     #[doc = "The behavior of the service when a device is re-provisioned to an IoT hub."]
     #[serde(rename = "reprovisionPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -327,12 +320,7 @@ pub struct EnrollmentGroup {
     #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
-    #[serde(
-        rename = "allocationPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<enrollment_group::AllocationPolicy>,
     #[doc = "The list of IoT Hub hostnames the device(s) in this resource can be allocated to. Must be a subset of tenant level list of IoT hubs."]
     #[serde(
@@ -423,12 +411,7 @@ pub struct IndividualEnrollment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "The provisioning status."]
-    #[serde(
-        rename = "provisioningStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_status: Option<individual_enrollment::ProvisioningStatus>,
     #[doc = "The behavior of the service when a device is re-provisioned to an IoT hub."]
     #[serde(rename = "reprovisionPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -440,12 +423,7 @@ pub struct IndividualEnrollment {
     #[serde(rename = "lastUpdatedDateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_date_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
-    #[serde(
-        rename = "allocationPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<individual_enrollment::AllocationPolicy>,
     #[doc = "The list of IoT Hub hostnames the device(s) in this resource can be allocated to. Must be a subset of tenant level list of IoT hubs."]
     #[serde(

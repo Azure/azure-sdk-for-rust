@@ -8,23 +8,13 @@ pub type CanonicalSupportPlanInfo = Vec<CanonicalSupportPlanInfoDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalSupportPlanInfoDefinition {
     #[doc = "Support plan type."]
-    #[serde(
-        rename = "supportPlanType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "supportPlanType", default, skip_serializing_if = "Option::is_none")]
     pub support_plan_type: Option<canonical_support_plan_info_definition::SupportPlanType>,
     #[doc = "Flag to indicate if this support plan type is currently enabled for the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "The one time charge status for the subscription."]
-    #[serde(
-        rename = "oneTimeCharge",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "oneTimeCharge", default, skip_serializing_if = "Option::is_none")]
     pub one_time_charge: Option<canonical_support_plan_info_definition::OneTimeCharge>,
 }
 impl CanonicalSupportPlanInfoDefinition {
@@ -123,12 +113,7 @@ pub mod canonical_support_plan_info_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalSupportPlanProperties {
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
 }
 impl CanonicalSupportPlanProperties {

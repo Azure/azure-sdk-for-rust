@@ -106,7 +106,7 @@ impl Serialize for AllowType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthInfoBase {
     #[doc = "The authentication type."]
-    #[serde(rename = "authType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authType")]
     pub auth_type: AuthType,
 }
 impl AuthInfoBase {
@@ -210,7 +210,7 @@ impl AzureResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourcePropertiesBase {
     #[doc = "The azure resource type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: AzureResourceType,
 }
 impl AzureResourcePropertiesBase {
@@ -347,15 +347,10 @@ impl Serialize for ClientType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationInfo {
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Indicates how to apply the connector operations, such as opt out network configuration, opt in configuration."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ActionType>,
     #[doc = "Optional. A dictionary of default key name and customized key name mapping. If not specified, default key name will be used for generate configurations"]
     #[serde(rename = "customizedKeys", default, skip_serializing_if = "Option::is_none")]
@@ -432,20 +427,10 @@ pub struct ConfigurationNames {
     #[serde(rename = "targetService", default, skip_serializing_if = "Option::is_none")]
     pub target_service: Option<String>,
     #[doc = "The application client type"]
-    #[serde(
-        rename = "clientType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "clientType", default, skip_serializing_if = "Option::is_none")]
     pub client_type: Option<ClientType>,
     #[doc = "The authentication type."]
-    #[serde(
-        rename = "authType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
     pub auth_type: Option<AuthType>,
     #[doc = "Indicates some additional properties for dapr client type"]
     #[serde(rename = "daprProperties", default, skip_serializing_if = "Option::is_none")]
@@ -696,12 +681,7 @@ pub struct DryrunOperationPreview {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The operation type"]
-    #[serde(
-        rename = "operationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<dryrun_operation_preview::OperationType>,
     #[doc = "The description of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -767,7 +747,7 @@ pub mod dryrun_operation_preview {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DryrunParameters {
     #[doc = "The name of action for you dryrun job."]
-    #[serde(rename = "actionName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "actionName")]
     pub action_name: DryrunActionName,
 }
 impl DryrunParameters {
@@ -791,7 +771,7 @@ impl DryrunPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DryrunPrerequisiteResult {
     #[doc = "The type of dryrun result."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: DryrunPrerequisiteResultType,
 }
 impl DryrunPrerequisiteResult {
@@ -961,20 +941,10 @@ pub struct FirewallRules {
     )]
     pub ip_ranges: Vec<String>,
     #[doc = "Whether to allow firewall rules."]
-    #[serde(
-        rename = "azureServices",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "azureServices", default, skip_serializing_if = "Option::is_none")]
     pub azure_services: Option<AllowType>,
     #[doc = "Whether to allow firewall rules."]
-    #[serde(
-        rename = "callerClientIP",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "callerClientIP", default, skip_serializing_if = "Option::is_none")]
     pub caller_client_ip: Option<AllowType>,
 }
 impl FirewallRules {
@@ -1042,12 +1012,7 @@ pub struct LinkerProperties {
     #[serde(rename = "authInfo", default, skip_serializing_if = "Option::is_none")]
     pub auth_info: Option<AuthInfoBase>,
     #[doc = "The application client type"]
-    #[serde(
-        rename = "clientType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "clientType", default, skip_serializing_if = "Option::is_none")]
     pub client_type: Option<ClientType>,
     #[doc = "The provisioning state. "]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1106,15 +1071,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1292,15 +1252,10 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicNetworkSolution {
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Indicates how to apply the connector operations, such as opt out network configuration, opt in configuration."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ActionType>,
     #[doc = "Target service's firewall rules. to allow connections from source service."]
     #[serde(rename = "firewallRules", default, skip_serializing_if = "Option::is_none")]
@@ -1382,7 +1337,7 @@ impl SecretAuthInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretInfoBase {
     #[doc = "The secret type."]
-    #[serde(rename = "secretType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "secretType")]
     pub secret_type: SecretType,
 }
 impl SecretInfoBase {
@@ -1478,12 +1433,7 @@ pub struct ServicePrincipalCertificateAuthInfo {
     #[doc = "ServicePrincipal certificate for servicePrincipal auth."]
     pub certificate: String,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Optional, this value specifies the Azure roles to be assigned. Automatically "]
     #[serde(
@@ -1521,12 +1471,7 @@ pub struct ServicePrincipalSecretAuthInfo {
     #[doc = "Secret for servicePrincipal auth."]
     pub secret: String,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Optional, this value specifies the Azure roles to be assigned. Automatically "]
     #[serde(
@@ -1572,12 +1517,7 @@ pub struct SystemAssignedIdentityAuthInfo {
     #[serde(flatten)]
     pub database_aad_auth_info: DatabaseAadAuthInfo,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Optional, this value specifies the Azure role to be assigned"]
     #[serde(
@@ -1601,7 +1541,7 @@ impl SystemAssignedIdentityAuthInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetServiceBase {
     #[doc = "The target service type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: TargetServiceType,
 }
 impl TargetServiceBase {
@@ -1661,12 +1601,7 @@ pub struct UserAccountAuthInfo {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Optional, this value specifies the Azure roles to be assigned. Automatically "]
     #[serde(
@@ -1701,12 +1636,7 @@ pub struct UserAssignedIdentityAuthInfo {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
     #[doc = "Optional, this value specifies the Azure role to be assigned"]
     #[serde(
@@ -1732,20 +1662,10 @@ impl UserAssignedIdentityAuthInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VNetSolution {
     #[doc = "Type of VNet solution."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<v_net_solution::Type>,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
-    #[serde(
-        rename = "deleteOrUpdateBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
     pub delete_or_update_behavior: Option<DeleteOrUpdateBehavior>,
 }
 impl VNetSolution {
@@ -1835,12 +1755,7 @@ pub struct ValidateResult {
     #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
     pub target_id: Option<String>,
     #[doc = "The authentication type."]
-    #[serde(
-        rename = "authType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
     pub auth_type: Option<AuthType>,
     #[doc = "The detail of validation result"]
     #[serde(
@@ -1866,7 +1781,7 @@ pub struct ValidationResultItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The result of validation"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<validation_result_item::Result>,
     #[doc = "The error message of validation result"]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1949,12 +1864,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1963,12 +1873,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

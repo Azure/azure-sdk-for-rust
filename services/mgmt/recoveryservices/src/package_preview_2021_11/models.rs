@@ -262,7 +262,7 @@ pub struct IdentityData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: identity_data::Type,
     #[doc = "The list of user-assigned identities associated with the resource. The user-assigned identity dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -463,12 +463,7 @@ impl PrivateEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[doc = "Gets or sets provisioning state of the private endpoint connection."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection::ProvisioningState>,
     #[doc = "The Private Endpoint network resource that is linked to the Private Endpoint connection."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -628,7 +623,7 @@ impl PrivateLinkResources {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "Gets or sets the status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<private_link_service_connection_state::Status>,
     #[doc = "Gets or sets description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -690,12 +685,7 @@ pub mod private_link_service_connection_state {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RawCertificateData {
     #[doc = "Specifies the authentication type."]
-    #[serde(
-        rename = "authType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
     pub auth_type: Option<raw_certificate_data::AuthType>,
     #[doc = "The base64 encoded certificate raw data string"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -948,7 +938,6 @@ impl ResourceCertificateDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The Sku name."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The Sku tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1051,18 +1040,13 @@ pub struct UpgradeDetails {
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Status of the vault upgrade operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<upgrade_details::Status>,
     #[doc = "Message to the user containing information about the upgrade operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The way the vault upgrade was triggered."]
-    #[serde(
-        rename = "triggerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<upgrade_details::TriggerType>,
     #[doc = "Resource ID of the upgraded vault."]
     #[serde(rename = "upgradedResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1298,20 +1282,10 @@ pub struct VaultProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnectionVaultProperties>,
     #[doc = "Private endpoint state for backup."]
-    #[serde(
-        rename = "privateEndpointStateForBackup",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateEndpointStateForBackup", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_state_for_backup: Option<vault_properties::PrivateEndpointStateForBackup>,
     #[doc = "Private endpoint state for site recovery."]
-    #[serde(
-        rename = "privateEndpointStateForSiteRecovery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateEndpointStateForSiteRecovery", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_state_for_site_recovery: Option<vault_properties::PrivateEndpointStateForSiteRecovery>,
     #[doc = "Customer Managed Key details of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1320,20 +1294,10 @@ pub struct VaultProperties {
     #[serde(rename = "moveDetails", default, skip_serializing_if = "Option::is_none")]
     pub move_details: Option<vault_properties::MoveDetails>,
     #[doc = "The State of the Resource after the move operation"]
-    #[serde(
-        rename = "moveState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "moveState", default, skip_serializing_if = "Option::is_none")]
     pub move_state: Option<vault_properties::MoveState>,
     #[doc = "Backup storage version"]
-    #[serde(
-        rename = "backupStorageVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "backupStorageVersion", default, skip_serializing_if = "Option::is_none")]
     pub backup_storage_version: Option<vault_properties::BackupStorageVersion>,
 }
 impl VaultProperties {
@@ -1427,12 +1391,7 @@ pub mod vault_properties {
         #[serde(rename = "kekIdentity", default, skip_serializing_if = "Option::is_none")]
         pub kek_identity: Option<CmkKekIdentity>,
         #[doc = "Enabling/Disabling the Double Encryption state"]
-        #[serde(
-            rename = "infrastructureEncryption",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "infrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
         pub infrastructure_encryption: Option<encryption::InfrastructureEncryption>,
     }
     impl Encryption {
@@ -1601,7 +1560,7 @@ pub mod vault_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultUsage {
     #[doc = "Unit of the usage."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<vault_usage::Unit>,
     #[doc = "Quota period of usage."]
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
@@ -1701,12 +1660,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1715,12 +1669,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

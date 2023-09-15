@@ -137,12 +137,7 @@ impl DicomServicePatchResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DicomServiceProperties {
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Authentication configuration information"]
     #[serde(rename = "authenticationConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -162,20 +157,10 @@ pub struct DicomServiceProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<ResourcePublicNetworkAccess>,
     #[doc = "Indicates the current status of event support for the resource."]
-    #[serde(
-        rename = "eventState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventState", default, skip_serializing_if = "Option::is_none")]
     pub event_state: Option<ResourceEventState>,
 }
 impl DicomServiceProperties {
@@ -281,7 +266,7 @@ pub struct FhirService {
     #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "The kind of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<fhir_service::Kind>,
     #[doc = "Fhir Service properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -501,12 +486,7 @@ impl FhirServicePatchResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FhirServiceProperties {
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The access policies of the service instance."]
     #[serde(rename = "accessPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -532,20 +512,10 @@ pub struct FhirServiceProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<ResourcePublicNetworkAccess>,
     #[doc = "Indicates the current status of event support for the resource."]
-    #[serde(
-        rename = "eventState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventState", default, skip_serializing_if = "Option::is_none")]
     pub event_state: Option<ResourceEventState>,
     #[doc = "The settings for history tracking for FHIR resources."]
     #[serde(rename = "resourceVersionPolicyConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -635,12 +605,7 @@ impl IotConnectorPatchResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotConnectorProperties {
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Event Hub ingestion endpoint configuration"]
     #[serde(rename = "ingestionEndpointConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -658,12 +623,7 @@ impl IotConnectorProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotDestinationProperties {
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl IotDestinationProperties {
@@ -740,7 +700,7 @@ pub struct IotFhirDestinationProperties {
     #[serde(flatten)]
     pub iot_destination_properties: IotDestinationProperties,
     #[doc = "The type of IoT identity resolution to use with the destination."]
-    #[serde(rename = "resourceIdentityResolutionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "resourceIdentityResolutionType")]
     pub resource_identity_resolution_type: IotIdentityResolutionType,
     #[doc = "Fully qualified resource id of the FHIR service to connect to."]
     #[serde(rename = "fhirServiceResourceId")]
@@ -974,12 +934,7 @@ pub struct OperationDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation_detail::ActionType>,
     #[doc = "Extra Operation properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1071,7 +1026,7 @@ pub struct OperationResultsDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The status of the operation being performed."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_results_description::Status>,
     #[doc = "The time that the operation was started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -1222,12 +1177,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -1401,7 +1351,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1605,7 +1555,7 @@ impl ResourceTags {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceVersionPolicyConfiguration {
     #[doc = "Controls how resources are versioned on the FHIR service"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<FhirResourceVersionPolicy>,
     #[doc = "A list of FHIR Resources and their version policy overrides."]
     #[serde(rename = "resourceTypeOverrides", default, skip_serializing_if = "Option::is_none")]
@@ -1777,7 +1727,7 @@ pub mod service_managed_identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Identity {
         #[doc = "Type of identity being specified, currently SystemAssigned and None are allowed."]
-        #[serde(rename = "type", with = "azure_core::xml::text_content")]
+        #[serde(rename = "type")]
         pub type_: identity::Type,
         #[doc = "The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity."]
         #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -1941,7 +1891,7 @@ pub struct ServicesNameAvailabilityInfo {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason for unavailability."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<services_name_availability_info::Reason>,
     #[doc = "The detailed reason message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1980,12 +1930,7 @@ impl ServicesPatchDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicesProperties {
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The access policies of the service instance."]
     #[serde(rename = "accessPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -2011,12 +1956,7 @@ pub struct ServicesProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<services_properties::PublicNetworkAccess>,
     #[doc = "Azure container registry configuration information"]
     #[serde(rename = "acrConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -2074,12 +2014,7 @@ pub mod services_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicesPropertiesUpdateParameters {
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<services_properties_update_parameters::PublicNetworkAccess>,
 }
 impl ServicesPropertiesUpdateParameters {
@@ -2140,7 +2075,6 @@ pub struct ServicesResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The kind of the service."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: services_resource::Kind,
     #[doc = "The resource location."]
     pub location: String,
@@ -2190,12 +2124,7 @@ pub mod services_resource {
         #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
         pub tenant_id: Option<String>,
         #[doc = "Type of identity being specified, currently SystemAssigned and None are allowed."]
-        #[serde(
-            rename = "type",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<identity::Type>,
     }
     impl Identity {
@@ -2303,12 +2232,7 @@ pub mod workspace {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "The provisioning state."]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningState>,
         #[doc = "The list of private endpoint connections that are set up for this resource."]
         #[serde(
@@ -2319,12 +2243,7 @@ pub mod workspace {
         )]
         pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
         #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-        #[serde(
-            rename = "publicNetworkAccess",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
         pub public_network_access: Option<ResourcePublicNetworkAccess>,
     }
     impl Properties {
@@ -2376,12 +2295,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2390,12 +2304,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

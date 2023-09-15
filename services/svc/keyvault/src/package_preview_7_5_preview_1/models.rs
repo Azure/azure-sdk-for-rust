@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Action {
     #[doc = "The type of the action."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<action::ActionType>,
 }
 impl Action {
@@ -126,12 +126,7 @@ pub struct CertificateAttributes {
     #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
     #[doc = "Reflects the deletion recovery level currently in effect for certificates in the current vault. If it contains 'Purgeable', the certificate can be permanently deleted by a privileged user; otherwise, only the system can purge the certificate, at the end of the retention interval."]
-    #[serde(
-        rename = "recoveryLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<certificate_attributes::RecoveryLevel>,
 }
 impl CertificateAttributes {
@@ -1267,7 +1262,7 @@ pub struct JsonWebKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
     #[doc = "JsonWebKey Key Type (kty), as defined in https://tools.ietf.org/html/draft-ietf-jose-json-web-algorithms-40."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kty: Option<json_web_key::Kty>,
     #[serde(
         default,
@@ -1306,7 +1301,7 @@ pub struct JsonWebKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key_hsm: Option<String>,
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crv: Option<json_web_key::Crv>,
     #[doc = "X component of an EC public key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1428,12 +1423,7 @@ pub struct KeyAttributes {
     #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
     #[doc = "Reflects the deletion recovery level currently in effect for keys in the current vault. If it contains 'Purgeable' the key can be permanently deleted by a privileged user; otherwise, only the system can purge the key, at the end of the retention interval."]
-    #[serde(
-        rename = "recoveryLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<key_attributes::RecoveryLevel>,
     #[doc = "Indicates if the private key can be exported. Release policy must be provided when creating the first version of an exportable key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1535,7 +1525,6 @@ impl KeyBundle {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyCreateParameters {
     #[doc = "The type of key to create. For valid values, see JsonWebKeyType."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kty: key_create_parameters::Kty,
     #[doc = "The key size in bits. For example: 2048, 3072, or 4096 for RSA."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1556,7 +1545,7 @@ pub struct KeyCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crv: Option<key_create_parameters::Crv>,
     #[doc = "The policy rules under which the key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1685,7 +1674,7 @@ pub struct KeyExportParameters {
     #[serde(rename = "wrappingKid", default, skip_serializing_if = "Option::is_none")]
     pub wrapping_kid: Option<String>,
     #[doc = "The encryption algorithm to use to protected the exported key material"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enc: Option<key_export_parameters::Enc>,
 }
 impl KeyExportParameters {
@@ -1837,7 +1826,6 @@ impl KeyOperationResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyOperationsParameters {
     #[doc = "algorithm identifier"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub alg: key_operations_parameters::Alg,
     pub value: String,
     #[doc = "Cryptographically random, non-repeating initialization vector for symmetric algorithms."]
@@ -1949,7 +1937,7 @@ pub struct KeyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exportable: Option<bool>,
     #[doc = "The type of key pair to be used for the certificate."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kty: Option<key_properties::Kty>,
     #[doc = "The key size in bits. For example: 2048, 3072, or 4096 for RSA."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1958,7 +1946,7 @@ pub struct KeyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reuse_key: Option<bool>,
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crv: Option<key_properties::Crv>,
 }
 impl KeyProperties {
@@ -2074,7 +2062,7 @@ pub struct KeyReleaseParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nonce: Option<String>,
     #[doc = "The encryption algorithm to use to protected the exported key material"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enc: Option<key_release_parameters::Enc>,
 }
 impl KeyReleaseParameters {
@@ -2217,7 +2205,6 @@ impl KeyRotationPolicyAttributes {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeySignParameters {
     #[doc = "The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub alg: key_sign_parameters::Alg,
     pub value: String,
 }
@@ -2342,7 +2329,6 @@ impl KeyVaultError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVerifyParameters {
     #[doc = "The signing/verification algorithm. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub alg: key_verify_parameters::Alg,
     #[doc = "The digest used for signing."]
     pub digest: String,
@@ -2484,12 +2470,7 @@ impl LifetimeActionsTrigger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LifetimeActionsType {
     #[doc = "The type of the action."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<lifetime_actions_type::Type>,
 }
 impl LifetimeActionsType {
@@ -2724,7 +2705,7 @@ impl RoleAssignmentProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentPropertiesWithScope {
     #[doc = "The role scope."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<RoleScope>,
     #[doc = "The role definition ID."]
     #[serde(rename = "roleDefinitionId", default, skip_serializing_if = "Option::is_none")]
@@ -2748,12 +2729,7 @@ pub struct RoleDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The role definition type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<role_definition::Type>,
     #[doc = "Role definition properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2863,12 +2839,7 @@ pub struct RoleDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The role type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<role_definition_properties::Type>,
     #[doc = "Role definition permissions."]
     #[serde(
@@ -3008,12 +2979,7 @@ pub struct SasDefinitionAttributes {
     #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
     #[doc = "Reflects the deletion recovery level currently in effect for SAS definitions in the current vault. If it contains 'Purgeable' the SAS definition can be permanently deleted by a privileged user; otherwise, only the system can purge the SAS definition, at the end of the retention interval."]
-    #[serde(
-        rename = "recoveryLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<sas_definition_attributes::RecoveryLevel>,
 }
 impl SasDefinitionAttributes {
@@ -3094,12 +3060,7 @@ pub struct SasDefinitionBundle {
     #[serde(rename = "templateUri", default, skip_serializing_if = "Option::is_none")]
     pub template_uri: Option<String>,
     #[doc = "The type of SAS token the SAS definition will create."]
-    #[serde(
-        rename = "sasType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sasType", default, skip_serializing_if = "Option::is_none")]
     pub sas_type: Option<sas_definition_bundle::SasType>,
     #[doc = "The validity period of SAS tokens created according to the SAS definition."]
     #[serde(rename = "validityPeriod", default, skip_serializing_if = "Option::is_none")]
@@ -3165,7 +3126,7 @@ pub struct SasDefinitionCreateParameters {
     #[serde(rename = "templateUri")]
     pub template_uri: String,
     #[doc = "The type of SAS token the SAS definition will create."]
-    #[serde(rename = "sasType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sasType")]
     pub sas_type: sas_definition_create_parameters::SasType,
     #[doc = "The validity period of SAS tokens created according to the SAS definition."]
     #[serde(rename = "validityPeriod")]
@@ -3283,12 +3244,7 @@ pub struct SasDefinitionUpdateParameters {
     #[serde(rename = "templateUri", default, skip_serializing_if = "Option::is_none")]
     pub template_uri: Option<String>,
     #[doc = "The type of SAS token the SAS definition will create."]
-    #[serde(
-        rename = "sasType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sasType", default, skip_serializing_if = "Option::is_none")]
     pub sas_type: Option<sas_definition_update_parameters::SasType>,
     #[doc = "The validity period of SAS tokens created according to the SAS definition."]
     #[serde(rename = "validityPeriod", default, skip_serializing_if = "Option::is_none")]
@@ -3356,12 +3312,7 @@ pub struct SecretAttributes {
     #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
     #[doc = "Reflects the deletion recovery level currently in effect for secrets in the current vault. If it contains 'Purgeable', the secret can be permanently deleted by a privileged user; otherwise, only the system can purge the secret, at the end of the retention interval."]
-    #[serde(
-        rename = "recoveryLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<secret_attributes::RecoveryLevel>,
 }
 impl SecretAttributes {
@@ -3638,7 +3589,7 @@ impl SecurityDomainObject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityDomainOperationStatus {
     #[doc = "operation status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<security_domain_operation_status::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
@@ -3707,12 +3658,7 @@ pub struct Setting {
     #[doc = "The value of the pool setting."]
     pub value: String,
     #[doc = "The type specifier of the value."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<setting::Type>,
 }
 impl Setting {
@@ -3791,12 +3737,7 @@ pub struct StorageAccountAttributes {
     #[serde(rename = "recoverableDays", default, skip_serializing_if = "Option::is_none")]
     pub recoverable_days: Option<i32>,
     #[doc = "Reflects the deletion recovery level currently in effect for storage accounts in the current vault. If it contains 'Purgeable' the storage account can be permanently deleted by a privileged user; otherwise, only the system can purge the storage account, at the end of the retention interval."]
-    #[serde(
-        rename = "recoveryLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
     pub recovery_level: Option<storage_account_attributes::RecoveryLevel>,
 }
 impl StorageAccountAttributes {

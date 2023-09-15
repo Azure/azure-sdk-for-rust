@@ -61,12 +61,7 @@ pub struct AgentProperties {
     #[serde(rename = "arcVmUuid")]
     pub arc_vm_uuid: String,
     #[doc = "The Agent status."]
-    #[serde(
-        rename = "agentStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_status: Option<agent_properties::AgentStatus>,
     #[doc = "The last updated time of the Agent status."]
     #[serde(rename = "lastStatusUpdate", default, with = "azure_core::date::rfc3339::option")]
@@ -86,12 +81,7 @@ pub struct AgentProperties {
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<agent_properties::ErrorDetails>,
     #[doc = "The provisioning state of this resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<agent_properties::ProvisioningState>,
 }
 impl AgentProperties {
@@ -358,7 +348,7 @@ impl Serialize for CredentialType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Credentials {
     #[doc = "The Credentials type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: CredentialType,
 }
 impl Credentials {
@@ -390,18 +380,13 @@ impl Endpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBaseProperties {
     #[doc = "The Endpoint resource type."]
-    #[serde(rename = "endpointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "endpointType")]
     pub endpoint_type: EndpointType,
     #[doc = "A description for the Endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The provisioning state of this resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<endpoint_base_properties::ProvisioningState>,
 }
 impl EndpointBaseProperties {
@@ -467,7 +452,7 @@ impl EndpointBaseUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBaseUpdateProperties {
     #[doc = "The Endpoint resource type."]
-    #[serde(rename = "endpointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "endpointType")]
     pub endpoint_type: EndpointType,
     #[doc = "A description for the Endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -663,7 +648,7 @@ pub struct JobDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Strategy to use for copy."]
-    #[serde(rename = "copyMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "copyMode")]
     pub copy_mode: job_definition_properties::CopyMode,
     #[doc = "The name of the source Endpoint."]
     #[serde(rename = "sourceName")]
@@ -690,12 +675,7 @@ pub struct JobDefinitionProperties {
     #[serde(rename = "latestJobRunResourceId", default, skip_serializing_if = "Option::is_none")]
     pub latest_job_run_resource_id: Option<String>,
     #[doc = "The current status of the Job Run in a non-terminal state, if exists."]
-    #[serde(
-        rename = "latestJobRunStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "latestJobRunStatus", default, skip_serializing_if = "Option::is_none")]
     pub latest_job_run_status: Option<job_definition_properties::LatestJobRunStatus>,
     #[doc = "Name of the Agent to assign for new Job Runs of this Job Definition."]
     #[serde(rename = "agentName", default, skip_serializing_if = "Option::is_none")]
@@ -704,12 +684,7 @@ pub struct JobDefinitionProperties {
     #[serde(rename = "agentResourceId", default, skip_serializing_if = "Option::is_none")]
     pub agent_resource_id: Option<String>,
     #[doc = "The provisioning state of this resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<job_definition_properties::ProvisioningState>,
 }
 impl JobDefinitionProperties {
@@ -875,12 +850,7 @@ pub struct JobDefinitionUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Strategy to use for copy."]
-    #[serde(
-        rename = "copyMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "copyMode", default, skip_serializing_if = "Option::is_none")]
     pub copy_mode: Option<job_definition_update_properties::CopyMode>,
     #[doc = "Name of the Agent to assign for new Job Runs of this Job Definition."]
     #[serde(rename = "agentName", default, skip_serializing_if = "Option::is_none")]
@@ -994,15 +964,10 @@ impl JobRunList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRunProperties {
     #[doc = "The state of the job execution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_run_properties::Status>,
     #[doc = "The status of Agent's scanning of source."]
-    #[serde(
-        rename = "scanStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scanStatus", default, skip_serializing_if = "Option::is_none")]
     pub scan_status: Option<job_run_properties::ScanStatus>,
     #[doc = "Name of the Agent assigned to this run."]
     #[serde(rename = "agentName", default, skip_serializing_if = "Option::is_none")]
@@ -1080,12 +1045,7 @@ pub struct JobRunProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<JobRunError>,
     #[doc = "The provisioning state of this resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<job_run_properties::ProvisioningState>,
 }
 impl JobRunProperties {
@@ -1239,12 +1199,7 @@ pub struct NfsMountEndpointProperties {
     #[doc = "The host name or IP address of the server exporting the file system."]
     pub host: String,
     #[doc = "The NFS protocol version."]
-    #[serde(
-        rename = "nfsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nfsVersion", default, skip_serializing_if = "Option::is_none")]
     pub nfs_version: Option<nfs_mount_endpoint_properties::NfsVersion>,
     #[doc = "The directory being exported from the server."]
     pub export: String,
@@ -1329,15 +1284,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1519,12 +1469,7 @@ pub struct ProjectProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The provisioning state of this resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
 impl ProjectProperties {
@@ -1719,12 +1664,7 @@ pub struct StorageMoverProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The provisioning state of this resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<storage_mover_properties::ProvisioningState>,
 }
 impl StorageMoverProperties {
@@ -1824,12 +1764,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1838,12 +1773,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

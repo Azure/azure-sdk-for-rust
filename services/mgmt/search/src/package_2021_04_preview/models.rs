@@ -22,7 +22,7 @@ impl AdminKeyResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AsyncOperationResult {
     #[doc = "The current status of the long running asynchronous shared private link resource operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<async_operation_result::Status>,
 }
 impl AsyncOperationResult {
@@ -78,7 +78,7 @@ pub struct CheckNameAvailabilityInput {
     #[doc = "The search service name to validate. Search service names must only contain lowercase letters, digits or dashes, cannot use dash as the first two or last one characters, cannot contain consecutive dashes, and must be between 2 and 60 characters in length."]
     pub name: String,
     #[doc = "The type of the resource whose name is to be validated. This value must always be 'searchServices'."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: check_name_availability_input::Type,
 }
 impl CheckNameAvailabilityInput {
@@ -102,7 +102,7 @@ pub struct CheckNameAvailabilityOutput {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the name is not available. 'Invalid' indicates the name provided does not match the naming requirements (incorrect length, unsupported characters, etc.). 'AlreadyExists' indicates that the name is already in use and is therefore unavailable."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_output::Reason>,
     #[doc = "A message that explains why the name is invalid and provides resource naming requirements. Available only if 'Invalid' is returned in the 'reason' property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -203,12 +203,7 @@ impl CloudErrorBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataPlaneAadOrApiKeyAuthOption {
     #[doc = "Describes what response the data plane API of a Search service would send for requests that failed authentication."]
-    #[serde(
-        rename = "aadAuthFailureMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "aadAuthFailureMode", default, skip_serializing_if = "Option::is_none")]
     pub aad_auth_failure_mode: Option<data_plane_aad_or_api_key_auth_option::AadAuthFailureMode>,
 }
 impl DataPlaneAadOrApiKeyAuthOption {
@@ -281,15 +276,10 @@ impl Serialize for DisabledDataExfiltrationOption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionWithCmk {
     #[doc = "Describes how a search service should enforce having one or more non customer encrypted resources."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enforcement: Option<encryption_with_cmk::Enforcement>,
     #[doc = "Describes whether the search service is compliant or not with respect to having non customer encrypted resources. If a service has more than one non customer encrypted resource and 'Enforcement' is 'enabled' then the service will be marked as 'nonCompliant'."]
-    #[serde(
-        rename = "encryptionComplianceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionComplianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub encryption_compliance_status: Option<encryption_with_cmk::EncryptionComplianceStatus>,
 }
 impl EncryptionWithCmk {
@@ -323,7 +313,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the resource. The type 'SystemAssigned, UserAssigned' includes both an identity created by the system and a set of user assigned identities. The type 'None' will remove all identities from the service."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: identity::Type,
     #[doc = "The list of user identities associated with the search service. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -433,7 +423,7 @@ pub struct NetworkRuleSet {
     )]
     pub ip_rules: Vec<IpRule>,
     #[doc = "Possible origins of inbound traffic that can bypass the rules defined in the 'ipRules' section."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bypass: Option<network_rule_set::Bypass>,
 }
 impl NetworkRuleSet {
@@ -749,7 +739,7 @@ pub mod private_endpoint_connection_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct PrivateLinkServiceConnectionState {
         #[doc = "Status of the the private link service connection. Can be Pending, Approved, Rejected, or Disconnected."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<private_link_service_connection_state::Status>,
         #[doc = "The description for the private link service connection state."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -940,34 +930,19 @@ pub struct SearchServiceProperties {
     #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
     pub partition_count: Option<i32>,
     #[doc = "Applicable only for the standard3 SKU. You can set this property to enable up to 3 high density partitions that allow up to 1000 indexes, which is much higher than the maximum indexes allowed for any other SKU. For the standard3 SKU, the value is either 'default' or 'highDensity'. For all other SKUs, this value must be 'default'."]
-    #[serde(
-        rename = "hostingMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hostingMode", default, skip_serializing_if = "Option::is_none")]
     pub hosting_mode: Option<search_service_properties::HostingMode>,
     #[doc = "This value can be set to 'enabled' to avoid breaking changes on existing customer resources and templates. If set to 'disabled', traffic over public interface is not allowed, and private endpoint connections would be the exclusive access method."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<search_service_properties::PublicNetworkAccess>,
     #[doc = "The status of the search service. Possible values include: 'running': The search service is running and no provisioning operations are underway. 'provisioning': The search service is being provisioned or scaled up or down. 'deleting': The search service is being deleted. 'degraded': The search service is degraded. This can occur when the underlying search units are not healthy. The search service is most likely operational, but performance might be slow and some requests might be dropped. 'disabled': The search service is disabled. In this state, the service will reject all API requests. 'error': The search service is in an error state. 'stopped': The search service is in a subscription that's disabled. If your service is in the degraded, disabled, or error states, it means the Azure Cognitive Search team is actively investigating the underlying issue. Dedicated services in these states are still chargeable based on the number of search units provisioned."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<search_service_properties::Status>,
     #[doc = "The details of the search service status."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "The state of the last provisioning operation performed on the search service. Provisioning is an intermediate state that occurs while service capacity is being established. After capacity is set up, provisioningState changes to either 'succeeded' or 'failed'. Client applications can poll provisioning status (the recommended polling interval is from 30 seconds to one minute) by using the Get Search Service operation to see when an operation is completed. If you are using the free service, this value tends to come back as 'succeeded' directly in the call to Create search service. This is because the free service uses capacity that is already set up."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<search_service_properties::ProvisioningState>,
     #[doc = "Network specific rules that determine how the Azure Cognitive Search service may be reached."]
     #[serde(rename = "networkRuleSet", default, skip_serializing_if = "Option::is_none")]
@@ -990,12 +965,7 @@ pub struct SearchServiceProperties {
     #[serde(rename = "authOptions", default, skip_serializing_if = "Option::is_none")]
     pub auth_options: Option<DataPlaneAuthOptions>,
     #[doc = "Sets options that control the availability of semantic search. This configuration is only possible for certain Azure Cognitive Search SKUs in certain locations."]
-    #[serde(
-        rename = "semanticSearch",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "semanticSearch", default, skip_serializing_if = "Option::is_none")]
     pub semantic_search: Option<SemanticSearch>,
     #[doc = "The list of private endpoint connections to the Azure Cognitive Search service."]
     #[serde(
@@ -1266,15 +1236,10 @@ pub struct SharedPrivateLinkResourceProperties {
     #[serde(rename = "resourceRegion", default, skip_serializing_if = "Option::is_none")]
     pub resource_region: Option<String>,
     #[doc = "Status of the shared private link resource. Can be Pending, Approved, Rejected, Disconnected or other yet to be documented value."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<shared_private_link_resource_properties::Status>,
     #[doc = "The provisioning state of the shared private link resource. Can be Updating, Deleting, Failed, Succeeded, Incomplete or other yet to be documented value."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<shared_private_link_resource_properties::ProvisioningState>,
 }
 impl SharedPrivateLinkResourceProperties {
@@ -1373,7 +1338,7 @@ pub mod shared_private_link_resource_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "The SKU of the search service. Valid values include: 'free': Shared service. 'basic': Dedicated service with up to 3 replicas. 'standard': Dedicated service with up to 12 partitions and 12 replicas. 'standard2': Similar to standard, but with more capacity per search unit. 'standard3': The largest Standard offering with up to 12 partitions and 12 replicas (or up to 3 partitions with more indexes if you also set the hostingMode property to 'highDensity'). 'storage_optimized_l1': Supports 1TB per partition, up to 12 partitions. 'storage_optimized_l2': Supports 2TB per partition, up to 12 partitions.'"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
 impl Sku {

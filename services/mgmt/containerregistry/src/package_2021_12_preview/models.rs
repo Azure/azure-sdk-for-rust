@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivationProperties {
     #[doc = "The activation status of the connected registry."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<activation_properties::Status>,
 }
 impl ActivationProperties {
@@ -134,18 +134,13 @@ pub struct AgentPoolProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
     #[doc = "The OS of agent machine"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<agent_pool_properties::Os>,
     #[doc = "The Virtual Network Subnet Resource Id of the agent machine"]
     #[serde(rename = "virtualNetworkSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_subnet_resource_id: Option<String>,
     #[doc = "The provisioning state of this agent pool"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<agent_pool_properties::ProvisioningState>,
 }
 impl AgentPoolProperties {
@@ -311,7 +306,7 @@ impl Argument {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthInfo {
     #[doc = "The type of Auth token."]
-    #[serde(rename = "tokenType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "tokenType")]
     pub token_type: auth_info::TokenType,
     #[doc = "The access token used to access the source control provider."]
     pub token: String,
@@ -381,12 +376,7 @@ pub mod auth_info {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthInfoUpdateParameters {
     #[doc = "The type of Auth token."]
-    #[serde(
-        rename = "tokenType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "tokenType", default, skip_serializing_if = "Option::is_none")]
     pub token_type: Option<auth_info_update_parameters::TokenType>,
     #[doc = "The access token used to access the source control provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -451,12 +441,7 @@ pub mod auth_info_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseImageDependency {
     #[doc = "The type of the base image dependency."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<base_image_dependency::Type>,
     #[doc = "The registry login server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -520,21 +505,16 @@ pub mod base_image_dependency {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageTrigger {
     #[doc = "The type of the auto trigger for base image dependency updates."]
-    #[serde(rename = "baseImageTriggerType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "baseImageTriggerType")]
     pub base_image_trigger_type: base_image_trigger::BaseImageTriggerType,
     #[doc = "The endpoint URL for receiving update triggers."]
     #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_endpoint: Option<String>,
     #[doc = "Type of Payload body for Base image update triggers."]
-    #[serde(
-        rename = "updateTriggerPayloadType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_payload_type: Option<base_image_trigger::UpdateTriggerPayloadType>,
     #[doc = "The current status of trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<base_image_trigger::Status>,
     #[doc = "The name of the trigger."]
     pub name: String,
@@ -673,26 +653,16 @@ pub mod base_image_trigger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageTriggerUpdateParameters {
     #[doc = "The type of the auto trigger for base image dependency updates."]
-    #[serde(
-        rename = "baseImageTriggerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "baseImageTriggerType", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger_type: Option<base_image_trigger_update_parameters::BaseImageTriggerType>,
     #[doc = "The endpoint URL for receiving update triggers."]
     #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_endpoint: Option<String>,
     #[doc = "Type of Payload body for Base image update triggers."]
-    #[serde(
-        rename = "updateTriggerPayloadType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_payload_type: Option<base_image_trigger_update_parameters::UpdateTriggerPayloadType>,
     #[doc = "The current status of trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<base_image_trigger_update_parameters::Status>,
     #[doc = "The name of the trigger."]
     pub name: String,
@@ -888,26 +858,15 @@ impl ConnectedRegistryListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedRegistryProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<connected_registry_properties::ProvisioningState>,
     #[doc = "The mode of the connected registry resource that indicates the permissions of the registry."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: connected_registry_properties::Mode,
     #[doc = "The current version of ACR runtime on the connected registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "The current connection state of the connected registry."]
-    #[serde(
-        rename = "connectionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
     pub connection_state: Option<connected_registry_properties::ConnectionState>,
     #[doc = "The last activity time of the connected registry."]
     #[serde(rename = "lastActivityTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1438,7 +1397,7 @@ impl EncodedTaskStepUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProperty {
     #[doc = "Indicates whether or not the encryption is enabled for container registry."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<encryption_property::Status>,
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
@@ -1726,12 +1685,7 @@ pub struct ExportPipelineProperties {
     )]
     pub options: Vec<String>,
     #[doc = "The provisioning state of the pipeline at the time the operation was called."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<export_pipeline_properties::ProvisioningState>,
 }
 impl ExportPipelineProperties {
@@ -1817,7 +1771,7 @@ impl ExportPipelineTargetProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportPolicy {
     #[doc = "The value that indicates whether the policy is enabled or not."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<export_policy::Status>,
 }
 impl ExportPolicy {
@@ -1988,7 +1942,7 @@ pub struct GenerateCredentialsParameters {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "Specifies name of the password which should be regenerated if any -- password1 or password2."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<generate_credentials_parameters::Name>,
 }
 impl GenerateCredentialsParameters {
@@ -2061,7 +2015,7 @@ impl GenerateCredentialsResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpRule {
     #[doc = "The action of IP ACL rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ip_rule::Action>,
     #[doc = "Specifies the IP or IP range in CIDR format. Only IPV4 address is allowed."]
     pub value: String,
@@ -2124,12 +2078,7 @@ pub struct IdentityProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_properties::Type>,
     #[doc = "The list of user identities associated with the resource. The user identity \r\ndictionary key references will be ARM resource ids in the form: \r\n'/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/\r\n    providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -2215,7 +2164,7 @@ pub struct ImportImageParameters {
     )]
     pub untagged_target_repositories: Vec<String>,
     #[doc = "When Force, any existing target tags will be overwritten. When NoForce, any existing target tags will fail the operation before any copying begins."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<import_image_parameters::Mode>,
 }
 impl ImportImageParameters {
@@ -2333,12 +2282,7 @@ pub struct ImportPipelineProperties {
     )]
     pub options: Vec<String>,
     #[doc = "The provisioning state of the pipeline at the time the operation was called."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<import_pipeline_properties::ProvisioningState>,
 }
 impl ImportPipelineProperties {
@@ -2403,12 +2347,7 @@ pub mod import_pipeline_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportPipelineSourceProperties {
     #[doc = "The type of source for the import pipeline."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<import_pipeline_source_properties::Type>,
     #[doc = "The source uri of the import pipeline.\r\nWhen 'AzureStorageBlob': \"https://accountName.blob.core.windows.net/containerName/blobName\"\r\nWhen 'AzureStorageBlobContainer': \"https://accountName.blob.core.windows.net/containerName\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2553,20 +2492,10 @@ impl KeyVaultProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoggingProperties {
     #[doc = "The verbosity of logs persisted on the connected registry."]
-    #[serde(
-        rename = "logLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logLevel", default, skip_serializing_if = "Option::is_none")]
     pub log_level: Option<logging_properties::LogLevel>,
     #[doc = "Indicates whether audit logs are enabled on the connected registry."]
-    #[serde(
-        rename = "auditLogStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "auditLogStatus", default, skip_serializing_if = "Option::is_none")]
     pub audit_log_status: Option<logging_properties::AuditLogStatus>,
 }
 impl LoggingProperties {
@@ -2686,7 +2615,7 @@ impl LoginServerProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSet {
     #[doc = "The default action of allow or deny when no other rules match."]
-    #[serde(rename = "defaultAction", with = "azure_core::xml::text_content")]
+    #[serde(rename = "defaultAction")]
     pub default_action: network_rule_set::DefaultAction,
     #[doc = "The virtual network rules."]
     #[serde(
@@ -3003,12 +2932,7 @@ impl PipelineRunListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRunProperties {
     #[doc = "The provisioning state of a pipeline run."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<pipeline_run_properties::ProvisioningState>,
     #[doc = "The request properties provided for a pipeline run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3144,12 +3068,7 @@ impl PipelineRunResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRunSourceProperties {
     #[doc = "The type of the source."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<pipeline_run_source_properties::Type>,
     #[doc = "The name of the source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3206,12 +3125,7 @@ pub mod pipeline_run_source_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRunTargetProperties {
     #[doc = "The type of the target."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<pipeline_run_target_properties::Type>,
     #[doc = "The name of the target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3279,7 +3193,6 @@ impl PipelineSourceTriggerDescriptor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineSourceTriggerProperties {
     #[doc = "The current status of the source trigger."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: pipeline_source_trigger_properties::Status,
 }
 impl PipelineSourceTriggerProperties {
@@ -3356,13 +3269,12 @@ impl PipelineTriggerProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlatformProperties {
     #[doc = "The operating system type required for the run."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub os: platform_properties::Os,
     #[doc = "The OS architecture."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub architecture: Option<platform_properties::Architecture>,
     #[doc = "Variant of the CPU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_properties::Variant>,
 }
 impl PlatformProperties {
@@ -3508,13 +3420,13 @@ pub mod platform_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlatformUpdateParameters {
     #[doc = "The operating system type required for the run."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<platform_update_parameters::Os>,
     #[doc = "The OS architecture."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub architecture: Option<platform_update_parameters::Architecture>,
     #[doc = "Variant of the CPU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_update_parameters::Variant>,
 }
 impl PlatformUpdateParameters {
@@ -3734,12 +3646,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
     #[doc = "The provisioning state of private endpoint connection resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -3873,18 +3780,13 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private link service connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<private_link_service_connection_state::Status>,
     #[doc = "The description for connection status. For example if connection is rejected it can indicate reason for rejection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
-    #[serde(
-        rename = "actionsRequired",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<private_link_service_connection_state::ActionsRequired>,
 }
 impl PrivateLinkServiceConnectionState {
@@ -4009,7 +3911,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuarantinePolicy {
     #[doc = "The value that indicates whether the policy is enabled or not."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<quarantine_policy::Status>,
 }
 impl QuarantinePolicy {
@@ -4068,7 +3970,6 @@ pub mod quarantine_policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateCredentialParameters {
     #[doc = "Specifies name of the password which should be regenerated -- password or password2."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: regenerate_credential_parameters::Name,
 }
 impl RegenerateCredentialParameters {
@@ -4161,7 +4062,7 @@ pub struct RegistryNameCheckRequest {
     #[doc = "The name of the container registry."]
     pub name: String,
     #[doc = "The resource type of the container registry. This field must be set to 'Microsoft.ContainerRegistry/registries'."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
 impl RegistryNameCheckRequest {
@@ -4200,7 +4101,7 @@ impl RegistryNameStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPassword {
     #[doc = "The password name."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<registry_password::Name>,
     #[doc = "The password value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4232,12 +4133,7 @@ pub struct RegistryProperties {
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the container registry at the time the operation was called."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
     #[doc = "The status of an Azure resource at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4273,28 +4169,13 @@ pub struct RegistryProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Whether or not public network access is allowed for the container registry."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<registry_properties::PublicNetworkAccess>,
     #[doc = "Whether to allow trusted Azure services to access a network restricted registry."]
-    #[serde(
-        rename = "networkRuleBypassOptions",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "networkRuleBypassOptions", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_bypass_options: Option<registry_properties::NetworkRuleBypassOptions>,
     #[doc = "Whether or not zone redundancy is enabled for this container registry"]
-    #[serde(
-        rename = "zoneRedundancy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundancy: Option<registry_properties::ZoneRedundancy>,
     #[doc = "Enables registry-wide pull from unauthenticated clients."]
     #[serde(rename = "anonymousPullEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -4497,20 +4378,10 @@ pub struct RegistryPropertiesUpdateParameters {
     #[serde(rename = "dataEndpointEnabled", default, skip_serializing_if = "Option::is_none")]
     pub data_endpoint_enabled: Option<bool>,
     #[doc = "Whether or not public network access is allowed for the container registry."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<registry_properties_update_parameters::PublicNetworkAccess>,
     #[doc = "Whether to allow trusted Azure services to access a network restricted registry."]
-    #[serde(
-        rename = "networkRuleBypassOptions",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "networkRuleBypassOptions", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_bypass_options: Option<registry_properties_update_parameters::NetworkRuleBypassOptions>,
     #[doc = "Enables registry-wide pull from unauthenticated clients."]
     #[serde(rename = "anonymousPullEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -4637,7 +4508,7 @@ pub struct RegistryUsage {
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
     #[doc = "The unit of measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<registry_usage::Unit>,
 }
 impl RegistryUsage {
@@ -4747,12 +4618,7 @@ impl ReplicationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationProperties {
     #[doc = "The provisioning state of the replication at the time the operation was called."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<replication_properties::ProvisioningState>,
     #[doc = "The status of an Azure resource at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4761,12 +4627,7 @@ pub struct ReplicationProperties {
     #[serde(rename = "regionEndpointEnabled", default, skip_serializing_if = "Option::is_none")]
     pub region_endpoint_enabled: Option<bool>,
     #[doc = "Whether or not zone redundancy is enabled for this container registry replication"]
-    #[serde(
-        rename = "zoneRedundancy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundancy: Option<replication_properties::ZoneRedundancy>,
 }
 impl ReplicationProperties {
@@ -4956,7 +4817,7 @@ pub struct RetentionPolicy {
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "The value that indicates whether the policy is enabled or not."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<retention_policy::Status>,
 }
 impl RetentionPolicy {
@@ -5032,15 +4893,10 @@ pub struct RunFilter {
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
     #[doc = "The type of run."]
-    #[serde(
-        rename = "runType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<run_filter::RunType>,
     #[doc = "The current status of the run."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<run_filter::Status>,
     #[doc = "The create time for a run."]
     #[serde(rename = "createTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5206,18 +5062,13 @@ pub struct RunProperties {
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
     #[doc = "The current status of the run."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<run_properties::Status>,
     #[doc = "The last updated time for the run."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "The type of run."]
-    #[serde(
-        rename = "runType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<run_properties::RunType>,
     #[doc = "The dedicated agent pool for the run."]
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
@@ -5277,12 +5128,7 @@ pub struct RunProperties {
     #[serde(rename = "logArtifact", default, skip_serializing_if = "Option::is_none")]
     pub log_artifact: Option<ImageDescriptor>,
     #[doc = "The provisioning state of a run."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<run_properties::ProvisioningState>,
     #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -5521,12 +5367,7 @@ pub struct ScopeMapProperties {
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scope_map_properties::ProvisioningState>,
     #[doc = "The list of scoped permissions for registry artifacts.\r\nE.g. repositories/repository-name/content/read,\r\nrepositories/repository-name/metadata/write"]
     pub actions: Vec<String>,
@@ -5628,12 +5469,7 @@ pub struct SecretObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "The type of the secret object which determines how the value of the secret object has to be\r\ninterpreted."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<secret_object::Type>,
 }
 impl SecretObject {
@@ -5705,10 +5541,9 @@ impl SetValue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The SKU name of the container registry. Required for registry creation."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The SKU tier based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {
@@ -5820,7 +5655,7 @@ impl Source {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceProperties {
     #[doc = "The type of source control service."]
-    #[serde(rename = "sourceControlType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sourceControlType")]
     pub source_control_type: source_properties::SourceControlType,
     #[doc = "The full URL to the source code repository"]
     #[serde(rename = "repositoryUrl")]
@@ -5886,12 +5721,7 @@ pub mod source_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceRegistryCredentials {
     #[doc = "The authentication mode which determines the source registry login scope. The credentials for the source registry\r\nwill be generated using the given scope. These credentials will be used to login to\r\nthe source registry during the run."]
-    #[serde(
-        rename = "loginMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<source_registry_credentials::LoginMode>,
 }
 impl SourceRegistryCredentials {
@@ -5949,7 +5779,7 @@ pub struct SourceTrigger {
     #[serde(rename = "sourceTriggerEvents")]
     pub source_trigger_events: Vec<String>,
     #[doc = "The current status of trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<source_trigger::Status>,
     #[doc = "The name of the trigger."]
     pub name: String,
@@ -6054,7 +5884,7 @@ pub struct SourceTriggerUpdateParameters {
     )]
     pub source_trigger_events: Vec<String>,
     #[doc = "The current status of trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<source_trigger_update_parameters::Status>,
     #[doc = "The name of the trigger."]
     pub name: String,
@@ -6118,12 +5948,7 @@ pub mod source_trigger_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceUpdateParameters {
     #[doc = "The type of source control service."]
-    #[serde(
-        rename = "sourceControlType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceControlType", default, skip_serializing_if = "Option::is_none")]
     pub source_control_type: Option<source_update_parameters::SourceControlType>,
     #[doc = "The full URL to the source code repository"]
     #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
@@ -6296,12 +6121,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -6310,12 +6130,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -6497,18 +6312,13 @@ impl TaskListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskProperties {
     #[doc = "The provisioning state of the task."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_properties::ProvisioningState>,
     #[doc = "The creation date of task."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The current status of task."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<task_properties::Status>,
     #[doc = "The platform properties against which the run has to happen."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6632,7 +6442,7 @@ pub mod task_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskPropertiesUpdateParameters {
     #[doc = "The current status of task."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<task_properties_update_parameters::Status>,
     #[doc = "The properties for updating the platform configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6753,12 +6563,7 @@ impl TaskRunListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRunProperties {
     #[doc = "The provisioning state of this task run"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_run_properties::ProvisioningState>,
     #[doc = "The request parameters for scheduling a run."]
     #[serde(rename = "runRequest", default, skip_serializing_if = "Option::is_none")]
@@ -6883,7 +6688,7 @@ impl TaskRunUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepProperties {
     #[doc = "The type of the step."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: task_step_properties::Type,
     #[doc = "List of base image dependencies for a step."]
     #[serde(
@@ -6956,7 +6761,7 @@ pub mod task_step_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepUpdateParameters {
     #[doc = "The type of the step."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: task_step_update_parameters::Type,
     #[doc = "The URL(absolute or relative) of the source context for the task step."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
@@ -7040,7 +6845,7 @@ pub struct TimerTrigger {
     #[doc = "The CRON expression for the task schedule"]
     pub schedule: String,
     #[doc = "The current status of trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<timer_trigger::Status>,
     #[doc = "The name of the trigger."]
     pub name: String,
@@ -7120,7 +6925,7 @@ pub struct TimerTriggerUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<String>,
     #[doc = "The current status of trigger."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<timer_trigger_update_parameters::Status>,
     #[doc = "The name of the trigger."]
     pub name: String,
@@ -7183,12 +6988,7 @@ pub mod timer_trigger_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TlsCertificateProperties {
     #[doc = "The type of certificate location."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<tls_certificate_properties::Type>,
     #[doc = "Indicates the location of the certificates."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7241,7 +7041,7 @@ pub mod tls_certificate_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TlsProperties {
     #[doc = "Indicates whether HTTPS is enabled for the login server."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<tls_properties::Status>,
     #[doc = "The TLS certificate properties of the connected registry login server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7309,7 +7109,7 @@ impl Token {
 #[doc = "The properties of a certificate used for authenticating a token."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenCertificate {
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<token_certificate::Name>,
     #[doc = "The expiry datetime of the certificate."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -7423,7 +7223,7 @@ pub struct TokenPassword {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub expiry: Option<time::OffsetDateTime>,
     #[doc = "The password name \"password1\" or \"password2\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<token_password::Name>,
     #[doc = "The password value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7483,12 +7283,7 @@ pub struct TokenProperties {
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<token_properties::ProvisioningState>,
     #[doc = "The resource ID of the scope map to which the token will be associated with."]
     #[serde(rename = "scopeMapId", default, skip_serializing_if = "Option::is_none")]
@@ -7497,7 +7292,7 @@ pub struct TokenProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<TokenCredentialsProperties>,
     #[doc = "The status of the token example enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<token_properties::Status>,
 }
 impl TokenProperties {
@@ -7611,7 +7406,7 @@ pub struct TokenUpdateProperties {
     #[serde(rename = "scopeMapId", default, skip_serializing_if = "Option::is_none")]
     pub scope_map_id: Option<String>,
     #[doc = "The status of the token example enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<token_update_properties::Status>,
     #[doc = "The properties of the credentials that can be used for authenticating the token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7724,15 +7519,10 @@ impl TriggerUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrustPolicy {
     #[doc = "The type of trust policy."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<trust_policy::Type>,
     #[doc = "The value that indicates whether the policy is enabled or not."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trust_policy::Status>,
 }
 impl TrustPolicy {
@@ -7845,7 +7635,7 @@ impl UserIdentityProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
     #[doc = "The action of virtual network rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<virtual_network_rule::Action>,
     #[doc = "Resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}."]
     pub id: String,
@@ -7965,7 +7755,7 @@ impl WebhookListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookProperties {
     #[doc = "The status of the webhook at the time the operation was called."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<webhook_properties::Status>,
     #[doc = "The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7973,12 +7763,7 @@ pub struct WebhookProperties {
     #[doc = "The list of actions that trigger the webhook to post notifications."]
     pub actions: Vec<String>,
     #[doc = "The provisioning state of the webhook at the time the operation was called."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<webhook_properties::ProvisioningState>,
 }
 impl WebhookProperties {
@@ -8088,7 +7873,7 @@ pub struct WebhookPropertiesCreateParameters {
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Option::is_none")]
     pub custom_headers: Option<serde_json::Value>,
     #[doc = "The status of the webhook at the time the operation was called."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<webhook_properties_create_parameters::Status>,
     #[doc = "The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8159,7 +7944,7 @@ pub struct WebhookPropertiesUpdateParameters {
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Option::is_none")]
     pub custom_headers: Option<serde_json::Value>,
     #[doc = "The status of the webhook at the time the operation was called."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<webhook_properties_update_parameters::Status>,
     #[doc = "The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

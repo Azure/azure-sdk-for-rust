@@ -36,7 +36,7 @@ pub struct ConnectedClusterIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the connected cluster. The type 'SystemAssigned, includes a system created identity. The type 'None' means no identity is assigned to the connected cluster."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: connected_cluster_identity::Type,
 }
 impl ConnectedClusterIdentity {
@@ -112,12 +112,7 @@ pub struct ConnectedClusterPatchProperties {
     #[serde(rename = "distributionVersion", default, skip_serializing_if = "Option::is_none")]
     pub distribution_version: Option<String>,
     #[doc = "Indicates whether Azure Hybrid Benefit is opted in"]
-    #[serde(
-        rename = "azureHybridBenefit",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "azureHybridBenefit", default, skip_serializing_if = "Option::is_none")]
     pub azure_hybrid_benefit: Option<connected_cluster_patch_properties::AzureHybridBenefit>,
 }
 impl ConnectedClusterPatchProperties {
@@ -186,12 +181,7 @@ pub struct ConnectedClusterProperties {
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "The current deployment state of connectedClusters."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ConnectedClusterProvisioningState>,
     #[doc = "The Kubernetes distribution running on this connected cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -216,31 +206,16 @@ pub struct ConnectedClusterProperties {
     #[serde(rename = "lastConnectivityTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_connectivity_time: Option<time::OffsetDateTime>,
     #[doc = "Represents the connectivity status of the connected cluster."]
-    #[serde(
-        rename = "connectivityStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
     #[doc = "Property which describes the state of private link on a connected cluster resource."]
-    #[serde(
-        rename = "privateLinkState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateLinkState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_state: Option<connected_cluster_properties::PrivateLinkState>,
     #[doc = "The resource id of the private link scope this connected cluster is assigned to, if any."]
     #[serde(rename = "privateLinkScopeResourceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_scope_resource_id: Option<String>,
     #[doc = "Indicates whether Azure Hybrid Benefit is opted in"]
-    #[serde(
-        rename = "azureHybridBenefit",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "azureHybridBenefit", default, skip_serializing_if = "Option::is_none")]
     pub azure_hybrid_benefit: Option<connected_cluster_properties::AzureHybridBenefit>,
     #[doc = "More properties related to the Connected Cluster"]
     #[serde(rename = "miscellaneousProperties", default, skip_serializing_if = "Option::is_none")]
@@ -571,7 +546,7 @@ impl HybridConnectionConfig {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListClusterUserCredentialProperties {
     #[doc = "The mode of client authentication."]
-    #[serde(rename = "authenticationMethod", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authenticationMethod")]
     pub authentication_method: list_cluster_user_credential_properties::AuthenticationMethod,
     #[doc = "Boolean value to indicate whether the request is for client side proxy or not"]
     #[serde(rename = "clientProxy")]
@@ -715,12 +690,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -729,12 +699,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

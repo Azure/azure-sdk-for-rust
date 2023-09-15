@@ -151,12 +151,7 @@ pub struct CatalogItemAction {
     )]
     pub parameters: Vec<CatalogItemParameter>,
     #[doc = "The type of action."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ActionType>,
     #[doc = "Name of the custom action type"]
     #[serde(rename = "typeName", default, skip_serializing_if = "Option::is_none")]
@@ -206,12 +201,7 @@ pub struct CatalogItemParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<serde_json::Value>,
     #[doc = "The type of data a parameter accepts."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ParameterType>,
     #[doc = "Whether or not this parameter is read-only.  If true, default should have a value."]
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
@@ -277,7 +267,7 @@ pub struct CatalogItemVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runner: Option<String>,
     #[doc = "Enable or disable status. Indicates whether the property applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EnableStatus>,
     #[doc = "Whether the version is eligible to be the latest version."]
     #[serde(rename = "eligibleForLatestVersion", default, skip_serializing_if = "Option::is_none")]
@@ -372,12 +362,7 @@ pub struct DevBox {
     #[serde(rename = "actionState", default, skip_serializing_if = "Option::is_none")]
     pub action_state: Option<String>,
     #[doc = "The power states of a Dev Box."]
-    #[serde(
-        rename = "powerState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<PowerState>,
     #[doc = "A unique identifier for the Dev Box. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
@@ -389,12 +374,7 @@ pub struct DevBox {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The operating system type."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "User identifier of the user this vm is assigned to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -411,12 +391,7 @@ pub struct DevBox {
     #[doc = "Creation time of this Dev Box"]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
-    #[serde(
-        rename = "localAdministrator",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "localAdministrator", default, skip_serializing_if = "Option::is_none")]
     pub local_administrator: Option<LocalAdminStatus>,
 }
 impl DevBox {
@@ -561,7 +536,7 @@ pub struct EnvironmentType {
     #[serde(rename = "deploymentTargetId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_target_id: Option<String>,
     #[doc = "Enable or disable status. Indicates whether the property applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EnableStatus>,
 }
 impl EnvironmentType {
@@ -805,12 +780,7 @@ pub struct Pool {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The operating system type."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
     #[doc = "Hardware specifications for the Dev Box."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
@@ -821,12 +791,7 @@ pub struct Pool {
     #[doc = "Specifies information about the image used"]
     #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageReference>,
-    #[serde(
-        rename = "localAdministrator",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "localAdministrator", default, skip_serializing_if = "Option::is_none")]
     pub local_administrator: Option<LocalAdminStatus>,
 }
 impl Pool {
@@ -969,15 +934,10 @@ pub struct Schedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The supported types for a scheduled task."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ScheduledType>,
     #[doc = "The frequency of task execution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduledFrequency>,
     #[doc = "The target time to trigger the action. The format is HH:MM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1050,10 +1010,10 @@ impl Serialize for ScheduledFrequency {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledTask {
     #[doc = "The supported types for a scheduled task."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ScheduledTaskType,
     #[doc = "Enable or disable status. Indicates whether the property applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<EnableStatus>,
     #[doc = "Date/time by which the environment should expire"]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]

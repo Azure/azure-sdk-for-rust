@@ -235,12 +235,7 @@ pub struct FileUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
     #[doc = "Integer representation of the file type (0 = JMX_FILE, 1 = USER_PROPERTIES, 2 = ADDITIONAL_ARTIFACTS)"]
-    #[serde(
-        rename = "fileType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
     pub file_type: Option<FileType>,
     #[doc = "Expiry time of the file"]
     #[serde(rename = "expireTime", default, with = "azure_core::date::rfc3339::option")]

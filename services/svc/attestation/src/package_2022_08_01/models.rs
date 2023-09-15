@@ -279,12 +279,7 @@ pub struct InitTimeData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
     #[doc = "Specifies the type of the data encoded contained within the \"data\" field of a \"RuntimeData\" or \"InitTimeData\" object"]
-    #[serde(
-        rename = "dataType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<DataType>,
 }
 impl InitTimeData {
@@ -434,12 +429,7 @@ pub struct PolicyCertificatesModificationResult {
     #[serde(rename = "x-ms-certificate-thumbprint", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_certificate_thumbprint: Option<String>,
     #[doc = "The result of the operation"]
-    #[serde(
-        rename = "x-ms-policycertificates-result",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "x-ms-policycertificates-result", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_policycertificates_result: Option<policy_certificates_modification_result::XMsPolicycertificatesResult>,
 }
 impl PolicyCertificatesModificationResult {
@@ -538,12 +528,7 @@ impl PolicyResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyResult {
     #[doc = "The result of the operation"]
-    #[serde(
-        rename = "x-ms-policy-result",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "x-ms-policy-result", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_policy_result: Option<policy_result::XMsPolicyResult>,
     #[doc = "The SHA256 hash of the policy object modified"]
     #[serde(rename = "x-ms-policy-token-hash", default, skip_serializing_if = "Option::is_none")]
@@ -606,12 +591,7 @@ pub struct RuntimeData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
     #[doc = "Specifies the type of the data encoded contained within the \"data\" field of a \"RuntimeData\" or \"InitTimeData\" object"]
-    #[serde(
-        rename = "dataType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
     pub data_type: Option<DataType>,
 }
 impl RuntimeData {

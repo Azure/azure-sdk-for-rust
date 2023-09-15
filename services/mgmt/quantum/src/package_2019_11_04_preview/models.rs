@@ -173,12 +173,7 @@ pub struct Provider {
     #[serde(rename = "applicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<String>,
     #[doc = "Provisioning status field"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<provider::ProvisioningState>,
     #[doc = "Id to track resource usage for the provider."]
     #[serde(rename = "resourceUsageId", default, skip_serializing_if = "Option::is_none")]
@@ -382,12 +377,7 @@ pub mod quantum_workspace {
         #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
         pub tenant_id: Option<String>,
         #[doc = "The identity type."]
-        #[serde(
-            rename = "type",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<identity::Type>,
     }
     impl Identity {
@@ -636,15 +626,10 @@ pub struct WorkspaceResourceProperties {
     )]
     pub providers: Vec<Provider>,
     #[doc = "Whether the current workspace is ready to accept Jobs."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub usable: Option<workspace_resource_properties::Usable>,
     #[doc = "Provisioning status field"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_resource_properties::ProvisioningState>,
     #[doc = "ARM Resource Id of the storage account associated with this workspace."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
@@ -814,12 +799,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -828,12 +808,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

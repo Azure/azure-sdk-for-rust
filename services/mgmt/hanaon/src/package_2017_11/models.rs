@@ -114,12 +114,7 @@ pub struct HanaInstanceProperties {
     #[serde(rename = "hanaInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub hana_instance_id: Option<String>,
     #[doc = "Resource power state"]
-    #[serde(
-        rename = "powerState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<hana_instance_properties::PowerState>,
     #[doc = "Resource proximity placement group"]
     #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
@@ -131,12 +126,7 @@ pub struct HanaInstanceProperties {
     #[serde(rename = "partnerNodeId", default, skip_serializing_if = "Option::is_none")]
     pub partner_node_id: Option<String>,
     #[doc = "State of provisioning of the HanaInstance"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<hana_instance_properties::ProvisioningState>,
 }
 impl HanaInstanceProperties {
@@ -274,20 +264,10 @@ impl HanaInstancesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfile {
     #[doc = "Name of the hardware type (vendor and/or their product name)"]
-    #[serde(
-        rename = "hardwareType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hardwareType", default, skip_serializing_if = "Option::is_none")]
     pub hardware_type: Option<hardware_profile::HardwareType>,
     #[doc = "Specifies the HANA instance SKU."]
-    #[serde(
-        rename = "hanaInstanceSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hanaInstanceSize", default, skip_serializing_if = "Option::is_none")]
     pub hana_instance_size: Option<hardware_profile::HanaInstanceSize>,
 }
 impl HardwareProfile {

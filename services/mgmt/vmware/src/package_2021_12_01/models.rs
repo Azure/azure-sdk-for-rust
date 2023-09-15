@@ -59,15 +59,10 @@ impl AddonList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddonProperties {
     #[doc = "The type of private cloud addon"]
-    #[serde(rename = "addonType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "addonType")]
     pub addon_type: addon_properties::AddonType,
     #[doc = "The state of the addon provisioning"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<addon_properties::ProvisioningState>,
 }
 impl AddonProperties {
@@ -264,7 +259,7 @@ impl Serialize for AffinityType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityProperties {
     #[doc = "The availability strategy for the private cloud"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub strategy: Option<availability_properties::Strategy>,
     #[doc = "The primary availability zone for the private cloud"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -400,7 +395,7 @@ impl CloudLinkList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudLinkProperties {
     #[doc = "The state of the cloud link."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<cloud_link_properties::Status>,
     #[doc = "Identifier of the other private cloud participating in the link."]
     #[serde(rename = "linkedCloud", default, skip_serializing_if = "Option::is_none")]
@@ -594,12 +589,7 @@ pub struct CommonClusterProperties {
     #[serde(rename = "clusterSize", default, skip_serializing_if = "Option::is_none")]
     pub cluster_size: Option<i32>,
     #[doc = "The state of the cluster provisioning"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ClusterProvisioningState>,
     #[doc = "The identity"]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
@@ -660,12 +650,7 @@ impl DatastoreList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatastoreProperties {
     #[doc = "The state of the datastore provisioning"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<datastore_properties::ProvisioningState>,
     #[doc = "An Azure NetApp Files volume from Microsoft.NetApp provider"]
     #[serde(rename = "netAppVolume", default, skip_serializing_if = "Option::is_none")]
@@ -674,7 +659,7 @@ pub struct DatastoreProperties {
     #[serde(rename = "diskPoolVolume", default, skip_serializing_if = "Option::is_none")]
     pub disk_pool_volume: Option<DiskPoolVolume>,
     #[doc = "The operational status of the datastore"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<datastore_properties::Status>,
 }
 impl DatastoreProperties {
@@ -789,12 +774,7 @@ pub struct DiskPoolVolume {
     #[serde(rename = "lunName")]
     pub lun_name: String,
     #[doc = "Mode that describes whether the LUN has to be mounted as a datastore or attached as a LUN"]
-    #[serde(
-        rename = "mountOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "mountOption", default, skip_serializing_if = "Option::is_none")]
     pub mount_option: Option<disk_pool_volume::MountOption>,
     #[doc = "Device path"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -861,7 +841,7 @@ pub mod disk_pool_volume {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
     #[doc = "Status of customer managed encryption key"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<encryption::Status>,
     #[doc = "An Encryption Key"]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -925,20 +905,10 @@ pub struct EncryptionKeyVaultProperties {
     #[serde(rename = "keyVaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_url: Option<String>,
     #[doc = "The state of key provided"]
-    #[serde(
-        rename = "keyState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keyState", default, skip_serializing_if = "Option::is_none")]
     pub key_state: Option<encryption_key_vault_properties::KeyState>,
     #[doc = "Property of the key if user provided or auto detected"]
-    #[serde(
-        rename = "versionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "versionType", default, skip_serializing_if = "Option::is_none")]
     pub version_type: Option<encryption_key_vault_properties::VersionType>,
 }
 impl EncryptionKeyVaultProperties {
@@ -1132,12 +1102,7 @@ impl ExpressRouteAuthorizationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteAuthorizationProperties {
     #[doc = "The state of the  ExpressRoute Circuit Authorization provisioning"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<express_route_authorization_properties::ProvisioningState>,
     #[doc = "The ID of the ExpressRoute Circuit Authorization"]
     #[serde(rename = "expressRouteAuthorizationId", default, skip_serializing_if = "Option::is_none")]
@@ -1239,12 +1204,7 @@ impl GlobalReachConnectionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalReachConnectionProperties {
     #[doc = "The state of the  ExpressRoute Circuit Authorization provisioning"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<global_reach_connection_properties::ProvisioningState>,
     #[doc = "The network used for global reach carved out from the original network block provided for the private cloud"]
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -1253,12 +1213,7 @@ pub struct GlobalReachConnectionProperties {
     #[serde(rename = "authorizationKey", default, skip_serializing_if = "Option::is_none")]
     pub authorization_key: Option<String>,
     #[doc = "The connection status of the global reach connection"]
-    #[serde(
-        rename = "circuitConnectionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "circuitConnectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub circuit_connection_status: Option<global_reach_connection_properties::CircuitConnectionStatus>,
     #[doc = "Identifier of the ExpressRoute Circuit to peer with in the global reach connection"]
     #[serde(rename = "peerExpressRouteCircuit", default, skip_serializing_if = "Option::is_none")]
@@ -1399,7 +1354,7 @@ pub struct HcxEnterpriseSiteProperties {
     #[serde(rename = "activationKey", default, skip_serializing_if = "Option::is_none")]
     pub activation_key: Option<String>,
     #[doc = "The status of the HCX Enterprise Site"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<hcx_enterprise_site_properties::Status>,
 }
 impl HcxEnterpriseSiteProperties {
@@ -1476,7 +1431,7 @@ pub struct IdentitySource {
     #[serde(rename = "secondaryServer", default, skip_serializing_if = "Option::is_none")]
     pub secondary_server: Option<String>,
     #[doc = "Protect LDAP communication using SSL certificate (LDAPS)"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ssl: Option<identity_source::Ssl>,
     #[doc = "The ID of an Active Directory user with a minimum of read-only access to Base DN for users and group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1804,21 +1759,16 @@ impl PlacementPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlacementPolicyProperties {
     #[doc = "placement policy type"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: placement_policy_properties::Type,
     #[doc = "Whether the placement policy is enabled or disabled"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<placement_policy_properties::State>,
     #[doc = "Display name of the placement policy"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<placement_policy_properties::ProvisioningState>,
 }
 impl PlacementPolicyProperties {
@@ -1967,7 +1917,7 @@ impl PlacementPolicyUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlacementPolicyUpdateProperties {
     #[doc = "Whether the placement policy is enabled or disabled"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<placement_policy_update_properties::State>,
     #[doc = "Virtual machine members list"]
     #[serde(
@@ -2065,12 +2015,7 @@ pub struct PrivateCloudIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the private cloud. The type 'SystemAssigned' refers to an implicitly created identity. The type 'None' will remove any identities from the Private Cloud."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<private_cloud_identity::Type>,
 }
 impl PrivateCloudIdentity {
@@ -2149,12 +2094,7 @@ pub struct PrivateCloudProperties {
     #[serde(flatten)]
     pub private_cloud_update_properties: PrivateCloudUpdateProperties,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_cloud_properties::ProvisioningState>,
     #[doc = "An ExpressRoute Circuit"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2293,7 +2233,7 @@ pub struct PrivateCloudUpdateProperties {
     #[serde(rename = "managementCluster", default, skip_serializing_if = "Option::is_none")]
     pub management_cluster: Option<ManagementCluster>,
     #[doc = "Connectivity to internet is enabled or disabled"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub internet: Option<private_cloud_update_properties::Internet>,
     #[doc = "vCenter Single Sign On Identity Sources"]
     #[serde(
@@ -2378,12 +2318,7 @@ pub struct Quota {
     #[serde(rename = "hostsRemaining", default, skip_serializing_if = "Option::is_none")]
     pub hosts_remaining: Option<serde_json::Value>,
     #[doc = "Host quota is active for current subscription"]
-    #[serde(
-        rename = "quotaEnabled",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "quotaEnabled", default, skip_serializing_if = "Option::is_none")]
     pub quota_enabled: Option<quota::QuotaEnabled>,
 }
 impl Quota {
@@ -2538,7 +2473,7 @@ pub struct ScriptExecutionParameter {
     #[doc = "The parameter name"]
     pub name: String,
     #[doc = "The type of execution parameter"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: script_execution_parameter::Type,
 }
 impl ScriptExecutionParameter {
@@ -2627,12 +2562,7 @@ pub struct ScriptExecutionProperties {
     #[serde(rename = "finishedAt", default, with = "azure_core::date::rfc3339::option")]
     pub finished_at: Option<time::OffsetDateTime>,
     #[doc = "The state of the script execution resource"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<script_execution_properties::ProvisioningState>,
     #[doc = "Standard output stream from the powershell execution"]
     #[serde(
@@ -2820,12 +2750,7 @@ impl ScriptPackagesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptParameter {
     #[doc = "The type of parameter the script is expecting. psCredential is a PSCredentialObject"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<script_parameter::Type>,
     #[doc = "The parameter name that the script will expect a parameter value for"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2834,10 +2759,10 @@ pub struct ScriptParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Should this parameter be visible to arm and passed in the parameters argument when executing"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<script_parameter::Visibility>,
     #[doc = "Is this parameter required or optional"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optional: Option<script_parameter::Optional>,
 }
 impl ScriptParameter {
@@ -3058,7 +2983,7 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Trial {
     #[doc = "Trial status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trial::Status>,
     #[doc = "Number of trial hosts available"]
     #[serde(rename = "availableHosts", default, skip_serializing_if = "Option::is_none")]
@@ -3138,12 +3063,7 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<String>,
     #[doc = "Whether VM DRS-driven movement is restricted (enabled) or not (disabled)"]
-    #[serde(
-        rename = "restrictMovement",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "restrictMovement", default, skip_serializing_if = "Option::is_none")]
     pub restrict_movement: Option<VirtualMachineRestrictMovementState>,
 }
 impl VirtualMachineProperties {
@@ -3155,12 +3075,7 @@ impl VirtualMachineProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineRestrictMovement {
     #[doc = "Whether VM DRS-driven movement is restricted (enabled) or not (disabled)"]
-    #[serde(
-        rename = "restrictMovement",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "restrictMovement", default, skip_serializing_if = "Option::is_none")]
     pub restrict_movement: Option<VirtualMachineRestrictMovementState>,
 }
 impl VirtualMachineRestrictMovement {
@@ -3242,7 +3157,7 @@ pub struct VmHostPlacementPolicyProperties {
     #[serde(rename = "hostMembers")]
     pub host_members: Vec<String>,
     #[doc = "Placement policy affinity type"]
-    #[serde(rename = "affinityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "affinityType")]
     pub affinity_type: AffinityType,
 }
 impl VmHostPlacementPolicyProperties {
@@ -3269,7 +3184,7 @@ pub struct VmVmPlacementPolicyProperties {
     #[serde(rename = "vmMembers")]
     pub vm_members: Vec<String>,
     #[doc = "Placement policy affinity type"]
-    #[serde(rename = "affinityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "affinityType")]
     pub affinity_type: AffinityType,
 }
 impl VmVmPlacementPolicyProperties {
@@ -3299,7 +3214,7 @@ impl WorkloadNetworkDhcp {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkloadNetworkDhcpEntity {
     #[doc = "Type of DHCP: SERVER or RELAY."]
-    #[serde(rename = "dhcpType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dhcpType")]
     pub dhcp_type: workload_network_dhcp_entity::DhcpType,
     #[doc = "Display name of the DHCP entity."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -3312,12 +3227,7 @@ pub struct WorkloadNetworkDhcpEntity {
     )]
     pub segments: Vec<String>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_dhcp_entity::ProvisioningState>,
     #[doc = "NSX revision number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3522,23 +3432,13 @@ pub struct WorkloadNetworkDnsServiceProperties {
     )]
     pub fqdn_zones: Vec<String>,
     #[doc = "DNS Service log level."]
-    #[serde(
-        rename = "logLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logLevel", default, skip_serializing_if = "Option::is_none")]
     pub log_level: Option<workload_network_dns_service_properties::LogLevel>,
     #[doc = "DNS Service status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<workload_network_dns_service_properties::Status>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_dns_service_properties::ProvisioningState>,
     #[doc = "NSX revision number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3749,12 +3649,7 @@ pub struct WorkloadNetworkDnsZoneProperties {
     #[serde(rename = "dnsServices", default, skip_serializing_if = "Option::is_none")]
     pub dns_services: Option<i64>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_dns_zone_properties::ProvisioningState>,
     #[doc = "NSX revision number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3936,7 +3831,7 @@ pub struct WorkloadNetworkPortMirroringProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Direction of port mirroring profile."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<workload_network_port_mirroring_properties::Direction>,
     #[doc = "Source VM Group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3945,15 +3840,10 @@ pub struct WorkloadNetworkPortMirroringProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<String>,
     #[doc = "Port Mirroring Status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<workload_network_port_mirroring_properties::Status>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_port_mirroring_properties::ProvisioningState>,
     #[doc = "NSX revision number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4118,12 +4008,7 @@ pub struct WorkloadNetworkPublicIpProperties {
     #[serde(rename = "publicIPBlock", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_block: Option<String>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_public_ip_properties::ProvisioningState>,
 }
 impl WorkloadNetworkPublicIpProperties {
@@ -4249,15 +4134,10 @@ pub struct WorkloadNetworkSegmentProperties {
     )]
     pub port_vif: Vec<WorkloadNetworkSegmentPortVif>,
     #[doc = "Segment status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<workload_network_segment_properties::Status>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_segment_properties::ProvisioningState>,
     #[doc = "NSX revision number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4426,15 +4306,10 @@ pub struct WorkloadNetworkVmGroupProperties {
     )]
     pub members: Vec<String>,
     #[doc = "VM Group status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<workload_network_vm_group_properties::Status>,
     #[doc = "The provisioning state"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workload_network_vm_group_properties::ProvisioningState>,
     #[doc = "NSX revision number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4576,12 +4451,7 @@ pub struct WorkloadNetworkVirtualMachineProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Virtual machine type."]
-    #[serde(
-        rename = "vmType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmType", default, skip_serializing_if = "Option::is_none")]
     pub vm_type: Option<workload_network_virtual_machine_properties::VmType>,
 }
 impl WorkloadNetworkVirtualMachineProperties {

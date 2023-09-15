@@ -51,15 +51,10 @@ impl CloudShellUserSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleCreateProperties {
     #[doc = "The operating system type of the cloud shell."]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: console_create_properties::OsType,
     #[doc = "Provisioning state of the console."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<console_create_properties::ProvisioningState>,
     #[doc = "Uri of the console."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -185,10 +180,10 @@ impl ConsoleDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleProperties {
     #[doc = "The operating system type of the cloud shell."]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: console_properties::OsType,
     #[doc = "Provisioning state of the console."]
-    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: console_properties::ProvisioningState,
     #[doc = "Uri of the console."]
     pub uri: String,
@@ -345,20 +340,10 @@ impl StorageProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TerminalSettings {
     #[doc = "Size of terminal font."]
-    #[serde(
-        rename = "fontSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fontSize", default, skip_serializing_if = "Option::is_none")]
     pub font_size: Option<terminal_settings::FontSize>,
     #[doc = "Style of terminal font."]
-    #[serde(
-        rename = "fontStyle",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fontStyle", default, skip_serializing_if = "Option::is_none")]
     pub font_style: Option<terminal_settings::FontStyle>,
 }
 impl TerminalSettings {
@@ -453,7 +438,7 @@ pub mod terminal_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserProperties {
     #[doc = "The operating system type of the cloud shell. Deprecated, use preferredShellType."]
-    #[serde(rename = "preferredOsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "preferredOsType")]
     pub preferred_os_type: user_properties::PreferredOsType,
     #[doc = "The preferred location of the cloud shell."]
     #[serde(rename = "preferredLocation")]
@@ -465,7 +450,7 @@ pub struct UserProperties {
     #[serde(rename = "terminalSettings")]
     pub terminal_settings: TerminalSettings,
     #[doc = "The shell type of the cloud shell."]
-    #[serde(rename = "preferredShellType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "preferredShellType")]
     pub preferred_shell_type: user_properties::PreferredShellType,
 }
 impl UserProperties {

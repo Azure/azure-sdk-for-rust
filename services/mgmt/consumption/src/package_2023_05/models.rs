@@ -71,12 +71,7 @@ pub struct BalanceProperties {
     #[serde(rename = "azureMarketplaceServiceCharges", default, skip_serializing_if = "Option::is_none")]
     pub azure_marketplace_service_charges: Option<f64>,
     #[doc = "The billing frequency."]
-    #[serde(
-        rename = "billingFrequency",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
     pub billing_frequency: Option<balance_properties::BillingFrequency>,
     #[doc = "Price is hidden or not."]
     #[serde(rename = "priceHidden", default, skip_serializing_if = "Option::is_none")]
@@ -168,7 +163,6 @@ pub struct BudgetComparisonExpression {
     #[doc = "The name of the column to use in comparison."]
     pub name: String,
     #[doc = "The operator to use for comparison."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: budget_comparison_expression::Operator,
     #[doc = "Array of values to use for comparison"]
     pub values: Vec<String>,
@@ -257,12 +251,11 @@ impl BudgetFilterProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BudgetProperties {
     #[doc = "The category of the budget, whether the budget tracks cost or usage."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub category: budget_properties::Category,
     #[doc = "The total amount of cost to track with the budget"]
     pub amount: f64,
     #[doc = "The time covered by a budget. Tracking of the amount will be reset based on the time grain. BillingMonth, BillingQuarter, and BillingAnnual are only supported by WD customers"]
-    #[serde(rename = "timeGrain", with = "azure_core::xml::text_content")]
+    #[serde(rename = "timeGrain")]
     pub time_grain: budget_properties::TimeGrain,
     #[doc = "The start and end date for a budget."]
     #[serde(rename = "timePeriod")]
@@ -431,7 +424,6 @@ pub struct ChargeSummary {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Specifies the kind of charge summary."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: charge_summary::Kind,
 }
 impl ChargeSummary {
@@ -704,12 +696,7 @@ pub struct EventProperties {
     #[serde(rename = "closedBalance", default, skip_serializing_if = "Option::is_none")]
     pub closed_balance: Option<Amount>,
     #[doc = "Identifies the type of the event."]
-    #[serde(
-        rename = "eventType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<event_properties::EventType>,
     #[doc = "The number which uniquely identifies the invoice on which the event was billed. This will be empty for unbilled events."]
     #[serde(rename = "invoiceNumber", default, skip_serializing_if = "Option::is_none")]
@@ -1310,12 +1297,7 @@ pub struct LegacyUsageDetailProperties {
     #[serde(rename = "benefitName", default, skip_serializing_if = "Option::is_none")]
     pub benefit_name: Option<String>,
     #[doc = "Identifier that indicates how the meter is priced."]
-    #[serde(
-        rename = "pricingModel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "pricingModel", default, skip_serializing_if = "Option::is_none")]
     pub pricing_model: Option<legacy_usage_detail_properties::PricingModel>,
 }
 impl LegacyUsageDetailProperties {
@@ -1376,7 +1358,7 @@ pub struct LotProperties {
     #[serde(rename = "closedBalance", default, skip_serializing_if = "Option::is_none")]
     pub closed_balance: Option<Amount>,
     #[doc = "The source of the lot."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<lot_properties::Source>,
     #[doc = "The date when the lot became effective."]
     #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]
@@ -1391,7 +1373,7 @@ pub struct LotProperties {
     #[serde(rename = "purchasedDate", default, with = "azure_core::date::rfc3339::option")]
     pub purchased_date: Option<time::OffsetDateTime>,
     #[doc = "The status of the lot."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<lot_properties::Status>,
     #[doc = "The currency of the lot."]
     #[serde(rename = "creditCurrency", default, skip_serializing_if = "Option::is_none")]
@@ -2121,12 +2103,7 @@ pub struct ModernUsageDetailProperties {
     #[serde(rename = "effectivePrice", default, skip_serializing_if = "Option::is_none")]
     pub effective_price: Option<f64>,
     #[doc = "Identifier that indicates how the meter is priced"]
-    #[serde(
-        rename = "pricingModel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "pricingModel", default, skip_serializing_if = "Option::is_none")]
     pub pricing_model: Option<modern_usage_detail_properties::PricingModel>,
     #[doc = "Name of the Billing Account."]
     #[serde(rename = "billingAccountName", default, skip_serializing_if = "Option::is_none")]
@@ -2390,7 +2367,6 @@ pub struct Notification {
     #[doc = "The notification is enabled or not."]
     pub enabled: bool,
     #[doc = "The comparison operator."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: notification::Operator,
     #[doc = "Threshold value associated with a notification. Notification is sent when the cost exceeded the threshold. It is always percent and has to be between 0 and 1000."]
     pub threshold: f64,
@@ -2414,15 +2390,10 @@ pub struct Notification {
     )]
     pub contact_groups: Vec<String>,
     #[doc = "The type of threshold"]
-    #[serde(
-        rename = "thresholdType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "thresholdType", default, skip_serializing_if = "Option::is_none")]
     pub threshold_type: Option<notification::ThresholdType>,
     #[doc = "Language in which the recipient will receive the notification"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locale: Option<notification::Locale>,
 }
 impl Notification {
@@ -2690,7 +2661,7 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
     #[doc = "The status of the long running operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_status::Status>,
     #[doc = "The properties of the price sheet download."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2958,7 +2929,6 @@ pub struct ReservationRecommendation {
     #[serde(flatten)]
     pub resource_attributes: ResourceAttributes,
     #[doc = "Specifies the kind of reservation recommendation."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: reservation_recommendation::Kind,
 }
 impl ReservationRecommendation {
@@ -3500,7 +3470,6 @@ pub struct UsageDetail {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Specifies the kind of usage details."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: usage_detail::Kind,
 }
 impl UsageDetail {

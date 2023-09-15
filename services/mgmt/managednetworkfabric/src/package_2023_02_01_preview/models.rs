@@ -55,7 +55,6 @@ pub struct AccessControlListConditionProperties {
     #[serde(rename = "sequenceNumber")]
     pub sequence_number: i32,
     #[doc = "action. Example: allow | deny."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: access_control_list_condition_properties::Action,
     #[doc = "destinationAddress. Example: any | 1.1.1.0/24 | 1.1.10.10"]
     #[serde(rename = "destinationAddress")]
@@ -157,12 +156,7 @@ pub struct AccessControlListPatchProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
     #[doc = "IP address family. Example: ipv4 | ipv6."]
-    #[serde(
-        rename = "addressFamily",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "addressFamily", default, skip_serializing_if = "Option::is_none")]
     pub address_family: Option<access_control_list_patch_properties::AddressFamily>,
     #[doc = "Access Control List conditions."]
     #[serde(
@@ -225,17 +219,12 @@ pub struct AccessControlListProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
     #[doc = "IP address family. Example: ipv4 | ipv6."]
-    #[serde(rename = "addressFamily", with = "azure_core::xml::text_content")]
+    #[serde(rename = "addressFamily")]
     pub address_family: access_control_list_properties::AddressFamily,
     #[doc = "Access Control List conditions."]
     pub conditions: Vec<AccessControlListConditionProperties>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AccessControlListProperties {
@@ -401,12 +390,7 @@ impl AnnotationResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BfdConfiguration {
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "interval in milliseconds. Example: 300."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -429,23 +413,13 @@ pub struct BgpConfiguration {
     #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub bfd_configuration: Option<BfdConfiguration>,
     #[doc = "Boolean Enum. Example- True/False"]
-    #[serde(
-        rename = "defaultRouteOriginate",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultRouteOriginate", default, skip_serializing_if = "Option::is_none")]
     pub default_route_originate: Option<BooleanEnumProperty>,
     #[doc = "Allows for routes to be received and processed even if the router detects its own ASN in the AS-Path. 0 is disable, Possible values are 1-10, default is 2."]
     #[serde(rename = "allowAS", default, skip_serializing_if = "Option::is_none")]
     pub allow_as: Option<i32>,
     #[doc = "Enable Or Disable state."]
-    #[serde(
-        rename = "allowASOverride",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allowASOverride", default, skip_serializing_if = "Option::is_none")]
     pub allow_as_override: Option<bgp_configuration::AllowAsOverride>,
     #[doc = "ASN of Network Fabric. Example: 65048."]
     #[serde(rename = "fabricASN", default, skip_serializing_if = "Option::is_none")]
@@ -830,12 +804,7 @@ pub struct ExpressRouteStatusDef {
     #[serde(rename = "expressRouteCircuitId", default, skip_serializing_if = "Option::is_none")]
     pub express_route_circuit_id: Option<String>,
     #[doc = "Express route connection state for the resource."]
-    #[serde(
-        rename = "expressRouteStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "expressRouteStatus", default, skip_serializing_if = "Option::is_none")]
     pub express_route_status: Option<express_route_status_def::ExpressRouteStatus>,
 }
 impl ExpressRouteStatusDef {
@@ -932,12 +901,7 @@ impl ExternalNetworkPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExternalNetworkPatchableProperties {
     #[doc = "Peering option list."]
-    #[serde(
-        rename = "peeringOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "peeringOption", default, skip_serializing_if = "Option::is_none")]
     pub peering_option: Option<PeeringOption>,
     #[doc = "Option B configuration."]
     #[serde(rename = "optionBProperties", default, skip_serializing_if = "Option::is_none")]
@@ -974,23 +938,13 @@ pub struct ExternalNetworkProperties {
     )]
     pub disabled_on_resources: Vec<String>,
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Peering option list."]
-    #[serde(rename = "peeringOption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "peeringOption")]
     pub peering_option: PeeringOption,
     #[doc = "Option B configuration."]
     #[serde(rename = "optionBProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1110,10 +1064,10 @@ impl GetArpResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetDeviceStatusProperties {
     #[doc = "Primary or Secondary power end."]
-    #[serde(rename = "operationalStatus", with = "azure_core::xml::text_content")]
+    #[serde(rename = "operationalStatus")]
     pub operational_status: get_device_status_properties::OperationalStatus,
     #[doc = "On or Off power cycle state."]
-    #[serde(rename = "powerCycleState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "powerCycleState")]
     pub power_cycle_state: get_device_status_properties::PowerCycleState,
     #[doc = "The serial number of the device"]
     #[serde(rename = "serialNumber")]
@@ -1242,12 +1196,7 @@ impl InfrastructureServices {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InterfaceStatus {
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "The interface operational status."]
     #[serde(rename = "operationalStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1351,12 +1300,7 @@ pub struct InternalNetworkProperties {
     )]
     pub disabled_on_resources: Vec<String>,
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "List of resources the BGP is disabled on. Can be either entire NetworkFabric or NetworkRack."]
     #[serde(
@@ -1383,12 +1327,7 @@ pub struct InternalNetworkProperties {
     )]
     pub bfd_for_static_routes_disabled_on_resources: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Vlan identifier. Example: 1001."]
     #[serde(rename = "vlanId")]
@@ -1535,7 +1474,6 @@ pub struct IpCommunityProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
     #[doc = "community action types. Example: Permit | Deny."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: CommunityActionTypes,
     #[doc = "Supported well known Community List."]
     #[serde(
@@ -1549,12 +1487,7 @@ pub struct IpCommunityProperties {
     #[serde(rename = "communityMembers")]
     pub community_members: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl IpCommunityProperties {
@@ -1681,18 +1614,12 @@ pub struct IpExtendedCommunityProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
     #[doc = "community action types. Example: Permit | Deny."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: CommunityActionTypes,
     #[doc = "Route Target List.The expected formats are ASN(plain):NN >> example 4294967294:50, ASN.ASN:NN >> example 65533.65333:40, IP-address:NN >> example 10.10.10.10:65535. The possible values of ASN,NN are in range of 0-65535, ASN(plain) is in range of 0-4294967295."]
     #[serde(rename = "routeTargets")]
     pub route_targets: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl IpExtendedCommunityProperties {
@@ -1754,12 +1681,7 @@ pub struct IpPrefixProperties {
     #[serde(rename = "ipPrefixRules")]
     pub ip_prefix_rules: Vec<serde_json::Value>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl IpPrefixProperties {
@@ -1865,20 +1787,10 @@ pub struct L2IsolationDomainProperties {
     )]
     pub disabled_on_resources: Vec<String>,
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl L2IsolationDomainProperties {
@@ -1955,20 +1867,10 @@ impl L3IsolationDomainPatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct L3IsolationDomainPatchProperties {
     #[doc = "Advertise Connected Subnets. Ex: \"True\" | \"False\"."]
-    #[serde(
-        rename = "redistributeConnectedSubnets",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "redistributeConnectedSubnets", default, skip_serializing_if = "Option::is_none")]
     pub redistribute_connected_subnets: Option<l3_isolation_domain_patch_properties::RedistributeConnectedSubnets>,
     #[doc = "Advertise Static Routes. Ex: \"True\" | \"False\"."]
-    #[serde(
-        rename = "redistributeStaticRoutes",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "redistributeStaticRoutes", default, skip_serializing_if = "Option::is_none")]
     pub redistribute_static_routes: Option<l3_isolation_domain_patch_properties::RedistributeStaticRoutes>,
     #[doc = "List of IPv4 and IPv6 route configurations."]
     #[serde(rename = "aggregateRouteConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -2078,12 +1980,7 @@ pub mod l3_isolation_domain_patch_properties {
         #[serde(rename = "exportRoutePolicyId", default, skip_serializing_if = "Option::is_none")]
         pub export_route_policy_id: Option<String>,
         #[doc = "EnabledDisabledState state for the resource."]
-        #[serde(
-            rename = "administrativeState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
         pub administrative_state: Option<EnabledDisabledState>,
     }
     impl ConnectedSubnetRoutePolicy {
@@ -2111,12 +2008,7 @@ pub struct L3IsolationDomainProperties {
     )]
     pub disabled_on_resources: Vec<String>,
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "List of resources the OptionB is disabled on. Can be either entire NetworkFabric or NetworkRack."]
     #[serde(
@@ -2127,12 +2019,7 @@ pub struct L3IsolationDomainProperties {
     )]
     pub option_b_disabled_on_resources: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl L3IsolationDomainProperties {
@@ -2382,15 +2269,10 @@ pub struct NetworkDeviceProperties {
     #[serde(rename = "networkDeviceSku")]
     pub network_device_sku: String,
     #[doc = "Available roles for the network device."]
-    #[serde(rename = "networkDeviceRole", with = "azure_core::xml::text_content")]
+    #[serde(rename = "networkDeviceRole")]
     pub network_device_role: NetworkDeviceRoleTypes,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Reference to network rack resource id."]
     #[serde(rename = "networkRackId", default, skip_serializing_if = "Option::is_none")]
@@ -2416,12 +2298,7 @@ pub struct NetworkDeviceRoleProperties {
     #[serde(rename = "networkDeviceSkuName", default, skip_serializing_if = "Option::is_none")]
     pub network_device_sku_name: Option<String>,
     #[doc = "Role for the network device."]
-    #[serde(
-        rename = "roleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
     pub role_type: Option<network_device_role_properties::RoleType>,
     #[doc = "Rack slot for the network device."]
     #[serde(rename = "rackSlot", default, skip_serializing_if = "Option::is_none")]
@@ -2578,12 +2455,7 @@ pub struct NetworkDeviceSkuProperties {
     )]
     pub interfaces: Vec<DeviceInterfaceProperties>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkDeviceSkuProperties {
@@ -2794,20 +2666,10 @@ pub struct NetworkFabricControllerProperties {
     #[serde(rename = "ipv6AddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_address_space: Option<String>,
     #[doc = "Operational state for the resource."]
-    #[serde(
-        rename = "operationalState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<NetworkFabricControllerOperationalState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkFabricControllerProperties {
@@ -2971,20 +2833,10 @@ pub struct NetworkFabricProperties {
     #[serde(rename = "managementNetworkConfiguration")]
     pub management_network_configuration: ManagementNetworkConfiguration,
     #[doc = "Operational state for the resource."]
-    #[serde(
-        rename = "operationalState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<NetworkFabricOperationalState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkFabricProperties {
@@ -3050,12 +2902,7 @@ pub struct NetworkFabricSkuProperties {
     #[serde(rename = "detailsUri", default, skip_serializing_if = "Option::is_none")]
     pub details_uri: Option<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkFabricSkuProperties {
@@ -3150,31 +2997,16 @@ pub struct NetworkInterfaceProperties {
     #[serde(rename = "physicalIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub physical_identifier: Option<String>,
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The arm resource id of the interface or compute server its connected to."]
     #[serde(rename = "connectedTo", default, skip_serializing_if = "Option::is_none")]
     pub connected_to: Option<String>,
     #[doc = "The Interface Type. Example: Management/Data"]
-    #[serde(
-        rename = "interfaceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "interfaceType", default, skip_serializing_if = "Option::is_none")]
     pub interface_type: Option<network_interface_properties::InterfaceType>,
     #[doc = "ipv4Address."]
     #[serde(rename = "ipv4Address", default, skip_serializing_if = "Option::is_none")]
@@ -3312,12 +3144,7 @@ pub struct NetworkRackProperties {
     )]
     pub network_devices: Vec<String>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkRackProperties {
@@ -3351,7 +3178,7 @@ impl NetworkRackSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRackSkuProperties {
     #[doc = "The role of the Network Rack: Aggregate or Compute."]
-    #[serde(rename = "roleName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "roleName")]
     pub role_name: network_rack_sku_properties::RoleName,
     #[doc = "Maximum number of servers available for this SKU."]
     #[serde(rename = "maximumServerCount", default, skip_serializing_if = "Option::is_none")]
@@ -3371,12 +3198,7 @@ pub struct NetworkRackSkuProperties {
     )]
     pub network_devices: Vec<NetworkDeviceRoleProperties>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkRackSkuProperties {
@@ -3499,26 +3321,16 @@ impl NetworkToNetworkInterconnect {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkToNetworkInterconnectProperties {
     #[doc = "Type of NNI used. Example: CE | NPB"]
-    #[serde(
-        rename = "nniType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nniType", default, skip_serializing_if = "Option::is_none")]
     pub nni_type: Option<network_to_network_interconnect_properties::NniType>,
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "Boolean Enum. Example- True/False"]
-    #[serde(rename = "isManagementType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "isManagementType")]
     pub is_management_type: BooleanEnumProperty,
     #[doc = "Boolean Enum. Example- True/False"]
-    #[serde(rename = "useOptionB", with = "azure_core::xml::text_content")]
+    #[serde(rename = "useOptionB")]
     pub use_option_b: BooleanEnumProperty,
     #[doc = "layer2Configuration"]
     #[serde(rename = "layer2Configuration", default, skip_serializing_if = "Option::is_none")]
@@ -3527,12 +3339,7 @@ pub struct NetworkToNetworkInterconnectProperties {
     #[serde(rename = "layer3Configuration", default, skip_serializing_if = "Option::is_none")]
     pub layer3_configuration: Option<Layer3Configuration>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkToNetworkInterconnectProperties {
@@ -3633,15 +3440,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -4072,12 +3874,7 @@ pub struct RoutePolicyProperties {
     #[doc = "Route Policy statements."]
     pub statements: Vec<RoutePolicyStatementProperties>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RoutePolicyProperties {
@@ -4119,7 +3916,7 @@ pub struct StatementActionProperties {
     #[serde(rename = "localPreference", default, skip_serializing_if = "Option::is_none")]
     pub local_preference: Option<i64>,
     #[doc = "community action types. Example: Permit | Deny."]
-    #[serde(rename = "actionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "actionType")]
     pub action_type: CommunityActionTypes,
     #[doc = "IP Community Properties."]
     #[serde(rename = "ipCommunityProperties", default, skip_serializing_if = "Option::is_none")]
@@ -4236,20 +4033,10 @@ pub struct SupportedVersionProperties {
     #[serde(rename = "vendorFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub vendor_firmware_version: Option<String>,
     #[doc = "If the current version is in use."]
-    #[serde(
-        rename = "isCurrent",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isCurrent", default, skip_serializing_if = "Option::is_none")]
     pub is_current: Option<supported_version_properties::IsCurrent>,
     #[doc = "If the current version is a test version."]
-    #[serde(
-        rename = "isTest",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isTest", default, skip_serializing_if = "Option::is_none")]
     pub is_test: Option<supported_version_properties::IsTest>,
 }
 impl SupportedVersionProperties {
@@ -4450,7 +4237,7 @@ pub struct UpdateAdministrativeState {
     #[serde(flatten)]
     pub enable_disable_on_resources: EnableDisableOnResources,
     #[doc = "Administrative state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<update_administrative_state::State>,
 }
 impl UpdateAdministrativeState {
@@ -4502,10 +4289,9 @@ pub mod update_administrative_state {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdatePowerCycleProperties {
     #[doc = "Primary or Secondary power end."]
-    #[serde(rename = "powerEnd", with = "azure_core::xml::text_content")]
+    #[serde(rename = "powerEnd")]
     pub power_end: update_power_cycle_properties::PowerEnd,
     #[doc = "On or Off toggle state."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: update_power_cycle_properties::State,
 }
 impl UpdatePowerCycleProperties {
@@ -4606,18 +4392,13 @@ impl UpdateVersionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VpnConfigurationProperties {
     #[doc = "EnabledDisabledState state for the resource."]
-    #[serde(
-        rename = "administrativeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
     #[doc = "Gets the networkToNetworkInterconnectId of the resource."]
     #[serde(rename = "networkToNetworkInterconnectId", default, skip_serializing_if = "Option::is_none")]
     pub network_to_network_interconnect_id: Option<String>,
     #[doc = "Peering option list."]
-    #[serde(rename = "peeringOption", with = "azure_core::xml::text_content")]
+    #[serde(rename = "peeringOption")]
     pub peering_option: PeeringOption,
     #[doc = "Option B configuration."]
     #[serde(rename = "optionBProperties", default, skip_serializing_if = "Option::is_none")]
@@ -4669,12 +4450,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -4683,12 +4459,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

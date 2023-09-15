@@ -13,12 +13,7 @@ pub struct AzureMonitorWorkspaceProperties {
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
     #[doc = "The mode of includeChangeDetails feature. The flag configures whether to include or exclude content of the change before and after values."]
-    #[serde(
-        rename = "includeChangeDetails",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "includeChangeDetails", default, skip_serializing_if = "Option::is_none")]
     pub include_change_details: Option<ChangeDetailsMode>,
 }
 impl AzureMonitorWorkspaceProperties {
@@ -184,12 +179,7 @@ pub struct NotificationSettings {
     #[serde(rename = "azureMonitorWorkspaceProperties", default, skip_serializing_if = "Option::is_none")]
     pub azure_monitor_workspace_properties: Option<AzureMonitorWorkspaceProperties>,
     #[doc = "The state of notifications feature."]
-    #[serde(
-        rename = "activationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "activationState", default, skip_serializing_if = "Option::is_none")]
     pub activation_state: Option<NotificationsState>,
 }
 impl NotificationSettings {
@@ -269,12 +259,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdentity {
     #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_identity::Type>,
     #[doc = "The principal id of the identity. This property will only be provided for a system-assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]

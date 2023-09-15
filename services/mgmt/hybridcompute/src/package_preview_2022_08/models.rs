@@ -48,12 +48,7 @@ pub struct AgentConfiguration {
     #[serde(rename = "guestConfigurationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub guest_configuration_enabled: Option<String>,
     #[doc = "Name of configuration mode to use. Modes are pre-defined configurations of security controls, extension allowlists and guest configuration, maintained by Microsoft."]
-    #[serde(
-        rename = "configMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "configMode", default, skip_serializing_if = "Option::is_none")]
     pub config_mode: Option<agent_configuration::ConfigMode>,
 }
 impl AgentConfiguration {
@@ -346,12 +341,7 @@ impl HybridComputePrivateLinkScopeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridComputePrivateLinkScopeProperties {
     #[doc = "The network access policy to determine if Azure Arc agents can use public Azure Arc service endpoints. Defaults to disabled (access to Azure Arc services only via private link)."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "Current state of this PrivateLinkScope: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Provisioning ,Succeeded, Canceled and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -383,12 +373,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
 impl Identity {
@@ -480,7 +465,7 @@ pub mod machine_extension_instance_view {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
         #[doc = "The level code."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub level: Option<status::Level>,
         #[doc = "The short localizable label for the status."]
         #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
@@ -705,7 +690,7 @@ pub struct MachineProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The status of the hybrid machine agent."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<machine_properties::Status>,
     #[doc = "The time of the last status change."]
     #[serde(rename = "lastStatusChange", default, with = "azure_core::date::rfc3339::option")]
@@ -971,20 +956,10 @@ impl OperationValueDisplay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchSettings {
     #[doc = "Specifies the assessment mode."]
-    #[serde(
-        rename = "assessmentMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "assessmentMode", default, skip_serializing_if = "Option::is_none")]
     pub assessment_mode: Option<patch_settings::AssessmentMode>,
     #[doc = "Specifies the patch mode."]
-    #[serde(
-        rename = "patchMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "patchMode", default, skip_serializing_if = "Option::is_none")]
     pub patch_mode: Option<patch_settings::PatchMode>,
 }
 impl PatchSettings {
@@ -1251,12 +1226,7 @@ pub struct PrivateLinkScopeValidationDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The network access policy to determine if Azure Arc agents can use public Azure Arc service endpoints. Defaults to disabled (access to Azure Arc services only via private link)."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "List of Private Endpoint Connection details."]
     #[serde(
@@ -1502,12 +1472,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1516,12 +1481,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

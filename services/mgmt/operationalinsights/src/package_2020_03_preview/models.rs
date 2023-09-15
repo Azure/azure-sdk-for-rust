@@ -7,12 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableServiceTier {
     #[doc = "The name of the Service Tier."]
-    #[serde(
-        rename = "serviceTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceTier", default, skip_serializing_if = "Option::is_none")]
     pub service_tier: Option<available_service_tier::ServiceTier>,
     #[doc = "True if the Service Tier is enabled for the workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -211,12 +206,7 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The provisioning state of the cluster."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
     #[doc = "The key vault properties."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -284,7 +274,7 @@ pub struct ClusterSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
     #[doc = "The name of the SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<cluster_sku::Name>,
 }
 impl ClusterSku {
@@ -495,7 +485,6 @@ pub struct DataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "The kind of the DataSource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DataSourceKind,
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -516,7 +505,7 @@ impl DataSource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceFilter {
     #[doc = "The kind of the DataSource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<DataSourceKind>,
 }
 impl DataSourceFilter {
@@ -670,12 +659,7 @@ pub struct Destination {
     #[serde(rename = "resourceId")]
     pub resource_id: String,
     #[doc = "The type of the destination resource"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<destination::Type>,
     #[doc = "Destination meta data."]
     #[serde(rename = "metaData", default, skip_serializing_if = "Option::is_none")]
@@ -818,7 +802,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: identity::Type,
 }
 impl Identity {
@@ -909,12 +893,7 @@ pub struct LinkedServiceProperties {
     #[serde(rename = "writeAccessResourceId", default, skip_serializing_if = "Option::is_none")]
     pub write_access_resource_id: Option<String>,
     #[doc = "The provisioning state of the linked service."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<linked_service_properties::ProvisioningState>,
 }
 impl LinkedServiceProperties {
@@ -992,12 +971,7 @@ impl LinkedStorageAccountsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedStorageAccountsProperties {
     #[doc = "Linked storage accounts type."]
-    #[serde(
-        rename = "dataSourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataSourceType", default, skip_serializing_if = "Option::is_none")]
     pub data_source_type: Option<linked_storage_accounts_properties::DataSourceType>,
     #[doc = "Linked storage accounts resources ids."]
     #[serde(
@@ -1512,7 +1486,7 @@ pub struct SearchSort {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The sort order of the search."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<search_sort::Order>,
 }
 impl SearchSort {
@@ -1673,7 +1647,6 @@ impl StorageInsightProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageInsightStatus {
     #[doc = "The state of the storage insight connection to the workspace"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: storage_insight_status::State,
     #[doc = "Description of the state of the storage insight."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1865,12 +1838,7 @@ pub struct WorkspaceCapping {
     #[serde(rename = "quotaNextResetTime", default, skip_serializing_if = "Option::is_none")]
     pub quota_next_reset_time: Option<String>,
     #[doc = "The status of data ingestion for this workspace."]
-    #[serde(
-        rename = "dataIngestionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataIngestionStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_ingestion_status: Option<workspace_capping::DataIngestionStatus>,
 }
 impl WorkspaceCapping {
@@ -2013,12 +1981,7 @@ impl WorkspacePatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceProperties {
     #[doc = "The provisioning state of the workspace."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
     #[doc = "This is a read-only property. Represents the ID associated with the workspace."]
     #[serde(rename = "customerId", default, skip_serializing_if = "Option::is_none")]
@@ -2033,20 +1996,10 @@ pub struct WorkspaceProperties {
     #[serde(rename = "workspaceCapping", default, skip_serializing_if = "Option::is_none")]
     pub workspace_capping: Option<WorkspaceCapping>,
     #[doc = "The network access type for operating on the Log Analytics Workspace. By default it is Enabled"]
-    #[serde(
-        rename = "publicNetworkAccessForIngestion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
     #[doc = "The network access type for operating on the Log Analytics Workspace. By default it is Enabled"]
-    #[serde(
-        rename = "publicNetworkAccessForQuery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccessForQuery", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
     #[doc = "List of linked private link scope resources."]
     #[serde(
@@ -2162,7 +2115,6 @@ impl WorkspacePurgeResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePurgeStatusResponse {
     #[doc = "Status of the operation represented by the requested Id."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: workspace_purge_status_response::Status,
 }
 impl WorkspacePurgeStatusResponse {
@@ -2216,7 +2168,6 @@ pub mod workspace_purge_status_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceSku {
     #[doc = "The name of the SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: workspace_sku::Name,
     #[doc = "The capacity reservation level for this workspace, when CapacityReservation sku is selected."]
     #[serde(rename = "capacityReservationLevel", default, skip_serializing_if = "Option::is_none")]

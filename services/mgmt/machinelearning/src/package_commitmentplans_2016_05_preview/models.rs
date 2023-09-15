@@ -441,12 +441,7 @@ pub struct SkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i64>,
     #[doc = "The scale type applicable to the sku."]
-    #[serde(
-        rename = "scaleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
 impl SkuCapacity {
@@ -539,12 +534,7 @@ impl SkuListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuRestrictions {
     #[doc = "The type of restrictions."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_restrictions::Type>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
@@ -554,12 +544,7 @@ pub struct SkuRestrictions {
     )]
     pub values: Vec<String>,
     #[doc = "The reason for restriction."]
-    #[serde(
-        rename = "reasonCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<sku_restrictions::ReasonCode>,
 }
 impl SkuRestrictions {

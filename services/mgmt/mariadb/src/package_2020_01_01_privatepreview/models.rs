@@ -121,7 +121,7 @@ impl ServerKeyListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerKeyProperties {
     #[doc = "The key type like  'AzureKeyVault'."]
-    #[serde(rename = "serverKeyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "serverKeyType")]
     pub server_key_type: server_key_properties::ServerKeyType,
     #[doc = "The URI of the key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -525,7 +525,7 @@ pub struct EnrollmentGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "Type of devices that connect through the group."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: enrollment_group::Type,
     #[doc = "The attestation definition for an enrollment group."]
     pub attestation: GroupAttestation,
@@ -632,7 +632,7 @@ pub struct FileUpload {
     #[serde(rename = "sasTtl", default, skip_serializing_if = "Option::is_none")]
     pub sas_ttl: Option<String>,
     #[doc = "The state of the file upload configuration"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<file_upload::State>,
     #[doc = "ETag used to prevent conflict with multiple uploads"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -781,7 +781,7 @@ impl Job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBatch {
     #[doc = "Whether batching is done on a specified number of devices or a percentage of the total devices."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: job_batch::Type,
     #[doc = "The number or percentage of devices on which batching is done."]
     pub value: f64,
@@ -806,7 +806,7 @@ pub mod job_batch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCancellationThreshold {
     #[doc = "Whether the cancellation threshold is per a specified number of devices or a percentage of the total devices."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: job_cancellation_threshold::Type,
     #[doc = "The number or percentage of devices on which the cancellation threshold is applied."]
     pub value: f64,
@@ -922,7 +922,7 @@ impl JobProgress {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSchedule {
     #[doc = "The recurrence of the scheduled job. If not provided, the job will run once at the specified start time."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<job_schedule::Recurrence>,
     #[doc = "The start time for the scheduled job"]
     #[serde(with = "azure_core::date::rfc3339")]

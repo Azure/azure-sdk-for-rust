@@ -10,7 +10,7 @@ pub struct AcsClusterProperties {
     #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
     pub cluster_fqdn: Option<String>,
     #[doc = "Type of orchestrator. It cannot be changed once the cluster is created."]
-    #[serde(rename = "orchestratorType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "orchestratorType")]
     pub orchestrator_type: acs_cluster_properties::OrchestratorType,
     #[doc = "Kubernetes cluster specific properties"]
     #[serde(rename = "orchestratorProperties")]
@@ -27,12 +27,7 @@ pub struct AcsClusterProperties {
     #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
     pub agent_count: Option<i64>,
     #[doc = "The Azure VM size of the agent VM nodes. This cannot be changed once the cluster is created."]
-    #[serde(
-        rename = "agentVmSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentVmSize", default, skip_serializing_if = "Option::is_none")]
     pub agent_vm_size: Option<acs_cluster_properties::AgentVmSize>,
 }
 impl AcsClusterProperties {
@@ -314,12 +309,7 @@ pub struct AsyncOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Read Only: The provisioning state of the cluster. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<async_operation_status::ProvisioningState>,
     #[doc = "The date time that the async operation started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -389,7 +379,7 @@ pub mod async_operation_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleConfiguration {
     #[doc = "If auto-scale is enabled for all services. Each service can turn it off individually."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<auto_scale_configuration::Status>,
     #[doc = "The minimum number of replicas for each service."]
     #[serde(rename = "minReplicas", default, skip_serializing_if = "Option::is_none")]
@@ -474,12 +464,7 @@ impl AvailableOperations {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckUpdateResponse {
     #[doc = "Yes if updates are available for the system services, No if not."]
-    #[serde(
-        rename = "updatesAvailable",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updatesAvailable", default, skip_serializing_if = "Option::is_none")]
     pub updates_available: Option<check_update_response::UpdatesAvailable>,
 }
 impl CheckUpdateResponse {
@@ -702,15 +687,10 @@ pub struct OperationalizationClusterProperties {
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<operationalization_cluster_properties::ProvisioningState>,
     #[doc = "The cluster type."]
-    #[serde(rename = "clusterType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "clusterType")]
     pub cluster_type: operationalization_cluster_properties::ClusterType,
     #[doc = "Properties of Storage Account."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
@@ -970,7 +950,7 @@ impl ServicePrincipalProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
     #[doc = "SSL status. Allowed values are Enabled and Disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ssl_configuration::Status>,
     #[doc = "The SSL cert data in PEM format encoded as base64 string"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1100,12 +1080,7 @@ impl Serialize for SystemServices {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateSystemResponse {
     #[doc = "Update status"]
-    #[serde(
-        rename = "updateStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<update_system_response::UpdateStatus>,
     #[doc = "Read Only: The date and time when the last system services update was started."]
     #[serde(rename = "updateStartedOn", default, with = "azure_core::date::rfc3339::option")]

@@ -98,7 +98,6 @@ impl SelfServicePolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelfServicePolicyDecisionRule {
     #[doc = "The effect for rule"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub effect: self_service_policy_decision_rule::Effect,
     #[doc = "This is field will indicate the role of a self service policy."]
     #[serde(rename = "purviewRoleName")]

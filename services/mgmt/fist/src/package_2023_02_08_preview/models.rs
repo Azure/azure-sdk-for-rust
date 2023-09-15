@@ -37,19 +37,19 @@ impl BinaryHardening {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BinaryHardeningFeatures {
     #[doc = "NX flag."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nx: Option<binary_hardening_features::Nx>,
     #[doc = "PIE flag."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pie: Option<binary_hardening_features::Pie>,
     #[doc = "RELRO flag."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relro: Option<binary_hardening_features::Relro>,
     #[doc = "Canary flag."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub canary: Option<binary_hardening_features::Canary>,
     #[doc = "Stripped flag."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stripped: Option<binary_hardening_features::Stripped>,
 }
 impl BinaryHardeningFeatures {
@@ -323,12 +323,7 @@ pub struct Component {
     )]
     pub paths: Vec<String>,
     #[doc = "Flag if new update is available for the component."]
-    #[serde(
-        rename = "isUpdateAvailable",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isUpdateAvailable", default, skip_serializing_if = "Option::is_none")]
     pub is_update_available: Option<component::IsUpdateAvailable>,
 }
 impl Component {
@@ -462,36 +457,16 @@ pub struct CryptoCertificate {
     #[serde(rename = "pairedKey", default, skip_serializing_if = "Option::is_none")]
     pub paired_key: Option<PairedKey>,
     #[doc = "Indicates if the certificate is expired."]
-    #[serde(
-        rename = "isExpired",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isExpired", default, skip_serializing_if = "Option::is_none")]
     pub is_expired: Option<crypto_certificate::IsExpired>,
     #[doc = "Indicates if the certificate was self-signed."]
-    #[serde(
-        rename = "isSelfSigned",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isSelfSigned", default, skip_serializing_if = "Option::is_none")]
     pub is_self_signed: Option<crypto_certificate::IsSelfSigned>,
     #[doc = "Indicates the signature algorithm used is insecure."]
-    #[serde(
-        rename = "isWeakSignature",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isWeakSignature", default, skip_serializing_if = "Option::is_none")]
     pub is_weak_signature: Option<crypto_certificate::IsWeakSignature>,
     #[doc = "Indicates the certificate's key size is considered too small to be secure for the key algorithm."]
-    #[serde(
-        rename = "isShortKeySize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isShortKeySize", default, skip_serializing_if = "Option::is_none")]
     pub is_short_key_size: Option<crypto_certificate::IsShortKeySize>,
 }
 impl CryptoCertificate {
@@ -763,12 +738,7 @@ pub struct CryptoKey {
     #[serde(rename = "pairedKey", default, skip_serializing_if = "Option::is_none")]
     pub paired_key: Option<PairedKey>,
     #[doc = "Indicates the key size is considered too small to be secure for the algorithm."]
-    #[serde(
-        rename = "isShortKeySize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "isShortKeySize", default, skip_serializing_if = "Option::is_none")]
     pub is_short_key_size: Option<crypto_key::IsShortKeySize>,
 }
 impl CryptoKey {
@@ -1126,7 +1096,7 @@ pub struct FirmwareProperties {
     #[serde(rename = "fileSize", default, skip_serializing_if = "Option::is_none")]
     pub file_size: Option<i64>,
     #[doc = "The status of firmware scan."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<firmware_properties::Status>,
     #[doc = "A list of errors or other messages generated during firmware analysis"]
     #[serde(
@@ -1137,12 +1107,7 @@ pub struct FirmwareProperties {
     )]
     pub status_messages: Vec<StatusMessage>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<firmware_properties::ProvisioningState>,
 }
 impl FirmwareProperties {
@@ -1309,15 +1274,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1645,12 +1605,7 @@ impl WorkspaceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
 }
 impl WorkspaceProperties {
@@ -1721,12 +1676,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1735,12 +1685,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

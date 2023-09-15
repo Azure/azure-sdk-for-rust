@@ -60,12 +60,7 @@ pub struct DelegatedControllerProperties {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current state of dnc controller resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<delegated_controller_properties::ProvisioningState>,
     #[doc = "dnc application id should be used by customer to authenticate with dnc gateway."]
     #[serde(rename = "dncAppId", default, skip_serializing_if = "Option::is_none")]
@@ -77,7 +72,7 @@ pub struct DelegatedControllerProperties {
     #[serde(rename = "dncEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub dnc_endpoint: Option<String>,
     #[doc = "The purpose of the dnc controller resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purpose: Option<delegated_controller_properties::Purpose>,
 }
 impl DelegatedControllerProperties {
@@ -214,12 +209,7 @@ pub struct DelegatedSubnetProperties {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current state of dnc delegated subnet resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<delegated_subnet_properties::ProvisioningState>,
     #[doc = "Properties of orchestrator"]
     #[serde(rename = "subnetDetails", default, skip_serializing_if = "Option::is_none")]
@@ -400,15 +390,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -568,12 +553,7 @@ pub struct OrchestratorIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for orchestrator cluster. Type 'SystemAssigned' will use an implicitly created identity orchestrator clusters"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<orchestrator_identity::Type>,
 }
 impl OrchestratorIdentity {
@@ -606,7 +586,6 @@ pub struct OrchestratorResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The kind of workbook. Choices are user and shared."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: orchestrator_resource::Kind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<OrchestratorIdentity>,
@@ -672,12 +651,7 @@ pub struct OrchestratorResourceProperties {
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
     #[doc = "The current state of orchestratorInstance resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<orchestrator_resource_properties::ProvisioningState>,
     #[doc = "AAD ID used with apiserver"]
     #[serde(rename = "orchestratorAppId", default, skip_serializing_if = "Option::is_none")]

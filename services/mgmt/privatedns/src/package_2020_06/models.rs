@@ -169,12 +169,7 @@ pub struct PrivateZoneProperties {
     )]
     pub number_of_virtual_network_links_with_registration: Option<i64>,
     #[doc = "The provisioning state of the resource. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_zone_properties::ProvisioningState>,
     #[doc = "Private zone internal Id"]
     #[serde(rename = "internalId", default, skip_serializing_if = "Option::is_none")]
@@ -548,20 +543,10 @@ pub struct VirtualNetworkLinkProperties {
     #[serde(rename = "registrationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub registration_enabled: Option<bool>,
     #[doc = "The status of the virtual network link to the Private DNS zone. Possible values are 'InProgress' and 'Done'. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(
-        rename = "virtualNetworkLinkState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "virtualNetworkLinkState", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_link_state: Option<virtual_network_link_properties::VirtualNetworkLinkState>,
     #[doc = "The provisioning state of the resource. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<virtual_network_link_properties::ProvisioningState>,
 }
 impl VirtualNetworkLinkProperties {

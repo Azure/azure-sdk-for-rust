@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiServerProfile {
     #[doc = "Visibility represents visibility."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<Visibility>,
     #[doc = "The URL to access the cluster API server (immutable)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -125,7 +125,7 @@ pub struct IngressProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Visibility represents visibility."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<Visibility>,
     #[doc = "The IP of the ingress (immutable)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -140,12 +140,7 @@ impl IngressProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MasterProfile {
     #[doc = "VMSize represents a VM size."]
-    #[serde(
-        rename = "vmSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<VmSize>,
     #[doc = "The Azure resource ID of the master subnet (immutable)."]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
@@ -232,12 +227,7 @@ impl OpenShiftClusterList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftClusterProperties {
     #[doc = "ProvisioningState represents a provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "ClusterProfile represents a cluster profile."]
     #[serde(rename = "clusterProfile", default, skip_serializing_if = "Option::is_none")]
@@ -431,12 +421,7 @@ pub struct WorkerProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "VMSize represents a VM size."]
-    #[serde(
-        rename = "vmSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<VmSize>,
     #[doc = "The disk size of the worker VMs.  Must be 128 or greater (immutable)."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]

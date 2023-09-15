@@ -530,12 +530,7 @@ pub struct IEdmEntityContainer {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub elements: Vec<IEdmEntityContainerElement>,
-    #[serde(
-        rename = "schemaElementKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_entity_container::SchemaElementKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
@@ -561,12 +556,7 @@ pub mod i_edm_entity_container {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmEntityContainerElement {
-    #[serde(
-        rename = "containerElementKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "containerElementKind", default, skip_serializing_if = "Option::is_none")]
     pub container_element_kind: Option<i_edm_entity_container_element::ContainerElementKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub container: Option<IEdmEntityContainer>,
@@ -591,12 +581,7 @@ pub mod i_edm_entity_container_element {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmExpression {
-    #[serde(
-        rename = "expressionKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "expressionKind", default, skip_serializing_if = "Option::is_none")]
     pub expression_kind: Option<i_edm_expression::ExpressionKind>,
 }
 impl IEdmExpression {
@@ -680,23 +665,13 @@ impl IEdmModel {
 pub struct IEdmNavigationProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub partner: Box<Option<IEdmNavigationProperty>>,
-    #[serde(
-        rename = "onDelete",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "onDelete", default, skip_serializing_if = "Option::is_none")]
     pub on_delete: Option<i_edm_navigation_property::OnDelete>,
     #[serde(rename = "containsTarget", default, skip_serializing_if = "Option::is_none")]
     pub contains_target: Option<bool>,
     #[serde(rename = "referentialConstraint", default, skip_serializing_if = "Option::is_none")]
     pub referential_constraint: Option<IEdmReferentialConstraint>,
-    #[serde(
-        rename = "propertyKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "propertyKind", default, skip_serializing_if = "Option::is_none")]
     pub property_kind: Option<i_edm_navigation_property::PropertyKind>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
@@ -770,12 +745,7 @@ pub struct IEdmPathExpression {
     pub path_segments: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
-    #[serde(
-        rename = "expressionKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "expressionKind", default, skip_serializing_if = "Option::is_none")]
     pub expression_kind: Option<i_edm_path_expression::ExpressionKind>,
 }
 impl IEdmPathExpression {
@@ -817,12 +787,7 @@ pub mod i_edm_path_expression {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmProperty {
-    #[serde(
-        rename = "propertyKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "propertyKind", default, skip_serializing_if = "Option::is_none")]
     pub property_kind: Option<i_edm_property::PropertyKind>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
@@ -862,12 +827,7 @@ impl IEdmReferentialConstraint {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmSchemaElement {
-    #[serde(
-        rename = "schemaElementKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_schema_element::SchemaElementKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
@@ -895,12 +855,7 @@ pub mod i_edm_schema_element {
 pub struct IEdmStructuralProperty {
     #[serde(rename = "defaultValueString", default, skip_serializing_if = "Option::is_none")]
     pub default_value_string: Option<String>,
-    #[serde(
-        rename = "propertyKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "propertyKind", default, skip_serializing_if = "Option::is_none")]
     pub property_kind: Option<i_edm_structural_property::PropertyKind>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IEdmTypeReference>,
@@ -938,12 +893,7 @@ pub struct IEdmStructuredType {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub declared_properties: Vec<IEdmProperty>,
-    #[serde(
-        rename = "typeKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "typeKind", default, skip_serializing_if = "Option::is_none")]
     pub type_kind: Option<i_edm_structured_type::TypeKind>,
 }
 impl IEdmStructuredType {
@@ -975,12 +925,7 @@ pub struct IEdmTerm {
     pub applies_to: Option<String>,
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
-    #[serde(
-        rename = "schemaElementKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "schemaElementKind", default, skip_serializing_if = "Option::is_none")]
     pub schema_element_kind: Option<i_edm_term::SchemaElementKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
@@ -1006,12 +951,7 @@ pub mod i_edm_term {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmType {
-    #[serde(
-        rename = "typeKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "typeKind", default, skip_serializing_if = "Option::is_none")]
     pub type_kind: Option<i_edm_type::TypeKind>,
 }
 impl IEdmType {
@@ -1280,20 +1220,10 @@ pub struct MigrateProjectProperties {
     #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_summary_refreshed_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the refresh summary state."]
-    #[serde(
-        rename = "refreshSummaryState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<migrate_project_properties::RefreshSummaryState>,
     #[doc = "Provisioning state of the migrate project."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<migrate_project_properties::ProvisioningState>,
 }
 impl MigrateProjectProperties {
@@ -1586,12 +1516,7 @@ pub struct ProjectSummary {
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
     #[doc = "Gets or sets the state of refresh summary."]
-    #[serde(
-        rename = "refreshSummaryState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
     #[doc = "Gets or sets the time when summary was last refreshed."]
     #[serde(rename = "lastSummaryRefreshedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1634,7 +1559,7 @@ impl RangeVariable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RefreshSummaryInput {
     #[doc = "Gets or sets the goal for which summary needs to be refreshed."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<refresh_summary_input::Goal>,
 }
 impl RefreshSummaryInput {
@@ -1667,7 +1592,7 @@ impl RefreshSummaryResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisterToolInput {
     #[doc = "Gets or sets the tool to be registered."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool: Option<register_tool_input::Tool>,
 }
 impl RegisterToolInput {
@@ -1794,7 +1719,7 @@ impl ServersSolutionSummary {
 pub struct SingleValueNode {
     #[serde(rename = "typeReference", default, skip_serializing_if = "Option::is_none")]
     pub type_reference: Option<IEdmTypeReference>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<single_value_node::Kind>,
 }
 impl SingleValueNode {
@@ -1900,24 +1825,19 @@ impl SolutionDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionProperties {
     #[doc = "Gets or sets the tool being used in the solution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool: Option<solution_properties::Tool>,
     #[doc = "Gets or sets the purpose of the solution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purpose: Option<solution_properties::Purpose>,
     #[doc = "Gets or sets the goal of the solution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<solution_properties::Goal>,
     #[doc = "Gets or sets the current status of the solution."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<solution_properties::Status>,
     #[doc = "Gets or sets the cleanup state of the solution."]
-    #[serde(
-        rename = "cleanupState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "cleanupState", default, skip_serializing_if = "Option::is_none")]
     pub cleanup_state: Option<solution_properties::CleanupState>,
     #[doc = "The solution summary class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2012,7 +1932,7 @@ impl SolutionsCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransformationNode {
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<transformation_node::Kind>,
 }
 impl TransformationNode {

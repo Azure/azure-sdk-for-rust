@@ -101,7 +101,7 @@ impl ExceptionResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitJsonObject {
     #[doc = "The limit object type."]
-    #[serde(rename = "limitObjectType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "limitObjectType")]
     pub limit_object_type: LimitObjectTypes,
 }
 impl LimitJsonObject {
@@ -117,12 +117,7 @@ pub struct LimitObject {
     #[doc = "The quota/limit value"]
     pub value: i32,
     #[doc = "The quota or usages limit types."]
-    #[serde(
-        rename = "limitType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "limitType", default, skip_serializing_if = "Option::is_none")]
     pub limit_type: Option<LimitTypes>,
 }
 impl LimitObject {
@@ -408,12 +403,7 @@ impl QuotaRequestOneResourceSubmitResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestProperties {
     #[doc = "Quota request status."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<QuotaRequestState>,
     #[doc = "User-friendly status message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -484,12 +474,7 @@ impl Serialize for QuotaRequestState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestStatusDetails {
     #[doc = "Quota request status."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<QuotaRequestState>,
     #[doc = "User-friendly message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -626,12 +611,7 @@ pub struct SubRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "Quota request status."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<QuotaRequestState>,
     #[doc = "User-friendly status message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -679,12 +659,7 @@ pub struct UsagesObject {
     #[doc = "The usages value."]
     pub value: i32,
     #[doc = "The quota or usages limit types."]
-    #[serde(
-        rename = "usagesType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "usagesType", default, skip_serializing_if = "Option::is_none")]
     pub usages_type: Option<UsagesTypes>,
 }
 impl UsagesObject {
@@ -763,12 +738,7 @@ impl Serialize for UsagesTypes {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestOneResourceProperties {
     #[doc = "Quota request status."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<QuotaRequestState>,
     #[doc = "User-friendly status message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

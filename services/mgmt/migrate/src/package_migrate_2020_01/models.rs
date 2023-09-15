@@ -13,12 +13,7 @@ pub struct AgentConfiguration {
     pub dependency_agent_version: Option<String>,
     #[serde(rename = "dependencyAgentRevision", default, skip_serializing_if = "Option::is_none")]
     pub dependency_agent_revision: Option<String>,
-    #[serde(
-        rename = "rebootStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "rebootStatus", default, skip_serializing_if = "Option::is_none")]
     pub reboot_status: Option<agent_configuration::RebootStatus>,
     #[serde(rename = "clockGranularity", default, skip_serializing_if = "Option::is_none")]
     pub clock_granularity: Option<i32>,
@@ -612,12 +607,7 @@ pub struct HyperVMachineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Value indicating whether the VM is highly available."]
-    #[serde(
-        rename = "highAvailability",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "highAvailability", default, skip_serializing_if = "Option::is_none")]
     pub high_availability: Option<hyper_v_machine_properties::HighAvailability>,
     #[doc = "Max memory of the virtual machine in MB."]
     #[serde(rename = "maxMemoryMB", default, skip_serializing_if = "Option::is_none")]
@@ -859,12 +849,7 @@ impl HyperVSiteUsage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HypervisorConfiguration {
-    #[serde(
-        rename = "hypervisorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hypervisorType", default, skip_serializing_if = "Option::is_none")]
     pub hypervisor_type: Option<hypervisor_configuration::HypervisorType>,
     #[serde(rename = "nativeHostMachineId", default, skip_serializing_if = "Option::is_none")]
     pub native_host_machine_id: Option<String>,
@@ -944,19 +929,9 @@ impl JobProperties {
 pub struct Machine {
     #[serde(rename = "properties.timestamp", default, with = "azure_core::date::rfc3339::option")]
     pub properties_timestamp: Option<time::OffsetDateTime>,
-    #[serde(
-        rename = "properties.monitoringState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "properties.monitoringState", default, skip_serializing_if = "Option::is_none")]
     pub properties_monitoring_state: Option<machine::PropertiesMonitoringState>,
-    #[serde(
-        rename = "properties.virtualizationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "properties.virtualizationState", default, skip_serializing_if = "Option::is_none")]
     pub properties_virtualization_state: Option<machine::PropertiesVirtualizationState>,
     #[serde(rename = "properties.displayName", default, skip_serializing_if = "Option::is_none")]
     pub properties_display_name: Option<String>,
@@ -1025,12 +1000,7 @@ pub struct MachineResourcesConfiguration {
     pub cpus: Option<i32>,
     #[serde(rename = "cpuSpeed", default, skip_serializing_if = "Option::is_none")]
     pub cpu_speed: Option<i32>,
-    #[serde(
-        rename = "cpuSpeedAccuracy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "cpuSpeedAccuracy", default, skip_serializing_if = "Option::is_none")]
     pub cpu_speed_accuracy: Option<machine_resources_configuration::CpuSpeedAccuracy>,
 }
 impl MachineResourcesConfiguration {
@@ -1132,11 +1102,11 @@ impl OperatingSystem {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperatingSystemConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<operating_system_configuration::Family>,
     #[serde(rename = "fullName", default, skip_serializing_if = "Option::is_none")]
     pub full_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bitness: Option<operating_system_configuration::Bitness>,
 }
 impl OperatingSystemConfiguration {
@@ -1313,12 +1283,7 @@ pub struct RunAsAccountProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Credential type of the run as account."]
-    #[serde(
-        rename = "credentialType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "credentialType", default, skip_serializing_if = "Option::is_none")]
     pub credential_type: Option<run_as_account_properties::CredentialType>,
     #[doc = "Timestamp marking run as account creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -1705,12 +1670,7 @@ pub struct VMwareDisk {
     #[serde(rename = "diskScrubbingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub disk_scrubbing_policy: Option<String>,
     #[doc = "Disk mode property used for identifying independent disks."]
-    #[serde(
-        rename = "diskMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
     pub disk_mode: Option<v_mware_disk::DiskMode>,
     #[doc = "Bytes allocated for the disk."]
     #[serde(rename = "maxSizeInBytes", default, skip_serializing_if = "Option::is_none")]
@@ -2136,12 +2096,7 @@ impl VMwareSiteUsage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineConfiguration {
-    #[serde(
-        rename = "virtualMachineType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "virtualMachineType", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_type: Option<virtual_machine_configuration::VirtualMachineType>,
     #[serde(rename = "nativeMachineId", default, skip_serializing_if = "Option::is_none")]
     pub native_machine_id: Option<String>,

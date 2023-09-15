@@ -53,12 +53,7 @@ pub mod aks_schema {
         #[serde(rename = "agentVmSize", default, skip_serializing_if = "Option::is_none")]
         pub agent_vm_size: Option<String>,
         #[doc = "Intended usage of the cluster"]
-        #[serde(
-            rename = "clusterPurpose",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "clusterPurpose", default, skip_serializing_if = "Option::is_none")]
         pub cluster_purpose: Option<properties::ClusterPurpose>,
         #[doc = "The ssl configuration for scoring"]
         #[serde(rename = "sslConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -67,12 +62,7 @@ pub mod aks_schema {
         #[serde(rename = "aksNetworkingConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub aks_networking_configuration: Option<AksNetworkingConfiguration>,
         #[doc = "Load Balancer Type"]
-        #[serde(
-            rename = "loadBalancerType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "loadBalancerType", default, skip_serializing_if = "Option::is_none")]
         pub load_balancer_type: Option<properties::LoadBalancerType>,
         #[doc = "Load Balancer Subnet"]
         #[serde(rename = "loadBalancerSubnet", default, skip_serializing_if = "Option::is_none")]
@@ -332,12 +322,7 @@ pub struct AmlComputeNodeInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<f64>,
     #[doc = "State of the compute node. Values are idle, running, preparing, unusable, leaving and preempted."]
-    #[serde(
-        rename = "nodeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "nodeState", default, skip_serializing_if = "Option::is_none")]
     pub node_state: Option<aml_compute_node_information::NodeState>,
     #[doc = "ID of the Experiment running on the node, if any else null."]
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
@@ -431,23 +416,13 @@ impl AmlComputeNodesInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmlComputeProperties {
     #[doc = "Compute OS Type"]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<aml_compute_properties::OsType>,
     #[doc = "Virtual Machine Size"]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
     #[doc = "Virtual Machine priority"]
-    #[serde(
-        rename = "vmPriority",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmPriority", default, skip_serializing_if = "Option::is_none")]
     pub vm_priority: Option<aml_compute_properties::VmPriority>,
     #[doc = "Virtual Machine image for Windows AML Compute"]
     #[serde(rename = "virtualMachineImage", default, skip_serializing_if = "Option::is_none")]
@@ -465,20 +440,10 @@ pub struct AmlComputeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
     #[doc = "State of the public SSH port. Possible values are: Disabled - Indicates that the public ssh port is closed on all nodes of the cluster. Enabled - Indicates that the public ssh port is open on all nodes of the cluster. NotSpecified - Indicates that the public ssh port is closed on all nodes of the cluster if VNet is defined, else is open all public nodes. It can be default only during cluster creation time, after creation it will be either enabled or disabled."]
-    #[serde(
-        rename = "remoteLoginPortPublicAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "remoteLoginPortPublicAccess", default, skip_serializing_if = "Option::is_none")]
     pub remote_login_port_public_access: Option<aml_compute_properties::RemoteLoginPortPublicAccess>,
     #[doc = "Allocation state of the compute. Possible values are: steady - Indicates that the compute is not resizing. There are no changes to the number of compute nodes in the compute in progress. A compute enters this state when it is created and when no operations are being performed on the compute to change the number of compute nodes. resizing - Indicates that the compute is resizing; that is, compute nodes are being added to or removed from the compute."]
-    #[serde(
-        rename = "allocationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state: Option<aml_compute_properties::AllocationState>,
     #[doc = "The time at which the compute entered its current allocation state."]
     #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
@@ -830,7 +795,7 @@ impl AssetContainer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetJobInput {
     #[doc = "Enum to determine the input data delivery mode."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<InputDeliveryMode>,
     #[doc = "[Required] Input Asset URI."]
     pub uri: String,
@@ -850,7 +815,7 @@ pub struct AssetJobOutput {
     #[serde(rename = "assetVersion", default, skip_serializing_if = "Option::is_none")]
     pub asset_version: Option<String>,
     #[doc = "Output data delivery mode enums."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<OutputDeliveryMode>,
     #[doc = "Output Asset URI."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -910,7 +875,7 @@ impl Serialize for AssetProvisioningState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetReferenceBase {
     #[doc = "Enum to determine which reference method to use for an asset."]
-    #[serde(rename = "referenceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "referenceType")]
     pub reference_type: ReferenceType,
 }
 impl AssetReferenceBase {
@@ -980,18 +945,13 @@ impl AutoMlJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoMlVertical {
     #[doc = "Enum for setting log verbosity."]
-    #[serde(
-        rename = "logVerbosity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logVerbosity", default, skip_serializing_if = "Option::is_none")]
     pub log_verbosity: Option<LogVerbosity>,
     #[doc = "Target column name: This is prediction values column.\r\nAlso known as label column name in context of classification tasks."]
     #[serde(rename = "targetColumnName", default, skip_serializing_if = "Option::is_none")]
     pub target_column_name: Option<String>,
     #[doc = "AutoMLJob Task type."]
-    #[serde(rename = "taskType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "taskType")]
     pub task_type: TaskType,
     #[serde(rename = "trainingData")]
     pub training_data: MlTableJobInput,
@@ -1119,7 +1079,7 @@ impl AutoTargetRollingWindowSize {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutologgerSettings {
     #[doc = "Enum to determine the state of mlflow autologger."]
-    #[serde(rename = "mlflowAutologger", with = "azure_core::xml::text_content")]
+    #[serde(rename = "mlflowAutologger")]
     pub mlflow_autologger: MlFlowAutologgerState,
 }
 impl AutologgerSettings {
@@ -1146,12 +1106,7 @@ pub struct AzureBlobDatastore {
     #[doc = "Protocol used to communicate with the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
-    #[serde(
-        rename = "serviceDataAccessAuthIdentity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceDataAccessAuthIdentity", default, skip_serializing_if = "Option::is_none")]
     pub service_data_access_auth_identity: Option<ServiceDataAccessAuthIdentity>,
 }
 impl AzureBlobDatastore {
@@ -1174,12 +1129,7 @@ pub struct AzureDataLakeGen1Datastore {
     pub azure_datastore: AzureDatastore,
     #[serde(flatten)]
     pub datastore: Datastore,
-    #[serde(
-        rename = "serviceDataAccessAuthIdentity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceDataAccessAuthIdentity", default, skip_serializing_if = "Option::is_none")]
     pub service_data_access_auth_identity: Option<ServiceDataAccessAuthIdentity>,
     #[doc = "[Required] Azure Data Lake store name."]
     #[serde(rename = "storeName")]
@@ -1213,12 +1163,7 @@ pub struct AzureDataLakeGen2Datastore {
     #[doc = "Protocol used to communicate with the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
-    #[serde(
-        rename = "serviceDataAccessAuthIdentity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceDataAccessAuthIdentity", default, skip_serializing_if = "Option::is_none")]
     pub service_data_access_auth_identity: Option<ServiceDataAccessAuthIdentity>,
 }
 impl AzureDataLakeGen2Datastore {
@@ -1268,12 +1213,7 @@ pub struct AzureFileDatastore {
     #[doc = "Protocol used to communicate with the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<String>,
-    #[serde(
-        rename = "serviceDataAccessAuthIdentity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceDataAccessAuthIdentity", default, skip_serializing_if = "Option::is_none")]
     pub service_data_access_auth_identity: Option<ServiceDataAccessAuthIdentity>,
 }
 impl AzureFileDatastore {
@@ -1322,12 +1262,7 @@ pub struct BatchDeployment {
     #[serde(rename = "errorThreshold", default, skip_serializing_if = "Option::is_none")]
     pub error_threshold: Option<i32>,
     #[doc = "Log verbosity for batch inferencing.\r\nIncreasing verbosity order for logging is : Warning, Info and Debug.\r\nThe default value is Info."]
-    #[serde(
-        rename = "loggingLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "loggingLevel", default, skip_serializing_if = "Option::is_none")]
     pub logging_level: Option<BatchLoggingLevel>,
     #[doc = "Indicates maximum number of parallelism per instance."]
     #[serde(rename = "maxConcurrencyPerInstance", default, skip_serializing_if = "Option::is_none")]
@@ -1339,23 +1274,13 @@ pub struct BatchDeployment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<AssetReferenceBase>,
     #[doc = "Enum to determine how batch inferencing will handle output"]
-    #[serde(
-        rename = "outputAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "outputAction", default, skip_serializing_if = "Option::is_none")]
     pub output_action: Option<BatchOutputAction>,
     #[doc = "Customized output file name for append_row output action."]
     #[serde(rename = "outputFileName", default, skip_serializing_if = "Option::is_none")]
     pub output_file_name: Option<String>,
     #[doc = "Possible values for DeploymentProvisioningState."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DeploymentProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resources: Option<DeploymentResourceConfiguration>,
@@ -1429,12 +1354,7 @@ pub struct BatchEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub defaults: Option<BatchEndpointDefaults>,
     #[doc = "State of endpoint provisioning."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<EndpointProvisioningState>,
 }
 impl BatchEndpoint {
@@ -1769,12 +1689,7 @@ pub struct Classification {
     #[serde(rename = "positiveLabel", default, skip_serializing_if = "Option::is_none")]
     pub positive_label: Option<String>,
     #[doc = "Primary metrics for classification tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ClassificationPrimaryMetrics>,
     #[doc = "Classification Training related configuration."]
     #[serde(rename = "trainingSettings", default, skip_serializing_if = "Option::is_none")]
@@ -2050,12 +1965,7 @@ pub struct CodeContainer {
     #[serde(flatten)]
     pub asset_container: AssetContainer,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl CodeContainer {
@@ -2113,12 +2023,7 @@ pub struct CodeVersion {
     #[serde(rename = "codeUri", default, skip_serializing_if = "Option::is_none")]
     pub code_uri: Option<String>,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl CodeVersion {
@@ -2258,12 +2163,7 @@ pub struct ComponentContainer {
     #[serde(flatten)]
     pub asset_container: AssetContainer,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl ComponentContainer {
@@ -2321,12 +2221,7 @@ pub struct ComponentVersion {
     #[serde(rename = "componentSpec", default, skip_serializing_if = "Option::is_none")]
     pub component_spec: Option<serde_json::Value>,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl ComponentVersion {
@@ -2379,18 +2274,13 @@ impl ComponentVersionResourceArmPaginatedResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
     #[doc = "The type of compute"]
-    #[serde(rename = "computeType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
     #[doc = "Location for the underlying compute"]
     #[serde(rename = "computeLocation", default, skip_serializing_if = "Option::is_none")]
     pub compute_location: Option<String>,
     #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<compute::ProvisioningState>,
     #[doc = "The description of the Machine Learning compute."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2520,12 +2410,7 @@ impl ComputeInstanceApplication {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceAutologgerSettings {
     #[doc = "Indicates whether mlflow autologger is enabled for notebooks."]
-    #[serde(
-        rename = "mlflowAutologger",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "mlflowAutologger", default, skip_serializing_if = "Option::is_none")]
     pub mlflow_autologger: Option<compute_instance_autologger_settings::MlflowAutologger>,
 }
 impl ComputeInstanceAutologgerSettings {
@@ -2595,13 +2480,13 @@ pub struct ComputeInstanceContainer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Auto save settings."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub autosave: Option<compute_instance_container::Autosave>,
     #[doc = "Information of GPU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gpu: Option<String>,
     #[doc = "network of this container."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<compute_instance_container::Network>,
     #[doc = "Environment information"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2720,7 +2605,7 @@ impl ComputeInstanceCreatedBy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceDataDisk {
     #[doc = "Caching type of Data Disk."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<compute_instance_data_disk::Caching>,
     #[doc = "The initial disk size in gigabytes."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
@@ -2729,12 +2614,7 @@ pub struct ComputeInstanceDataDisk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
     #[doc = "type of this storage account."]
-    #[serde(
-        rename = "storageAccountType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<compute_instance_data_disk::StorageAccountType>,
 }
 impl ComputeInstanceDataDisk {
@@ -2835,23 +2715,13 @@ pub struct ComputeInstanceDataMount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[doc = "Data source type."]
-    #[serde(
-        rename = "sourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<compute_instance_data_mount::SourceType>,
     #[doc = "name of the ComputeInstance data mount."]
     #[serde(rename = "mountName", default, skip_serializing_if = "Option::is_none")]
     pub mount_name: Option<String>,
     #[doc = "Mount Action."]
-    #[serde(
-        rename = "mountAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "mountAction", default, skip_serializing_if = "Option::is_none")]
     pub mount_action: Option<compute_instance_data_mount::MountAction>,
     #[doc = "who this data mount created by."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -2860,12 +2730,7 @@ pub struct ComputeInstanceDataMount {
     #[serde(rename = "mountPath", default, skip_serializing_if = "Option::is_none")]
     pub mount_path: Option<String>,
     #[doc = "Mount state."]
-    #[serde(
-        rename = "mountState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "mountState", default, skip_serializing_if = "Option::is_none")]
     pub mount_state: Option<compute_instance_data_mount::MountState>,
     #[doc = "The time when the disk mounted."]
     #[serde(rename = "mountedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -3023,31 +2888,16 @@ impl ComputeInstanceEnvironmentInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceLastOperation {
     #[doc = "Name of the last operation."]
-    #[serde(
-        rename = "operationName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationName", default, skip_serializing_if = "Option::is_none")]
     pub operation_name: Option<compute_instance_last_operation::OperationName>,
     #[doc = "Time of the last operation."]
     #[serde(rename = "operationTime", default, with = "azure_core::date::rfc3339::option")]
     pub operation_time: Option<time::OffsetDateTime>,
     #[doc = "Operation status."]
-    #[serde(
-        rename = "operationStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
     pub operation_status: Option<compute_instance_last_operation::OperationStatus>,
     #[doc = "Trigger of operation."]
-    #[serde(
-        rename = "operationTrigger",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationTrigger", default, skip_serializing_if = "Option::is_none")]
     pub operation_trigger: Option<compute_instance_last_operation::OperationTrigger>,
 }
 impl ComputeInstanceLastOperation {
@@ -3201,12 +3051,7 @@ pub struct ComputeInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<ResourceId>,
     #[doc = "Policy for sharing applications on this compute instance among users of parent workspace. If Personal, only the creator can access applications on this compute instance. When Shared, any workspace user can access applications on this instance depending on his/her assigned role."]
-    #[serde(
-        rename = "applicationSharingPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "applicationSharingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub application_sharing_policy: Option<compute_instance_properties::ApplicationSharingPolicy>,
     #[doc = "Specifies settings for autologger."]
     #[serde(rename = "autologgerSettings", default, skip_serializing_if = "Option::is_none")]
@@ -3246,15 +3091,10 @@ pub struct ComputeInstanceProperties {
     )]
     pub errors: Vec<ErrorResponse>,
     #[doc = "Current state of an ComputeInstance."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ComputeInstanceState>,
     #[doc = "The Compute Instance Authorization type. Available values are personal (default)."]
-    #[serde(
-        rename = "computeInstanceAuthorizationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "computeInstanceAuthorizationType", default, skip_serializing_if = "Option::is_none")]
     pub compute_instance_authorization_type: Option<compute_instance_properties::ComputeInstanceAuthorizationType>,
     #[doc = "Settings for a personal compute instance."]
     #[serde(rename = "personalComputeInstanceSettings", default, skip_serializing_if = "Option::is_none")]
@@ -3408,12 +3248,7 @@ impl ComputeInstanceSchema {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceSshSettings {
     #[doc = "State of the public SSH port. Possible values are: Disabled - Indicates that the public ssh port is closed on this instance. Enabled - Indicates that the public ssh port is open and accessible according to the VNet/subnet policy if applicable."]
-    #[serde(
-        rename = "sshPublicAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sshPublicAccess", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_access: Option<compute_instance_ssh_settings::SshPublicAccess>,
     #[doc = "Describes the admin user name."]
     #[serde(rename = "adminUserName", default, skip_serializing_if = "Option::is_none")]
@@ -3654,7 +3489,7 @@ impl ComputeSchedules {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeSecrets {
     #[doc = "The type of compute"]
-    #[serde(rename = "computeType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
 }
 impl ComputeSecrets {
@@ -3669,25 +3504,15 @@ pub struct ComputeStartStopSchedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The current deployment state of schedule."]
-    #[serde(
-        rename = "provisioningStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_status: Option<compute_start_stop_schedule::ProvisioningStatus>,
     #[doc = "Is the schedule enabled or disabled?"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ScheduleStatus>,
     #[doc = "[Required] The compute power action."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ComputePowerAction>,
-    #[serde(
-        rename = "triggerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<TriggerType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<RecurrenceTrigger>,
@@ -4200,7 +4025,7 @@ pub struct DataContainer {
     #[serde(flatten)]
     pub asset_container: AssetContainer,
     #[doc = "Enum to determine the type of data."]
-    #[serde(rename = "dataType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataType")]
     pub data_type: DataType,
 }
 impl DataContainer {
@@ -4372,7 +4197,7 @@ pub struct DataVersionBase {
     #[serde(flatten)]
     pub asset_base: AssetBase,
     #[doc = "Enum to determine the type of data."]
-    #[serde(rename = "dataType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataType")]
     pub data_type: DataType,
     #[doc = "[Required] Uri of the data. Example: https://go.microsoft.com/fwlink/?linkid=2202330"]
     #[serde(rename = "dataUri")]
@@ -4522,7 +4347,7 @@ pub struct Datastore {
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentials,
     #[doc = "Enum to determine the datastore contents type."]
-    #[serde(rename = "datastoreType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "datastoreType")]
     pub datastore_type: DatastoreType,
     #[doc = "Readonly property to indicate if datastore is the workspace default datastore"]
     #[serde(rename = "isDefault", default, skip_serializing_if = "Option::is_none")]
@@ -4542,7 +4367,7 @@ impl Datastore {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatastoreCredentials {
     #[doc = "Enum to determine the datastore credentials type."]
-    #[serde(rename = "credentialsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "credentialsType")]
     pub credentials_type: CredentialsType,
 }
 impl DatastoreCredentials {
@@ -4595,7 +4420,7 @@ impl DatastoreResourceArmPaginatedResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatastoreSecrets {
     #[doc = "Enum to determine the datastore secrets type."]
-    #[serde(rename = "secretsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "secretsType")]
     pub secrets_type: SecretsType,
 }
 impl DatastoreSecrets {
@@ -4670,12 +4495,7 @@ impl DeploymentLogs {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentLogsRequest {
     #[doc = "The type of container to retrieve logs from."]
-    #[serde(
-        rename = "containerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
     pub container_type: Option<ContainerType>,
     #[doc = "The maximum number of lines to tail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4869,7 +4689,7 @@ pub struct DiagnoseResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[doc = "Level of workspace setup error"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<diagnose_result::Level>,
     #[doc = "Message of workspace setup error"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4937,7 +4757,7 @@ impl DiagnoseWorkspaceParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DistributionConfiguration {
     #[doc = "Enum to determine the job distribution type."]
-    #[serde(rename = "distributionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "distributionType")]
     pub distribution_type: DistributionType,
 }
 impl DistributionConfiguration {
@@ -5004,7 +4824,7 @@ pub struct EarlyTerminationPolicy {
     #[doc = "Interval (number of runs) between policy evaluations."]
     #[serde(rename = "evaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_interval: Option<i32>,
-    #[serde(rename = "policyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "policyType")]
     pub policy_type: EarlyTerminationPolicyType,
 }
 impl EarlyTerminationPolicy {
@@ -5126,7 +4946,6 @@ impl EncryptionKeyVaultUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionProperty {
     #[doc = "Indicates whether or not the encryption is enabled for the workspace."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: encryption_property::Status,
     #[doc = "Identity that will be used to access key vault for encryption at rest"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5196,7 +5015,7 @@ impl EncryptionUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoint {
     #[doc = "Protocol over which communication will happen over this endpoint"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<endpoint::Protocol>,
     #[doc = "Name of the Endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5411,7 +5230,7 @@ impl EndpointDeploymentPropertiesBase {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointPropertiesBase {
     #[doc = "Enum to determine endpoint authentication mode."]
-    #[serde(rename = "authMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authMode")]
     pub auth_mode: EndpointAuthMode,
     #[doc = "Description of the inference endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5508,12 +5327,7 @@ pub struct EnvironmentContainer {
     #[serde(flatten)]
     pub asset_container: AssetContainer,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl EnvironmentContainer {
@@ -5602,12 +5416,7 @@ impl Serialize for EnvironmentType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentVariable {
     #[doc = "Type of the Environment Variable. Possible values are: local - For local variable"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<environment_variable::Type>,
     #[doc = "Value of the Environment variable"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5668,12 +5477,7 @@ pub struct EnvironmentVersion {
     #[serde(flatten)]
     pub asset_base: AssetBase,
     #[doc = "AutoRebuild setting for the derived image"]
-    #[serde(
-        rename = "autoRebuild",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoRebuild", default, skip_serializing_if = "Option::is_none")]
     pub auto_rebuild: Option<AutoRebuildSetting>,
     #[doc = "Configuration settings for Docker build context"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5682,12 +5486,7 @@ pub struct EnvironmentVersion {
     #[serde(rename = "condaFile", default, skip_serializing_if = "Option::is_none")]
     pub conda_file: Option<String>,
     #[doc = "Environment type is either user created or curated by Azure ML service"]
-    #[serde(
-        rename = "environmentType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "environmentType", default, skip_serializing_if = "Option::is_none")]
     pub environment_type: Option<EnvironmentType>,
     #[doc = "Name of the image that will be used for the environment.\r\n<seealso href=\"https://docs.microsoft.com/en-us/azure/machine-learning/how-to-deploy-custom-docker-image#use-a-custom-base-image\" />"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5695,20 +5494,10 @@ pub struct EnvironmentVersion {
     #[serde(rename = "inferenceConfig", default, skip_serializing_if = "Option::is_none")]
     pub inference_config: Option<InferenceContainerProperties>,
     #[doc = "The type of operating system."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OperatingSystemType>,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl EnvironmentVersion {
@@ -5830,10 +5619,10 @@ pub struct EstimatedVmPrice {
     #[serde(rename = "retailPrice")]
     pub retail_price: f64,
     #[doc = "Operating system type used by the VM."]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: estimated_vm_price::OsType,
     #[doc = "The type of the VM."]
-    #[serde(rename = "vmTier", with = "azure_core::xml::text_content")]
+    #[serde(rename = "vmTier")]
     pub vm_tier: estimated_vm_price::VmTier,
 }
 impl EstimatedVmPrice {
@@ -5928,10 +5717,10 @@ pub mod estimated_vm_price {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EstimatedVmPrices {
     #[doc = "Three lettered code specifying the currency of the VM price. Example: USD"]
-    #[serde(rename = "billingCurrency", with = "azure_core::xml::text_content")]
+    #[serde(rename = "billingCurrency")]
     pub billing_currency: estimated_vm_prices::BillingCurrency,
     #[doc = "The unit of time measurement for the specified VM price. Example: OneHour"]
-    #[serde(rename = "unitOfMeasure", with = "azure_core::xml::text_content")]
+    #[serde(rename = "unitOfMeasure")]
     pub unit_of_measure: estimated_vm_prices::UnitOfMeasure,
     #[doc = "The list of estimated prices for using a VM of a particular OS type, tier, etc."]
     pub values: Vec<EstimatedVmPrice>,
@@ -6072,7 +5861,6 @@ pub struct ExportSummary {
     #[serde(rename = "exportedRowCount", default, skip_serializing_if = "Option::is_none")]
     pub exported_row_count: Option<i64>,
     #[doc = "The format of exported labels."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub format: ExportFormatType,
     #[doc = "Name and identifier of the job containing exported labels."]
     #[serde(rename = "labelingJobId", default, skip_serializing_if = "Option::is_none")]
@@ -6282,7 +6070,6 @@ impl FlavorData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForecastHorizon {
     #[doc = "Enum to determine forecast horizon selection mode."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: ForecastHorizonMode,
 }
 impl ForecastHorizon {
@@ -6338,12 +6125,7 @@ pub struct Forecasting {
     #[serde(rename = "forecastingSettings", default, skip_serializing_if = "Option::is_none")]
     pub forecasting_settings: Option<ForecastingSettings>,
     #[doc = "Primary metrics for Forecasting task."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ForecastingPrimaryMetrics>,
     #[doc = "Forecasting Training related configuration."]
     #[serde(rename = "trainingSettings", default, skip_serializing_if = "Option::is_none")]
@@ -6491,12 +6273,7 @@ pub struct ForecastingSettings {
     #[serde(rename = "cvStepSize", default, skip_serializing_if = "Option::is_none")]
     pub cv_step_size: Option<i32>,
     #[doc = "Flag for generating lags for the numeric features."]
-    #[serde(
-        rename = "featureLags",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "featureLags", default, skip_serializing_if = "Option::is_none")]
     pub feature_lags: Option<FeatureLags>,
     #[doc = "The desired maximum forecast horizon in units of time-series frequency."]
     #[serde(rename = "forecastHorizon", default, skip_serializing_if = "Option::is_none")]
@@ -6508,20 +6285,10 @@ pub struct ForecastingSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub seasonality: Option<Seasonality>,
     #[doc = "The parameter defining how if AutoML should handle short time series."]
-    #[serde(
-        rename = "shortSeriesHandlingConfig",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "shortSeriesHandlingConfig", default, skip_serializing_if = "Option::is_none")]
     pub short_series_handling_config: Option<ShortSeriesHandlingConfiguration>,
     #[doc = "Target aggregate function."]
-    #[serde(
-        rename = "targetAggregateFunction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "targetAggregateFunction", default, skip_serializing_if = "Option::is_none")]
     pub target_aggregate_function: Option<TargetAggregationFunction>,
     #[doc = "The number of past periods to lag from the target column."]
     #[serde(rename = "targetLags", default, skip_serializing_if = "Option::is_none")]
@@ -6541,12 +6308,7 @@ pub struct ForecastingSettings {
     )]
     pub time_series_id_column_names: Vec<String>,
     #[doc = "Configure STL Decomposition of the time-series target column."]
-    #[serde(
-        rename = "useStl",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "useStl", default, skip_serializing_if = "Option::is_none")]
     pub use_stl: Option<UseStl>,
 }
 impl ForecastingSettings {
@@ -6719,7 +6481,7 @@ impl IdAssetReference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityConfiguration {
     #[doc = "Enum to determine identity framework."]
-    #[serde(rename = "identityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "identityType")]
     pub identity_type: IdentityConfigurationType,
 }
 impl IdentityConfiguration {
@@ -6794,12 +6556,7 @@ impl IdleShutdownSetting {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Image {
     #[doc = "Type of the image. Possible values are: docker - For docker images. azureml - For AzureML images"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<image::Type>,
     #[doc = "Image reference URL"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6904,12 +6661,7 @@ pub struct ImageClassification {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for classification tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ClassificationPrimaryMetrics>,
 }
 impl ImageClassification {
@@ -6954,12 +6706,7 @@ pub struct ImageClassificationMultilabel {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for classification multilabel tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ClassificationMultilabelPrimaryMetrics>,
 }
 impl ImageClassificationMultilabel {
@@ -6979,12 +6726,7 @@ pub struct ImageInstanceSegmentation {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for InstanceSegmentation tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<InstanceSegmentationPrimaryMetrics>,
 }
 impl ImageInstanceSegmentation {
@@ -7252,12 +6994,7 @@ pub struct ImageModelSettings {
     #[serde(rename = "learningRate", default, skip_serializing_if = "Option::is_none")]
     pub learning_rate: Option<f32>,
     #[doc = "Learning rate scheduler enum."]
-    #[serde(
-        rename = "learningRateScheduler",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "learningRateScheduler", default, skip_serializing_if = "Option::is_none")]
     pub learning_rate_scheduler: Option<LearningRateScheduler>,
     #[doc = "Name of the model to use for training.\r\nFor more information on the available models please visit the official documentation:\r\nhttps://docs.microsoft.com/en-us/azure/machine-learning/how-to-auto-train-image-models."]
     #[serde(rename = "modelName", default, skip_serializing_if = "Option::is_none")]
@@ -7275,7 +7012,7 @@ pub struct ImageModelSettings {
     #[serde(rename = "numberOfWorkers", default, skip_serializing_if = "Option::is_none")]
     pub number_of_workers: Option<i32>,
     #[doc = "Stochastic optimizer for image models."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optimizer: Option<StochasticOptimizer>,
     #[doc = "Random seed to be used when using deterministic training."]
     #[serde(rename = "randomSeed", default, skip_serializing_if = "Option::is_none")]
@@ -7351,12 +7088,7 @@ pub struct ImageModelSettingsObjectDetection {
     #[serde(rename = "minSize", default, skip_serializing_if = "Option::is_none")]
     pub min_size: Option<i32>,
     #[doc = "Image model size."]
-    #[serde(
-        rename = "modelSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "modelSize", default, skip_serializing_if = "Option::is_none")]
     pub model_size: Option<ModelSize>,
     #[doc = "Enable multi-scale image by varying image size by +/- 50%.\r\nNote: training run may get into CUDA OOM if no sufficient GPU memory.\r\nNote: This settings is only supported for the 'yolov5' algorithm."]
     #[serde(rename = "multiScale", default, skip_serializing_if = "Option::is_none")]
@@ -7377,12 +7109,7 @@ pub struct ImageModelSettingsObjectDetection {
     #[serde(rename = "validationIouThreshold", default, skip_serializing_if = "Option::is_none")]
     pub validation_iou_threshold: Option<f32>,
     #[doc = "Metric computation method to use for validation metrics in image tasks."]
-    #[serde(
-        rename = "validationMetricType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "validationMetricType", default, skip_serializing_if = "Option::is_none")]
     pub validation_metric_type: Option<ValidationMetricType>,
 }
 impl ImageModelSettingsObjectDetection {
@@ -7398,12 +7125,7 @@ pub struct ImageObjectDetection {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for Image ObjectDetection task."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ObjectDetectionPrimaryMetrics>,
 }
 impl ImageObjectDetection {
@@ -7446,7 +7168,7 @@ pub struct ImageSweepSettings {
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
     pub early_termination: Option<EarlyTerminationPolicy>,
-    #[serde(rename = "samplingAlgorithm", with = "azure_core::xml::text_content")]
+    #[serde(rename = "samplingAlgorithm")]
     pub sampling_algorithm: SamplingAlgorithmType,
 }
 impl ImageSweepSettings {
@@ -7680,13 +7402,13 @@ pub struct JobBase {
     #[serde(rename = "isArchived", default, skip_serializing_if = "Option::is_none")]
     pub is_archived: Option<bool>,
     #[doc = "Enum to determine the type of job."]
-    #[serde(rename = "jobType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "jobType")]
     pub job_type: JobType,
     #[doc = "List of JobEndpoints.\r\nFor local jobs, a job endpoint will have an endpoint value of FileStreamObject."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub services: Option<serde_json::Value>,
     #[doc = "The status of a job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobStatus>,
 }
 impl JobBase {
@@ -7753,7 +7475,7 @@ pub struct JobInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Enum to determine the Job Input Type."]
-    #[serde(rename = "jobInputType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "jobInputType")]
     pub job_input_type: JobInputType,
 }
 impl JobInput {
@@ -7820,7 +7542,7 @@ impl Serialize for JobInputType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobLimits {
-    #[serde(rename = "jobLimitsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "jobLimitsType")]
     pub job_limits_type: JobLimitsType,
     #[doc = "The max run duration in ISO 8601 format, after which the job will be cancelled. Only supports duration with precision as low as Seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7877,7 +7599,7 @@ pub struct JobOutput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Enum to determine the Job Output Type."]
-    #[serde(rename = "jobOutputType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "jobOutputType")]
     pub job_output_type: JobOutputType,
 }
 impl JobOutput {
@@ -8370,12 +8092,7 @@ pub struct LabelCategory {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Whether multiSelect is enabled"]
-    #[serde(
-        rename = "multiSelect",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "multiSelect", default, skip_serializing_if = "Option::is_none")]
     pub multi_select: Option<MultiSelect>,
 }
 impl LabelCategory {
@@ -8405,12 +8122,7 @@ pub struct LabelingDataConfiguration {
     #[serde(rename = "dataId", default, skip_serializing_if = "Option::is_none")]
     pub data_id: Option<String>,
     #[doc = "Whether IncrementalDataRefresh is enabled"]
-    #[serde(
-        rename = "incrementalDataRefresh",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "incrementalDataRefresh", default, skip_serializing_if = "Option::is_none")]
     pub incremental_data_refresh: Option<IncrementalDataRefresh>,
 }
 impl LabelingDataConfiguration {
@@ -8448,12 +8160,7 @@ pub struct LabelingJob {
     #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
     #[doc = "Enum to determine the job provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<JobProvisioningState>,
     #[doc = "Status messages of the job."]
     #[serde(
@@ -8487,12 +8194,7 @@ pub struct LabelingJobImageProperties {
     #[serde(flatten)]
     pub labeling_job_media_properties: LabelingJobMediaProperties,
     #[doc = "Annotation type of image data."]
-    #[serde(
-        rename = "annotationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "annotationType", default, skip_serializing_if = "Option::is_none")]
     pub annotation_type: Option<ImageAnnotationType>,
 }
 impl LabelingJobImageProperties {
@@ -8519,7 +8221,7 @@ impl LabelingJobInstructions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LabelingJobMediaProperties {
     #[doc = "Media type of data asset."]
-    #[serde(rename = "mediaType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "mediaType")]
     pub media_type: MediaType,
 }
 impl LabelingJobMediaProperties {
@@ -8574,12 +8276,7 @@ pub struct LabelingJobTextProperties {
     #[serde(flatten)]
     pub labeling_job_media_properties: LabelingJobMediaProperties,
     #[doc = "Annotation type of text data."]
-    #[serde(
-        rename = "annotationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "annotationType", default, skip_serializing_if = "Option::is_none")]
     pub annotation_type: Option<TextAnnotationType>,
 }
 impl LabelingJobTextProperties {
@@ -8843,7 +8540,7 @@ impl Serialize for LogVerbosity {
 #[doc = "Labeling MLAssist configuration definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MlAssistConfiguration {
-    #[serde(rename = "mlAssist", with = "azure_core::xml::text_content")]
+    #[serde(rename = "mlAssist")]
     pub ml_assist: MlAssistConfigurationType,
 }
 impl MlAssistConfiguration {
@@ -9103,7 +8800,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -9216,12 +8913,7 @@ pub struct ModelContainer {
     #[serde(flatten)]
     pub asset_container: AssetContainer,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl ModelContainer {
@@ -9330,12 +9022,7 @@ pub struct ModelVersion {
     #[serde(rename = "modelUri", default, skip_serializing_if = "Option::is_none")]
     pub model_uri: Option<String>,
     #[doc = "Provisioning state of registry asset."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<AssetProvisioningState>,
 }
 impl ModelVersion {
@@ -9442,7 +9129,6 @@ impl Serialize for MultiSelect {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NCrossValidations {
     #[doc = "Determines how N-Cross validations value is determined."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: NCrossValidationsMode,
 }
 impl NCrossValidations {
@@ -9497,12 +9183,7 @@ pub struct NlpFixedParameters {
     #[serde(rename = "learningRate", default, skip_serializing_if = "Option::is_none")]
     pub learning_rate: Option<f32>,
     #[doc = "Enum of learning rate schedulers that aligns with those supported by HF"]
-    #[serde(
-        rename = "learningRateScheduler",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "learningRateScheduler", default, skip_serializing_if = "Option::is_none")]
     pub learning_rate_scheduler: Option<NlpLearningRateScheduler>,
     #[doc = "The name of the model to train."]
     #[serde(rename = "modelName", default, skip_serializing_if = "Option::is_none")]
@@ -9617,7 +9298,7 @@ pub struct NlpSweepSettings {
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
     pub early_termination: Option<EarlyTerminationPolicy>,
-    #[serde(rename = "samplingAlgorithm", with = "azure_core::xml::text_content")]
+    #[serde(rename = "samplingAlgorithm")]
     pub sampling_algorithm: SamplingAlgorithmType,
 }
 impl NlpSweepSettings {
@@ -9723,7 +9404,7 @@ impl NodeStateCounts {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Nodes {
     #[doc = "The enumerated types for the nodes value"]
-    #[serde(rename = "nodesValueType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "nodesValueType")]
     pub nodes_value_type: NodesValueType,
 }
 impl Nodes {
@@ -9881,7 +9562,6 @@ impl Serialize for ObjectDetectionPrimaryMetrics {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Objective {
     #[doc = "Defines supported metric goals for hyperparameter tuning"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub goal: Goal,
     #[doc = "[Required] Name of the metric to optimize."]
     #[serde(rename = "primaryMetric")]
@@ -9900,15 +9580,10 @@ pub struct OnlineDeployment {
     #[serde(rename = "appInsightsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub app_insights_enabled: Option<bool>,
     #[doc = "Enum to determine whether PublicNetworkAccess is Enabled or Disabled for egress of a deployment."]
-    #[serde(
-        rename = "egressPublicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "egressPublicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub egress_public_network_access: Option<EgressPublicNetworkAccessType>,
     #[doc = "Enum to determine endpoint compute type."]
-    #[serde(rename = "endpointComputeType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "endpointComputeType")]
     pub endpoint_compute_type: EndpointComputeType,
     #[doc = "Compute instance type."]
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
@@ -9923,12 +9598,7 @@ pub struct OnlineDeployment {
     #[serde(rename = "modelMountPath", default, skip_serializing_if = "Option::is_none")]
     pub model_mount_path: Option<String>,
     #[doc = "Possible values for DeploymentProvisioningState."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<DeploymentProvisioningState>,
     #[doc = "Deployment container liveness/readiness probe configuration."]
     #[serde(rename = "readinessProbe", default, skip_serializing_if = "Option::is_none")]
@@ -10021,20 +9691,10 @@ pub struct OnlineEndpoint {
     #[serde(rename = "mirrorTraffic", default, skip_serializing_if = "Option::is_none")]
     pub mirror_traffic: Option<serde_json::Value>,
     #[doc = "State of endpoint provisioning."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<EndpointProvisioningState>,
     #[doc = "Enum to determine whether PublicNetworkAccess is Enabled or Disabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "Percentage of traffic from endpoint to divert to each deployment. Traffic values need to sum to 100."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10125,7 +9785,7 @@ impl OnlineRequestSettings {
 #[doc = "Online deployment scaling configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OnlineScaleSettings {
-    #[serde(rename = "scaleType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "scaleType")]
     pub scale_type: ScaleType,
 }
 impl OnlineScaleSettings {
@@ -10341,12 +10001,7 @@ impl PartialBatchDeploymentPartialMinimalTrackedResourceWithProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartialManagedServiceIdentity {
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ManagedServiceIdentityType>,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -10445,7 +10100,7 @@ pub struct PartialSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SkuTier>,
 }
 impl PartialSku {
@@ -10590,12 +10245,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -10765,7 +10415,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10891,7 +10541,7 @@ pub struct QuotaBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
     #[doc = "An enum describing the unit of quota measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
 }
 impl QuotaBaseProperties {
@@ -10965,7 +10615,7 @@ pub struct RandomSamplingAlgorithm {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub logbase: Option<String>,
     #[doc = "The specific type of random algorithm"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rule: Option<RandomSamplingAlgorithmRule>,
     #[doc = "An optional integer to use as the seed for random number generation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11099,7 +10749,6 @@ pub struct RecurrenceTrigger {
     #[serde(flatten)]
     pub trigger_base: TriggerBase,
     #[doc = "Enum to describe the frequency of a recurrence schedule"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub frequency: RecurrenceFrequency,
     #[doc = "[Required] Specifies schedule interval in conjunction with frequency"]
     pub interval: i32,
@@ -11157,7 +10806,7 @@ impl Serialize for ReferenceType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateEndpointKeysRequest {
-    #[serde(rename = "keyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "keyType")]
     pub key_type: KeyType,
     #[doc = "The value the key is set to."]
     #[serde(rename = "keyValue", default, skip_serializing_if = "Option::is_none")]
@@ -11306,12 +10955,7 @@ pub struct Regression {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for Regression task."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<RegressionPrimaryMetrics>,
     #[doc = "Regression Training related configuration."]
     #[serde(rename = "trainingSettings", default, skip_serializing_if = "Option::is_none")]
@@ -11556,7 +11200,7 @@ pub struct ResourceQuota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
     #[doc = "An enum describing the unit of quota measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<resource_quota::Unit>,
 }
 impl ResourceQuota {
@@ -11632,7 +11276,7 @@ impl SasAuthTypeWorkspaceConnectionProperties {
 #[doc = "The Sampling Algorithm used to generate hyperparameter values, along with properties to\r\nconfigure the algorithm"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SamplingAlgorithm {
-    #[serde(rename = "samplingAlgorithmType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "samplingAlgorithmType")]
     pub sampling_algorithm_type: SamplingAlgorithmType,
 }
 impl SamplingAlgorithm {
@@ -11793,12 +11437,7 @@ pub struct Schedule {
     #[doc = "Is the schedule enabled?"]
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ScheduleProvisioningStatus>,
     pub trigger: TriggerBase,
 }
@@ -11816,7 +11455,7 @@ impl Schedule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleActionBase {
-    #[serde(rename = "actionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "actionType")]
     pub action_type: ScheduleActionType,
 }
 impl ScheduleActionBase {
@@ -11866,15 +11505,10 @@ pub struct ScheduleBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The current deployment state of schedule."]
-    #[serde(
-        rename = "provisioningStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_status: Option<ScheduleProvisioningState>,
     #[doc = "Is the schedule enabled or disabled?"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ScheduleStatus>,
 }
 impl ScheduleBase {
@@ -12121,7 +11755,6 @@ impl ScriptsToExecute {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Seasonality {
     #[doc = "Forecasting seasonality mode."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: SeasonalityMode,
 }
 impl Seasonality {
@@ -12371,7 +12004,7 @@ pub struct SharedPrivateLinkResourceProperty {
     #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]
     pub request_message: Option<String>,
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
 }
 impl SharedPrivateLinkResourceProperty {
@@ -12426,7 +12059,7 @@ pub struct Sku {
     #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
     pub name: String,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SkuTier>,
     #[doc = "The SKU size. When the name field is the combination of tier and some other value, this would be the standalone code. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12462,12 +12095,7 @@ pub struct SkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<i32>,
     #[doc = "Node scaling setting for the compute sku."]
-    #[serde(
-        rename = "scaleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<SkuScaleType>,
 }
 impl SkuCapacity {
@@ -12563,7 +12191,7 @@ pub struct SkuSetting {
     #[doc = "[Required] The name of the SKU. Ex - P3. It is typically a letter+number code."]
     pub name: String,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SkuTier>,
 }
 impl SkuSetting {
@@ -12658,7 +12286,7 @@ impl SparkJob {
 #[doc = "Spark job entry point definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkJobEntry {
-    #[serde(rename = "sparkJobEntryType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sparkJobEntryType")]
     pub spark_job_entry_type: SparkJobEntryType,
 }
 impl SparkJobEntry {
@@ -12748,7 +12376,7 @@ impl SparkResourceConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
     #[doc = "Enable or disable ssl for scoring"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ssl_configuration::Status>,
     #[doc = "Cert data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12823,12 +12451,7 @@ pub struct StackEnsembleSettings {
     #[serde(rename = "stackMetaLearnerTrainPercentage", default, skip_serializing_if = "Option::is_none")]
     pub stack_meta_learner_train_percentage: Option<f64>,
     #[doc = "The meta-learner is a model trained on the output of the individual heterogeneous models.\r\nDefault meta-learners are LogisticRegression for classification tasks (or LogisticRegressionCV if cross-validation is enabled) and ElasticNet for regression/forecasting tasks (or ElasticNetCV if cross-validation is enabled).\r\nThis parameter can be one of the following strings: LogisticRegression, LogisticRegressionCV, LightGBMClassifier, ElasticNet, ElasticNetCV, LightGBMRegressor, or LinearRegression"]
-    #[serde(
-        rename = "stackMetaLearnerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "stackMetaLearnerType", default, skip_serializing_if = "Option::is_none")]
     pub stack_meta_learner_type: Option<StackMetaLearnerType>,
 }
 impl StackEnsembleSettings {
@@ -12898,7 +12521,7 @@ pub struct StatusMessage {
     #[doc = "Time in UTC at which the message was created."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_date_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<StatusMessageLevel>,
     #[doc = "A human-readable representation of the message code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13320,7 +12943,7 @@ pub struct TableSweepSettings {
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
     pub early_termination: Option<EarlyTerminationPolicy>,
-    #[serde(rename = "samplingAlgorithm", with = "azure_core::xml::text_content")]
+    #[serde(rename = "samplingAlgorithm")]
     pub sampling_algorithm: SamplingAlgorithmType,
 }
 impl TableSweepSettings {
@@ -13403,7 +13026,7 @@ pub struct TableVerticalFeaturizationSettings {
     #[serde(rename = "enableDnnFeaturization", default, skip_serializing_if = "Option::is_none")]
     pub enable_dnn_featurization: Option<bool>,
     #[doc = "Featurization mode - determines data featurization mode."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<FeaturizationMode>,
     #[doc = "User can specify additional transformers to be used along with the columns to which it would be applied and parameters for the transformer constructor."]
     #[serde(rename = "transformerParams", default, skip_serializing_if = "Option::is_none")]
@@ -13500,7 +13123,6 @@ impl Serialize for TargetAggregationFunction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetLags {
     #[doc = "Target lags selection modes."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: TargetLagsMode,
 }
 impl TargetLags {
@@ -13549,7 +13171,6 @@ impl Serialize for TargetLagsMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetRollingWindowSize {
     #[doc = "Target rolling windows size mode."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: TargetRollingWindowSizeMode,
 }
 impl TargetRollingWindowSize {
@@ -13742,12 +13363,7 @@ pub struct TextClassification {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for classification tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ClassificationPrimaryMetrics>,
 }
 impl TextClassification {
@@ -13767,12 +13383,7 @@ pub struct TextClassificationMultilabel {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for classification multilabel tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ClassificationMultilabelPrimaryMetrics>,
 }
 impl TextClassificationMultilabel {
@@ -13792,12 +13403,7 @@ pub struct TextNer {
     #[serde(flatten)]
     pub auto_ml_vertical: AutoMlVertical,
     #[doc = "Primary metrics for classification tasks."]
-    #[serde(
-        rename = "primaryMetric",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "primaryMetric", default, skip_serializing_if = "Option::is_none")]
     pub primary_metric: Option<ClassificationPrimaryMetrics>,
 }
 impl TextNer {
@@ -13904,12 +13510,7 @@ pub struct TrainingSettings {
     #[serde(rename = "stackEnsembleSettings", default, skip_serializing_if = "Option::is_none")]
     pub stack_ensemble_settings: Option<StackEnsembleSettings>,
     #[doc = "Training mode dictates whether to use distributed training or not"]
-    #[serde(
-        rename = "trainingMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "trainingMode", default, skip_serializing_if = "Option::is_none")]
     pub training_mode: Option<TrainingMode>,
 }
 impl TrainingSettings {
@@ -13960,7 +13561,7 @@ pub struct TriggerBase {
     #[doc = "Specifies time zone in which the schedule runs.\r\nTimeZone should follow Windows time zone format. Refer: https://docs.microsoft.com/en-us/windows-hardware/manufacture/desktop/default-time-zones?view=windows-11"]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
-    #[serde(rename = "triggerType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "triggerType")]
     pub trigger_type: TriggerType,
 }
 impl TriggerBase {
@@ -14069,10 +13670,10 @@ pub struct UpdateWorkspaceQuotas {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
     #[doc = "An enum describing the unit of quota measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<update_workspace_quotas::Unit>,
     #[doc = "Status of update workspace quota."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<update_workspace_quotas::Status>,
 }
 impl UpdateWorkspaceQuotas {
@@ -14286,7 +13887,7 @@ pub struct Usage {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "An enum describing the unit of usage measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
     #[doc = "The current usage of the resource."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
@@ -14709,12 +14310,7 @@ impl VirtualMachineSshCredentials {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeDefinition {
     #[doc = "Type of Volume Definition. Possible Values: bind,volume,tmpfs,npipe"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<volume_definition::Type>,
     #[doc = "Indicate whether to mount volume as readOnly. Default value for this is false."]
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
@@ -14916,10 +14512,10 @@ impl WorkspaceConnectionPersonalAccessToken {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceConnectionPropertiesV2 {
     #[doc = "Authentication type of the connection target"]
-    #[serde(rename = "authType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authType")]
     pub auth_type: ConnectionAuthType,
     #[doc = "Category of the connection"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<ConnectionCategory>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
@@ -14927,12 +14523,7 @@ pub struct WorkspaceConnectionPropertiesV2 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "format for the workspace connection value"]
-    #[serde(
-        rename = "valueFormat",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "valueFormat", default, skip_serializing_if = "Option::is_none")]
     pub value_format: Option<workspace_connection_properties_v2::ValueFormat>,
 }
 impl WorkspaceConnectionPropertiesV2 {
@@ -15110,12 +14701,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "discoveryUrl", default, skip_serializing_if = "Option::is_none")]
     pub discovery_url: Option<String>,
     #[doc = "The current deployment state of workspace resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<EncryptionProperty>,
@@ -15135,12 +14721,7 @@ pub struct WorkspaceProperties {
     #[serde(rename = "allowPublicAccessWhenBehindVnet", default, skip_serializing_if = "Option::is_none")]
     pub allow_public_access_when_behind_vnet: Option<bool>,
     #[doc = "Whether requests from Public Network are allowed."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<workspace_properties::PublicNetworkAccess>,
     #[doc = "The list of private endpoint connections in the workspace."]
     #[serde(
@@ -15301,12 +14882,7 @@ pub struct WorkspacePropertiesUpdateParameters {
     #[serde(rename = "primaryUserAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub primary_user_assigned_identity: Option<String>,
     #[doc = "Whether requests from Public Network are allowed."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<workspace_properties_update_parameters::PublicNetworkAccess>,
     #[doc = "ARM id of the application insights associated with this workspace."]
     #[serde(rename = "applicationInsights", default, skip_serializing_if = "Option::is_none")]
@@ -15392,12 +14968,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -15406,12 +14977,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

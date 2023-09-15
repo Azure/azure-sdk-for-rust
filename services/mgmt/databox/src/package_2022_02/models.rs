@@ -10,12 +10,7 @@ pub struct AccountCredentialDetails {
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
     #[doc = "Type of the account."]
-    #[serde(
-        rename = "dataAccountType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataAccountType", default, skip_serializing_if = "Option::is_none")]
     pub data_account_type: Option<account_credential_details::DataAccountType>,
     #[doc = "Connection string of the account endpoint to use the account as a storage endpoint on the device."]
     #[serde(rename = "accountConnectionString", default, skip_serializing_if = "Option::is_none")]
@@ -76,12 +71,7 @@ pub struct AddressValidationProperties {
     #[serde(flatten)]
     pub validation_input_response: ValidationInputResponse,
     #[doc = "The address validation status."]
-    #[serde(
-        rename = "validationStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "validationStatus", default, skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<address_validation_properties::ValidationStatus>,
     #[doc = "List of alternate addresses."]
     #[serde(
@@ -163,7 +153,7 @@ impl ArmBaseObject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableSkuRequest {
     #[doc = "Type of the transfer."]
-    #[serde(rename = "transferType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "transferType")]
     pub transfer_type: available_sku_request::TransferType,
     #[doc = "ISO country code. Country for hardware shipment. For codes check: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements"]
     pub country: String,
@@ -374,7 +364,7 @@ impl ContactDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyLogDetails {
     #[doc = "Indicates the type of job details."]
-    #[serde(rename = "copyLogDetailsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "copyLogDetailsType")]
     pub copy_log_details_type: copy_log_details::CopyLogDetailsType,
 }
 impl CopyLogDetails {
@@ -400,20 +390,10 @@ pub struct CopyProgress {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
     #[doc = "Transfer type of data"]
-    #[serde(
-        rename = "transferType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "transferType", default, skip_serializing_if = "Option::is_none")]
     pub transfer_type: Option<copy_progress::TransferType>,
     #[doc = "Data Account Type."]
-    #[serde(
-        rename = "dataAccountType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataAccountType", default, skip_serializing_if = "Option::is_none")]
     pub data_account_type: Option<copy_progress::DataAccountType>,
     #[doc = "Id of the account where the data needs to be uploaded."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
@@ -489,7 +469,7 @@ pub struct CreateOrderLimitForSubscriptionValidationRequest {
     #[serde(flatten)]
     pub validation_input_request: ValidationInputRequest,
     #[doc = "Device type to be used for the job."]
-    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceType")]
     pub device_type: create_order_limit_for_subscription_validation_request::DeviceType,
 }
 impl CreateOrderLimitForSubscriptionValidationRequest {
@@ -520,7 +500,7 @@ pub struct CreateOrderLimitForSubscriptionValidationResponseProperties {
     #[serde(flatten)]
     pub validation_input_response: ValidationInputResponse,
     #[doc = "Create order limit validation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<create_order_limit_for_subscription_validation_response_properties::Status>,
 }
 impl CreateOrderLimitForSubscriptionValidationResponseProperties {
@@ -571,7 +551,7 @@ impl CustomerDiskJobSecrets {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataAccountDetails {
     #[doc = "Account Type of the data to be transferred."]
-    #[serde(rename = "dataAccountType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataAccountType")]
     pub data_account_type: data_account_details::DataAccountType,
     #[doc = "Password for all the shares to be created on the device. Should not be passed for TransferType:ExportFromAzure jobs. If this is not passed, the service will generate password itself. This will not be returned in Get Call. Password Requirements :  Password must be minimum of 12 and maximum of 64 characters. Password must have at least one uppercase alphabet, one number and one special character. Password cannot have the following characters : IilLoO0 Password can have only alphabets, numbers and these characters : @#\\-$%^!+=;:_()]+"]
     #[serde(rename = "sharePassword", default, skip_serializing_if = "Option::is_none")]
@@ -658,12 +638,7 @@ pub struct DataBoxCustomerDiskCopyProgress {
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "The Status of the copy"]
-    #[serde(
-        rename = "copyStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "copyStatus", default, skip_serializing_if = "Option::is_none")]
     pub copy_status: Option<data_box_customer_disk_copy_progress::CopyStatus>,
 }
 impl DataBoxCustomerDiskCopyProgress {
@@ -825,7 +800,7 @@ pub struct DataBoxDiskCopyProgress {
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
     #[doc = "The Status of the copy"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<data_box_disk_copy_progress::Status>,
 }
 impl DataBoxDiskCopyProgress {
@@ -945,12 +920,7 @@ pub struct DataBoxDiskGranularCopyProgress {
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "The Status of the copy"]
-    #[serde(
-        rename = "copyStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "copyStatus", default, skip_serializing_if = "Option::is_none")]
     pub copy_status: Option<data_box_disk_granular_copy_progress::CopyStatus>,
 }
 impl DataBoxDiskGranularCopyProgress {
@@ -1311,12 +1281,7 @@ pub struct DataExportDetails {
     #[serde(rename = "transferConfiguration")]
     pub transfer_configuration: TransferConfiguration,
     #[doc = "Level of the logs to be collected."]
-    #[serde(
-        rename = "logCollectionLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logCollectionLevel", default, skip_serializing_if = "Option::is_none")]
     pub log_collection_level: Option<data_export_details::LogCollectionLevel>,
     #[doc = "Account details of the data to be transferred"]
     #[serde(rename = "accountDetails")]
@@ -1352,12 +1317,7 @@ pub struct DataImportDetails {
     #[serde(rename = "accountDetails")]
     pub account_details: DataAccountDetails,
     #[doc = "Level of the logs to be collected."]
-    #[serde(
-        rename = "logCollectionLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "logCollectionLevel", default, skip_serializing_if = "Option::is_none")]
     pub log_collection_level: Option<data_import_details::LogCollectionLevel>,
 }
 impl DataImportDetails {
@@ -1419,10 +1379,10 @@ pub struct DataTransferDetailsValidationRequest {
     )]
     pub data_import_details: Vec<DataImportDetails>,
     #[doc = "Device type."]
-    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceType")]
     pub device_type: data_transfer_details_validation_request::DeviceType,
     #[doc = "Type of the transfer."]
-    #[serde(rename = "transferType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "transferType")]
     pub transfer_type: data_transfer_details_validation_request::TransferType,
 }
 impl DataTransferDetailsValidationRequest {
@@ -1463,7 +1423,7 @@ pub struct DataTransferDetailsValidationResponseProperties {
     #[serde(flatten)]
     pub validation_input_response: ValidationInputResponse,
     #[doc = "Data transfer details validation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<data_transfer_details_validation_response_properties::Status>,
 }
 impl DataTransferDetailsValidationResponseProperties {
@@ -1595,7 +1555,7 @@ pub struct DatacenterAddressRequest {
     #[serde(rename = "storageLocation")]
     pub storage_location: String,
     #[doc = "Sku Name for which the data center address requested."]
-    #[serde(rename = "skuName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "skuName")]
     pub sku_name: datacenter_address_request::SkuName,
 }
 impl DatacenterAddressRequest {
@@ -1621,7 +1581,7 @@ pub mod datacenter_address_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatacenterAddressResponse {
     #[doc = "Data center address type"]
-    #[serde(rename = "datacenterAddressType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "datacenterAddressType")]
     pub datacenter_address_type: datacenter_address_response::DatacenterAddressType,
     #[doc = "List of supported carriers for return shipment."]
     #[serde(
@@ -1682,12 +1642,7 @@ impl Details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceErasureDetails {
     #[doc = "Holds the device erasure completion status"]
-    #[serde(
-        rename = "deviceErasureStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deviceErasureStatus", default, skip_serializing_if = "Option::is_none")]
     pub device_erasure_status: Option<device_erasure_details::DeviceErasureStatus>,
     #[doc = "Shared access key to download cleanup or destruction certificate for device"]
     #[serde(rename = "erasureOrDestructionCertificateSasKey", default, skip_serializing_if = "Option::is_none")]
@@ -1754,12 +1709,7 @@ impl DiskSecret {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionPreferences {
     #[doc = "Defines secondary layer of software-based encryption enablement."]
-    #[serde(
-        rename = "doubleEncryption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "doubleEncryption", default, skip_serializing_if = "Option::is_none")]
     pub double_encryption: Option<encryption_preferences::DoubleEncryption>,
 }
 impl EncryptionPreferences {
@@ -1826,7 +1776,7 @@ impl ExportDiskDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterFileDetails {
     #[doc = "Type of the filter file."]
-    #[serde(rename = "filterFileType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "filterFileType")]
     pub filter_file_type: filter_file_details::FilterFileType,
     #[doc = "Path of the file that contains the details of all items to transfer."]
     #[serde(rename = "filterFilePath")]
@@ -1853,7 +1803,7 @@ pub mod filter_file_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GranularCopyLogDetails {
     #[doc = "Indicates the type of job details."]
-    #[serde(rename = "copyLogDetailsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "copyLogDetailsType")]
     pub copy_log_details_type: granular_copy_log_details::CopyLogDetailsType,
 }
 impl GranularCopyLogDetails {
@@ -1879,20 +1829,10 @@ pub struct GranularCopyProgress {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
     #[doc = "Transfer type of data"]
-    #[serde(
-        rename = "transferType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "transferType", default, skip_serializing_if = "Option::is_none")]
     pub transfer_type: Option<granular_copy_progress::TransferType>,
     #[doc = "Data Account Type."]
-    #[serde(
-        rename = "dataAccountType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataAccountType", default, skip_serializing_if = "Option::is_none")]
     pub data_account_type: Option<granular_copy_progress::DataAccountType>,
     #[doc = "Id of the account where the data needs to be uploaded."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
@@ -2057,7 +1997,7 @@ pub struct JobDetails {
     )]
     pub data_export_details: Vec<DataExportDetails>,
     #[doc = "Indicates the type of job details."]
-    #[serde(rename = "jobDetailsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "jobDetailsType")]
     pub job_details_type: job_details::JobDetailsType,
     #[doc = "Preferences related to the order"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2099,12 +2039,7 @@ pub struct JobDetails {
     #[serde(rename = "datacenterAddress", default, skip_serializing_if = "Option::is_none")]
     pub datacenter_address: Option<DatacenterAddressResponse>,
     #[doc = "DataCenter code."]
-    #[serde(
-        rename = "dataCenterCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataCenterCode", default, skip_serializing_if = "Option::is_none")]
     pub data_center_code: Option<job_details::DataCenterCode>,
 }
 impl JobDetails {
@@ -2355,7 +2290,7 @@ pub mod job_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[doc = "Type of the data transfer."]
-    #[serde(rename = "transferType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "transferType")]
     pub transfer_type: job_properties::TransferType,
     #[doc = "Describes whether the job is cancellable or not."]
     #[serde(rename = "isCancellable", default, skip_serializing_if = "Option::is_none")]
@@ -2370,7 +2305,7 @@ pub struct JobProperties {
     #[serde(rename = "isPrepareToShipEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_prepare_to_ship_enabled: Option<bool>,
     #[doc = "Name of the stage which is in progress."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_properties::Status>,
     #[doc = "Time at which the job was started in UTC ISO 8601 format."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2385,12 +2320,7 @@ pub struct JobProperties {
     #[serde(rename = "cancellationReason", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_reason: Option<String>,
     #[doc = "Delivery type of Job."]
-    #[serde(
-        rename = "deliveryType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deliveryType", default, skip_serializing_if = "Option::is_none")]
     pub delivery_type: Option<job_properties::DeliveryType>,
     #[doc = "Additional delivery info."]
     #[serde(rename = "deliveryInfo", default, skip_serializing_if = "Option::is_none")]
@@ -2599,7 +2529,7 @@ impl JobResourceUpdateParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSecrets {
     #[doc = "Used to indicate what type of job secrets object."]
-    #[serde(rename = "jobSecretsType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "jobSecretsType")]
     pub job_secrets_type: job_secrets::JobSecretsType,
     #[doc = "Dc access security code"]
     #[serde(rename = "dcAccessSecurityCode", default, skip_serializing_if = "Option::is_none")]
@@ -2632,23 +2562,13 @@ pub mod job_secrets {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStages {
     #[doc = "Name of the job stage."]
-    #[serde(
-        rename = "stageName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
     pub stage_name: Option<job_stages::StageName>,
     #[doc = "Display name of the job stage."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Status of the job stage."]
-    #[serde(
-        rename = "stageStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "stageStatus", default, skip_serializing_if = "Option::is_none")]
     pub stage_status: Option<job_stages::StageStatus>,
     #[doc = "Time for the job stage in UTC ISO 8601 format."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2772,7 +2692,7 @@ pub mod job_stages {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyEncryptionKey {
     #[doc = "Type of encryption key used for key encryption."]
-    #[serde(rename = "kekType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "kekType")]
     pub kek_type: key_encryption_key::KekType,
     #[doc = "Managed identity properties."]
     #[serde(rename = "identityProperties", default, skip_serializing_if = "Option::is_none")]
@@ -2818,12 +2738,7 @@ pub struct LastMitigationActionOnJob {
     #[serde(rename = "isPerformedByCustomer", default, skip_serializing_if = "Option::is_none")]
     pub is_performed_by_customer: Option<bool>,
     #[doc = "Resolution code provided by customer"]
-    #[serde(
-        rename = "customerResolution",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "customerResolution", default, skip_serializing_if = "Option::is_none")]
     pub customer_resolution: Option<last_mitigation_action_on_job::CustomerResolution>,
 }
 impl LastMitigationActionOnJob {
@@ -2882,7 +2797,7 @@ impl MarkDevicesShippedRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MitigateJobRequest {
     #[doc = "Resolution code for the job"]
-    #[serde(rename = "customerResolutionCode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "customerResolutionCode")]
     pub customer_resolution_code: mitigate_job_request::CustomerResolutionCode,
 }
 impl MitigateJobRequest {
@@ -2906,7 +2821,7 @@ pub mod mitigate_job_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationPreference {
     #[doc = "Name of the stage."]
-    #[serde(rename = "stageName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "stageName")]
     pub stage_name: notification_preference::StageName,
     #[doc = "Notification is required or not."]
     #[serde(rename = "sendNotification")]
@@ -3142,7 +3057,7 @@ pub struct PreferencesValidationRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preference: Option<Preferences>,
     #[doc = "Device type to be used for the job."]
-    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceType")]
     pub device_type: preferences_validation_request::DeviceType,
 }
 impl PreferencesValidationRequest {
@@ -3171,7 +3086,7 @@ pub struct PreferencesValidationResponseProperties {
     #[serde(flatten)]
     pub validation_input_response: ValidationInputResponse,
     #[doc = "Validation status of requested data center and transport."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<preferences_validation_response_properties::Status>,
 }
 impl PreferencesValidationResponseProperties {
@@ -3280,7 +3195,7 @@ pub struct ScheduleAvailabilityRequest {
     #[serde(rename = "storageLocation")]
     pub storage_location: String,
     #[doc = "Sku Name for which the order is to be scheduled."]
-    #[serde(rename = "skuName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "skuName")]
     pub sku_name: schedule_availability_request::SkuName,
     #[doc = "Country in which storage location should be supported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3330,12 +3245,7 @@ pub struct ShareCredentialDetails {
     #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
     #[doc = "Type of the share."]
-    #[serde(
-        rename = "shareType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "shareType", default, skip_serializing_if = "Option::is_none")]
     pub share_type: Option<share_credential_details::ShareType>,
     #[doc = "User name for the share."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -3438,12 +3348,7 @@ pub struct ShippingAddress {
     #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
     pub company_name: Option<String>,
     #[doc = "Type of address."]
-    #[serde(
-        rename = "addressType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
     pub address_type: Option<shipping_address::AddressType>,
 }
 impl ShippingAddress {
@@ -3481,7 +3386,6 @@ pub mod shipping_address {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The sku name."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The display name of the sku."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -3516,10 +3420,10 @@ pub struct SkuAvailabilityValidationRequest {
     #[serde(flatten)]
     pub validation_input_request: ValidationInputRequest,
     #[doc = "Device type to be used for the job."]
-    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceType")]
     pub device_type: sku_availability_validation_request::DeviceType,
     #[doc = "Type of the transfer."]
-    #[serde(rename = "transferType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "transferType")]
     pub transfer_type: sku_availability_validation_request::TransferType,
     #[doc = "ISO country code. Country for hardware shipment. For codes check: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements"]
     pub country: String,
@@ -3566,7 +3470,7 @@ pub struct SkuAvailabilityValidationResponseProperties {
     #[serde(flatten)]
     pub validation_input_response: ValidationInputResponse,
     #[doc = "Sku availability validation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<sku_availability_validation_response_properties::Status>,
 }
 impl SkuAvailabilityValidationResponseProperties {
@@ -3668,12 +3572,7 @@ pub struct SkuProperties {
     )]
     pub api_versions: Vec<String>,
     #[doc = "Reason why the Sku is disabled."]
-    #[serde(
-        rename = "disabledReason",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "disabledReason", default, skip_serializing_if = "Option::is_none")]
     pub disabled_reason: Option<sku_properties::DisabledReason>,
     #[doc = "Message for why the Sku is disabled."]
     #[serde(rename = "disabledReasonMessage", default, skip_serializing_if = "Option::is_none")]
@@ -3734,7 +3633,7 @@ pub struct SubscriptionIsAllowedToCreateJobValidationResponseProperties {
     #[serde(flatten)]
     pub validation_input_response: ValidationInputResponse,
     #[doc = "Validation status of subscription permission to create job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<subscription_is_allowed_to_create_job_validation_response_properties::Status>,
 }
 impl SubscriptionIsAllowedToCreateJobValidationResponseProperties {
@@ -3759,7 +3658,7 @@ pub mod subscription_is_allowed_to_create_job_validation_response_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransferAllDetails {
     #[doc = "Type of the account of data"]
-    #[serde(rename = "dataAccountType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataAccountType")]
     pub data_account_type: transfer_all_details::DataAccountType,
     #[doc = "To indicate if all Azure blobs have to be transferred"]
     #[serde(rename = "transferAllBlobs", default, skip_serializing_if = "Option::is_none")]
@@ -3795,7 +3694,7 @@ pub mod transfer_all_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransferConfiguration {
     #[doc = "Type of the configuration for transfer."]
-    #[serde(rename = "transferConfigurationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "transferConfigurationType")]
     pub transfer_configuration_type: transfer_configuration::TransferConfigurationType,
     #[doc = "Map of filter type and the details to filter. This field is required only if the TransferConfigurationType is given as TransferUsingFilter."]
     #[serde(rename = "transferFilterDetails", default, skip_serializing_if = "Option::is_none")]
@@ -3850,7 +3749,7 @@ pub mod transfer_configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransferFilterDetails {
     #[doc = "Type of the account of data."]
-    #[serde(rename = "dataAccountType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "dataAccountType")]
     pub data_account_type: transfer_filter_details::DataAccountType,
     #[doc = "Filter details to transfer Azure Blobs"]
     #[serde(rename = "blobFilterDetails", default, skip_serializing_if = "Option::is_none")]
@@ -3895,12 +3794,7 @@ pub mod transfer_filter_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransportAvailabilityDetails {
     #[doc = "Transport Shipment Type supported for given region."]
-    #[serde(
-        rename = "shipmentType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "shipmentType", default, skip_serializing_if = "Option::is_none")]
     pub shipment_type: Option<transport_availability_details::ShipmentType>,
 }
 impl TransportAvailabilityDetails {
@@ -3921,12 +3815,7 @@ pub mod transport_availability_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransportAvailabilityRequest {
     #[doc = "Type of the device."]
-    #[serde(
-        rename = "skuName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<transport_availability_request::SkuName>,
 }
 impl TransportAvailabilityRequest {
@@ -3966,7 +3855,7 @@ impl TransportAvailabilityResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportPreferences {
     #[doc = "Indicates Shipment Logistics type that the customer preferred."]
-    #[serde(rename = "preferredShipmentType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "preferredShipmentType")]
     pub preferred_shipment_type: transport_preferences::PreferredShipmentType,
 }
 impl TransportPreferences {
@@ -4092,7 +3981,7 @@ pub struct ValidateAddress {
     #[serde(rename = "shippingAddress")]
     pub shipping_address: ShippingAddress,
     #[doc = "Device type to be used for the job."]
-    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceType")]
     pub device_type: validate_address::DeviceType,
     #[doc = "Preferences related to the shipment logistics of the sku"]
     #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
@@ -4127,7 +4016,7 @@ pub mod validate_address {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationInputRequest {
     #[doc = "Identifies the type of validation request."]
-    #[serde(rename = "validationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "validationType")]
     pub validation_type: validation_input_request::ValidationType,
 }
 impl ValidationInputRequest {
@@ -4152,7 +4041,7 @@ pub mod validation_input_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationInputResponse {
     #[doc = "Identifies the type of validation response."]
-    #[serde(rename = "validationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "validationType")]
     pub validation_type: validation_input_response::ValidationType,
     #[doc = "Provides additional information about an http error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4183,7 +4072,7 @@ pub mod validation_input_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationRequest {
     #[doc = "Identify the nature of validation."]
-    #[serde(rename = "validationCategory", with = "azure_core::xml::text_content")]
+    #[serde(rename = "validationCategory")]
     pub validation_category: validation_request::ValidationCategory,
     #[doc = "List of request details contain validationType and its request as key and value respectively."]
     #[serde(rename = "individualRequestDetails")]
@@ -4224,7 +4113,7 @@ impl ValidationResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidationResponseProperties {
     #[doc = "Overall validation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<validation_response_properties::Status>,
     #[doc = "List of response details contain validationType and its response as key and value respectively."]
     #[serde(

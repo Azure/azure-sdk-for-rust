@@ -9,7 +9,6 @@ pub struct Artifact {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
     #[doc = "Specifies the kind of Blueprint artifact."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: artifact::Kind,
 }
 impl Artifact {
@@ -155,7 +154,7 @@ impl AssignmentList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentLockSettings {
     #[doc = "Lock mode."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<assignment_lock_settings::Mode>,
 }
 impl AssignmentLockSettings {
@@ -223,12 +222,7 @@ pub struct AssignmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locks: Option<AssignmentLockSettings>,
     #[doc = "State of the assignment."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<assignment_properties::ProvisioningState>,
 }
 impl AssignmentProperties {
@@ -446,7 +440,7 @@ impl BlueprintStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
     #[doc = "Type of the Managed Service Identity."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: managed_service_identity::Type,
     #[doc = "Azure Active Directory principal ID associated with this Identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -510,7 +504,7 @@ pub mod managed_service_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterDefinition {
     #[doc = "Allowed data types for Azure Resource Manager template parameters."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: parameter_definition::Type,
     #[doc = "User-friendly properties for this parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -954,12 +948,7 @@ pub struct SharedBlueprintProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<BlueprintStatus>,
     #[doc = "The scope where this Blueprint can be applied."]
-    #[serde(
-        rename = "targetScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "targetScope", default, skip_serializing_if = "Option::is_none")]
     pub target_scope: Option<shared_blueprint_properties::TargetScope>,
     #[doc = "A dictionary hold parameter name and it's metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

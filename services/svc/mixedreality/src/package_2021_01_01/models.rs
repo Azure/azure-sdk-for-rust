@@ -16,7 +16,6 @@ pub struct Conversion {
     #[doc = "The error object containing details of why the request failed."]
     pub error: Error,
     #[doc = "The status of the conversion. Terminal states are 'Cancelled', 'Failed', and 'Succeeded'."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: ConversionStatus,
     #[doc = "The time when the conversion was created. Date and time in ISO 8601 format."]
     #[serde(rename = "creationTime", with = "azure_core::date::rfc3339")]
@@ -209,7 +208,6 @@ pub struct CreateSessionSettings {
     #[serde(rename = "maxLeaseTimeMinutes")]
     pub max_lease_time_minutes: i64,
     #[doc = "The size of the server used for the rendering session. The size impacts the number of polygons the server can render. Refer to https://docs.microsoft.com/azure/remote-rendering/reference/vm-sizes for details."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub size: SessionSize,
 }
 impl CreateSessionSettings {
@@ -290,10 +288,8 @@ pub struct SessionProperties {
     #[serde(rename = "maxLeaseTimeMinutes", default, skip_serializing_if = "Option::is_none")]
     pub max_lease_time_minutes: Option<i64>,
     #[doc = "The size of the server used for the rendering session. The size impacts the number of polygons the server can render. Refer to https://docs.microsoft.com/azure/remote-rendering/reference/vm-sizes for details."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub size: SessionSize,
     #[doc = "The status of the rendering session. Terminal states are 'Error', 'Expired', and 'Stopped'."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: SessionStatus,
     #[doc = "The computational power of the rendering session GPU measured in teraflops."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

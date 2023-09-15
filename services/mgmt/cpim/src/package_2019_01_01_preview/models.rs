@@ -16,7 +16,7 @@ pub struct AsyncOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The status of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<async_operation_status::Status>,
     #[doc = "Start time of the async operation."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -65,10 +65,10 @@ pub mod async_operation_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct B2cResourceSku {
     #[doc = "The name of the SKU for the tenant."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<b2c_resource_sku::Name>,
     #[doc = "The tier of the tenant."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<b2c_resource_sku::Tier>,
 }
 impl B2cResourceSku {
@@ -94,12 +94,7 @@ pub mod b2c_resource_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct B2cTenantResource {
     #[doc = "The type of the B2C tenant resource."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<b2c_tenant_resource::Type>,
     #[doc = "SKU properties of the Azure AD B2C tenant. Learn more about Azure AD B2C billing at [aka.ms/b2cBilling](https://aka.ms/b2cBilling)."]
     pub sku: B2cResourceSku,
@@ -183,12 +178,7 @@ pub mod b2c_tenant_resource_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct BillingConfig {
         #[doc = "The type of billing. Will be MAU for all new customers. If 'Auths', it can be updated to 'MAU'. Cannot be changed if value is 'MAU'. Learn more about Azure AD B2C billing at [aka.ms/b2cBilling](https://aka.ms/b2cbilling)."]
-        #[serde(
-            rename = "billingType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
         pub billing_type: Option<billing_config::BillingType>,
         #[doc = "The data from which the billing type took effect"]
         #[serde(rename = "effectiveStartDateUtc", default, skip_serializing_if = "Option::is_none")]
@@ -376,7 +366,7 @@ pub struct NameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Describes the reason for the 'nameAvailable' value."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<NameAvailabilityReason>,
 }
 impl NameAvailabilityResponse {

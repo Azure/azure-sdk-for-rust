@@ -97,7 +97,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Specifies the reason for the unavailability of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
     #[doc = "The detailed info regarding the reason associated with the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -257,12 +257,7 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeysParameters {
     #[doc = "Key that needs to be regenerated."]
-    #[serde(
-        rename = "policyKey",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "policyKey", default, skip_serializing_if = "Option::is_none")]
     pub policy_key: Option<regenerate_keys_parameters::PolicyKey>,
 }
 impl RegenerateKeysParameters {
@@ -417,10 +412,8 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Name of this Sku"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The tier of this particular SKU"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub tier: sku::Tier,
 }
 impl Sku {
@@ -549,12 +542,7 @@ impl WcfRelay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WcfRelayProperties {
     #[doc = "WCFRelay Type."]
-    #[serde(
-        rename = "relayType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "relayType", default, skip_serializing_if = "Option::is_none")]
     pub relay_type: Option<wcf_relay_properties::RelayType>,
     #[doc = "The time the WCFRelay was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]

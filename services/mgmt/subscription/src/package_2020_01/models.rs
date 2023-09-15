@@ -184,12 +184,7 @@ pub struct SubscriptionCreationParameters {
     )]
     pub owners: Vec<AdPrincipal>,
     #[doc = "The offer type of the subscription. For example, MS-AZR-0017P (EnterpriseAgreement) and MS-AZR-0148P (EnterpriseAgreement devTest) are available. Only valid when creating a subscription in a enrollment account scope."]
-    #[serde(
-        rename = "offerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
     pub offer_type: Option<subscription_creation_parameters::OfferType>,
 }
 impl SubscriptionCreationParameters {

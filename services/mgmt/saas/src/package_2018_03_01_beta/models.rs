@@ -212,7 +212,7 @@ impl SaasAppPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SaasAppProperties {
     #[doc = "the Saas resource status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<saas_app_properties::Status>,
     #[doc = "Saas resource plan."]
     #[serde(rename = "saasAppPlan", default, skip_serializing_if = "Option::is_none")]
@@ -310,12 +310,7 @@ pub struct SaasCreationProperties {
     #[serde(rename = "skuId", default, skip_serializing_if = "Option::is_none")]
     pub sku_id: Option<String>,
     #[doc = "The Payment channel for the SaasSubscription."]
-    #[serde(
-        rename = "paymentChannelType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "paymentChannelType", default, skip_serializing_if = "Option::is_none")]
     pub payment_channel_type: Option<saas_creation_properties::PaymentChannelType>,
     #[doc = "The metadata about the SaaS subscription such as the AzureSubscriptionId and ResourceUri."]
     #[serde(rename = "paymentChannelMetadata", default, skip_serializing_if = "Option::is_none")]
@@ -388,7 +383,7 @@ pub mod saas_creation_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SaasProperties {
     #[doc = "The SaaS Subscription Status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<saas_properties::Status>,
     #[doc = "The current Term object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

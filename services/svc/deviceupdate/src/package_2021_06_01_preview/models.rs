@@ -62,7 +62,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "movedOnToNewDeployment")]
     pub moved_on_to_new_deployment: bool,
     #[doc = "Deployment state."]
-    #[serde(rename = "deviceState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
 impl DeploymentDeviceState {
@@ -86,12 +86,7 @@ pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "The deployment device state."]
-    #[serde(
-        rename = "deviceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
     pub device_state: Option<DeviceState>,
 }
 impl DeploymentDeviceStatesFilter {
@@ -180,7 +175,7 @@ impl Serialize for DeploymentState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentStatus {
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deploymentState")]
     pub deployment_state: DeploymentState,
     #[doc = "The total number of devices in the deployment."]
     #[serde(rename = "totalDevices", default, skip_serializing_if = "Option::is_none")]
@@ -253,12 +248,7 @@ pub struct Device {
     #[serde(rename = "lastAttemptedUpdateId", default, skip_serializing_if = "Option::is_none")]
     pub last_attempted_update_id: Option<UpdateId>,
     #[doc = "Deployment state."]
-    #[serde(
-        rename = "deploymentStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<DeviceDeploymentState>,
     #[doc = "Update identifier."]
     #[serde(rename = "installedUpdateId", default, skip_serializing_if = "Option::is_none")]
@@ -395,7 +385,6 @@ pub struct DeviceOperation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -644,7 +633,7 @@ pub struct Group {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "Supported group types."]
-    #[serde(rename = "groupType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "groupType")]
     pub group_type: GroupType,
     #[doc = "IoT Hub tags."]
     pub tags: Vec<String>,
@@ -924,7 +913,7 @@ pub struct LogCollectionOperation {
     #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_action_date_time: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
 }
 impl LogCollectionOperation {
@@ -952,7 +941,7 @@ pub struct LogCollectionOperationDetailedStatus {
     #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_action_date_time: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
     #[doc = "Status of the devices in the operation"]
     #[serde(
@@ -995,7 +984,6 @@ pub struct LogCollectionOperationDeviceStatus {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatusWithoutUndefinedOption,
     #[doc = "Log upload result code"]
     #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
@@ -1043,7 +1031,7 @@ impl LogCollectionOperationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[doc = "Operation status filter."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
 }
 impl OperationFilter {
@@ -1176,12 +1164,7 @@ impl Serialize for OperationStatusWithoutUndefinedOption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Step {
     #[doc = "Step type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<step::Type>,
     #[doc = "Step description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1561,7 +1544,6 @@ pub struct UpdateOperation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Update identifier."]
     #[serde(rename = "updateId", default, skip_serializing_if = "Option::is_none")]

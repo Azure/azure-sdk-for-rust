@@ -49,7 +49,7 @@ impl AccessPolicyEntityCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyProperties {
     #[doc = "Defines the access level granted by this policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<access_policy_properties::Role>,
     #[doc = "Base class for access policies authentication methods."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -102,7 +102,7 @@ pub mod access_policy_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEncryption {
     #[doc = "The type of key used to encrypt the Account Key."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: account_encryption::Type,
     #[doc = "The details for accessing the encryption keys in Key Vault."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -198,7 +198,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -255,7 +255,6 @@ pub struct EccTokenKey {
     #[serde(flatten)]
     pub token_key: TokenKey,
     #[doc = "Elliptical curve algorithm to be used: ES256, ES384 or ES512."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub alg: ecc_token_key::Alg,
     #[doc = "X coordinate."]
     pub x: String,
@@ -388,7 +387,7 @@ pub struct Endpoint {
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
     #[doc = "The type of the endpoint."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: endpoint::Type,
 }
 impl Endpoint {
@@ -624,23 +623,13 @@ pub struct MetricSpecification {
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
     #[doc = "The metric unit"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<metric_specification::Unit>,
     #[doc = "The metric aggregation type"]
-    #[serde(
-        rename = "aggregationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<metric_specification::AggregationType>,
     #[doc = "The metric lock aggregation type"]
-    #[serde(
-        rename = "lockAggregationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub lock_aggregation_type: Option<metric_specification::LockAggregationType>,
     #[doc = "Supported aggregation types."]
     #[serde(
@@ -818,12 +807,7 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "Indicates the action type."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -972,7 +956,6 @@ pub struct RsaTokenKey {
     #[serde(flatten)]
     pub token_key: TokenKey,
     #[doc = "RSA algorithm to be used: RS256, RS384 or RS512."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub alg: rsa_token_key::Alg,
     #[doc = "RSA public key modulus."]
     pub n: String,
@@ -1355,12 +1338,7 @@ pub struct VideoProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Type of the video archive. Different archive formats provide different capabilities."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<video_properties::Type>,
     #[doc = "Video flags contain information about the available video actions and its dynamic properties based on the current video state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1449,12 +1427,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1463,12 +1436,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

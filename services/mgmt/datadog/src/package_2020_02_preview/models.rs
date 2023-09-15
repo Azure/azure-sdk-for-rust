@@ -348,20 +348,10 @@ impl DatadogSetPasswordLink {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatadogSingleSignOnProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Various states of the SSO resource"]
-    #[serde(
-        rename = "singleSignOnState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "singleSignOnState", default, skip_serializing_if = "Option::is_none")]
     pub single_sign_on_state: Option<SingleSignOnStates>,
     #[doc = "The Id of the Enterprise App used for Single sign-on."]
     #[serde(rename = "enterpriseAppId", default, skip_serializing_if = "Option::is_none")]
@@ -449,7 +439,7 @@ pub struct FilteringTag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Valid actions for a filtering tag. Exclusion takes priority over inclusion."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<TagAction>,
 }
 impl FilteringTag {
@@ -466,12 +456,7 @@ pub struct IdentityProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Identity type"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ManagedIdentityTypes>,
 }
 impl IdentityProperties {
@@ -676,28 +661,13 @@ impl MetricRules {
 #[doc = "Properties specific to the monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
-    #[serde(
-        rename = "monitoringStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
     #[doc = "Flag specifying the Marketplace Subscription Status of the resource. If payment is not made in time, the resource will go in Suspended state."]
-    #[serde(
-        rename = "marketplaceSubscriptionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
     #[doc = "Datadog organization properties"]
     #[serde(rename = "datadogOrganizationProperties", default, skip_serializing_if = "Option::is_none")]
@@ -705,12 +675,7 @@ pub struct MonitorProperties {
     #[doc = "User info"]
     #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
     pub user_info: Option<UserInfo>,
-    #[serde(
-        rename = "liftrResourceCategory",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_category: Option<LiftrResourceCategories>,
     #[doc = "The priority of the resource."]
     #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
@@ -725,12 +690,7 @@ impl MonitorProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorUpdateProperties {
     #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
-    #[serde(
-        rename = "monitoringStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
 }
 impl MonitorUpdateProperties {
@@ -878,12 +838,7 @@ impl MonitoringTagRulesListResponse {
 #[doc = "Definition of the properties for a TagRules resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRulesProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Set of rules for sending logs for the Monitor resource."]
     #[serde(rename = "logRules", default, skip_serializing_if = "Option::is_none")]

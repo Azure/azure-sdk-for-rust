@@ -12,7 +12,7 @@ pub struct AssetItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Asset's type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: asset_item::Type,
     #[doc = "Describes the access location for a web service asset."]
     #[serde(rename = "locationInfo")]
@@ -106,10 +106,10 @@ impl AssetLocation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColumnSpecification {
     #[doc = "Data type of the column."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: column_specification::Type,
     #[doc = "Additional format information for the data type."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<column_specification::Format>,
     #[doc = "If the data type is categorical, this provides the list of accepted categories."]
     #[serde(
@@ -265,7 +265,6 @@ impl CommitmentPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsConfiguration {
     #[doc = "Specifies the verbosity of the diagnostic output. Valid values are: None - disables tracing; Error - collects only error (stderr) traces; All - collects all traces (stdout and stderr)."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub level: diagnostics_configuration::Level,
     #[doc = "Specifies the date and time when the logging will cease. If null, diagnostic collection is not time limited."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -404,7 +403,7 @@ pub struct GraphParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Graph parameter's type."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: graph_parameter::Type,
     #[doc = "Association links for this parameter to nodes in the graph."]
     pub links: Vec<GraphParameterLink>,
@@ -497,12 +496,7 @@ impl GraphParameterLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputPort {
     #[doc = "Port data type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<input_port::Type>,
 }
 impl InputPort {
@@ -605,12 +599,7 @@ impl ModuleAssetParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputPort {
     #[doc = "Port data type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<output_port::Type>,
 }
 impl OutputPort {
@@ -840,12 +829,7 @@ pub struct WebServiceProperties {
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "Read Only: The provision state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<web_service_properties::ProvisioningState>,
     #[doc = "Access keys for the web service calls."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -890,7 +874,7 @@ pub struct WebServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
-    #[serde(rename = "packageType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "packageType")]
     pub package_type: web_service_properties::PackageType,
 }
 impl WebServiceProperties {

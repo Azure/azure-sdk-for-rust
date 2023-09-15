@@ -12,12 +12,7 @@ pub struct ArmIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the resource. The type 'SystemAssigned,UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the service."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<arm_identity::Type>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
@@ -250,12 +245,7 @@ pub struct EndpointHealthData {
     #[serde(rename = "endpointId", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_id: Option<String>,
     #[doc = "Health statuses have following meanings. The 'healthy' status shows that the endpoint is accepting messages as expected. The 'unhealthy' status shows that the endpoint is not accepting messages as expected and IoT Hub is retrying to send data to this endpoint. The status of an unhealthy endpoint will be updated to healthy when IoT Hub has established an eventually consistent state of health. The 'dead' status shows that the endpoint is not accepting messages, after IoT Hub retried sending messages for the retrial period. See IoT Hub metrics to identify errors and monitor issues with endpoints. The 'unknown' status shows that the IoT Hub has not established a connection with the endpoint. No messages have been delivered to or rejected from this endpoint"]
-    #[serde(
-        rename = "healthStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<endpoint_health_data::HealthStatus>,
     #[doc = "Last error obtained when a message failed to be delivered to iot hub"]
     #[serde(rename = "lastKnownError", default, skip_serializing_if = "Option::is_none")]
@@ -511,12 +501,7 @@ pub struct ExportDevicesRequest {
     #[serde(rename = "exportBlobName", default, skip_serializing_if = "Option::is_none")]
     pub export_blob_name: Option<String>,
     #[doc = "Specifies authentication type being used for connecting to the storage account."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<export_devices_request::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -602,7 +587,6 @@ pub struct FallbackRouteProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The source to which the routing rule is to be applied to. For example, DeviceMessages"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub source: fallback_route_properties::Source,
     #[doc = "The condition which is evaluated in order to apply the fallback route. If the condition is not provided it will evaluate to true by default. For grammar, See: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-query-language"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -750,12 +734,7 @@ pub struct ImportDevicesRequest {
     #[serde(rename = "outputBlobName", default, skip_serializing_if = "Option::is_none")]
     pub output_blob_name: Option<String>,
     #[doc = "Specifies authentication type being used for connecting to the storage account."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<import_devices_request::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -836,12 +815,7 @@ pub struct IotHubCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i64>,
     #[doc = "The type of the scaling enabled."]
-    #[serde(
-        rename = "scaleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<iot_hub_capacity::ScaleType>,
 }
 impl IotHubCapacity {
@@ -922,7 +896,7 @@ pub struct IotHubLocationDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The role of the region, can be either primary or secondary. The primary region is where the IoT hub is currently provisioned. The secondary region is the Azure disaster recovery (DR) paired region and also the region where the IoT hub can failover to."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<iot_hub_location_description::Role>,
 }
 impl IotHubLocationDescription {
@@ -979,7 +953,7 @@ pub struct IotHubNameAvailabilityInfo {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason for unavailability."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<iot_hub_name_availability_info::Reason>,
     #[doc = "The detailed reason message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1031,12 +1005,7 @@ pub struct IotHubProperties {
     )]
     pub allowed_fqdn_list: Vec<String>,
     #[doc = "Whether requests from Public Network are allowed"]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<iot_hub_properties::PublicNetworkAccess>,
     #[doc = "The IP filter rules."]
     #[serde(
@@ -1094,7 +1063,7 @@ pub struct IotHubProperties {
     #[serde(rename = "deviceStreams", default, skip_serializing_if = "Option::is_none")]
     pub device_streams: Option<iot_hub_properties::DeviceStreams>,
     #[doc = "The capabilities and features enabled for the IoT hub."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub features: Option<iot_hub_properties::Features>,
     #[doc = "The encryption properties for the IoT hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1301,10 +1270,9 @@ impl IotHubSkuDescriptionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IotHubSkuInfo {
     #[doc = "The name of the SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: iot_hub_sku_info::Name,
     #[doc = "The billing tier for the IoT hub."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<iot_hub_sku_info::Tier>,
     #[doc = "The number of provisioned IoT Hub units. See: https://docs.microsoft.com/azure/azure-subscription-service-limits#iot-hub-limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1383,7 +1351,6 @@ pub struct IpFilterRule {
     #[serde(rename = "filterName")]
     pub filter_name: String,
     #[doc = "The desired action for requests captured by this rule."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: ip_filter_rule::Action,
     #[doc = "A string that contains the IP address range in CIDR notation for the rule."]
     #[serde(rename = "ipMask")]
@@ -1420,15 +1387,10 @@ pub struct JobResponse {
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc1123::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The type of the job."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_response::Type>,
     #[doc = "The status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_response::Status>,
     #[doc = "If status == failed, this string containing the reason for the failure."]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
@@ -1631,7 +1593,7 @@ pub struct NetworkRuleSetIpRule {
     #[serde(rename = "filterName")]
     pub filter_name: String,
     #[doc = "IP Filter Action"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<network_rule_set_ip_rule::Action>,
     #[doc = "A string that contains the IP address range in CIDR notation for the rule."]
     #[serde(rename = "ipMask")]
@@ -1693,12 +1655,7 @@ pub mod network_rule_set_ip_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSetProperties {
     #[doc = "Default Action for Network Rule Set"]
-    #[serde(
-        rename = "defaultAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<network_rule_set_properties::DefaultAction>,
     #[doc = "If True, then Network Rule Set is also applied to BuiltIn EventHub EndPoint of IotHub"]
     #[serde(rename = "applyToBuiltInEventHubEndpoint")]
@@ -1912,7 +1869,6 @@ impl PrivateLinkResources {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The status of a private endpoint connection"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: private_link_service_connection_state::Status,
     #[doc = "The description for the current state of a private endpoint connection"]
     pub description: String,
@@ -2027,7 +1983,7 @@ pub struct RouteCompilationError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Severity of the route error"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<route_compilation_error::Severity>,
     #[doc = "Range of route errors"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2116,7 +2072,6 @@ pub struct RouteProperties {
     #[doc = "The name of the route. The name can only include alphanumeric characters, periods, underscores, hyphens, has a maximum length of 64 characters, and must be unique."]
     pub name: String,
     #[doc = "The source that the routing rule is to be applied to, such as DeviceMessages."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub source: route_properties::Source,
     #[doc = "The condition that is evaluated to apply the routing rule. If no condition is provided, it evaluates to true by default. For grammar, see: https://docs.microsoft.com/azure/iot-hub/iot-hub-devguide-query-language"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2248,12 +2203,7 @@ pub struct RoutingEventHubProperties {
     #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
     pub entity_path: Option<String>,
     #[doc = "Method used to authenticate against the event hub endpoint"]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<routing_event_hub_properties::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2387,12 +2337,7 @@ pub struct RoutingServiceBusQueueEndpointProperties {
     #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
     pub entity_path: Option<String>,
     #[doc = "Method used to authenticate against the service bus queue endpoint"]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<routing_service_bus_queue_endpoint_properties::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2479,12 +2424,7 @@ pub struct RoutingServiceBusTopicEndpointProperties {
     #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
     pub entity_path: Option<String>,
     #[doc = "Method used to authenticate against the service bus topic endpoint"]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<routing_service_bus_topic_endpoint_properties::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2568,12 +2508,7 @@ pub struct RoutingStorageContainerProperties {
     #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_uri: Option<String>,
     #[doc = "Method used to authenticate against the storage endpoint"]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<routing_storage_container_properties::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2599,7 +2534,7 @@ pub struct RoutingStorageContainerProperties {
     #[serde(rename = "maxChunkSizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_chunk_size_in_bytes: Option<i32>,
     #[doc = "Encoding that is used to serialize messages to blobs. Supported values are 'avro', 'avrodeflate', and 'JSON'. Default value is 'avro'."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<routing_storage_container_properties::Encoding>,
 }
 impl RoutingStorageContainerProperties {
@@ -2715,7 +2650,6 @@ pub struct SharedAccessSignatureAuthorizationRule {
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
     #[doc = "The permissions assigned to the shared access policy."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub rights: shared_access_signature_authorization_rule::Rights,
 }
 impl SharedAccessSignatureAuthorizationRule {
@@ -2799,12 +2733,7 @@ pub struct StorageEndpointProperties {
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[doc = "Specifies authentication type being used for connecting to the storage account."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<storage_endpoint_properties::AuthenticationType>,
     #[doc = "The properties of the Managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2879,12 +2808,7 @@ impl TagsResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestAllRoutesInput {
     #[doc = "Routing source"]
-    #[serde(
-        rename = "routingSource",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "routingSource", default, skip_serializing_if = "Option::is_none")]
     pub routing_source: Option<test_all_routes_input::RoutingSource>,
     #[doc = "Routing message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2993,7 +2917,7 @@ impl TestRouteInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRouteResult {
     #[doc = "Result of testing route"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<test_route_result::Result>,
     #[doc = "Detailed result of testing a route"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3117,12 +3041,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3131,12 +3050,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

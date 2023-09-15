@@ -61,18 +61,13 @@ pub struct GrantDetailProperties {
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "Grant Offer Type"]
-    #[serde(
-        rename = "offerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
     pub offer_type: Option<grant_detail_properties::OfferType>,
     #[doc = "Expiration Date"]
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "Grant status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<grant_detail_properties::Status>,
     #[doc = "The amount."]
     #[serde(rename = "allocatedBudget", default, skip_serializing_if = "Option::is_none")]
@@ -263,7 +258,7 @@ pub struct JoinRequestProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
     #[doc = "Join request status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<join_request_properties::Status>,
 }
 impl JoinRequestProperties {
@@ -368,7 +363,7 @@ pub struct LabProperties {
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
     #[doc = "The status of this lab"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<lab_properties::Status>,
     #[doc = "the total number of students that can be accepted to the lab."]
     #[serde(rename = "maxStudentCount", default, skip_serializing_if = "Option::is_none")]
@@ -454,15 +449,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -699,7 +689,7 @@ pub struct StudentLabProperties {
     #[serde(rename = "expirationDate", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date: Option<time::OffsetDateTime>,
     #[doc = "Student Role"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<student_lab_properties::Role>,
     #[doc = "The amount."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -708,7 +698,7 @@ pub struct StudentLabProperties {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "Student Lab Status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<student_lab_properties::Status>,
     #[doc = "User Added Date"]
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
@@ -842,7 +832,6 @@ pub struct StudentProperties {
     #[doc = "Student Email"]
     pub email: String,
     #[doc = "Student Role"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub role: student_properties::Role,
     #[doc = "The amount."]
     pub budget: Amount,
@@ -853,7 +842,7 @@ pub struct StudentProperties {
     #[serde(rename = "expirationDate", with = "azure_core::date::rfc3339")]
     pub expiration_date: time::OffsetDateTime,
     #[doc = "Student Lab Status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<student_properties::Status>,
     #[doc = "Date student was added to the lab"]
     #[serde(rename = "effectiveDate", default, with = "azure_core::date::rfc3339::option")]
@@ -979,12 +968,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -993,12 +977,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

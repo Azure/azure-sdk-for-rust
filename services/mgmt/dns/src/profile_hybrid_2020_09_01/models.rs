@@ -405,14 +405,9 @@ pub struct ZoneDeleteResult {
     #[doc = "Users can perform a Get on Azure-AsyncOperation to get the status of their delete Zone operations."]
     #[serde(rename = "azureAsyncOperation", default, skip_serializing_if = "Option::is_none")]
     pub azure_async_operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<zone_delete_result::Status>,
-    #[serde(
-        rename = "statusCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<zone_delete_result::StatusCode>,
     #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
@@ -528,12 +523,7 @@ pub struct ZoneProperties {
     )]
     pub name_servers: Vec<String>,
     #[doc = "The type of this DNS zone (Public or Private)."]
-    #[serde(
-        rename = "zoneType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneType", default, skip_serializing_if = "Option::is_none")]
     pub zone_type: Option<zone_properties::ZoneType>,
 }
 impl ZoneProperties {

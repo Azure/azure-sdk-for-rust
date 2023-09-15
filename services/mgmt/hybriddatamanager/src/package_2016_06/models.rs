@@ -92,7 +92,6 @@ pub struct CustomerSecret {
     #[serde(rename = "keyValue")]
     pub key_value: String,
     #[doc = "The encryption algorithm used to encrypt data."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub algorithm: customer_secret::Algorithm,
 }
 impl CustomerSecret {
@@ -216,7 +215,6 @@ impl DataServiceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataServiceProperties {
     #[doc = "State of the data service."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: data_service_properties::State,
     #[doc = "Supported data store types which can be used as a sink."]
     #[serde(
@@ -314,7 +312,6 @@ pub struct DataStoreProperties {
     #[serde(rename = "repositoryId", default, skip_serializing_if = "Option::is_none")]
     pub repository_id: Option<String>,
     #[doc = "State of the data source."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: data_store_properties::State,
     #[doc = "A generic json used differently by each data source type."]
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
@@ -400,7 +397,6 @@ pub struct DataStoreTypeProperties {
     #[serde(rename = "repositoryType", default, skip_serializing_if = "Option::is_none")]
     pub repository_type: Option<String>,
     #[doc = "State of the data store type."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: data_store_type_properties::State,
     #[doc = "Supported data services where it can be used as a sink."]
     #[serde(
@@ -498,7 +494,6 @@ pub struct Job {
     #[serde(flatten)]
     pub dms_base_object: DmsBaseObject,
     #[doc = "Status of the job."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: job::Status,
     #[doc = "Time at which the job was started in UTC ISO 8601 format."]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
@@ -558,7 +553,6 @@ impl JobDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDefinitionFilter {
     #[doc = "The state of the job definition."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: job_definition_filter::State,
     #[doc = "The data source associated with the job definition"]
     #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
@@ -628,26 +622,15 @@ pub struct JobDefinitionProperties {
     )]
     pub schedules: Vec<Schedule>,
     #[doc = "State of the job definition."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub state: job_definition_properties::State,
     #[doc = "Last modified time of the job definition."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "This is the preferred geo location for the job to run."]
-    #[serde(
-        rename = "runLocation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runLocation", default, skip_serializing_if = "Option::is_none")]
     pub run_location: Option<job_definition_properties::RunLocation>,
     #[doc = "Enum to detect if user confirmation is required. If not passed will default to NotRequired."]
-    #[serde(
-        rename = "userConfirmation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userConfirmation", default, skip_serializing_if = "Option::is_none")]
     pub user_confirmation: Option<job_definition_properties::UserConfirmation>,
     #[doc = "A generic json used differently by each data service type."]
     #[serde(rename = "dataServiceInput", default, skip_serializing_if = "Option::is_none")]
@@ -790,7 +773,6 @@ impl JobDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobFilter {
     #[doc = "The status of the job."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: job_filter::Status,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -844,7 +826,7 @@ impl JobList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[doc = "Describes whether the job is cancellable."]
-    #[serde(rename = "isCancellable", with = "azure_core::xml::text_content")]
+    #[serde(rename = "isCancellable")]
     pub is_cancellable: job_properties::IsCancellable,
     #[doc = "Number of bytes processed by the job as of now."]
     #[serde(rename = "bytesProcessed", default, skip_serializing_if = "Option::is_none")]
@@ -898,7 +880,7 @@ pub struct JobStages {
     #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
     pub stage_name: Option<String>,
     #[doc = "Status of the job stage."]
-    #[serde(rename = "stageStatus", with = "azure_core::xml::text_content")]
+    #[serde(rename = "stageStatus")]
     pub stage_status: job_stages::StageStatus,
     #[doc = "Job Stage Details"]
     #[serde(rename = "jobStageDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1054,12 +1036,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunParameters {
     #[doc = "Enum to detect if user confirmation is required. If not passed will default to NotRequired."]
-    #[serde(
-        rename = "userConfirmation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userConfirmation", default, skip_serializing_if = "Option::is_none")]
     pub user_confirmation: Option<run_parameters::UserConfirmation>,
     #[doc = "A generic json used differently by each data service type."]
     #[serde(rename = "dataServiceInput", default, skip_serializing_if = "Option::is_none")]

@@ -436,7 +436,7 @@ pub struct FileUpload {
     #[serde(rename = "sasTtl", default, skip_serializing_if = "Option::is_none")]
     pub sas_ttl: Option<String>,
     #[doc = "The state of the file upload configuration"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<file_upload::State>,
     #[doc = "ETag used to prevent conflict with multiple uploads"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

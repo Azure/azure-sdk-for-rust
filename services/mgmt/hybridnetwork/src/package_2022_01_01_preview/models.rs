@@ -36,12 +36,7 @@ impl CustomProfile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataDisk {
     #[doc = "Specifies how the virtual machine should be created."]
-    #[serde(
-        rename = "createOption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createOption", default, skip_serializing_if = "Option::is_none")]
     pub create_option: Option<data_disk::CreateOption>,
     #[doc = "The name of data disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -145,18 +140,13 @@ impl DeviceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DevicePropertiesFormat {
     #[doc = "The current device status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<device_properties_format::Status>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The type of the device."]
-    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deviceType")]
     pub device_type: device_properties_format::DeviceType,
     #[doc = "The list of network functions deployed on the device."]
     #[serde(
@@ -452,12 +442,7 @@ impl NetworkFunctionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Reference to another sub resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -466,12 +451,7 @@ pub struct NetworkFunctionPropertiesFormat {
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
     #[doc = "Sku type."]
-    #[serde(
-        rename = "skuType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
     #[doc = "The vendor name for the network function. Once set, it cannot be updated."]
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
@@ -480,12 +460,7 @@ pub struct NetworkFunctionPropertiesFormat {
     #[serde(rename = "serviceKey", default, skip_serializing_if = "Option::is_none")]
     pub service_key: Option<String>,
     #[doc = "The current vendor provisioning state."]
-    #[serde(
-        rename = "vendorProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vendorProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub vendor_provisioning_state: Option<VendorProvisioningState>,
     #[doc = "Reference to another sub resource."]
     #[serde(rename = "managedApplication", default, skip_serializing_if = "Option::is_none")]
@@ -521,20 +496,10 @@ pub struct NetworkFunctionRoleConfiguration {
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
     pub role_name: Option<String>,
     #[doc = "Role type."]
-    #[serde(
-        rename = "roleType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
     pub role_type: Option<network_function_role_configuration::RoleType>,
     #[doc = "The size of the virtual machine."]
-    #[serde(
-        rename = "virtualMachineSize",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "virtualMachineSize", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_size: Option<network_function_role_configuration::VirtualMachineSize>,
     #[doc = "Specifies the operating system settings for the role instance."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
@@ -747,12 +712,7 @@ impl NetworkFunctionRoleInstanceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFunctionSkuDetails {
     #[doc = "Sku type."]
-    #[serde(
-        rename = "skuType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
     #[doc = "The network function sku role details."]
     #[serde(
@@ -966,12 +926,7 @@ pub struct NetworkInterface {
     )]
     pub ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
     #[doc = "The type of the VM switch."]
-    #[serde(
-        rename = "vmSwitchType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vmSwitchType", default, skip_serializing_if = "Option::is_none")]
     pub vm_switch_type: Option<network_interface::VmSwitchType>,
 }
 impl NetworkInterface {
@@ -1027,12 +982,7 @@ pub mod network_interface {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfiguration {
     #[doc = "IP address allocation method."]
-    #[serde(
-        rename = "ipAllocationMethod",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ipAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub ip_allocation_method: Option<network_interface_ip_configuration::IpAllocationMethod>,
     #[doc = "The value of the IP address."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
@@ -1044,12 +994,7 @@ pub struct NetworkInterfaceIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gateway: Option<String>,
     #[doc = "IP address version."]
-    #[serde(
-        rename = "ipVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ipVersion", default, skip_serializing_if = "Option::is_none")]
     pub ip_version: Option<network_interface_ip_configuration::IpVersion>,
     #[doc = "The list of DNS servers IP addresses."]
     #[serde(
@@ -1157,15 +1102,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1303,12 +1243,7 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsDisk {
     #[doc = "The OS type."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<os_disk::OsType>,
     #[doc = "The VHD name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1416,12 +1351,7 @@ impl PreviewSubscription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreviewSubscriptionProperties {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl PreviewSubscriptionProperties {
@@ -1519,7 +1449,7 @@ pub struct RequestMetadata {
     #[serde(rename = "relativePath")]
     pub relative_path: String,
     #[doc = "The http method of the request."]
-    #[serde(rename = "httpMethod", with = "azure_core::xml::text_content")]
+    #[serde(rename = "httpMethod")]
     pub http_method: request_metadata::HttpMethod,
     #[doc = "The serialized body of the request."]
     #[serde(rename = "serializedBody")]
@@ -1632,20 +1562,10 @@ impl RoleInstance {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleInstanceProperties {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The operational state of the role instance."]
-    #[serde(
-        rename = "operationalState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<role_instance_properties::OperationalState>,
 }
 impl RoleInstanceProperties {
@@ -1734,12 +1654,7 @@ pub struct SkuOverview {
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
     #[doc = "Sku type."]
-    #[serde(
-        rename = "skuType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
 }
 impl SkuOverview {
@@ -2012,31 +1927,16 @@ impl VendorNetworkFunctionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorNetworkFunctionPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The current vendor provisioning state."]
-    #[serde(
-        rename = "vendorProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "vendorProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub vendor_provisioning_state: Option<VendorProvisioningState>,
     #[doc = "The name of the sku. Once set, it cannot be updated."]
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
     #[doc = "Sku type."]
-    #[serde(
-        rename = "skuType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
     #[doc = "An array of network function vendor configurations."]
     #[serde(
@@ -2056,12 +1956,7 @@ impl VendorNetworkFunctionPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A list of IDs of the vendor skus offered by the vendor."]
     #[serde(
@@ -2169,36 +2064,16 @@ impl VendorSkuListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorSkuPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Sku type."]
-    #[serde(
-        rename = "skuType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "skuType", default, skip_serializing_if = "Option::is_none")]
     pub sku_type: Option<SkuType>,
     #[doc = "The sku deployment mode."]
-    #[serde(
-        rename = "deploymentMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deploymentMode", default, skip_serializing_if = "Option::is_none")]
     pub deployment_mode: Option<vendor_sku_properties_format::DeploymentMode>,
     #[doc = "The network function type."]
-    #[serde(
-        rename = "networkFunctionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "networkFunctionType", default, skip_serializing_if = "Option::is_none")]
     pub network_function_type: Option<vendor_sku_properties_format::NetworkFunctionType>,
     #[doc = "Indicates if the vendor sku is in preview mode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2320,12 +2195,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2334,12 +2204,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

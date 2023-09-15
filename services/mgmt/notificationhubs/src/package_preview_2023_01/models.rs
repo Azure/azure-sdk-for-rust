@@ -610,15 +610,10 @@ pub struct NamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Defines values for OperationProvisioningState."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<OperationProvisioningState>,
     #[doc = "Namespace status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<NamespaceStatus>,
     #[doc = "Gets or sets whether or not the namespace is currently enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -642,28 +637,13 @@ pub struct NamespaceProperties {
     #[serde(rename = "updatedAt", default, with = "azure_core::date::rfc3339::option")]
     pub updated_at: Option<time::OffsetDateTime>,
     #[doc = "Defines values for NamespaceType."]
-    #[serde(
-        rename = "namespaceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "namespaceType", default, skip_serializing_if = "Option::is_none")]
     pub namespace_type: Option<NamespaceType>,
     #[doc = "Allowed replication region"]
-    #[serde(
-        rename = "replicationRegion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "replicationRegion", default, skip_serializing_if = "Option::is_none")]
     pub replication_region: Option<ReplicationRegion>,
     #[doc = "Namespace SKU name."]
-    #[serde(
-        rename = "zoneRedundancy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "zoneRedundancy", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundancy: Option<ZoneRedundancyPreference>,
     #[doc = "A collection of network authorization rules."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
@@ -689,12 +669,7 @@ pub struct NamespaceProperties {
     #[serde(rename = "dataCenter", default, skip_serializing_if = "Option::is_none")]
     pub data_center: Option<String>,
     #[doc = "Type of public network access."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<PublicNetworkAccess>,
 }
 impl NamespaceProperties {
@@ -1115,7 +1090,7 @@ impl PnsCredentialsResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyKeyResource {
     #[doc = "Type of Shared Access Policy Key (primary or secondary)."]
-    #[serde(rename = "policyKey", with = "azure_core::xml::text_content")]
+    #[serde(rename = "policyKey")]
     pub policy_key: PolicyKeyType,
 }
 impl PolicyKeyResource {
@@ -1164,12 +1139,7 @@ impl Serialize for PolicyKeyType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
     #[doc = "State of Private Endpoint Connection."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
     #[doc = "Represents a Private Endpoint that is connected to Notification Hubs namespace using Private Endpoint Connection."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -1515,7 +1485,7 @@ impl RemotePrivateEndpointConnection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemotePrivateLinkServiceConnectionState {
     #[doc = "State of Private Link Connection."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateLinkConnectionStatus>,
     #[doc = "Human-friendly description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1742,7 +1712,6 @@ impl SharedAccessAuthorizationRuleResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Namespace SKU name."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "Gets or sets the tier of particular sku"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1937,12 +1906,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1951,12 +1915,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

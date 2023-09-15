@@ -25,7 +25,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -101,12 +101,7 @@ impl CommunicationServiceKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommunicationServiceProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<communication_service_properties::ProvisioningState>,
     #[doc = "FQDN of the CommunicationService instance."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
@@ -328,12 +323,7 @@ impl Serialize for DomainManagement {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<domain_properties::ProvisioningState>,
     #[doc = "The location where the Domains resource data is stored at rest."]
     #[serde(rename = "dataLocation", default, skip_serializing_if = "Option::is_none")]
@@ -345,7 +335,7 @@ pub struct DomainProperties {
     #[serde(rename = "mailFromSenderDomain", default, skip_serializing_if = "Option::is_none")]
     pub mail_from_sender_domain: Option<String>,
     #[doc = "Describes how a Domains resource is being managed."]
-    #[serde(rename = "domainManagement", with = "azure_core::xml::text_content")]
+    #[serde(rename = "domainManagement")]
     pub domain_management: DomainManagement,
     #[doc = "List of VerificationStatusRecord"]
     #[serde(rename = "verificationStates", default, skip_serializing_if = "Option::is_none")]
@@ -354,12 +344,7 @@ pub struct DomainProperties {
     #[serde(rename = "verificationRecords", default, skip_serializing_if = "Option::is_none")]
     pub verification_records: Option<domain_properties::VerificationRecords>,
     #[doc = "Describes whether user engagement tracking is enabled or disabled."]
-    #[serde(
-        rename = "userEngagementTracking",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userEngagementTracking", default, skip_serializing_if = "Option::is_none")]
     pub user_engagement_tracking: Option<UserEngagementTracking>,
 }
 impl DomainProperties {
@@ -525,12 +510,7 @@ pub type DomainsResourceList = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailServiceProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<email_service_properties::ProvisioningState>,
     #[doc = "The location where the email service stores its data at rest."]
     #[serde(rename = "dataLocation")]
@@ -773,15 +753,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -930,12 +905,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeyParameters {
     #[doc = "The keyType to regenerate. Must be either 'primary' or 'secondary'(case-insensitive)."]
-    #[serde(
-        rename = "keyType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
     pub key_type: Option<regenerate_key_parameters::KeyType>,
 }
 impl RegenerateKeyParameters {
@@ -985,12 +955,7 @@ pub struct SenderUsernameProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Provisioning state of the resource. Unknown is the default state for Communication Services."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<sender_username_properties::ProvisioningState>,
 }
 impl SenderUsernameProperties {
@@ -1132,12 +1097,7 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateDomainProperties {
     #[doc = "Describes whether user engagement tracking is enabled or disabled."]
-    #[serde(
-        rename = "userEngagementTracking",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userEngagementTracking", default, skip_serializing_if = "Option::is_none")]
     pub user_engagement_tracking: Option<UserEngagementTracking>,
 }
 impl UpdateDomainProperties {
@@ -1200,7 +1160,7 @@ impl Serialize for UserEngagementTracking {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VerificationParameter {
     #[doc = "Type of verification."]
-    #[serde(rename = "verificationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "verificationType")]
     pub verification_type: verification_parameter::VerificationType,
 }
 impl VerificationParameter {
@@ -1262,7 +1222,7 @@ pub mod verification_parameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VerificationStatusRecord {
     #[doc = "Status of the verification operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<verification_status_record::Status>,
     #[doc = "Error code. This property will only be present if the status is UnableToVerify."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
@@ -1329,12 +1289,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1343,12 +1298,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

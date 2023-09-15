@@ -43,12 +43,7 @@ pub type CreatedDateTime = time::OffsetDateTime;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
     #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Default, Microsoft.Keyvault"]
-    #[serde(
-        rename = "keySource",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
     #[doc = "The name of KeyVault key."]
     #[serde(rename = "KeyName", default, skip_serializing_if = "Option::is_none")]
@@ -478,20 +473,10 @@ pub struct VirtualNetworkPeeringPropertiesFormat {
     #[serde(rename = "remoteAddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub remote_address_space: Option<AddressSpace>,
     #[doc = "The status of the virtual network peering."]
-    #[serde(
-        rename = "peeringState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "peeringState", default, skip_serializing_if = "Option::is_none")]
     pub peering_state: Option<virtual_network_peering_properties_format::PeeringState>,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PeeringProvisioningState>,
 }
 impl VirtualNetworkPeeringPropertiesFormat {
@@ -600,12 +585,7 @@ impl Workspace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomBooleanParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The value which should be used for this field."]
     pub value: bool,
@@ -619,12 +599,7 @@ impl WorkspaceCustomBooleanParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomObjectParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The value which should be used for this field."]
     pub value: serde_json::Value,
@@ -734,12 +709,7 @@ impl WorkspaceCustomParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomStringParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The value which should be used for this field."]
     pub value: String,
@@ -753,12 +723,7 @@ impl WorkspaceCustomStringParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceEncryptionParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The object that contains details of encryption used on the workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -804,12 +769,7 @@ pub struct WorkspaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<WorkspaceCustomParameters>,
     #[doc = "Provisioning status of the workspace."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The blob URI where the UI definition file is located."]
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]

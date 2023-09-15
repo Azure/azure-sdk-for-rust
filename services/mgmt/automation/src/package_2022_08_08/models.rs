@@ -213,7 +213,7 @@ pub struct AdvancedScheduleMonthlyOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub occurrence: Option<i32>,
     #[doc = "Day of the occurrence. Must be one of monday, tuesday, wednesday, thursday, friday, saturday, sunday."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<advanced_schedule_monthly_occurrence::Day>,
 }
 impl AdvancedScheduleMonthlyOccurrence {
@@ -311,7 +311,7 @@ impl AgentRegistrationKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentRegistrationRegenerateKeyParameter {
     #[doc = "Gets or sets the agent registration key name - primary or secondary."]
-    #[serde(rename = "keyName", with = "azure_core::xml::text_content")]
+    #[serde(rename = "keyName")]
     pub key_name: agent_registration_regenerate_key_parameter::KeyName,
 }
 impl AgentRegistrationRegenerateKeyParameter {
@@ -464,7 +464,7 @@ pub struct AutomationAccountProperties {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "Gets status of account."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<automation_account_properties::State>,
     #[doc = "Gets the creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1025,12 +1025,7 @@ pub struct ContentSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hash: Option<ContentHash>,
     #[doc = "Gets or sets the content source type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<content_source::Type>,
     #[doc = "Gets or sets the value of the content. This is based on the content source type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1390,18 +1385,13 @@ pub struct DscCompilationJobProperties {
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<JobProvisioningStateProperty>,
     #[doc = "Gets or sets the runOn which specifies the group name where the job is to be executed."]
     #[serde(rename = "runOn", default, skip_serializing_if = "Option::is_none")]
     pub run_on: Option<String>,
     #[doc = "Gets or sets the status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<dsc_compilation_job_properties::Status>,
     #[doc = "Gets or sets the status details of the job."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1628,12 +1618,7 @@ impl DscConfigurationParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscConfigurationProperties {
     #[doc = "Gets or sets the provisioning state of the configuration."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dsc_configuration_properties::ProvisioningState>,
     #[doc = "Gets or sets the job count of the configuration."]
     #[serde(rename = "jobCount", default, skip_serializing_if = "Option::is_none")]
@@ -1645,7 +1630,7 @@ pub struct DscConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<ContentSource>,
     #[doc = "Gets or sets the state of the configuration."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<dsc_configuration_properties::State>,
     #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
@@ -2210,12 +2195,7 @@ pub struct EncryptionProperties {
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
     #[doc = "Encryption Key Source"]
-    #[serde(
-        rename = "keySource",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption_properties::KeySource>,
     #[doc = "User identity used for CMK."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2399,12 +2379,7 @@ impl HybridRunbookWorkerGroupCreateOrUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorkerGroupProperties {
     #[doc = "Type of the HybridWorkerGroup."]
-    #[serde(
-        rename = "groupType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
     pub group_type: Option<hybrid_runbook_worker_group_properties::GroupType>,
     #[doc = "Definition of RunAs credential to use for hybrid worker."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2508,12 +2483,7 @@ pub struct HybridRunbookWorkerProperties {
     #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
     pub vm_resource_id: Option<String>,
     #[doc = "Type of the HybridWorker."]
-    #[serde(
-        rename = "workerType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "workerType", default, skip_serializing_if = "Option::is_none")]
     pub worker_type: Option<hybrid_runbook_worker_properties::WorkerType>,
     #[doc = "Name of the HybridWorker."]
     #[serde(rename = "workerName", default, skip_serializing_if = "Option::is_none")]
@@ -2599,12 +2569,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
     #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -2670,7 +2635,7 @@ pub struct JobCollectionItemProperties {
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_collection_item_properties::Status>,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2826,7 +2791,7 @@ pub struct JobProperties {
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<job_properties::Status>,
     #[doc = "Gets or sets the status details of the job."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -2850,12 +2815,7 @@ pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<JobProvisioningStateProperty>,
 }
 impl JobProperties {
@@ -3121,12 +3081,7 @@ pub struct JobStreamProperties {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the stream type."]
-    #[serde(
-        rename = "streamType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
     pub stream_type: Option<job_stream_properties::StreamType>,
     #[doc = "Gets or sets the stream text."]
     #[serde(rename = "streamText", default, skip_serializing_if = "Option::is_none")]
@@ -3197,20 +3152,10 @@ pub mod job_stream_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Key {
     #[doc = "Automation key name."]
-    #[serde(
-        rename = "KeyName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "KeyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<key::KeyName>,
     #[doc = "Automation key permissions."]
-    #[serde(
-        rename = "Permissions",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Permissions", default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<key::Permissions>,
     #[doc = "Value of the Automation Key used for registration."]
     #[serde(rename = "Value", default, skip_serializing_if = "Option::is_none")]
@@ -3347,12 +3292,7 @@ impl LinkedWorkspace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxProperties {
     #[doc = "Update classifications included in the software update configuration."]
-    #[serde(
-        rename = "includedPackageClassifications",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "includedPackageClassifications", default, skip_serializing_if = "Option::is_none")]
     pub included_package_classifications: Option<linux_properties::IncludedPackageClassifications>,
     #[doc = "packages excluded from the software update configuration."]
     #[serde(
@@ -3582,12 +3522,7 @@ pub struct ModuleProperties {
     #[serde(rename = "activityCount", default, skip_serializing_if = "Option::is_none")]
     pub activity_count: Option<i32>,
     #[doc = "Gets or sets the provisioning state of the module."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<module_properties::ProvisioningState>,
     #[doc = "Definition of the content link."]
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
@@ -4085,12 +4020,7 @@ pub struct RawGraphicalRunbookContent {
     #[serde(rename = "runbookDefinition", default, skip_serializing_if = "Option::is_none")]
     pub runbook_definition: Option<String>,
     #[doc = "Runbook Type"]
-    #[serde(
-        rename = "runbookType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runbookType", default, skip_serializing_if = "Option::is_none")]
     pub runbook_type: Option<raw_graphical_runbook_content::RunbookType>,
 }
 impl RawGraphicalRunbookContent {
@@ -4219,7 +4149,7 @@ pub struct RunbookCreateOrUpdateDraftProperties {
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
     #[doc = "Gets or sets the type of the runbook."]
-    #[serde(rename = "runbookType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "runbookType")]
     pub runbook_type: runbook_create_or_update_draft_properties::RunbookType,
     pub draft: RunbookDraft,
     #[doc = "Gets or sets the description of the runbook."]
@@ -4328,7 +4258,7 @@ pub struct RunbookCreateOrUpdateProperties {
     #[serde(rename = "logProgress", default, skip_serializing_if = "Option::is_none")]
     pub log_progress: Option<bool>,
     #[doc = "Gets or sets the type of the runbook."]
-    #[serde(rename = "runbookType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "runbookType")]
     pub runbook_type: runbook_create_or_update_properties::RunbookType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub draft: Option<RunbookDraft>,
@@ -4441,12 +4371,7 @@ impl RunbookDraft {
 #[doc = "The response model for the undo edit runbook operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookDraftUndoEditResult {
-    #[serde(
-        rename = "statusCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<runbook_draft_undo_edit_result::StatusCode>,
     #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
@@ -4638,18 +4563,13 @@ impl RunbookParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunbookProperties {
     #[doc = "Gets or sets the type of the runbook."]
-    #[serde(
-        rename = "runbookType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "runbookType", default, skip_serializing_if = "Option::is_none")]
     pub runbook_type: Option<runbook_properties::RunbookType>,
     #[doc = "Definition of the content link."]
     #[serde(rename = "publishContentLink", default, skip_serializing_if = "Option::is_none")]
     pub publish_content_link: Option<ContentLink>,
     #[doc = "Gets or sets the state of the runbook."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<runbook_properties::State>,
     #[doc = "Gets or sets verbose log option."]
     #[serde(rename = "logVerbose", default, skip_serializing_if = "Option::is_none")]
@@ -4677,12 +4597,7 @@ pub struct RunbookProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub draft: Option<RunbookDraft>,
     #[doc = "Gets or sets the provisioning state of the runbook."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<runbook_properties::ProvisioningState>,
     #[doc = "Gets or sets the last modified by."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
@@ -4868,7 +4783,7 @@ pub struct SucScheduleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<i64>,
     #[doc = "Gets or sets the frequency of the schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduleFrequency>,
     #[doc = "Gets or sets the time zone of the schedule."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
@@ -4946,7 +4861,6 @@ pub struct ScheduleCreateOrUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<serde_json::Value>,
     #[doc = "Gets or sets the frequency of the schedule."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub frequency: ScheduleFrequency,
     #[doc = "Gets or sets the time zone of the schedule."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
@@ -5021,7 +4935,7 @@ pub struct ScheduleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<serde_json::Value>,
     #[doc = "Gets or sets the frequency of the schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduleFrequency>,
     #[doc = "Gets or sets the time zone of the schedule."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
@@ -5078,7 +4992,6 @@ impl ScheduleUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Gets or sets the SKU name of the account."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "Gets or sets the SKU family."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5180,12 +5093,7 @@ pub struct SourceControlCreateOrUpdateProperties {
     #[serde(rename = "publishRunbook", default, skip_serializing_if = "Option::is_none")]
     pub publish_runbook: Option<bool>,
     #[doc = "The source type. Must be one of VsoGit, VsoTfvc, GitHub, case sensitive."]
-    #[serde(
-        rename = "sourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<source_control_create_or_update_properties::SourceType>,
     #[serde(rename = "securityToken", default, skip_serializing_if = "Option::is_none")]
     pub security_token: Option<SourceControlSecurityTokenProperties>,
@@ -5284,12 +5192,7 @@ pub struct SourceControlProperties {
     #[serde(rename = "publishRunbook", default, skip_serializing_if = "Option::is_none")]
     pub publish_runbook: Option<bool>,
     #[doc = "The source type. Must be one of VsoGit, VsoTfvc, GitHub."]
-    #[serde(
-        rename = "sourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<source_control_properties::SourceType>,
     #[doc = "The description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5357,12 +5260,7 @@ pub struct SourceControlSecurityTokenProperties {
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
     #[doc = "The token type. Must be either PersonalAccessToken or Oauth."]
-    #[serde(
-        rename = "tokenType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "tokenType", default, skip_serializing_if = "Option::is_none")]
     pub token_type: Option<source_control_security_token_properties::TokenType>,
 }
 impl SourceControlSecurityTokenProperties {
@@ -5456,12 +5354,7 @@ pub struct SourceControlSyncJobByIdProperties {
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the job."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<source_control_sync_job_by_id_properties::ProvisioningState>,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5470,12 +5363,7 @@ pub struct SourceControlSyncJobByIdProperties {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The sync type."]
-    #[serde(
-        rename = "syncType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
     pub sync_type: Option<source_control_sync_job_by_id_properties::SyncType>,
     #[doc = "The exceptions that occurred while running the sync job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5623,12 +5511,7 @@ pub struct SourceControlSyncJobProperties {
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state of the job."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<source_control_sync_job_properties::ProvisioningState>,
     #[doc = "The start time of the job."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5637,12 +5520,7 @@ pub struct SourceControlSyncJobProperties {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The sync type."]
-    #[serde(
-        rename = "syncType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
     pub sync_type: Option<source_control_sync_job_properties::SyncType>,
 }
 impl SourceControlSyncJobProperties {
@@ -5772,12 +5650,7 @@ pub struct SourceControlSyncJobStreamByIdProperties {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The type of the sync job stream."]
-    #[serde(
-        rename = "streamType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
     pub stream_type: Option<source_control_sync_job_stream_by_id_properties::StreamType>,
     #[doc = "The text of the sync job stream."]
     #[serde(rename = "streamText", default, skip_serializing_if = "Option::is_none")]
@@ -5844,12 +5717,7 @@ pub struct SourceControlSyncJobStreamProperties {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "The type of the sync job stream."]
-    #[serde(
-        rename = "streamType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "streamType", default, skip_serializing_if = "Option::is_none")]
     pub stream_type: Option<source_control_sync_job_stream_properties::StreamType>,
 }
 impl SourceControlSyncJobStreamProperties {
@@ -6013,12 +5881,7 @@ pub struct TagSettingsProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "Filter VMs by Any or All specified tags."]
-    #[serde(
-        rename = "filterOperator",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "filterOperator", default, skip_serializing_if = "Option::is_none")]
     pub filter_operator: Option<tag_settings_properties::FilterOperator>,
 }
 impl TagSettingsProperties {
@@ -6644,12 +6507,7 @@ impl WebhookUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsProperties {
     #[doc = "Update classification included in the software update configuration. A comma separated string with required values"]
-    #[serde(
-        rename = "includedUpdateClassifications",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "includedUpdateClassifications", default, skip_serializing_if = "Option::is_none")]
     pub included_update_classifications: Option<windows_properties::IncludedUpdateClassifications>,
     #[doc = "KB numbers excluded from the software update configuration."]
     #[serde(
@@ -6849,7 +6707,7 @@ pub struct SoftwareUpdateConfigurationCollectionItemProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tasks: Option<SoftwareUpdateConfigurationTasks>,
     #[doc = "Gets or sets the frequency of the schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<ScheduleFrequency>,
     #[doc = "the start time of the update."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -7111,12 +6969,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -7125,12 +6978,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -7245,7 +7093,7 @@ impl TaskProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateConfiguration {
     #[doc = "Target operating system for the software update configuration."]
-    #[serde(rename = "operatingSystem", with = "azure_core::xml::text_content")]
+    #[serde(rename = "operatingSystem")]
     pub operating_system: OperatingSystemType,
     #[doc = "Windows specific update configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

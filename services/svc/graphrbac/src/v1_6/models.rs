@@ -183,12 +183,7 @@ pub struct Application {
     #[serde(rename = "errorUrl", default, skip_serializing_if = "Option::is_none")]
     pub error_url: Option<String>,
     #[doc = "Configures the groups claim issued in a user or OAuth 2.0 access token that the app expects."]
-    #[serde(
-        rename = "groupMembershipClaims",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "groupMembershipClaims", default, skip_serializing_if = "Option::is_none")]
     pub group_membership_claims: Option<GroupMembershipClaims>,
     #[doc = "The home page of the application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -376,12 +371,7 @@ pub struct ApplicationBase {
     #[serde(rename = "errorUrl", default, skip_serializing_if = "Option::is_none")]
     pub error_url: Option<String>,
     #[doc = "Configures the groups claim issued in a user or OAuth 2.0 access token that the app expects."]
-    #[serde(
-        rename = "groupMembershipClaims",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "groupMembershipClaims", default, skip_serializing_if = "Option::is_none")]
     pub group_membership_claims: Option<GroupMembershipClaims>,
     #[doc = "The home page of the application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -761,13 +751,13 @@ pub struct GroupCreateParameters {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "Whether the group is mail-enabled. Must be false. This is because only pure security groups can be created using the Graph API."]
-    #[serde(rename = "mailEnabled", with = "azure_core::xml::text_content")]
+    #[serde(rename = "mailEnabled")]
     pub mail_enabled: group_create_parameters::MailEnabled,
     #[doc = "Mail nickname"]
     #[serde(rename = "mailNickname")]
     pub mail_nickname: String,
     #[doc = "Whether the group is a security group. Must be true. This is because only pure security groups can be created using the Graph API."]
-    #[serde(rename = "securityEnabled", with = "azure_core::xml::text_content")]
+    #[serde(rename = "securityEnabled")]
     pub security_enabled: group_create_parameters::SecurityEnabled,
 }
 impl GroupCreateParameters {
@@ -1021,12 +1011,7 @@ pub struct OAuth2PermissionGrant {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
     #[doc = "Indicates if consent was provided by the administrator (on behalf of the organization) or by an individual."]
-    #[serde(
-        rename = "consentType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "consentType", default, skip_serializing_if = "Option::is_none")]
     pub consent_type: Option<o_auth2_permission_grant::ConsentType>,
     #[doc = "When consent type is Principal, this property specifies the id of the user that granted consent and applies only for that user."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -1627,12 +1612,7 @@ pub struct User {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub surname: Option<String>,
     #[doc = "A string value that can be used to classify user types in your directory, such as 'Member' and 'Guest'."]
-    #[serde(
-        rename = "userType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userType", default, skip_serializing_if = "Option::is_none")]
     pub user_type: Option<user::UserType>,
     #[doc = "Whether the account is enabled."]
     #[serde(rename = "accountEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -1731,12 +1711,7 @@ pub struct UserBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub surname: Option<String>,
     #[doc = "A string value that can be used to classify user types in your directory, such as 'Member' and 'Guest'."]
-    #[serde(
-        rename = "userType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "userType", default, skip_serializing_if = "Option::is_none")]
     pub user_type: Option<user_base::UserType>,
 }
 impl UserBase {

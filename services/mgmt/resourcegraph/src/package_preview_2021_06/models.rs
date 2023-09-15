@@ -9,7 +9,7 @@ pub struct Column {
     #[doc = "Column name."]
     pub name: String,
     #[doc = "Data type of a column in a table."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ColumnDataType,
 }
 impl Column {
@@ -149,12 +149,7 @@ pub struct FacetRequestOptions {
     #[serde(rename = "sortBy", default, skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<String>,
     #[doc = "The sorting order by the selected column (count by default)."]
-    #[serde(
-        rename = "sortOrder",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sortOrder", default, skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<facet_request_options::SortOrder>,
     #[doc = "Specifies the filter condition for the 'where' clause which will be run on main query's result, just before the actual faceting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -326,23 +321,13 @@ pub struct QueryRequestOptions {
     #[serde(rename = "$skip", default, skip_serializing_if = "Option::is_none")]
     pub skip: Option<i32>,
     #[doc = "Defines in which format query result returned."]
-    #[serde(
-        rename = "resultFormat",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resultFormat", default, skip_serializing_if = "Option::is_none")]
     pub result_format: Option<query_request_options::ResultFormat>,
     #[doc = "Only applicable for tenant and management group level queries to decide whether to allow partial scopes for result in case the number of subscriptions exceed allowed limits."]
     #[serde(rename = "allowPartialScopes", default, skip_serializing_if = "Option::is_none")]
     pub allow_partial_scopes: Option<bool>,
     #[doc = "Defines what level of authorization resources should be returned based on the which subscriptions and management groups are passed as scopes."]
-    #[serde(
-        rename = "authorizationScopeFilter",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authorizationScopeFilter", default, skip_serializing_if = "Option::is_none")]
     pub authorization_scope_filter: Option<query_request_options::AuthorizationScopeFilter>,
 }
 impl QueryRequestOptions {
@@ -388,7 +373,7 @@ pub struct QueryResponse {
     #[doc = "Number of records returned in the current response. In the case of paging, this is the number of records in the current page."]
     pub count: i64,
     #[doc = "Indicates whether the query results are truncated."]
-    #[serde(rename = "resultTruncated", with = "azure_core::xml::text_content")]
+    #[serde(rename = "resultTruncated")]
     pub result_truncated: query_response::ResultTruncated,
     #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
@@ -472,12 +457,7 @@ pub struct ResourcesHistoryRequestOptions {
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
     #[doc = "Defines in which format query result returned."]
-    #[serde(
-        rename = "resultFormat",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resultFormat", default, skip_serializing_if = "Option::is_none")]
     pub result_format: Option<resources_history_request_options::ResultFormat>,
 }
 impl ResourcesHistoryRequestOptions {

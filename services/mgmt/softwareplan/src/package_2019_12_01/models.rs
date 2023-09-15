@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[doc = "Defined error codes to be returned to the client."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<ErrorCode>,
     #[doc = "A user readable error message. Localized based on x-ms-effective-locale header in the request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -114,12 +114,7 @@ impl HybridUseBenefitModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridUseBenefitProperties {
     #[doc = "Represent the current state of the Reservation."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Created date"]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]

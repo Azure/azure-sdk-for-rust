@@ -62,12 +62,7 @@ pub struct AdminRequestApprovalProperties {
     #[serde(rename = "publisherId", default, skip_serializing_if = "Option::is_none")]
     pub publisher_id: Option<String>,
     #[doc = "Gets or sets admin action"]
-    #[serde(
-        rename = "adminAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "adminAction", default, skip_serializing_if = "Option::is_none")]
     pub admin_action: Option<admin_request_approval_properties::AdminAction>,
     #[doc = "Gets or sets Approved plans ids, empty in case of rejected"]
     #[serde(
@@ -815,7 +810,7 @@ pub struct Plan {
     #[serde(rename = "planDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub plan_display_name: Option<String>,
     #[doc = "Plan accessibility"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accessibility: Option<plan::Accessibility>,
     #[doc = "Alternative stack type"]
     #[serde(rename = "altStackReference", default, skip_serializing_if = "Option::is_none")]
@@ -1027,7 +1022,7 @@ impl Serialize for PrivateStoreOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateStoreProperties {
     #[doc = "Indicates private store availability"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub availability: Option<private_store_properties::Availability>,
     #[doc = "Private Store id"]
     #[serde(rename = "privateStoreId", default, skip_serializing_if = "Option::is_none")]
@@ -1459,12 +1454,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rule {
     #[doc = "Rule type"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<rule::Type>,
     #[serde(
         default,
@@ -1720,7 +1710,7 @@ pub struct Subscription {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription::State>,
 }
 impl Subscription {
@@ -1819,12 +1809,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1833,12 +1818,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1989,7 +1969,7 @@ pub struct PlanDetails {
     #[serde(rename = "planId", default, skip_serializing_if = "Option::is_none")]
     pub plan_id: Option<String>,
     #[doc = "Gets the plan status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<plan_details::Status>,
     #[doc = "Gets request date"]
     #[serde(rename = "requestDate", default, skip_serializing_if = "Option::is_none")]

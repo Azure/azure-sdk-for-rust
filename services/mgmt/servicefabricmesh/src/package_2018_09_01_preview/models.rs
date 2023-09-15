@@ -56,18 +56,13 @@ pub struct ApplicationProperties {
     )]
     pub service_names: Vec<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the application."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "When the application's health state is not 'Ok', this additional details from service fabric Health Manager for the user to know why the application is marked unhealthy."]
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
@@ -153,7 +148,6 @@ impl ApplicationScopedVolume {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParameters {
     #[doc = "Specifies the application-scoped volume kind."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: ApplicationScopedVolumeKind,
     #[doc = "User readable description of the volume."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -170,7 +164,7 @@ pub struct ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
     #[serde(flatten)]
     pub application_scoped_volume_creation_parameters: ApplicationScopedVolumeCreationParameters,
     #[doc = "Volume size"]
-    #[serde(rename = "sizeDisk", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sizeDisk")]
     pub size_disk: application_scoped_volume_creation_parameters_service_fabric_volume_disk::SizeDisk,
 }
 impl ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
@@ -267,7 +261,6 @@ impl Serialize for ApplicationScopedVolumeKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingMechanism {
     #[doc = "Enumerates the mechanisms for auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AutoScalingMechanismKind,
 }
 impl AutoScalingMechanism {
@@ -314,7 +307,6 @@ impl Serialize for AutoScalingMechanismKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingMetric {
     #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AutoScalingMetricKind,
 }
 impl AutoScalingMetric {
@@ -378,7 +370,6 @@ pub struct AutoScalingResourceMetric {
     #[serde(flatten)]
     pub auto_scaling_metric: AutoScalingMetric,
     #[doc = "Enumerates the resources that are used for triggering auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: AutoScalingResourceMetricName,
 }
 impl AutoScalingResourceMetric {
@@ -429,7 +420,6 @@ impl Serialize for AutoScalingResourceMetricName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingTrigger {
     #[doc = "Enumerates the triggers for auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AutoScalingTriggerKind,
 }
 impl AutoScalingTrigger {
@@ -865,7 +855,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
     #[doc = "The kind of DiagnosticsSink."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1046,7 +1035,7 @@ pub struct GatewayProperties {
     )]
     pub http: Vec<HttpConfig>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the gateway."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1222,12 +1211,7 @@ pub struct HttpRouteMatchHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "how to match header value"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_route_match_header::Type>,
 }
 impl HttpRouteMatchHeader {
@@ -1287,7 +1271,7 @@ pub struct HttpRouteMatchPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rewrite: Option<String>,
     #[doc = "how to match value in the Uri"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: http_route_match_path::Type,
 }
 impl HttpRouteMatchPath {
@@ -1621,7 +1605,7 @@ pub struct NetworkResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the network."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1643,7 +1627,6 @@ pub struct NetworkResourcePropertiesBase {
     #[serde(flatten)]
     pub provisioned_resource_properties: ProvisionedResourceProperties,
     #[doc = "The type of a Service Fabric container network."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: NetworkKind,
 }
 impl NetworkResourcePropertiesBase {
@@ -1972,7 +1955,7 @@ pub struct SecretResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the secret."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1998,7 +1981,6 @@ pub struct SecretResourcePropertiesBase {
     #[serde(flatten)]
     pub provisioned_resource_properties: ProvisionedResourceProperties,
     #[doc = "Describes the kind of secret."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: SecretKind,
 }
 impl SecretResourcePropertiesBase {
@@ -2105,18 +2087,13 @@ pub struct ServiceProperties {
     )]
     pub auto_scaling_policies: Vec<AutoScalingPolicy>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the service."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "When the service's health state is not 'Ok', this additional details from service fabric Health Manager for the user to know why the service is marked unhealthy."]
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
@@ -2173,7 +2150,7 @@ impl ServiceReplicaDescriptionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceReplicaProperties {
     #[doc = "The operation system required by the code in service."]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: OperatingSystemType,
     #[doc = "Describes the set of code packages that forms the service. A code package describes the container and the properties for running it. All the code packages are started together on the same host and share the same context (network, process etc.)."]
     #[serde(rename = "codePackages")]
@@ -2340,13 +2317,12 @@ pub struct VolumeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the volume."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "Describes the provider of the volume resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub provider: VolumeProvider,
     #[doc = "This type describes a volume provided by an Azure Files file share."]
     #[serde(rename = "azureFileParameters", default, skip_serializing_if = "Option::is_none")]

@@ -21,7 +21,7 @@ pub struct CheckNameAvailabilityParameters {
     #[doc = "The name to check for availability"]
     pub name: String,
     #[doc = "The resource type. Must be set to Microsoft.StorageSync/storageSyncServices"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
 impl CheckNameAvailabilityParameters {
@@ -45,7 +45,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Gets the reason that a Storage Sync Service name could not be used. The Reason element is only returned if NameAvailable is false."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -887,12 +887,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -1046,7 +1041,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1271,12 +1266,7 @@ pub struct RegisteredServerProperties {
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "Type of the registered server agent version status"]
-    #[serde(
-        rename = "agentVersionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "agentVersionStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_version_status: Option<RegisteredServerAgentVersionStatus>,
     #[doc = "Registered Server Agent Version Expiration Date"]
     #[serde(rename = "agentVersionExpirationDate", default, with = "azure_core::date::rfc3339::option")]
@@ -1474,7 +1464,7 @@ pub struct ServerEndpointCloudTieringStatus {
     #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Type of the cloud tiering health state"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub health: Option<ServerEndpointCloudTieringHealthState>,
     #[doc = "The last updated timestamp of health state"]
     #[serde(rename = "healthLastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
@@ -1527,12 +1517,7 @@ pub struct ServerEndpointCreateParametersProperties {
     #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
     pub server_local_path: Option<PhysicalPath>,
     #[doc = "Type of the Feature Status"]
-    #[serde(
-        rename = "cloudTiering",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
     pub cloud_tiering: Option<FeatureStatus>,
     #[doc = "Level of free space to be maintained by Cloud Tiering if it is enabled."]
     #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
@@ -1547,31 +1532,16 @@ pub struct ServerEndpointCreateParametersProperties {
     #[serde(rename = "serverResourceId", default, skip_serializing_if = "Option::is_none")]
     pub server_resource_id: Option<ResourceId>,
     #[doc = "Type of the Feature Status"]
-    #[serde(
-        rename = "offlineDataTransfer",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
     pub offline_data_transfer: Option<FeatureStatus>,
     #[doc = "Offline data transfer share name"]
     #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
     pub offline_data_transfer_share_name: Option<String>,
     #[doc = "Policy for how namespace and files are recalled during FastDr"]
-    #[serde(
-        rename = "initialDownloadPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "initialDownloadPolicy", default, skip_serializing_if = "Option::is_none")]
     pub initial_download_policy: Option<InitialDownloadPolicy>,
     #[doc = "Policy for enabling follow-the-sun business models: link local cache to cloud behavior to pre-populate before local access."]
-    #[serde(
-        rename = "localCacheMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "localCacheMode", default, skip_serializing_if = "Option::is_none")]
     pub local_cache_mode: Option<LocalCacheMode>,
 }
 impl ServerEndpointCreateParametersProperties {
@@ -1645,12 +1615,7 @@ pub struct ServerEndpointProperties {
     #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
     pub server_local_path: Option<PhysicalPath>,
     #[doc = "Type of the Feature Status"]
-    #[serde(
-        rename = "cloudTiering",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
     pub cloud_tiering: Option<FeatureStatus>,
     #[doc = "Level of free space to be maintained by Cloud Tiering if it is enabled."]
     #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
@@ -1677,12 +1642,7 @@ pub struct ServerEndpointProperties {
     #[serde(rename = "syncStatus", default, skip_serializing_if = "Option::is_none")]
     pub sync_status: Option<ServerEndpointSyncStatus>,
     #[doc = "Type of the Feature Status"]
-    #[serde(
-        rename = "offlineDataTransfer",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
     pub offline_data_transfer: Option<FeatureStatus>,
     #[doc = "Offline data transfer storage account resource ID"]
     #[serde(
@@ -1708,20 +1668,10 @@ pub struct ServerEndpointProperties {
     #[serde(rename = "recallStatus", default, skip_serializing_if = "Option::is_none")]
     pub recall_status: Option<ServerEndpointRecallStatus>,
     #[doc = "Policy for how namespace and files are recalled during FastDr"]
-    #[serde(
-        rename = "initialDownloadPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "initialDownloadPolicy", default, skip_serializing_if = "Option::is_none")]
     pub initial_download_policy: Option<InitialDownloadPolicy>,
     #[doc = "Policy for enabling follow-the-sun business models: link local cache to cloud behavior to pre-populate before local access."]
-    #[serde(
-        rename = "localCacheMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "localCacheMode", default, skip_serializing_if = "Option::is_none")]
     pub local_cache_mode: Option<LocalCacheMode>,
 }
 impl ServerEndpointProperties {
@@ -1828,12 +1778,7 @@ pub struct ServerEndpointSyncActivityStatus {
     #[serde(rename = "totalBytes", default, skip_serializing_if = "Option::is_none")]
     pub total_bytes: Option<i64>,
     #[doc = "Sync mode for the server endpoint."]
-    #[serde(
-        rename = "syncMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncMode", default, skip_serializing_if = "Option::is_none")]
     pub sync_mode: Option<ServerEndpointSyncMode>,
 }
 impl ServerEndpointSyncActivityStatus {
@@ -1961,12 +1906,7 @@ pub struct ServerEndpointSyncSessionStatus {
     )]
     pub files_not_syncing_errors: Vec<ServerEndpointFilesNotSyncingError>,
     #[doc = "Sync mode for the server endpoint."]
-    #[serde(
-        rename = "lastSyncMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastSyncMode", default, skip_serializing_if = "Option::is_none")]
     pub last_sync_mode: Option<ServerEndpointSyncMode>,
 }
 impl ServerEndpointSyncSessionStatus {
@@ -1978,36 +1918,16 @@ impl ServerEndpointSyncSessionStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointSyncStatus {
     #[doc = "Type of the sync health state"]
-    #[serde(
-        rename = "downloadHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "downloadHealth", default, skip_serializing_if = "Option::is_none")]
     pub download_health: Option<ServerEndpointSyncHealthState>,
     #[doc = "Type of the sync health state"]
-    #[serde(
-        rename = "uploadHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "uploadHealth", default, skip_serializing_if = "Option::is_none")]
     pub upload_health: Option<ServerEndpointSyncHealthState>,
     #[doc = "Type of the sync health state"]
-    #[serde(
-        rename = "combinedHealth",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "combinedHealth", default, skip_serializing_if = "Option::is_none")]
     pub combined_health: Option<ServerEndpointSyncHealthState>,
     #[doc = "Type of the sync activity state"]
-    #[serde(
-        rename = "syncActivity",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "syncActivity", default, skip_serializing_if = "Option::is_none")]
     pub sync_activity: Option<ServerEndpointSyncActivityState>,
     #[doc = "Total count of persistent files not syncing (combined upload + download)."]
     #[serde(rename = "totalPersistentFilesNotSyncingCount", default, skip_serializing_if = "Option::is_none")]
@@ -2028,12 +1948,7 @@ pub struct ServerEndpointSyncStatus {
     #[serde(rename = "downloadActivity", default, skip_serializing_if = "Option::is_none")]
     pub download_activity: Option<ServerEndpointSyncActivityStatus>,
     #[doc = "Type of the Health state"]
-    #[serde(
-        rename = "offlineDataTransferStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "offlineDataTransferStatus", default, skip_serializing_if = "Option::is_none")]
     pub offline_data_transfer_status: Option<ServerEndpointOfflineDataTransferState>,
 }
 impl ServerEndpointSyncStatus {
@@ -2057,12 +1972,7 @@ impl ServerEndpointUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointUpdateProperties {
     #[doc = "Type of the Feature Status"]
-    #[serde(
-        rename = "cloudTiering",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
     pub cloud_tiering: Option<FeatureStatus>,
     #[doc = "Level of free space to be maintained by Cloud Tiering if it is enabled."]
     #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
@@ -2071,23 +1981,13 @@ pub struct ServerEndpointUpdateProperties {
     #[serde(rename = "tierFilesOlderThanDays", default, skip_serializing_if = "Option::is_none")]
     pub tier_files_older_than_days: Option<i64>,
     #[doc = "Type of the Feature Status"]
-    #[serde(
-        rename = "offlineDataTransfer",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
     pub offline_data_transfer: Option<FeatureStatus>,
     #[doc = "Offline data transfer share name"]
     #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
     pub offline_data_transfer_share_name: Option<String>,
     #[doc = "Policy for enabling follow-the-sun business models: link local cache to cloud behavior to pre-populate before local access."]
-    #[serde(
-        rename = "localCacheMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "localCacheMode", default, skip_serializing_if = "Option::is_none")]
     pub local_cache_mode: Option<LocalCacheMode>,
 }
 impl ServerEndpointUpdateProperties {
@@ -2258,12 +2158,7 @@ impl StorageSyncServiceCreateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncServiceCreateParametersProperties {
     #[doc = "Type of the Incoming Traffic Policy"]
-    #[serde(
-        rename = "incomingTrafficPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "incomingTrafficPolicy", default, skip_serializing_if = "Option::is_none")]
     pub incoming_traffic_policy: Option<IncomingTrafficPolicy>,
 }
 impl StorageSyncServiceCreateParametersProperties {
@@ -2275,12 +2170,7 @@ impl StorageSyncServiceCreateParametersProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncServiceProperties {
     #[doc = "Type of the Incoming Traffic Policy"]
-    #[serde(
-        rename = "incomingTrafficPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "incomingTrafficPolicy", default, skip_serializing_if = "Option::is_none")]
     pub incoming_traffic_policy: Option<IncomingTrafficPolicy>,
     #[doc = "Storage Sync service status."]
     #[serde(rename = "storageSyncServiceStatus", default, skip_serializing_if = "Option::is_none")]
@@ -2330,12 +2220,7 @@ impl StorageSyncServiceUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSyncServiceUpdateProperties {
     #[doc = "Type of the Incoming Traffic Policy"]
-    #[serde(
-        rename = "incomingTrafficPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "incomingTrafficPolicy", default, skip_serializing_if = "Option::is_none")]
     pub incoming_traffic_policy: Option<IncomingTrafficPolicy>,
 }
 impl StorageSyncServiceUpdateProperties {
@@ -2347,7 +2232,7 @@ impl StorageSyncServiceUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionState {
     #[doc = "State of Azure Subscription"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription_state::State>,
     #[doc = "Is Transitioning"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2523,12 +2408,7 @@ pub struct TriggerChangeDetectionParameters {
     #[serde(rename = "directoryPath", default, skip_serializing_if = "Option::is_none")]
     pub directory_path: Option<String>,
     #[doc = "Change Detection Mode. Applies to a directory specified in directoryPath parameter."]
-    #[serde(
-        rename = "changeDetectionMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "changeDetectionMode", default, skip_serializing_if = "Option::is_none")]
     pub change_detection_mode: Option<trigger_change_detection_parameters::ChangeDetectionMode>,
     #[doc = "Array of relative paths on the Azure File share to be included in the change detection. Can be files and directories."]
     #[serde(
@@ -2638,10 +2518,10 @@ pub struct WorkflowProperties {
     #[serde(rename = "lastStepName", default, skip_serializing_if = "Option::is_none")]
     pub last_step_name: Option<String>,
     #[doc = "Type of the Workflow Status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Type of the Operation Direction"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<OperationDirection>,
     #[doc = "workflow steps"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

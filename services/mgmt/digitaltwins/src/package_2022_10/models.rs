@@ -62,7 +62,7 @@ pub struct CheckNameRequest {
     #[doc = "Resource name."]
     pub name: String,
     #[doc = "The type of resource, for instance Microsoft.DigitalTwins/digitalTwinsInstances."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: check_name_request::Type,
 }
 impl CheckNameRequest {
@@ -89,7 +89,7 @@ pub struct CheckNameResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Message providing the reason why the given name is invalid."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_result::Reason>,
 }
 impl CheckNameResult {
@@ -141,12 +141,7 @@ pub mod check_name_result {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionProperties {
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<connection_properties::ProvisioningState>,
     #[doc = "The private endpoint property of a private endpoint connection."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -216,7 +211,6 @@ pub mod connection_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionState {
     #[doc = "The status of a private endpoint connection."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: connection_state::Status,
     #[doc = "The description for the current state of a private endpoint connection."]
     pub description: String,
@@ -364,26 +358,16 @@ impl DigitalTwinsEndpointResourceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsEndpointResourceProperties {
     #[doc = "The type of Digital Twins endpoint"]
-    #[serde(rename = "endpointType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "endpointType")]
     pub endpoint_type: digital_twins_endpoint_resource_properties::EndpointType,
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<digital_twins_endpoint_resource_properties::ProvisioningState>,
     #[doc = "Time when the Endpoint was added to DigitalTwinsInstance."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Specifies the authentication type being used for connecting to the endpoint. Defaults to 'KeyBased'. If 'KeyBased' is selected, a connection string must be specified (at least the primary connection string). If 'IdentityBased' is select, the endpointUri and entityPath properties must be specified."]
-    #[serde(
-        rename = "authenticationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<digital_twins_endpoint_resource_properties::AuthenticationType>,
     #[doc = "Dead letter storage secret for key-based authentication. Will be obfuscated during read."]
     #[serde(rename = "deadLetterSecret", default, skip_serializing_if = "Option::is_none")]
@@ -548,12 +532,7 @@ pub mod digital_twins_endpoint_resource_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DigitalTwinsIdentity {
     #[doc = "The type of Managed Identity used by the DigitalTwinsInstance."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<digital_twins_identity::Type>,
     #[doc = "The object id of the Managed Identity Resource. This will be sent to the RP from ARM via the x-ms-identity-principal-id header in the PUT request if the resource has a systemAssigned(implicit) identity"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -637,12 +616,7 @@ impl DigitalTwinsPatchDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DigitalTwinsPatchProperties {
     #[doc = "Public network access for the DigitalTwinsInstance."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<digital_twins_patch_properties::PublicNetworkAccess>,
 }
 impl DigitalTwinsPatchProperties {
@@ -700,12 +674,7 @@ pub struct DigitalTwinsProperties {
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<digital_twins_properties::ProvisioningState>,
     #[doc = "Api endpoint to work with DigitalTwinsInstance."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
@@ -719,12 +688,7 @@ pub struct DigitalTwinsProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Public network access for the DigitalTwinsInstance."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<digital_twins_properties::PublicNetworkAccess>,
 }
 impl DigitalTwinsProperties {
@@ -1057,12 +1021,7 @@ impl GroupIdInformationResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIdentityReference {
     #[doc = "The type of managed identity used."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_identity_reference::Type>,
     #[doc = "The user identity ARM resource id if the managed identity type is 'UserAssigned'."]
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1276,12 +1235,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1290,12 +1244,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1434,15 +1383,10 @@ impl TimeSeriesDatabaseConnectionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesDatabaseConnectionProperties {
     #[doc = "The type of time series connection resource."]
-    #[serde(rename = "connectionType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "connectionType")]
     pub connection_type: time_series_database_connection_properties::ConnectionType,
     #[doc = "The provisioning state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<time_series_database_connection_properties::ProvisioningState>,
     #[doc = "The properties of the Managed Identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -6,7 +6,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionableRemediation {
     #[doc = "ActionableRemediation Setting.\r\nNone - the setting was never set.\r\nEnabled - ActionableRemediation is enabled.\r\nDisabled - ActionableRemediation is disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ActionableRemediationState>,
     #[serde(
         rename = "severityLevels",
@@ -157,12 +157,7 @@ impl AzureDevOpsConnectorListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsConnectorProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authorization: Option<AuthorizationInfo>,
@@ -211,12 +206,7 @@ impl AzureDevOpsConnectorStatsListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsConnectorStatsProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets orgs count."]
     #[serde(rename = "orgsCount", default, skip_serializing_if = "Option::is_none")]
@@ -277,12 +267,7 @@ pub struct AzureDevOpsOrgMetadata {
     #[doc = "Gets or sets name of the AzureDevOps Org."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(
-        rename = "autoDiscovery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
     pub auto_discovery: Option<AutoDiscovery>,
     #[serde(
         default,
@@ -299,19 +284,9 @@ impl AzureDevOpsOrgMetadata {
 #[doc = "AzureDevOps Org properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsOrgProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[serde(
-        rename = "autoDiscovery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
     pub auto_discovery: Option<AutoDiscovery>,
 }
 impl AzureDevOpsOrgProperties {
@@ -363,12 +338,7 @@ pub struct AzureDevOpsProjectMetadata {
     #[doc = "Gets or sets name of the AzureDevOps Project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(
-        rename = "autoDiscovery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
     pub auto_discovery: Option<AutoDiscovery>,
     #[doc = "Gets or sets repositories."]
     #[serde(
@@ -386,12 +356,7 @@ impl AzureDevOpsProjectMetadata {
 #[doc = "AzureDevOps Project properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsProjectProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets AzureDevOps org Name."]
     #[serde(rename = "orgName", default, skip_serializing_if = "Option::is_none")]
@@ -399,12 +364,7 @@ pub struct AzureDevOpsProjectProperties {
     #[doc = "Gets or sets AzureDevOps Project Id."]
     #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
-    #[serde(
-        rename = "autoDiscovery",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
     pub auto_discovery: Option<AutoDiscovery>,
 }
 impl AzureDevOpsProjectProperties {
@@ -453,12 +413,7 @@ impl AzureDevOpsRepoListResponse {
 #[doc = "AzureDevOps Repo properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsRepoProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets AzureDevOps org Name."]
     #[serde(rename = "orgName", default, skip_serializing_if = "Option::is_none")]
@@ -593,12 +548,7 @@ impl GitHubConnectorListResponse {
 #[doc = "Properties of the ARM resource for /subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.SecurityDevOps/gitHubConnectors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubConnectorProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets one-time OAuth code to exchange for refresh and access tokens.\r\n\r\nOnly used during PUT operations. The secret is cleared during GET.\r\nIn general, RPaaS does not return any property marked as a secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -641,12 +591,7 @@ impl GitHubConnectorStatsListResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubConnectorStatsProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets owners count."]
     #[serde(rename = "ownersCount", default, skip_serializing_if = "Option::is_none")]
@@ -701,12 +646,7 @@ impl GitHubOwnerListResponse {
 #[doc = "GitHub Repo Owner properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubOwnerProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets gitHub owner url."]
     #[serde(rename = "ownerUrl", default, skip_serializing_if = "Option::is_none")]
@@ -758,12 +698,7 @@ impl GitHubRepoListResponse {
 #[doc = "GitHub Repo properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubRepoProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets gitHub repo account id."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
@@ -782,12 +717,7 @@ impl GitHubRepoProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubReposProperties {
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Gets or sets gitHub repo account id."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
@@ -817,15 +747,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1116,12 +1041,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1130,12 +1050,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

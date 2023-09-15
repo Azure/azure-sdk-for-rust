@@ -118,12 +118,7 @@ impl CatalogListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CatalogProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl CatalogProperties {
@@ -196,7 +191,7 @@ pub struct CertificateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
     #[doc = "Certificate status values."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<CertificateStatus>,
     #[doc = "The certificate subject."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -211,12 +206,7 @@ pub struct CertificateProperties {
     #[serde(rename = "notBeforeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub not_before_utc: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl CertificateProperties {
@@ -351,12 +341,7 @@ pub struct DeploymentProperties {
     #[serde(rename = "deploymentDateUtc", default, with = "azure_core::date::rfc3339::option")]
     pub deployment_date_utc: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl DeploymentProperties {
@@ -419,47 +404,22 @@ pub struct DeviceGroupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "OS feed type values."]
-    #[serde(
-        rename = "osFeedType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osFeedType", default, skip_serializing_if = "Option::is_none")]
     pub os_feed_type: Option<OsFeedType>,
     #[doc = "Update policy values."]
-    #[serde(
-        rename = "updatePolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updatePolicy", default, skip_serializing_if = "Option::is_none")]
     pub update_policy: Option<UpdatePolicy>,
     #[doc = "Allow crash dumps values."]
-    #[serde(
-        rename = "allowCrashDumpsCollection",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allowCrashDumpsCollection", default, skip_serializing_if = "Option::is_none")]
     pub allow_crash_dumps_collection: Option<AllowCrashDumpCollection>,
     #[doc = "Regional data boundary values."]
-    #[serde(
-        rename = "regionalDataBoundary",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "regionalDataBoundary", default, skip_serializing_if = "Option::is_none")]
     pub regional_data_boundary: Option<RegionalDataBoundary>,
     #[doc = "Deployment status for the device group."]
     #[serde(rename = "hasDeployment", default, skip_serializing_if = "Option::is_none")]
     pub has_deployment: Option<bool>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl DeviceGroupProperties {
@@ -486,36 +446,16 @@ pub struct DeviceGroupUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "OS feed type values."]
-    #[serde(
-        rename = "osFeedType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osFeedType", default, skip_serializing_if = "Option::is_none")]
     pub os_feed_type: Option<OsFeedType>,
     #[doc = "Update policy values."]
-    #[serde(
-        rename = "updatePolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "updatePolicy", default, skip_serializing_if = "Option::is_none")]
     pub update_policy: Option<UpdatePolicy>,
     #[doc = "Allow crash dumps values."]
-    #[serde(
-        rename = "allowCrashDumpsCollection",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allowCrashDumpsCollection", default, skip_serializing_if = "Option::is_none")]
     pub allow_crash_dumps_collection: Option<AllowCrashDumpCollection>,
     #[doc = "Regional data boundary values."]
-    #[serde(
-        rename = "regionalDataBoundary",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "regionalDataBoundary", default, skip_serializing_if = "Option::is_none")]
     pub regional_data_boundary: Option<RegionalDataBoundary>,
 }
 impl DeviceGroupUpdateProperties {
@@ -627,12 +567,7 @@ pub struct DeviceProperties {
     #[serde(rename = "lastUpdateRequestUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_update_request_utc: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl DeviceProperties {
@@ -788,12 +723,7 @@ pub struct ImageProperties {
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
     #[doc = "Regional data boundary values."]
-    #[serde(
-        rename = "regionalDataBoundary",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "regionalDataBoundary", default, skip_serializing_if = "Option::is_none")]
     pub regional_data_boundary: Option<RegionalDataBoundary>,
     #[doc = "Location the image"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -805,20 +735,10 @@ pub struct ImageProperties {
     #[serde(rename = "componentId", default, skip_serializing_if = "Option::is_none")]
     pub component_id: Option<String>,
     #[doc = "Image type values."]
-    #[serde(
-        rename = "imageType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "imageType", default, skip_serializing_if = "Option::is_none")]
     pub image_type: Option<ImageType>,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ImageProperties {
@@ -980,15 +900,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1182,12 +1097,7 @@ pub struct ProductProperties {
     #[doc = "Description of the product"]
     pub description: String,
     #[doc = "Provisioning state of the resource."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ProductProperties {
@@ -1438,12 +1348,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1452,12 +1357,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Authorization {
     #[doc = "Type of authorization."]
-    #[serde(rename = "authorizationType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "authorizationType")]
     pub authorization_type: authorization::AuthorizationType,
     #[doc = "Authorization parameters corresponding to the authorization type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -124,7 +124,7 @@ impl CloudErrorBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CodeRepository {
     #[doc = "Type of code repository."]
-    #[serde(rename = "repositoryType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "repositoryType")]
     pub repository_type: code_repository::RepositoryType,
     #[doc = "Unique immutable identifier of the code repository."]
     pub id: String,
@@ -200,7 +200,7 @@ pub struct InputDescriptor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Data type of the value of the input parameter."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: input_descriptor::Type,
     #[doc = "List of possible values for the input parameter."]
     #[serde(

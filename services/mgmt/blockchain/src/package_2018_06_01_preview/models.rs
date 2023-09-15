@@ -92,18 +92,13 @@ impl BlockchainMemberNodesSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockchainMemberProperties {
     #[doc = "Gets or sets the blockchain protocol."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<blockchain_member_properties::Protocol>,
     #[doc = "Payload of the blockchain member nodes Sku for a blockchain member."]
     #[serde(rename = "validatorNodesSku", default, skip_serializing_if = "Option::is_none")]
     pub validator_nodes_sku: Option<BlockchainMemberNodesSku>,
     #[doc = "Gets or sets the blockchain member provision state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blockchain_member_properties::ProvisioningState>,
     #[doc = "Gets the dns endpoint of the blockchain member."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -274,7 +269,7 @@ pub struct Consortium {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Gets or sets the protocol for the consortium."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<consortium::Protocol>,
 }
 impl Consortium {
@@ -425,7 +420,7 @@ pub struct NameAvailability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Gets or sets the name availability reason."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<name_availability::Reason>,
 }
 impl NameAvailability {
@@ -736,12 +731,7 @@ impl TransactionNodeCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransactionNodeProperties {
     #[doc = "Gets or sets the blockchain member provision state."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<transaction_node_properties::ProvisioningState>,
     #[doc = "Gets or sets the transaction node dns endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

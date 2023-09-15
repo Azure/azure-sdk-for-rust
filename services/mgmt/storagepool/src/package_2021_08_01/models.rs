@@ -210,13 +210,12 @@ impl DiskPoolListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
     #[doc = "Provisioning state of the iSCSI Target."]
-    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
     #[doc = "Logical zone for Disk Pool resource; example: [\"1\"]."]
     #[serde(rename = "availabilityZones")]
     pub availability_zones: Vec<AvailabilityZone>,
     #[doc = "Operational status of the resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationalStatus,
     #[doc = "List of Azure Managed Disks to attach to a Disk Pool."]
     #[serde(
@@ -575,7 +574,7 @@ impl IscsiTargetCreate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreateProperties {
     #[doc = "ACL mode for iSCSI Target."]
-    #[serde(rename = "aclMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "aclMode")]
     pub acl_mode: AclMode,
     #[doc = "iSCSI Target IQN (iSCSI Qualified Name); example: \"iqn.2005-03.org.iscsi:server\"."]
     #[serde(rename = "targetIqn", default, skip_serializing_if = "Option::is_none")]
@@ -630,7 +629,7 @@ impl IscsiTargetList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetProperties {
     #[doc = "ACL mode for iSCSI Target."]
-    #[serde(rename = "aclMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "aclMode")]
     pub acl_mode: AclMode,
     #[doc = "Access Control List (ACL) for an iSCSI Target; defines LUN masking policy"]
     #[serde(
@@ -651,10 +650,9 @@ pub struct IscsiTargetProperties {
     #[serde(rename = "targetIqn")]
     pub target_iqn: String,
     #[doc = "Provisioning state of the iSCSI Target."]
-    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
     #[doc = "Operational status of the resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationalStatus,
     #[doc = "List of private IPv4 addresses to connect to the iSCSI Target."]
     #[serde(
@@ -1038,12 +1036,7 @@ impl ResourceSkuRestrictionInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictions {
     #[doc = "The type of restrictions."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_sku_restrictions::Type>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
@@ -1056,12 +1049,7 @@ pub struct ResourceSkuRestrictions {
     #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
     pub restriction_info: Option<ResourceSkuRestrictionInfo>,
     #[doc = "The reason for restriction."]
-    #[serde(
-        rename = "reasonCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
 impl ResourceSkuRestrictions {
@@ -1198,12 +1186,7 @@ pub struct SystemMetadata {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_metadata::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1212,12 +1195,7 @@ pub struct SystemMetadata {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_metadata::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

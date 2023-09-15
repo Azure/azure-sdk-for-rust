@@ -27,7 +27,7 @@ pub struct AlertProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Source of alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<alert_properties::Source>,
     #[doc = "Alert details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36,7 +36,7 @@ pub struct AlertProperties {
     #[serde(rename = "costEntityId", default, skip_serializing_if = "Option::is_none")]
     pub cost_entity_id: Option<String>,
     #[doc = "alert status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<alert_properties::Status>,
     #[doc = "dateTime in which alert was created"]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
@@ -65,18 +65,13 @@ pub mod alert_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Definition {
         #[doc = "type of alert"]
-        #[serde(
-            rename = "type",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<definition::Type>,
         #[doc = "Alert category"]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub category: Option<definition::Category>,
         #[doc = "Criteria that triggered alert"]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub criteria: Option<definition::Criteria>,
     }
     impl Definition {
@@ -282,12 +277,7 @@ pub mod alert_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Details {
         #[doc = "Type of timegrain cadence"]
-        #[serde(
-            rename = "timeGrainType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "timeGrainType", default, skip_serializing_if = "Option::is_none")]
         pub time_grain_type: Option<details::TimeGrainType>,
         #[doc = "datetime of periodStartDate"]
         #[serde(rename = "periodStartDate", default, skip_serializing_if = "Option::is_none")]
@@ -326,7 +316,7 @@ pub mod alert_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub threshold: Option<f64>,
         #[doc = "operator used to compare currentSpend with amount"]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operator: Option<details::Operator>,
         #[doc = "budget threshold amount"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -671,7 +661,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ForecastDataset {
     #[doc = "The granularity of rows in the forecast."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<forecast_dataset::Granularity>,
     #[doc = "The configuration of dataset in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -730,10 +720,9 @@ pub mod forecast_dataset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForecastDefinition {
     #[doc = "The type of the forecast."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: forecast_definition::Type,
     #[doc = "The time frame for pulling data for the forecast. If custom, then a specific time period must be provided."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub timeframe: forecast_definition::Timeframe,
     #[doc = "The start and end date for pulling data for the query."]
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
@@ -850,12 +839,7 @@ pub mod forecast_definition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KpiProperties {
     #[doc = "KPI type (Forecast, Budget)."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<kpi_properties::Type>,
     #[doc = "ID of resource related to metric (budget)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -980,7 +964,7 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
     #[doc = "The status of the long running operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<operation_status::Status>,
     #[doc = "The URL to download the generated report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1037,12 +1021,7 @@ pub mod operation_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PivotProperties {
     #[doc = "Data type to show in view."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<pivot_properties::Type>,
     #[doc = "Data field to show in view."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1120,7 +1099,6 @@ pub struct QueryAggregation {
     #[doc = "The name of the column to aggregate."]
     pub name: String,
     #[doc = "The name of the aggregation function to use."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub function: query_aggregation::Function,
 }
 impl QueryAggregation {
@@ -1224,7 +1202,6 @@ pub struct QueryComparisonExpression {
     #[doc = "The name of the column to use in comparison."]
     pub name: String,
     #[doc = "The operator to use for comparison."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: query_comparison_expression::Operator,
     #[doc = "Array of values to use for comparison"]
     pub values: Vec<String>,
@@ -1276,7 +1253,7 @@ pub mod query_comparison_expression {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryDataset {
     #[doc = "The granularity of rows in the query."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<query_dataset::Granularity>,
     #[doc = "The configuration of dataset in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1358,10 +1335,9 @@ impl QueryDatasetConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryDefinition {
     #[doc = "The type of the query."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: query_definition::Type,
     #[doc = "The time frame for pulling data for the query. If custom, then a specific time period must be provided."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub timeframe: query_definition::Timeframe,
     #[doc = "The start and end date for pulling data for the query."]
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
@@ -1499,7 +1475,7 @@ impl QueryFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryGrouping {
     #[doc = "The type of the column in the export."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: QueryColumnType,
     #[doc = "The name of the column to group."]
     pub name: String,
@@ -1570,7 +1546,6 @@ pub struct ReportConfigAggregation {
     #[doc = "The name of the column to aggregate."]
     pub name: String,
     #[doc = "The name of the aggregation function to use."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub function: report_config_aggregation::Function,
 }
 impl ReportConfigAggregation {
@@ -1659,7 +1634,6 @@ pub struct ReportConfigComparisonExpression {
     #[doc = "The name of the column to use in comparison."]
     pub name: String,
     #[doc = "The operator to use for comparison."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: report_config_comparison_expression::Operator,
     #[doc = "Array of values to use for comparison"]
     pub values: Vec<String>,
@@ -1713,7 +1687,7 @@ pub mod report_config_comparison_expression {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigDataset {
     #[doc = "The granularity of rows in the report."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<report_config_dataset::Granularity>,
     #[doc = "The configuration of dataset in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1804,10 +1778,9 @@ impl ReportConfigDatasetConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigDefinition {
     #[doc = "The type of the report. Usage represents actual usage, forecast represents forecasted data and UsageAndForecast represents both usage and forecasted data. Actual usage and forecasted data can be differentiated based on dates."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: report_config_definition::Type,
     #[doc = "The time frame for pulling data for the report. If custom, then a specific time period must be provided."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub timeframe: report_config_definition::Timeframe,
     #[doc = "The start and end date for pulling data for the report."]
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
@@ -1942,7 +1915,7 @@ impl ReportConfigFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigGrouping {
     #[doc = "The type of the column in the report."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ReportConfigColumnType,
     #[doc = "The name of the column to group. This version supports subscription lowest possible grain."]
     pub name: String,
@@ -1956,7 +1929,7 @@ impl ReportConfigGrouping {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigSorting {
     #[doc = "Direction of sort."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<report_config_sorting::Direction>,
     #[doc = "The name of the column to sort."]
     pub name: String,
@@ -2025,12 +1998,7 @@ impl ReportConfigTimePeriod {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportUrl {
     #[doc = "The CSV file from the reportUrl blob link consists of reservation usage data with the following schema at daily granularity"]
-    #[serde(
-        rename = "reportUrl",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "reportUrl", default, skip_serializing_if = "Option::is_none")]
     pub report_url: Option<ReservationReportSchema>,
     #[doc = "The time at which report URL becomes invalid."]
     #[serde(rename = "validUntil", default, with = "azure_core::date::rfc3339::option")]
@@ -2194,13 +2162,13 @@ pub struct ViewProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<ReportConfigDefinition>,
     #[doc = "Chart type of the main view in Cost Analysis. Required."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chart: Option<view_properties::Chart>,
     #[doc = "Show costs accumulated over time."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accumulated: Option<view_properties::Accumulated>,
     #[doc = "Metric to use when displaying costs."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metric: Option<view_properties::Metric>,
     #[doc = "List of KPIs to show in Cost Analysis UI."]
     #[serde(

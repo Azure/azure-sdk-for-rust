@@ -281,7 +281,7 @@ pub struct StatusResult {
     #[serde(rename = "trustModel", default, skip_serializing_if = "Option::is_none")]
     pub trust_model: Option<String>,
     #[doc = "Status of attestation service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<status_result::Status>,
     #[doc = "Gets the uri of attestation service"]
     #[serde(rename = "attestUri", default, skip_serializing_if = "Option::is_none")]

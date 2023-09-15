@@ -129,12 +129,7 @@ pub struct AvailableGroundStationProperties {
     #[serde(rename = "altitudeMeters", default, skip_serializing_if = "Option::is_none")]
     pub altitude_meters: Option<f64>,
     #[doc = "Release Status of a ground station."]
-    #[serde(
-        rename = "releaseMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "releaseMode", default, skip_serializing_if = "Option::is_none")]
     pub release_mode: Option<available_ground_station_properties::ReleaseMode>,
 }
 impl AvailableGroundStationProperties {
@@ -399,10 +394,8 @@ pub struct ContactProfileLink {
     #[doc = "Link name."]
     pub name: String,
     #[doc = "Polarization. e.g. (RHCP, LHCP)."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub polarization: contact_profile_link::Polarization,
     #[doc = "Direction (uplink or downlink)."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub direction: contact_profile_link::Direction,
     #[doc = "Gain To Noise Temperature in db/K. It is the required G/T by the customer. Not used yet."]
     #[serde(rename = "gainOverTemperature", default, skip_serializing_if = "Option::is_none")]
@@ -596,12 +589,7 @@ pub struct ContactProfilesProperties {
     #[serde(rename = "minimumElevationDegrees", default, skip_serializing_if = "Option::is_none")]
     pub minimum_elevation_degrees: Option<f64>,
     #[doc = "Auto-tracking configuration."]
-    #[serde(
-        rename = "autoTrackingConfiguration",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "autoTrackingConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub auto_tracking_configuration: Option<contact_profiles_properties::AutoTrackingConfiguration>,
     #[doc = "ARM resource identifier of the Event Hub used for telemetry. Requires granting Orbital Resource Provider the rights to send telemetry into the hub."]
     #[serde(rename = "eventHubUri", default, skip_serializing_if = "Option::is_none")]
@@ -657,7 +645,7 @@ pub struct ContactsProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "Status of a contact."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<contacts_properties::Status>,
     #[doc = "Reservation start time of a contact (ISO 8601 UTC standard)."]
     #[serde(rename = "reservationStartTime", with = "azure_core::date::rfc3339")]
@@ -816,7 +804,6 @@ pub struct EndPoint {
     #[doc = "TCP port to listen on to receive data."]
     pub port: String,
     #[doc = "Protocol either UDP or TCP."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: end_point::Protocol,
 }
 impl EndPoint {
@@ -885,15 +872,10 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(
-        rename = "actionType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1037,7 +1019,7 @@ pub struct OperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The status of operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
     #[doc = "The operation start time (ISO 8601 UTC standard)."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1224,10 +1206,8 @@ pub struct SpacecraftLink {
     #[serde(rename = "bandwidthMHz")]
     pub bandwidth_m_hz: f64,
     #[doc = "Direction (uplink or downlink)."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub direction: spacecraft_link::Direction,
     #[doc = "Polarization. e.g. (RHCP, LHCP)."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub polarization: spacecraft_link::Polarization,
     #[doc = "Authorized Ground Stations"]
     #[serde(
@@ -1485,12 +1465,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1499,12 +1474,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

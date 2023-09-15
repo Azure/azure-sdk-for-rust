@@ -61,7 +61,7 @@ pub struct CheckNameAvailabilityParameters {
     #[doc = "The name to check for availability."]
     pub name: String,
     #[doc = "The resource type to check for name availability."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
 impl CheckNameAvailabilityParameters {
@@ -167,12 +167,7 @@ impl ConfigurationStoreListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationStoreProperties {
     #[doc = "The provisioning state of the configuration store."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<configuration_store_properties::ProvisioningState>,
     #[doc = "The creation date of configuration store."]
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
@@ -192,12 +187,7 @@ pub struct ConfigurationStoreProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnectionReference>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<configuration_store_properties::PublicNetworkAccess>,
     #[doc = "Disables all authentication methods other than AAD authentication."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -209,12 +199,7 @@ pub struct ConfigurationStoreProperties {
     #[serde(rename = "enablePurgeProtection", default, skip_serializing_if = "Option::is_none")]
     pub enable_purge_protection: Option<bool>,
     #[doc = "Indicates whether the configuration store need to be recovered."]
-    #[serde(
-        rename = "createMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<configuration_store_properties::CreateMode>,
 }
 impl ConfigurationStoreProperties {
@@ -323,12 +308,7 @@ pub struct ConfigurationStorePropertiesUpdateParameters {
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(
-        rename = "publicNetworkAccess",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<configuration_store_properties_update_parameters::PublicNetworkAccess>,
     #[doc = "Property specifying whether protection against purge is enabled for this configuration store."]
     #[serde(rename = "enablePurgeProtection", default, skip_serializing_if = "Option::is_none")]
@@ -864,12 +844,7 @@ impl PrivateEndpointConnectionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
     #[doc = "The provisioning status of the private endpoint connection."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
     #[doc = "Private endpoint which a connection belongs to."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -1034,18 +1009,13 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private link service connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<private_link_service_connection_state::Status>,
     #[doc = "The private link service connection description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Any action that is required beyond basic workflow (approve/ reject/ disconnect)"]
-    #[serde(
-        rename = "actionsRequired",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<private_link_service_connection_state::ActionsRequired>,
 }
 impl PrivateLinkServiceConnectionState {
@@ -1205,12 +1175,7 @@ pub struct ReplicaProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
     #[doc = "The provisioning state of the replica."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<replica_properties::ProvisioningState>,
 }
 impl ReplicaProperties {
@@ -1286,12 +1251,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdentity {
     #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_identity::Type>,
     #[doc = "The list of user-assigned identities associated with the resource. The user-assigned identity dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1431,12 +1391,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1445,12 +1400,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

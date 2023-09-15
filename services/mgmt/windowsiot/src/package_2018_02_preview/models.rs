@@ -63,7 +63,7 @@ pub struct DeviceServiceNameAvailabilityInfo {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason for unavailability."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<device_service_name_availability_info::Reason>,
     #[doc = "The detailed reason message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

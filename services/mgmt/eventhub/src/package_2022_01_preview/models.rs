@@ -108,7 +108,7 @@ pub struct ApplicationGroupPolicy {
     #[doc = "The Name of this policy"]
     pub name: String,
     #[doc = "Application Group Policy types"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: application_group_policy::Type,
 }
 impl ApplicationGroupPolicy {
@@ -177,12 +177,7 @@ pub mod arm_disaster_recovery {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Provisioning state of the Alias(Disaster Recovery configuration) - possible values 'Accepted' or 'Succeeded' or 'Failed'"]
-        #[serde(
-            rename = "provisioningState",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "ARM Id of the Primary/Secondary eventhub namespace name, which is part of GEO DR pairing"]
         #[serde(rename = "partnerNamespace", default, skip_serializing_if = "Option::is_none")]
@@ -191,7 +186,7 @@ pub mod arm_disaster_recovery {
         #[serde(rename = "alternateName", default, skip_serializing_if = "Option::is_none")]
         pub alternate_name: Option<String>,
         #[doc = "role of namespace in GEO DR - possible values 'Primary' or 'PrimaryNotReplicating' or 'Secondary'"]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub role: Option<properties::Role>,
         #[doc = "Number of entities pending to be replicated."]
         #[serde(rename = "pendingReplicationOperationsCount", default, skip_serializing_if = "Option::is_none")]
@@ -336,7 +331,7 @@ pub struct CaptureDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "Enumerates the possible values for the encoding format of capture description. Note: 'AvroDeflate' will be deprecated in New API Version"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<capture_description::Encoding>,
     #[doc = "The time window allows you to set the frequency with which the capture to Azure Blobs will happen, value should between 60 to 900 seconds"]
     #[serde(rename = "intervalInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -386,7 +381,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Specifies the reason for the unavailability of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
 }
 impl CheckNameAvailabilityResult {
@@ -482,7 +477,6 @@ impl ClusterQuotaConfigurationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterSku {
     #[doc = "Name of this SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: cluster_sku::Name,
     #[doc = "The quantity of Event Hubs Cluster Capacity Units contained in this cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -535,7 +529,7 @@ pub mod cluster_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionState {
     #[doc = "Status of the connection."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<connection_state::Status>,
     #[doc = "Description of the connection state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -727,12 +721,7 @@ pub mod eh_namespace {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "The minimum TLS version for the cluster to support, e.g. '1.2'"]
-        #[serde(
-            rename = "minimumTlsVersion",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
         pub minimum_tls_version: Option<properties::MinimumTlsVersion>,
         #[doc = "Provisioning state of the Namespace."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -759,12 +748,7 @@ pub mod eh_namespace {
         #[serde(rename = "isAutoInflateEnabled", default, skip_serializing_if = "Option::is_none")]
         pub is_auto_inflate_enabled: Option<bool>,
         #[doc = "This determines if traffic is allowed over public network. By default it is enabled."]
-        #[serde(
-            rename = "publicNetworkAccess",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
         pub public_network_access: Option<properties::PublicNetworkAccess>,
         #[doc = "Upper limit of throughput units when AutoInflate is enabled, value should be within 0 to 20 throughput units. ( '0' if AutoInflateEnabled = true)"]
         #[serde(rename = "maximumThroughputUnits", default, skip_serializing_if = "Option::is_none")]
@@ -953,12 +937,7 @@ pub struct Encryption {
     )]
     pub key_vault_properties: Vec<KeyVaultProperties>,
     #[doc = "Enumerates the possible value of keySource for Encryption"]
-    #[serde(
-        rename = "keySource",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
     pub key_source: Option<encryption::KeySource>,
     #[doc = "Enable Infrastructure Encryption (Double Encryption)"]
     #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
@@ -1117,7 +1096,7 @@ pub mod eventhub {
         #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
         pub partition_count: Option<i64>,
         #[doc = "Enumerates the possible values for the status of the Event Hub."]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<properties::Status>,
         #[doc = "Properties to configure capture description for eventhub"]
         #[serde(rename = "captureDescription", default, skip_serializing_if = "Option::is_none")]
@@ -1155,12 +1134,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
     #[doc = "Properties for User Assigned Identities"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1210,7 +1184,7 @@ pub struct NwRuleSetIpRules {
     #[serde(rename = "ipMask", default, skip_serializing_if = "Option::is_none")]
     pub ip_mask: Option<String>,
     #[doc = "The IP Filter Action"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<nw_rule_set_ip_rules::Action>,
 }
 impl NwRuleSetIpRules {
@@ -1297,12 +1271,7 @@ pub mod network_rule_set {
         #[serde(rename = "trustedServiceAccessEnabled", default, skip_serializing_if = "Option::is_none")]
         pub trusted_service_access_enabled: Option<bool>,
         #[doc = "Default Action for Network Rule Set"]
-        #[serde(
-            rename = "defaultAction",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
         pub default_action: Option<properties::DefaultAction>,
         #[doc = "List VirtualNetwork Rules"]
         #[serde(
@@ -1321,12 +1290,7 @@ pub mod network_rule_set {
         )]
         pub ip_rules: Vec<NwRuleSetIpRules>,
         #[doc = "This determines if traffic is allowed over public network. By default it is enabled. If value is SecuredByPerimeter then Inbound and Outbound communication is controlled by the network security perimeter and profile's access rules. "]
-        #[serde(
-            rename = "publicNetworkAccess",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
         pub public_network_access: Option<properties::PublicNetworkAccess>,
     }
     impl Properties {
@@ -1490,12 +1454,7 @@ impl NetworkSecurityPerimeterConfigurationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityPerimeterConfigurationProperties {
     #[doc = "Provisioning state of NetworkSecurityPerimeter configuration propagation"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<network_security_perimeter_configuration_properties::ProvisioningState>,
     #[doc = "List of Provisioning Issues if any"]
     #[serde(
@@ -1584,12 +1543,7 @@ pub mod network_security_perimeter_configuration_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
         #[doc = "Access Mode of the resource association"]
-        #[serde(
-            rename = "accessMode",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "accessMode", default, skip_serializing_if = "Option::is_none")]
         pub access_mode: Option<resource_association::AccessMode>,
     }
     impl ResourceAssociation {
@@ -1694,7 +1648,7 @@ pub mod nsp_access_rule {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Direction of Access Rule"]
-        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub direction: Option<properties::Direction>,
         #[doc = "Address prefixes in the CIDR format for inbound rules"]
         #[serde(
@@ -1908,12 +1862,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<ConnectionState>,
     #[doc = "Provisioning state of the Private Endpoint Connection."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -2095,7 +2044,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateAccessKeyParameters {
     #[doc = "The access key to regenerate."]
-    #[serde(rename = "keyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "keyType")]
     pub key_type: regenerate_access_key_parameters::KeyType,
     #[doc = "Optional, if the key value provided, is set for KeyType or autogenerated Key value set for keyType"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2199,20 +2148,10 @@ pub mod schema_group {
         #[serde(rename = "groupProperties", default, skip_serializing_if = "Option::is_none")]
         pub group_properties: Option<serde_json::Value>,
         #[doc = ""]
-        #[serde(
-            rename = "schemaCompatibility",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "schemaCompatibility", default, skip_serializing_if = "Option::is_none")]
         pub schema_compatibility: Option<properties::SchemaCompatibility>,
         #[doc = ""]
-        #[serde(
-            rename = "schemaType",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "schemaType", default, skip_serializing_if = "Option::is_none")]
         pub schema_type: Option<properties::SchemaType>,
     }
     impl Properties {
@@ -2329,10 +2268,9 @@ impl SchemaGroupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Name of this SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The billing tier of this particular SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
     #[doc = "The Event Hubs throughput units for Basic or Standard tiers, where value should be 0 to 20 throughput units. The Event Hubs premium units for Premium tier, where value should be 0 to 10 premium units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2449,7 +2387,7 @@ pub struct ThrottlingPolicy {
     #[serde(rename = "rateLimitThreshold")]
     pub rate_limit_threshold: i64,
     #[doc = "Metric Id on which the throttle limit should be set, MetricId can be discovered by hovering over Metric in the Metrics section of Event Hub Namespace inside Azure Portal"]
-    #[serde(rename = "metricId", with = "azure_core::xml::text_content")]
+    #[serde(rename = "metricId")]
     pub metric_id: throttling_policy::MetricId,
 }
 impl ThrottlingPolicy {
@@ -2558,12 +2496,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2572,12 +2505,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

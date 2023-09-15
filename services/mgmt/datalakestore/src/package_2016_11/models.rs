@@ -10,7 +10,7 @@ pub struct CapabilityInformation {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "The subscription state."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<capability_information::State>,
     #[doc = "The maximum supported number of accounts under this subscription."]
     #[serde(rename = "maxAccountCount", default, skip_serializing_if = "Option::is_none")]
@@ -79,7 +79,7 @@ pub struct CheckNameAvailabilityParameters {
     #[doc = "The Data Lake Store name to check availability for."]
     pub name: String,
     #[doc = "The resource type. Note: This should not be set by the user, as the constant value is Microsoft.DataLakeStore/accounts"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
 impl CheckNameAvailabilityParameters {
@@ -128,12 +128,7 @@ pub struct CreateDataLakeStoreAccountProperties {
     #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<EncryptionConfig>,
     #[doc = "The current state of encryption for this Data Lake Store account."]
-    #[serde(
-        rename = "encryptionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_state: Option<create_data_lake_store_account_properties::EncryptionState>,
     #[doc = "The list of firewall rules associated with this Data Lake Store account."]
     #[serde(
@@ -152,20 +147,10 @@ pub struct CreateDataLakeStoreAccountProperties {
     )]
     pub virtual_network_rules: Vec<CreateVirtualNetworkRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this Data Lake Store account."]
-    #[serde(
-        rename = "firewallState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<create_data_lake_store_account_properties::FirewallState>,
     #[doc = "The current state of allowing or disallowing IPs originating within Azure through the firewall. If the firewall is disabled, this is not enforced."]
-    #[serde(
-        rename = "firewallAllowAzureIps",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<create_data_lake_store_account_properties::FirewallAllowAzureIps>,
     #[doc = "The list of trusted identity providers associated with this Data Lake Store account."]
     #[serde(
@@ -176,20 +161,10 @@ pub struct CreateDataLakeStoreAccountProperties {
     )]
     pub trusted_id_providers: Vec<CreateTrustedIdProviderWithAccountParameters>,
     #[doc = "The current state of the trusted identity provider feature for this Data Lake Store account."]
-    #[serde(
-        rename = "trustedIdProviderState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
     pub trusted_id_provider_state: Option<create_data_lake_store_account_properties::TrustedIdProviderState>,
     #[doc = "The commitment tier to use for next month."]
-    #[serde(
-        rename = "newTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<create_data_lake_store_account_properties::NewTier>,
 }
 impl CreateDataLakeStoreAccountProperties {
@@ -423,20 +398,10 @@ pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "encryptionConfig", default, skip_serializing_if = "Option::is_none")]
     pub encryption_config: Option<EncryptionConfig>,
     #[doc = "The current state of encryption for this Data Lake Store account."]
-    #[serde(
-        rename = "encryptionState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_state: Option<data_lake_store_account_properties::EncryptionState>,
     #[doc = "The current state of encryption provisioning for this Data Lake Store account."]
-    #[serde(
-        rename = "encryptionProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "encryptionProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub encryption_provisioning_state: Option<data_lake_store_account_properties::EncryptionProvisioningState>,
     #[doc = "The list of firewall rules associated with this Data Lake Store account."]
     #[serde(
@@ -455,20 +420,10 @@ pub struct DataLakeStoreAccountProperties {
     )]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
     #[doc = "The current state of the IP address firewall for this Data Lake Store account."]
-    #[serde(
-        rename = "firewallState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<data_lake_store_account_properties::FirewallState>,
     #[doc = "The current state of allowing or disallowing IPs originating within Azure through the firewall. If the firewall is disabled, this is not enforced."]
-    #[serde(
-        rename = "firewallAllowAzureIps",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<data_lake_store_account_properties::FirewallAllowAzureIps>,
     #[doc = "The list of trusted identity providers associated with this Data Lake Store account."]
     #[serde(
@@ -479,28 +434,13 @@ pub struct DataLakeStoreAccountProperties {
     )]
     pub trusted_id_providers: Vec<TrustedIdProvider>,
     #[doc = "The current state of the trusted identity provider feature for this Data Lake Store account."]
-    #[serde(
-        rename = "trustedIdProviderState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
     pub trusted_id_provider_state: Option<data_lake_store_account_properties::TrustedIdProviderState>,
     #[doc = "The commitment tier to use for next month."]
-    #[serde(
-        rename = "newTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<data_lake_store_account_properties::NewTier>,
     #[doc = "The commitment tier in use for the current month."]
-    #[serde(
-        rename = "currentTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "currentTier", default, skip_serializing_if = "Option::is_none")]
     pub current_tier: Option<data_lake_store_account_properties::CurrentTier>,
 }
 impl DataLakeStoreAccountProperties {
@@ -582,15 +522,10 @@ pub struct DataLakeStoreAccountPropertiesBasic {
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
     #[doc = "The provisioning status of the Data Lake Store account."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_lake_store_account_properties_basic::ProvisioningState>,
     #[doc = "The state of the Data Lake Store account."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<data_lake_store_account_properties_basic::State>,
     #[doc = "The account creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -635,7 +570,7 @@ pub mod data_lake_store_account_properties_basic {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionConfig {
     #[doc = "The type of encryption configuration being used. Currently the only supported types are 'UserManaged' and 'ServiceManaged'."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: encryption_config::Type,
     #[doc = "Metadata information used by account encryption."]
     #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
@@ -662,7 +597,7 @@ pub mod encryption_config {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionIdentity {
     #[doc = "The type of encryption being used. Currently the only supported type is 'SystemAssigned'."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: encryption_identity::Type,
     #[doc = "The principal identifier associated with the encryption."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -792,7 +727,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
 }
 impl Operation {
@@ -1019,20 +954,10 @@ pub struct UpdateDataLakeStoreAccountProperties {
     )]
     pub virtual_network_rules: Vec<UpdateVirtualNetworkRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this Data Lake Store account. Disabling the firewall does not remove existing rules, they will just be ignored until the firewall is re-enabled."]
-    #[serde(
-        rename = "firewallState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
     pub firewall_state: Option<update_data_lake_store_account_properties::FirewallState>,
     #[doc = "The current state of allowing or disallowing IPs originating within Azure through the firewall. If the firewall is disabled, this is not enforced."]
-    #[serde(
-        rename = "firewallAllowAzureIps",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
     pub firewall_allow_azure_ips: Option<update_data_lake_store_account_properties::FirewallAllowAzureIps>,
     #[doc = "The list of trusted identity providers associated with this Data Lake Store account."]
     #[serde(
@@ -1043,20 +968,10 @@ pub struct UpdateDataLakeStoreAccountProperties {
     )]
     pub trusted_id_providers: Vec<UpdateTrustedIdProviderWithAccountParameters>,
     #[doc = "The current state of the trusted identity provider feature for this Data Lake Store account. Disabling trusted identity provider functionality does not remove the providers, they will just be ignored until this feature is re-enabled."]
-    #[serde(
-        rename = "trustedIdProviderState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "trustedIdProviderState", default, skip_serializing_if = "Option::is_none")]
     pub trusted_id_provider_state: Option<update_data_lake_store_account_properties::TrustedIdProviderState>,
     #[doc = "The commitment tier to use for next month."]
-    #[serde(
-        rename = "newTier",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
     pub new_tier: Option<update_data_lake_store_account_properties::NewTier>,
 }
 impl UpdateDataLakeStoreAccountProperties {
@@ -1247,7 +1162,7 @@ impl UpdateVirtualNetworkRuleWithAccountParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[doc = "Gets the unit of measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
     #[doc = "Resource identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

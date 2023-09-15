@@ -72,12 +72,7 @@ pub struct BillingAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub company: Option<String>,
     #[doc = "The billing account Type."]
-    #[serde(
-        rename = "accountType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
     pub account_type: Option<billing_account_properties::AccountType>,
     #[doc = "Address details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -574,12 +569,7 @@ pub struct EventProperties {
     #[serde(rename = "closedBalance", default, skip_serializing_if = "Option::is_none")]
     pub closed_balance: Option<Amount>,
     #[doc = "The type of event."]
-    #[serde(
-        rename = "eventType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<event_properties::EventType>,
     #[doc = "Invoice Number."]
     #[serde(rename = "invoiceNumber", default, skip_serializing_if = "Option::is_none")]
@@ -706,7 +696,7 @@ pub struct LotProperties {
     #[serde(rename = "closedBalance", default, skip_serializing_if = "Option::is_none")]
     pub closed_balance: Option<Amount>,
     #[doc = "Lot source."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<lot_properties::Source>,
     #[doc = "Start Date."]
     #[serde(rename = "startDate", default, with = "azure_core::date::rfc3339::option")]

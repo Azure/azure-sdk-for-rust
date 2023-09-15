@@ -1153,7 +1153,7 @@ pub struct EnrollmentGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[doc = "Type of devices that connect through the group."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: enrollment_group::Type,
     #[doc = "The attestation definition for an enrollment group."]
     pub attestation: GroupAttestation,
@@ -1387,7 +1387,6 @@ pub struct Export {
     #[doc = "Toggle to start/stop an export from sending data."]
     pub enabled: bool,
     #[doc = "The type of data to export."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub source: export::Source,
     #[doc = "Query defining which events from the source should be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1535,7 +1534,7 @@ pub struct FileUpload {
     #[serde(rename = "sasTtl", default, skip_serializing_if = "Option::is_none")]
     pub sas_ttl: Option<String>,
     #[doc = "The state of the file upload configuration"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<file_upload::State>,
     #[doc = "ETag used to prevent conflict with multiple uploads"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1707,12 +1706,7 @@ pub mod image_tile_configuration {
         #[serde(rename = "textSize", default, skip_serializing_if = "Option::is_none")]
         pub text_size: Option<f64>,
         #[doc = "The unit of size for the text in the tile"]
-        #[serde(
-            rename = "textSizeUnit",
-            default,
-            skip_serializing_if = "Option::is_none",
-            with = "azure_core::xml::text_content"
-        )]
+        #[serde(rename = "textSizeUnit", default, skip_serializing_if = "Option::is_none")]
         pub text_size_unit: Option<format::TextSizeUnit>,
         #[doc = "Whether or not to show the display name text on the tile"]
         #[serde(rename = "showTitle", default, skip_serializing_if = "Option::is_none")]
@@ -1836,7 +1830,7 @@ impl Job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBatch {
     #[doc = "Whether batching is done on a specified number of devices or a percentage of the total devices."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: job_batch::Type,
     #[doc = "The number or percentage of devices on which batching is done."]
     pub value: f64,
@@ -1861,7 +1855,7 @@ pub mod job_batch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCancellationThreshold {
     #[doc = "Whether the cancellation threshold is per a specified number of devices or a percentage of the total devices."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: job_cancellation_threshold::Type,
     #[doc = "The number or percentage of devices on which the cancellation threshold is applied."]
     pub value: f64,
@@ -1977,7 +1971,7 @@ impl JobProgress {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSchedule {
     #[doc = "The recurrence of the scheduled job. If not provided, the job will run once at the specified start time."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<job_schedule::Recurrence>,
     #[doc = "The start time for the scheduled job"]
     #[serde(with = "azure_core::date::rfc3339")]
@@ -2062,12 +2056,7 @@ pub struct LabelTileConfiguration {
     #[serde(rename = "textSize", default, skip_serializing_if = "Option::is_none")]
     pub text_size: Option<f64>,
     #[doc = "The unit of size for the text in the tile"]
-    #[serde(
-        rename = "textSizeUnit",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "textSizeUnit", default, skip_serializing_if = "Option::is_none")]
     pub text_size_unit: Option<TileTextSizeUnit>,
     #[doc = "Whether to wrap the text being displayed"]
     #[serde(rename = "wordWrap", default, skip_serializing_if = "Option::is_none")]
@@ -2833,7 +2822,7 @@ pub struct TextFormatConfiguration {
     #[serde(rename = "textSize", default, skip_serializing_if = "Option::is_none")]
     pub text_size: Option<f64>,
     #[doc = "The unit of size for the text in the tile"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<TileTextSizeUnit>,
     #[doc = "Whether to wrap the text being displayed"]
     #[serde(rename = "wordWrap", default, skip_serializing_if = "Option::is_none")]
@@ -2883,7 +2872,7 @@ pub struct TileCapability {
     #[doc = "The path of the capability associated with data to be rendered in the tile."]
     pub capability: String,
     #[doc = "The type of aggregation to be applied on capability data."]
-    #[serde(rename = "aggregateFunction", with = "azure_core::xml::text_content")]
+    #[serde(rename = "aggregateFunction")]
     pub aggregate_function: CapabilityAggregateFunctionType,
 }
 impl TileCapability {
@@ -2968,10 +2957,9 @@ pub struct TimeQueryRangeConfiguration {
     #[serde(flatten)]
     pub query_range_configuration: QueryRangeConfiguration,
     #[doc = "The duration of time to look back when querying data."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub duration: TimeRangeDuration,
     #[doc = "The resolution to aggregate data over for each data point."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resolution: Option<TimeRangeResolution>,
 }
 impl TimeQueryRangeConfiguration {
@@ -3253,12 +3241,7 @@ pub struct WebhookV1DestinationOAuthAuth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[doc = "Content-Type for the token request."]
-    #[serde(
-        rename = "requestType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "requestType", default, skip_serializing_if = "Option::is_none")]
     pub request_type: Option<webhook_v1_destination_o_auth_auth::RequestType>,
 }
 impl WebhookV1DestinationOAuthAuth {

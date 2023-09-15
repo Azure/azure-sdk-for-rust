@@ -21,15 +21,10 @@ impl AfdDomain {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AfdDomainHttpsParameters {
     #[doc = "Defines the source of the SSL certificate."]
-    #[serde(rename = "certificateType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "certificateType")]
     pub certificate_type: afd_domain_https_parameters::CertificateType,
     #[doc = "TLS protocol version that will be used for Https"]
-    #[serde(
-        rename = "minimumTlsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<afd_domain_https_parameters::MinimumTlsVersion>,
     #[doc = "Reference to another resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -125,12 +120,7 @@ pub struct AfdDomainProperties {
     #[serde(flatten)]
     pub afd_state_properties: AfdStateProperties,
     #[doc = "Provisioning substate shows the progress of custom HTTPS enabling/disabling process step by step. DCV stands for DomainControlValidation."]
-    #[serde(
-        rename = "domainValidationState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "domainValidationState", default, skip_serializing_if = "Option::is_none")]
     pub domain_validation_state: Option<afd_domain_properties::DomainValidationState>,
     #[doc = "The host name of the domain. Must be a domain name."]
     #[serde(rename = "hostName")]
@@ -290,12 +280,7 @@ pub struct AfdEndpointPropertiesUpdateParameters {
     #[serde(rename = "originResponseTimeoutSeconds", default, skip_serializing_if = "Option::is_none")]
     pub origin_response_timeout_seconds: Option<i32>,
     #[doc = "Whether to enable use of this rule. Permitted values are 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "enabledState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<afd_endpoint_properties_update_parameters::EnabledState>,
 }
 impl AfdEndpointPropertiesUpdateParameters {
@@ -497,12 +482,7 @@ pub struct AfdOriginGroupUpdatePropertiesParameters {
     )]
     pub response_based_afd_origin_error_detection_settings: Option<ResponseBasedOriginErrorDetectionParameters>,
     #[doc = "Whether to allow session affinity on this host. Valid options are 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "sessionAffinityState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sessionAffinityState", default, skip_serializing_if = "Option::is_none")]
     pub session_affinity_state: Option<afd_origin_group_update_properties_parameters::SessionAffinityState>,
 }
 impl AfdOriginGroupUpdatePropertiesParameters {
@@ -631,12 +611,7 @@ pub struct AfdOriginUpdatePropertiesParameters {
     #[serde(rename = "sharedPrivateLinkResource", default, skip_serializing_if = "Option::is_none")]
     pub shared_private_link_resource: Option<SharedPrivateLinkResourceProperties>,
     #[doc = "Whether to enable health probes to be made against backends defined under backendPools. Health probes can only be disabled if there is a single enabled backend in single enabled backend pool."]
-    #[serde(
-        rename = "enabledState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<afd_origin_update_properties_parameters::EnabledState>,
 }
 impl AfdOriginUpdatePropertiesParameters {
@@ -688,19 +663,9 @@ pub mod afd_origin_update_properties_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AfdStateProperties {
     #[doc = "Provisioning status"]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<afd_state_properties::ProvisioningState>,
-    #[serde(
-        rename = "deploymentStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<afd_state_properties::DeploymentStatus>,
 }
 impl AfdStateProperties {
@@ -878,13 +843,13 @@ impl AfdPurgeParameters {
 #[doc = "Defines the parameters for the cache expiration action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheExpirationActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: cache_expiration_action_parameters::OdataType,
     #[doc = "Caching behavior for the requests"]
-    #[serde(rename = "cacheBehavior", with = "azure_core::xml::text_content")]
+    #[serde(rename = "cacheBehavior")]
     pub cache_behavior: cache_expiration_action_parameters::CacheBehavior,
     #[doc = "The level at which the content needs to be cached."]
-    #[serde(rename = "cacheType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "cacheType")]
     pub cache_type: cache_expiration_action_parameters::CacheType,
     #[doc = "The duration for which the content needs to be cached. Allowed format is [d.]hh:mm:ss"]
     #[serde(rename = "cacheDuration", default, skip_serializing_if = "Option::is_none")]
@@ -989,10 +954,10 @@ pub mod cache_expiration_action_parameters {
 #[doc = "Defines the parameters for the cache-key query string action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheKeyQueryStringActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: cache_key_query_string_action_parameters::OdataType,
     #[doc = "Caching behavior for the requests"]
-    #[serde(rename = "queryStringBehavior", with = "azure_core::xml::text_content")]
+    #[serde(rename = "queryStringBehavior")]
     pub query_string_behavior: cache_key_query_string_action_parameters::QueryStringBehavior,
     #[doc = "query parameters to include or exclude (comma separated)."]
     #[serde(rename = "queryParameters", default, skip_serializing_if = "Option::is_none")]
@@ -1062,10 +1027,10 @@ pub mod cache_key_query_string_action_parameters {
 #[doc = "Defines the parameters for using CDN managed certificate for securing custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CdnCertificateSourceParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: cdn_certificate_source_parameters::OdataType,
     #[doc = "Type of certificate used"]
-    #[serde(rename = "certificateType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
 impl CdnCertificateSourceParameters {
@@ -1241,19 +1206,9 @@ pub struct CdnWebApplicationFirewallPolicyProperties {
     )]
     pub endpoint_links: Vec<CdnEndpoint>,
     #[doc = "Provisioning state of the WebApplicationFirewallPolicy."]
-    #[serde(
-        rename = "provisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<cdn_web_application_firewall_policy_properties::ProvisioningState>,
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<cdn_web_application_firewall_policy_properties::ResourceState>,
 }
 impl CdnWebApplicationFirewallPolicyProperties {
@@ -1371,7 +1326,7 @@ pub struct CheckNameAvailabilityInput {
     #[doc = "The resource name to validate."]
     pub name: String,
     #[doc = "Type of CDN resource used in CheckNameAvailability."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ResourceType,
 }
 impl CheckNameAvailabilityInput {
@@ -1442,13 +1397,12 @@ impl ContinentsResponse {
 #[doc = "Defines the parameters for Cookies match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CookiesMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: cookies_match_condition_parameters::OdataType,
     #[doc = "Name of Cookies to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: cookies_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -1560,18 +1514,13 @@ impl CustomDomain {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainHttpsParameters {
     #[doc = "Defines the source of the SSL certificate."]
-    #[serde(rename = "certificateSource", with = "azure_core::xml::text_content")]
+    #[serde(rename = "certificateSource")]
     pub certificate_source: custom_domain_https_parameters::CertificateSource,
     #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
-    #[serde(rename = "protocolType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "protocolType")]
     pub protocol_type: custom_domain_https_parameters::ProtocolType,
     #[doc = "TLS protocol version that will be used for Https"]
-    #[serde(
-        rename = "minimumTlsVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<custom_domain_https_parameters::MinimumTlsVersion>,
 }
 impl CustomDomainHttpsParameters {
@@ -1717,28 +1666,13 @@ pub struct CustomDomainProperties {
     #[serde(rename = "hostName")]
     pub host_name: String,
     #[doc = "Resource status of the custom domain."]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<custom_domain_properties::ResourceState>,
     #[doc = "Provisioning status of Custom Https of the custom domain."]
-    #[serde(
-        rename = "customHttpsProvisioningState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "customHttpsProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_state: Option<custom_domain_properties::CustomHttpsProvisioningState>,
     #[doc = "Provisioning substate shows the progress of custom HTTPS enabling/disabling process step by step."]
-    #[serde(
-        rename = "customHttpsProvisioningSubstate",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "customHttpsProvisioningSubstate", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_substate: Option<custom_domain_properties::CustomHttpsProvisioningSubstate>,
     #[doc = "The JSON object that contains the properties to secure a custom domain."]
     #[serde(rename = "customHttpsParameters", default, skip_serializing_if = "Option::is_none")]
@@ -1941,12 +1875,7 @@ pub struct CustomRule {
     #[doc = "Defines the name of the custom rule"]
     pub name: String,
     #[doc = "Describes if the custom rule is in enabled or disabled state. Defaults to Enabled if not specified."]
-    #[serde(
-        rename = "enabledState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<custom_rule::EnabledState>,
     #[doc = "Defines in what order this rule be evaluated in the overall list of custom rules"]
     pub priority: i32,
@@ -1954,7 +1883,6 @@ pub struct CustomRule {
     #[serde(rename = "matchConditions")]
     pub match_conditions: Vec<MatchCondition>,
     #[doc = "Defines the action to take on rule match."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: ActionType,
 }
 impl CustomRule {
@@ -2247,7 +2175,6 @@ impl DeliveryRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleAction {
     #[doc = "The name of the action for the delivery rule."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: delivery_rule_action::Name,
 }
 impl DeliveryRuleAction {
@@ -2343,7 +2270,6 @@ impl DeliveryRuleCacheKeyQueryStringAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCondition {
     #[doc = "The name of the condition for the delivery rule."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: delivery_rule_condition::Name,
 }
 impl DeliveryRuleCondition {
@@ -2798,12 +2724,7 @@ pub struct EndpointProperties {
     )]
     pub origin_groups: Vec<DeepCreatedOriginGroup>,
     #[doc = "Resource status of the endpoint."]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<endpoint_properties::ResourceState>,
     #[doc = "Provisioning status of the endpoint."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2896,20 +2817,10 @@ pub struct EndpointPropertiesUpdateParameters {
     #[serde(rename = "isHttpsAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_https_allowed: Option<bool>,
     #[doc = "Defines how CDN caches requests that include query strings. You can ignore any query strings when caching, bypass caching to prevent requests that contain query strings from being cached, or cache every request with a unique URL."]
-    #[serde(
-        rename = "queryStringCachingBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "queryStringCachingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub query_string_caching_behavior: Option<QueryStringCachingBehavior>,
     #[doc = "Specifies what scenario the customer wants this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization."]
-    #[serde(
-        rename = "optimizationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "optimizationType", default, skip_serializing_if = "Option::is_none")]
     pub optimization_type: Option<OptimizationType>,
     #[doc = "Path to a file hosted on the origin which helps accelerate delivery of the dynamic content and calculate the most optimal routes for the CDN. This is relative to the origin path. This property is only relevant when using a single origin."]
     #[serde(rename = "probePath", default, skip_serializing_if = "Option::is_none")]
@@ -3017,7 +2928,6 @@ pub struct GeoFilter {
     #[serde(rename = "relativePath")]
     pub relative_path: String,
     #[doc = "Action of the geo filter, i.e. allow or block access."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub action: geo_filter::Action,
     #[doc = "Two letter country codes defining user country access in a geo filter, e.g. AU, MX, US."]
     #[serde(rename = "countryCodes")]
@@ -3044,10 +2954,10 @@ pub mod geo_filter {
 #[doc = "Defines the parameters for the request header action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HeaderActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: header_action_parameters::OdataType,
     #[doc = "Action to perform"]
-    #[serde(rename = "headerAction", with = "azure_core::xml::text_content")]
+    #[serde(rename = "headerAction")]
     pub header_action: header_action_parameters::HeaderAction,
     #[doc = "Name of the header to modify"]
     #[serde(rename = "headerName")]
@@ -3124,20 +3034,10 @@ pub struct HealthProbeParameters {
     #[serde(rename = "probePath", default, skip_serializing_if = "Option::is_none")]
     pub probe_path: Option<String>,
     #[doc = "The type of health probe request that is made."]
-    #[serde(
-        rename = "probeRequestType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "probeRequestType", default, skip_serializing_if = "Option::is_none")]
     pub probe_request_type: Option<health_probe_parameters::ProbeRequestType>,
     #[doc = "Protocol to use for health probe."]
-    #[serde(
-        rename = "probeProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "probeProtocol", default, skip_serializing_if = "Option::is_none")]
     pub probe_protocol: Option<health_probe_parameters::ProbeProtocol>,
     #[doc = "The number of seconds between health probes.Default is 240sec."]
     #[serde(rename = "probeIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -3185,10 +3085,9 @@ impl HttpErrorRangeParameters {
 #[doc = "Defines the parameters for HttpVersion match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpVersionMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: http_version_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: http_version_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -3334,10 +3233,9 @@ impl IpAddressGroup {
 #[doc = "Defines the parameters for IsDevice match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IsDeviceMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: is_device_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: is_device_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -3418,7 +3316,7 @@ pub mod is_device_match_condition_parameters {
 #[doc = "Describes the parameters for using a user's KeyVault certificate for securing custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultCertificateSourceParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: key_vault_certificate_source_parameters::OdataType,
     #[doc = "Subscription Id of the user's Key Vault containing the SSL certificate"]
     #[serde(rename = "subscriptionId")]
@@ -3436,10 +3334,10 @@ pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "secretVersion", default, skip_serializing_if = "Option::is_none")]
     pub secret_version: Option<String>,
     #[doc = "Describes the action that shall be taken when the certificate is updated in Key Vault."]
-    #[serde(rename = "updateRule", with = "azure_core::xml::text_content")]
+    #[serde(rename = "updateRule")]
     pub update_rule: key_vault_certificate_source_parameters::UpdateRule,
     #[doc = "Describes the action that shall be taken when the certificate is removed from Key Vault."]
-    #[serde(rename = "deleteRule", with = "azure_core::xml::text_content")]
+    #[serde(rename = "deleteRule")]
     pub delete_rule: key_vault_certificate_source_parameters::DeleteRule,
 }
 impl KeyVaultCertificateSourceParameters {
@@ -3545,7 +3443,7 @@ pub mod key_vault_certificate_source_parameters {
 #[doc = "Describes the parameters for using a user's KeyVault for URL Signing Key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSigningKeyParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: key_vault_signing_key_parameters::OdataType,
     #[doc = "Subscription Id of the user's Key Vault containing the secret"]
     #[serde(rename = "subscriptionId")]
@@ -3708,15 +3606,10 @@ pub struct ManagedRuleOverride {
     #[serde(rename = "ruleId")]
     pub rule_id: String,
     #[doc = "Describes if the managed rule is in enabled or disabled state. Defaults to Disabled if not specified."]
-    #[serde(
-        rename = "enabledState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<managed_rule_override::EnabledState>,
     #[doc = "Defines the action to take on rule match."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ActionType>,
 }
 impl ManagedRuleOverride {
@@ -3888,13 +3781,12 @@ impl ManagedRuleSetList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MatchCondition {
     #[doc = "Match variable to compare against."]
-    #[serde(rename = "matchVariable", with = "azure_core::xml::text_content")]
+    #[serde(rename = "matchVariable")]
     pub match_variable: match_condition::MatchVariable,
     #[doc = "Selector can used to match a specific key for QueryString, Cookies, RequestHeader or PostArgs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: match_condition::Operator,
     #[doc = "Describes if the result of this condition should be negated."]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -4041,7 +3933,7 @@ pub struct MetricsResponse {
     pub date_time_begin: Option<time::OffsetDateTime>,
     #[serde(rename = "dateTimeEnd", default, with = "azure_core::date::rfc3339::option")]
     pub date_time_end: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<metrics_response::Granularity>,
     #[serde(
         default,
@@ -4243,7 +4135,7 @@ impl OriginGroupOverrideAction {
 #[doc = "Defines the parameters for the origin group override action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OriginGroupOverrideActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: origin_group_override_action_parameters::OdataType,
     #[doc = "Reference to another resource."]
     #[serde(rename = "originGroup")]
@@ -4268,12 +4160,7 @@ pub struct OriginGroupProperties {
     #[serde(flatten)]
     pub origin_group_update_properties_parameters: OriginGroupUpdatePropertiesParameters,
     #[doc = "Resource status of the origin group."]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<origin_group_properties::ResourceState>,
     #[doc = "Provisioning status of the origin group."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -4406,23 +4293,13 @@ pub struct OriginProperties {
     #[serde(flatten)]
     pub origin_update_properties_parameters: OriginUpdatePropertiesParameters,
     #[doc = "Resource status of the origin."]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<origin_properties::ResourceState>,
     #[doc = "Provisioning status of the origin."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The approval status for the connection to the Private Link"]
-    #[serde(
-        rename = "privateEndpointStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "privateEndpointStatus", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint_status: Option<origin_properties::PrivateEndpointStatus>,
 }
 impl OriginProperties {
@@ -4577,13 +4454,12 @@ impl OriginUpdatePropertiesParameters {
 #[doc = "Defines the parameters for PostArgs match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PostArgsMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: post_args_match_condition_parameters::OdataType,
     #[doc = "Name of PostArg to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: post_args_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -4729,12 +4605,7 @@ impl ProfileListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
     #[doc = "Resource status of the profile."]
-    #[serde(
-        rename = "resourceState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
     #[doc = "Provisioning status of the profile."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -4838,10 +4709,9 @@ pub enum QueryStringCachingBehavior {
 #[doc = "Defines the parameters for QueryString match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryStringMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: query_string_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: query_string_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -4996,10 +4866,9 @@ impl RateLimitRuleList {
 #[doc = "Defines the parameters for RemoteAddress match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoteAddressMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: remote_address_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: remote_address_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -5085,10 +4954,9 @@ pub mod remote_address_match_condition_parameters {
 #[doc = "Defines the parameters for RequestBody match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestBodyMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: request_body_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: request_body_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -5187,13 +5055,12 @@ pub mod request_body_match_condition_parameters {
 #[doc = "Defines the parameters for RequestHeader match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestHeaderMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: request_header_match_condition_parameters::OdataType,
     #[doc = "Name of Header to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: request_header_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -5293,10 +5160,9 @@ pub mod request_header_match_condition_parameters {
 #[doc = "Defines the parameters for RequestMethod match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestMethodMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: request_method_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: request_method_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -5369,10 +5235,9 @@ pub mod request_method_match_condition_parameters {
 #[doc = "Defines the parameters for RequestScheme match conditions "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestSchemeMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: request_scheme_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: request_scheme_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -5415,10 +5280,9 @@ pub mod request_scheme_match_condition_parameters {
 #[doc = "Defines the parameters for RequestUri match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestUriMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: request_uri_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: request_uri_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -5625,12 +5489,7 @@ impl ResourcesResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResponseBasedOriginErrorDetectionParameters {
     #[doc = "Type of response errors for real user requests for which origin will be deemed unhealthy"]
-    #[serde(
-        rename = "responseBasedDetectedErrorTypes",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "responseBasedDetectedErrorTypes", default, skip_serializing_if = "Option::is_none")]
     pub response_based_detected_error_types: Option<response_based_origin_error_detection_parameters::ResponseBasedDetectedErrorTypes>,
     #[doc = "The percentage of failed requests in the sample where failover should trigger."]
     #[serde(
@@ -5775,44 +5634,19 @@ pub struct RouteUpdatePropertiesParameters {
     #[serde(rename = "compressionSettings", default, skip_serializing_if = "Option::is_none")]
     pub compression_settings: Option<CompressionSettings>,
     #[doc = "Defines how CDN caches requests that include query strings. You can ignore any query strings when caching, bypass caching to prevent requests that contain query strings from being cached, or cache every request with a unique URL."]
-    #[serde(
-        rename = "queryStringCachingBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "queryStringCachingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub query_string_caching_behavior: Option<route_update_properties_parameters::QueryStringCachingBehavior>,
     #[doc = "Protocol this rule will use when forwarding traffic to backends."]
-    #[serde(
-        rename = "forwardingProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "forwardingProtocol", default, skip_serializing_if = "Option::is_none")]
     pub forwarding_protocol: Option<route_update_properties_parameters::ForwardingProtocol>,
     #[doc = "whether this route will be linked to the default endpoint domain."]
-    #[serde(
-        rename = "linkToDefaultDomain",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "linkToDefaultDomain", default, skip_serializing_if = "Option::is_none")]
     pub link_to_default_domain: Option<route_update_properties_parameters::LinkToDefaultDomain>,
     #[doc = "Whether to automatically redirect HTTP traffic to HTTPS traffic. Note that this is a easy way to set up this rule and it will be the first rule that gets executed."]
-    #[serde(
-        rename = "httpsRedirect",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "httpsRedirect", default, skip_serializing_if = "Option::is_none")]
     pub https_redirect: Option<route_update_properties_parameters::HttpsRedirect>,
     #[doc = "Whether to enable use of this rule. Permitted values are 'Enabled' or 'Disabled'"]
-    #[serde(
-        rename = "enabledState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<route_update_properties_parameters::EnabledState>,
 }
 impl RouteUpdatePropertiesParameters {
@@ -6133,12 +5967,7 @@ pub struct RuleUpdatePropertiesParameters {
     )]
     pub actions: Vec<DeliveryRuleAction>,
     #[doc = "If this rule is a match should the rules engine continue running the remaining rules or stop. If not present, defaults to Continue."]
-    #[serde(
-        rename = "matchProcessingBehavior",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "matchProcessingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub match_processing_behavior: Option<rule_update_properties_parameters::MatchProcessingBehavior>,
 }
 impl RuleUpdatePropertiesParameters {
@@ -6234,7 +6063,7 @@ impl SecretListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretParameters {
     #[doc = "The type of the Secret to create."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: secret_parameters::Type,
 }
 impl SecretParameters {
@@ -6341,7 +6170,7 @@ impl SecurityPolicyListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityPolicyParameters {
     #[doc = "The type of the Security policy to create."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: security_policy_parameters::Type,
 }
 impl SecurityPolicyParameters {
@@ -6466,7 +6295,7 @@ pub struct SharedPrivateLinkResourceProperties {
     #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]
     pub request_message: Option<String>,
     #[doc = "Status of the shared private link resource. Can be Pending, Approved, Rejected, Disconnected, or Timeout."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<shared_private_link_resource_properties::Status>,
 }
 impl SharedPrivateLinkResourceProperties {
@@ -6490,7 +6319,7 @@ pub mod shared_private_link_resource_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "Name of the pricing tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
 impl Sku {
@@ -6616,12 +6445,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -6630,12 +6454,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that creates/modifies resources"]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -6714,10 +6533,9 @@ impl Serialize for TransformType {
 #[doc = "Defines the parameters for UrlFileExtension match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileExtensionMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: url_file_extension_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: url_file_extension_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -6816,10 +6634,9 @@ pub mod url_file_extension_match_condition_parameters {
 #[doc = "Defines the parameters for UrlFilename match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileNameMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: url_file_name_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: url_file_name_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -6918,10 +6735,9 @@ pub mod url_file_name_match_condition_parameters {
 #[doc = "Defines the parameters for UrlPath match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlPathMatchConditionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: url_path_match_condition_parameters::OdataType,
     #[doc = "Describes operator to be matched"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub operator: url_path_match_condition_parameters::Operator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -7038,18 +6854,13 @@ impl UrlRedirectAction {
 #[doc = "Defines the parameters for the url redirect action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRedirectActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: url_redirect_action_parameters::OdataType,
     #[doc = "The redirect type the rule will use when redirecting traffic."]
-    #[serde(rename = "redirectType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "redirectType")]
     pub redirect_type: url_redirect_action_parameters::RedirectType,
     #[doc = "Protocol to use for the redirect. The default value is MatchRequest"]
-    #[serde(
-        rename = "destinationProtocol",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "destinationProtocol", default, skip_serializing_if = "Option::is_none")]
     pub destination_protocol: Option<url_redirect_action_parameters::DestinationProtocol>,
     #[doc = "The full path to redirect. Path cannot be empty and must start with /. Leave empty to use the incoming path as destination path."]
     #[serde(rename = "customPath", default, skip_serializing_if = "Option::is_none")]
@@ -7184,7 +6995,7 @@ impl UrlRewriteAction {
 #[doc = "Defines the parameters for the url rewrite action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRewriteActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: url_rewrite_action_parameters::OdataType,
     #[doc = "define a request URI pattern that identifies the type of requests that may be rewritten. If value is blank, all strings are matched."]
     #[serde(rename = "sourcePattern")]
@@ -7232,10 +7043,10 @@ impl UrlSigningAction {
 #[doc = "Defines the parameters for the Url Signing action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlSigningActionParameters {
-    #[serde(rename = "@odata.type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "@odata.type")]
     pub odata_type: url_signing_action_parameters::OdataType,
     #[doc = "Algorithm to use for URL signing"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub algorithm: Option<url_signing_action_parameters::Algorithm>,
     #[doc = "Defines which query string parameters in the url to be considered for expires, key id etc. "]
     #[serde(
@@ -7346,7 +7157,7 @@ impl UrlSigningKeyParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlSigningParamIdentifier {
     #[doc = "Indicates the purpose of the parameter"]
-    #[serde(rename = "paramIndicator", with = "azure_core::xml::text_content")]
+    #[serde(rename = "paramIndicator")]
     pub param_indicator: url_signing_param_identifier::ParamIndicator,
     #[doc = "Parameter name"]
     #[serde(rename = "paramName")]
@@ -7409,7 +7220,6 @@ pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "An enum describing the unit of measurement."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub unit: usage::Unit,
     #[doc = "The current value of the usage."]
     #[serde(rename = "currentValue")]
@@ -7595,7 +7405,7 @@ pub struct ValidateSecretInput {
     #[serde(rename = "secretSource")]
     pub secret_source: ResourceReference,
     #[doc = "The secret type."]
-    #[serde(rename = "secretType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "secretType")]
     pub secret_type: validate_secret_input::SecretType,
 }
 impl ValidateSecretInput {
@@ -7652,7 +7462,7 @@ pub mod validate_secret_input {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateSecretOutput {
     #[doc = "The validation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<validate_secret_output::Status>,
     #[doc = "Detailed error message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7725,7 +7535,7 @@ pub struct WafMetricsResponse {
     pub date_time_begin: Option<time::OffsetDateTime>,
     #[serde(rename = "dateTimeEnd", default, with = "azure_core::date::rfc3339::option")]
     pub date_time_end: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<waf_metrics_response::Granularity>,
     #[serde(
         default,
@@ -7795,26 +7605,16 @@ impl CidrIpAddress {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySettings {
     #[doc = "describes if the policy is in enabled state or disabled state"]
-    #[serde(
-        rename = "enabledState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<policy_settings::EnabledState>,
     #[doc = "Describes if it is in detection mode or prevention mode at policy level."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<policy_settings::Mode>,
     #[doc = "If action type is redirect, this field represents the default redirect URL for the client."]
     #[serde(rename = "defaultRedirectUrl", default, skip_serializing_if = "Option::is_none")]
     pub default_redirect_url: Option<String>,
     #[doc = "If the action type is block, this field defines the default customer overridable http response status code."]
-    #[serde(
-        rename = "defaultCustomBlockResponseStatusCode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "defaultCustomBlockResponseStatusCode", default, skip_serializing_if = "Option::is_none")]
     pub default_custom_block_response_status_code: Option<policy_settings::DefaultCustomBlockResponseStatusCode>,
     #[doc = "If the action type is block, customer can override the response body. The body must be specified in base64 encoding."]
     #[serde(rename = "defaultCustomBlockResponseBody", default, skip_serializing_if = "Option::is_none")]

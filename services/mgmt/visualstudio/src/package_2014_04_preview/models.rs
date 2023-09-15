@@ -43,12 +43,7 @@ pub struct AccountResourceRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The type of the operation."]
-    #[serde(
-        rename = "operationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
     pub operation_type: Option<account_resource_request::OperationType>,
     #[doc = "The custom properties of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

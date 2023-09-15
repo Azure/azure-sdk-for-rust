@@ -21,7 +21,7 @@ impl ApplyUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplyUpdateProperties {
     #[doc = "The status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<apply_update_properties::Status>,
     #[doc = "The resourceId"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -165,12 +165,7 @@ impl InputLinuxParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputPatchConfiguration {
     #[doc = "Possible reboot preference as defined by the user based on which it would be decided to reboot the machine or not after the patch operation is completed. This property only applies to Guest (InGuestPatch) scope."]
-    #[serde(
-        rename = "rebootSetting",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "rebootSetting", default, skip_serializing_if = "Option::is_none")]
     pub reboot_setting: Option<input_patch_configuration::RebootSetting>,
     #[doc = "Input properties for patching a Windows machine. This property only applies to Guest (InGuestPatch) scope."]
     #[serde(rename = "windowsParameters", default, skip_serializing_if = "Option::is_none")]
@@ -388,18 +383,13 @@ pub struct MaintenanceConfigurationProperties {
     #[serde(rename = "extensionProperties", default, skip_serializing_if = "Option::is_none")]
     pub extension_properties: Option<serde_json::Value>,
     #[doc = "Gets or sets maintenanceScope of the configuration"]
-    #[serde(
-        rename = "maintenanceScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "maintenanceScope", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_scope: Option<maintenance_configuration_properties::MaintenanceScope>,
     #[doc = "Definition of a MaintenanceWindow"]
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
     #[doc = "Gets or sets the visibility of the configuration. The default value is 'Custom'"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<maintenance_configuration_properties::Visibility>,
     #[doc = "Input configuration for a patch run"]
     #[serde(rename = "installPatches", default, skip_serializing_if = "Option::is_none")]
@@ -632,23 +622,13 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Update {
     #[doc = "The impact area"]
-    #[serde(
-        rename = "maintenanceScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "maintenanceScope", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_scope: Option<update::MaintenanceScope>,
     #[doc = "The impact type"]
-    #[serde(
-        rename = "impactType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "impactType", default, skip_serializing_if = "Option::is_none")]
     pub impact_type: Option<update::ImpactType>,
     #[doc = "The status"]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<update::Status>,
     #[doc = "Duration of impact in seconds"]
     #[serde(rename = "impactDurationInSec", default, skip_serializing_if = "Option::is_none")]
@@ -844,12 +824,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -858,12 +833,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -969,12 +939,7 @@ pub struct TaskProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[doc = "[Not supported] Global Task execute once when schedule trigger. Resource task execute for each VM."]
-    #[serde(
-        rename = "taskScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "taskScope", default, skip_serializing_if = "Option::is_none")]
     pub task_scope: Option<task_properties::TaskScope>,
 }
 impl TaskProperties {

@@ -123,12 +123,7 @@ pub struct AzureMachineLearningWebServiceFunctionBindingRetrievalProperties {
     #[serde(rename = "executeEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub execute_endpoint: Option<String>,
     #[doc = "The function type."]
-    #[serde(
-        rename = "udfType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "udfType", default, skip_serializing_if = "Option::is_none")]
     pub udf_type: Option<UdfType>,
 }
 impl AzureMachineLearningWebServiceFunctionBindingRetrievalProperties {
@@ -486,7 +481,7 @@ pub struct CsvSerializationProperties {
     #[serde(rename = "fieldDelimiter", default, skip_serializing_if = "Option::is_none")]
     pub field_delimiter: Option<String>,
     #[doc = "Specifies the encoding of the incoming data in the case of input and the encoding of outgoing data in the case of output."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<Encoding>,
 }
 impl CsvSerializationProperties {
@@ -1086,12 +1081,7 @@ pub struct JavaScriptFunctionBindingRetrievalProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
     #[doc = "The function type."]
-    #[serde(
-        rename = "udfType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "udfType", default, skip_serializing_if = "Option::is_none")]
     pub udf_type: Option<UdfType>,
 }
 impl JavaScriptFunctionBindingRetrievalProperties {
@@ -1174,10 +1164,10 @@ impl JsonSerialization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonSerializationProperties {
     #[doc = "Specifies the encoding of the incoming data in the case of input and the encoding of outgoing data in the case of output."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<Encoding>,
     #[doc = "Specifies the format of the JSON the output will be written in. The currently supported values are 'lineSeparated' indicating the output will be formatted by having each JSON object separated by a new line and 'array' indicating the output will be formatted as an array of JSON objects."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<JsonOutputSerializationFormat>,
 }
 impl JsonSerializationProperties {
@@ -1571,7 +1561,7 @@ impl ScalarFunctionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Serialization {
     #[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: EventSerializationType,
 }
 impl Serialization {
@@ -1679,7 +1669,7 @@ impl ServiceBusTopicOutputDataSourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "The name of the SKU. Required on PUT (CreateOrReplace) requests."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
 impl Sku {
@@ -1729,12 +1719,7 @@ pub mod sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartStreamingJobParameters {
     #[doc = "Value may be JobStartTime, CustomTime, or LastOutputEventTime to indicate whether the starting point of the output event stream should start whenever the job is started, start at a custom user time stamp specified via the outputStartTime property, or start from the last event output time."]
-    #[serde(
-        rename = "outputStartMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "outputStartMode", default, skip_serializing_if = "Option::is_none")]
     pub output_start_mode: Option<OutputStartMode>,
     #[doc = "Value is either an ISO-8601 formatted time stamp that indicates the starting point of the output event stream, or null to indicate that the output event stream will start whenever the streaming job is started. This property must have a value if outputStartMode is set to CustomTime."]
     #[serde(rename = "outputStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1844,12 +1829,7 @@ pub struct StreamingJobProperties {
     #[serde(rename = "jobState", default, skip_serializing_if = "Option::is_none")]
     pub job_state: Option<String>,
     #[doc = "Value may be JobStartTime, CustomTime, or LastOutputEventTime to indicate whether the starting point of the output event stream should start whenever the job is started, start at a custom user time stamp specified via the outputStartTime property, or start from the last event output time."]
-    #[serde(
-        rename = "outputStartMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "outputStartMode", default, skip_serializing_if = "Option::is_none")]
     pub output_start_mode: Option<OutputStartMode>,
     #[doc = "Value is either an ISO-8601 formatted time stamp that indicates the starting point of the output event stream, or null to indicate that the output event stream will start whenever the streaming job is started. This property must have a value if outputStartMode is set to CustomTime."]
     #[serde(rename = "outputStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1858,20 +1838,10 @@ pub struct StreamingJobProperties {
     #[serde(rename = "lastOutputEventTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_output_event_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates the policy to apply to events that arrive out of order in the input event stream."]
-    #[serde(
-        rename = "eventsOutOfOrderPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventsOutOfOrderPolicy", default, skip_serializing_if = "Option::is_none")]
     pub events_out_of_order_policy: Option<EventsOutOfOrderPolicy>,
     #[doc = "Indicates the policy to apply to events that arrive at the output and cannot be written to the external storage due to being malformed (missing column values, column values of wrong type or size)."]
-    #[serde(
-        rename = "outputErrorPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "outputErrorPolicy", default, skip_serializing_if = "Option::is_none")]
     pub output_error_policy: Option<OutputErrorPolicy>,
     #[doc = "The maximum tolerable delay in seconds where out-of-order events can be adjusted to be back in order."]
     #[serde(rename = "eventsOutOfOrderMaxDelayInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1883,12 +1853,7 @@ pub struct StreamingJobProperties {
     #[serde(rename = "dataLocale", default, skip_serializing_if = "Option::is_none")]
     pub data_locale: Option<String>,
     #[doc = "Controls certain runtime behaviors of the streaming job."]
-    #[serde(
-        rename = "compatibilityLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
     pub compatibility_level: Option<CompatibilityLevel>,
     #[doc = "Value is an ISO-8601 formatted UTC timestamp indicating when the streaming job was created."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]

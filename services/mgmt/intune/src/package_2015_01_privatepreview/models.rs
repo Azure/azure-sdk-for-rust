@@ -40,19 +40,9 @@ impl AndroidMamPolicyCollection {
 pub struct AndroidMamPolicyProperties {
     #[serde(flatten)]
     pub mam_policy_properties: MamPolicyProperties,
-    #[serde(
-        rename = "screenCapture",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "screenCapture", default, skip_serializing_if = "Option::is_none")]
     pub screen_capture: Option<android_mam_policy_properties::ScreenCapture>,
-    #[serde(
-        rename = "fileEncryption",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fileEncryption", default, skip_serializing_if = "Option::is_none")]
     pub file_encryption: Option<android_mam_policy_properties::FileEncryption>,
 }
 impl AndroidMamPolicyProperties {
@@ -126,7 +116,6 @@ impl ApplicationCollection {
 pub struct ApplicationProperties {
     #[serde(rename = "friendlyName")]
     pub friendly_name: String,
-    #[serde(with = "azure_core::xml::text_content")]
     pub platform: application_properties::Platform,
     #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
@@ -465,60 +454,25 @@ pub struct MamPolicyProperties {
     pub friendly_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(
-        rename = "appSharingFromLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appSharingFromLevel", default, skip_serializing_if = "Option::is_none")]
     pub app_sharing_from_level: Option<mam_policy_properties::AppSharingFromLevel>,
-    #[serde(
-        rename = "appSharingToLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "appSharingToLevel", default, skip_serializing_if = "Option::is_none")]
     pub app_sharing_to_level: Option<mam_policy_properties::AppSharingToLevel>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authentication: Option<mam_policy_properties::Authentication>,
-    #[serde(
-        rename = "clipboardSharingLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "clipboardSharingLevel", default, skip_serializing_if = "Option::is_none")]
     pub clipboard_sharing_level: Option<mam_policy_properties::ClipboardSharingLevel>,
-    #[serde(
-        rename = "dataBackup",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "dataBackup", default, skip_serializing_if = "Option::is_none")]
     pub data_backup: Option<mam_policy_properties::DataBackup>,
-    #[serde(
-        rename = "fileSharingSaveAs",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fileSharingSaveAs", default, skip_serializing_if = "Option::is_none")]
     pub file_sharing_save_as: Option<mam_policy_properties::FileSharingSaveAs>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pin: Option<mam_policy_properties::Pin>,
     #[serde(rename = "pinNumRetry", default, skip_serializing_if = "Option::is_none")]
     pub pin_num_retry: Option<i64>,
-    #[serde(
-        rename = "deviceCompliance",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "deviceCompliance", default, skip_serializing_if = "Option::is_none")]
     pub device_compliance: Option<mam_policy_properties::DeviceCompliance>,
-    #[serde(
-        rename = "managedBrowser",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "managedBrowser", default, skip_serializing_if = "Option::is_none")]
     pub managed_browser: Option<mam_policy_properties::ManagedBrowser>,
     #[serde(rename = "accessRecheckOfflineTimeout", default, skip_serializing_if = "Option::is_none")]
     pub access_recheck_offline_timeout: Option<String>,
@@ -528,12 +482,7 @@ pub struct MamPolicyProperties {
     pub offline_wipe_timeout: Option<String>,
     #[serde(rename = "numOfApps", default, skip_serializing_if = "Option::is_none")]
     pub num_of_apps: Option<i64>,
-    #[serde(
-        rename = "groupStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "groupStatus", default, skip_serializing_if = "Option::is_none")]
     pub group_status: Option<mam_policy_properties::GroupStatus>,
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
@@ -857,19 +806,9 @@ impl IOsmamPolicy {
 pub struct IOsmamPolicyProperties {
     #[serde(flatten)]
     pub mam_policy_properties: MamPolicyProperties,
-    #[serde(
-        rename = "fileEncryptionLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "fileEncryptionLevel", default, skip_serializing_if = "Option::is_none")]
     pub file_encryption_level: Option<i_osmam_policy_properties::FileEncryptionLevel>,
-    #[serde(
-        rename = "touchId",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "touchId", default, skip_serializing_if = "Option::is_none")]
     pub touch_id: Option<i_osmam_policy_properties::TouchId>,
 }
 impl IOsmamPolicyProperties {

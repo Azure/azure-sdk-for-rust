@@ -200,7 +200,7 @@ impl ProfessionalServiceAppPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfessionalServiceAppProperties {
     #[doc = "the ProfessionalService resource status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<professional_service_app_properties::Status>,
     #[doc = "ProfessionalService resource plan."]
     #[serde(rename = "professionalServiceAppPlan", default, skip_serializing_if = "Option::is_none")]
@@ -313,7 +313,7 @@ impl ProfessionalServiceCreationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfessionalServiceProperties {
     #[doc = "The ProfessionalService Subscription Status."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<professional_service_properties::Status>,
     #[doc = "The current Term object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -325,12 +325,7 @@ pub struct ProfessionalServiceProperties {
     #[serde(rename = "isFreeTrial", default, skip_serializing_if = "Option::is_none")]
     pub is_free_trial: Option<bool>,
     #[doc = "The Payment channel for the ProfessionalServiceSubscription."]
-    #[serde(
-        rename = "paymentChannelType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "paymentChannelType", default, skip_serializing_if = "Option::is_none")]
     pub payment_channel_type: Option<professional_service_properties::PaymentChannelType>,
     #[doc = "The metadata about the ProfessionalService subscription such as the AzureSubscriptionId and ResourceUri."]
     #[serde(rename = "paymentChannelMetadata", default, skip_serializing_if = "Option::is_none")]

@@ -297,12 +297,7 @@ pub struct NamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub critical: Option<bool>,
     #[doc = "The namespace type."]
-    #[serde(
-        rename = "namespaceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "namespaceType", default, skip_serializing_if = "Option::is_none")]
     pub namespace_type: Option<namespace_properties::NamespaceType>,
 }
 impl NamespaceProperties {
@@ -619,7 +614,6 @@ impl SharedAccessAuthorizationRuleResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Name of the notification hub sku"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The tier of particular sku"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

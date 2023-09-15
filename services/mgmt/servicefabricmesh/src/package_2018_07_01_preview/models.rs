@@ -20,18 +20,13 @@ pub struct ApplicationProperties {
     )]
     pub services: Vec<ServiceResourceDescription>,
     #[doc = "The health state of a resource such as Application, Service, or Network."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "When the application's health state is not 'Ok', this additional details from service fabric Health Manager for the user to know why the application is marked unhealthy."]
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluation: Option<String>,
     #[doc = "Status of the application resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<application_properties::Status>,
     #[doc = "Gives additional information about the current status of the application deployment."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -518,7 +513,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
     #[doc = "The kind of DiagnosticsSink."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -705,12 +699,7 @@ impl ImageRegistryCredential {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngressConfig {
     #[doc = "The QoS tier for ingress."]
-    #[serde(
-        rename = "qosLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "qosLevel", default, skip_serializing_if = "Option::is_none")]
     pub qos_level: Option<ingress_config::QosLevel>,
     #[doc = "Configuration for layer4 public connectivity for this network."]
     #[serde(
@@ -1197,7 +1186,7 @@ impl ServiceReplicaList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceReplicaProperties {
     #[doc = "The Operating system type required by the code in service.\n"]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: service_replica_properties::OsType,
     #[doc = "Describes the set of code packages that forms the service. A code package describes the container and the properties for running it. All the code packages are started together on the same host and share the same context (network, process etc.).\n"]
     #[serde(rename = "codePackages")]
@@ -1292,15 +1281,10 @@ pub struct ServiceResourceProperties {
     #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
     pub replica_count: Option<i64>,
     #[doc = "The health state of a resource such as Application, Service, or Network."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "Represents the status of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<service_resource_properties::Status>,
 }
 impl ServiceResourceProperties {
@@ -1427,7 +1411,6 @@ pub struct VolumeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Provider of the volume."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub provider: volume_properties::Provider,
     #[doc = "This type describes a volume provided by an Azure Files file share."]
     #[serde(rename = "azureFileParameters", default, skip_serializing_if = "Option::is_none")]

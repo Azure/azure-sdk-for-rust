@@ -174,12 +174,7 @@ pub struct ArtifactSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
     #[doc = "The type of the artifact source."]
-    #[serde(
-        rename = "sourceType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
     pub source_type: Option<artifact_source_properties::SourceType>,
     #[doc = "The folder path of the artifact source."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
@@ -191,7 +186,7 @@ pub struct ArtifactSourceProperties {
     #[serde(rename = "securityToken", default, skip_serializing_if = "Option::is_none")]
     pub security_token: Option<String>,
     #[doc = "The status of the artifact source."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<artifact_source_properties::Status>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -397,12 +392,7 @@ pub struct CostPerDayProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
     #[doc = "The type of the cost."]
-    #[serde(
-        rename = "costType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "costType", default, skip_serializing_if = "Option::is_none")]
     pub cost_type: Option<cost_per_day_properties::CostType>,
 }
 impl CostPerDayProperties {
@@ -511,12 +501,7 @@ pub struct CustomImageProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The OS type of the custom image."]
-    #[serde(
-        rename = "osType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<custom_image_properties::OsType>,
     #[doc = "The author of the custom image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -925,12 +910,7 @@ pub struct LabProperties {
     #[serde(rename = "vaultName", default, skip_serializing_if = "Option::is_none")]
     pub vault_name: Option<String>,
     #[doc = "The type of the lab storage."]
-    #[serde(
-        rename = "labStorageType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "labStorageType", default, skip_serializing_if = "Option::is_none")]
     pub lab_storage_type: Option<lab_properties::LabStorageType>,
     #[doc = "The default virtual network identifier of the lab."]
     #[serde(rename = "defaultVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
@@ -1103,12 +1083,7 @@ impl LabVirtualMachineProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxOsInfo {
     #[doc = "The state of the Linux OS."]
-    #[serde(
-        rename = "linuxOsState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "linuxOsState", default, skip_serializing_if = "Option::is_none")]
     pub linux_os_state: Option<linux_os_info::LinuxOsState>,
 }
 impl LinuxOsInfo {
@@ -1211,15 +1186,10 @@ pub struct PolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The status of the policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<policy_properties::Status>,
     #[doc = "The fact name of the policy."]
-    #[serde(
-        rename = "factName",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "factName", default, skip_serializing_if = "Option::is_none")]
     pub fact_name: Option<policy_properties::FactName>,
     #[doc = "The fact data of the policy."]
     #[serde(rename = "factData", default, skip_serializing_if = "Option::is_none")]
@@ -1228,12 +1198,7 @@ pub struct PolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<String>,
     #[doc = "The evaluator type of the policy."]
-    #[serde(
-        rename = "evaluatorType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "evaluatorType", default, skip_serializing_if = "Option::is_none")]
     pub evaluator_type: Option<policy_properties::EvaluatorType>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1755,15 +1720,10 @@ impl Schedule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleProperties {
     #[doc = "The status of the schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<schedule_properties::Status>,
     #[doc = "The task type of the schedule."]
-    #[serde(
-        rename = "taskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "taskType", default, skip_serializing_if = "Option::is_none")]
     pub task_type: Option<schedule_properties::TaskType>,
     #[doc = "Properties of a weekly schedule."]
     #[serde(rename = "weeklyRecurrence", default, skip_serializing_if = "Option::is_none")]
@@ -1871,12 +1831,7 @@ pub struct Subnet {
     pub resource_id: Option<String>,
     #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub lab_subnet_name: Option<String>,
-    #[serde(
-        rename = "allowPublicIp",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "allowPublicIp", default, skip_serializing_if = "Option::is_none")]
     pub allow_public_ip: Option<subnet::AllowPublicIp>,
 }
 impl Subnet {
@@ -1935,20 +1890,10 @@ pub struct SubnetOverride {
     #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub lab_subnet_name: Option<String>,
     #[doc = "Indicates whether this subnet can be used during virtual machine creation."]
-    #[serde(
-        rename = "useInVmCreationPermission",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "useInVmCreationPermission", default, skip_serializing_if = "Option::is_none")]
     pub use_in_vm_creation_permission: Option<subnet_override::UseInVmCreationPermission>,
     #[doc = "Indicates whether public IP addresses can be assigned to virtual machines on this subnet."]
-    #[serde(
-        rename = "usePublicIpAddressPermission",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "usePublicIpAddressPermission", default, skip_serializing_if = "Option::is_none")]
     pub use_public_ip_address_permission: Option<subnet_override::UsePublicIpAddressPermission>,
 }
 impl SubnetOverride {
@@ -2041,7 +1986,7 @@ pub mod subnet_override {
 pub struct SubscriptionNotification {
     #[serde(rename = "registrationDate", default, skip_serializing_if = "Option::is_none")]
     pub registration_date: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<subscription_notification::State>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionNotificationProperties>,
@@ -2206,12 +2151,7 @@ impl WeekDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsOsInfo {
     #[doc = "The state of the Windows OS."]
-    #[serde(
-        rename = "windowsOsState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "windowsOsState", default, skip_serializing_if = "Option::is_none")]
     pub windows_os_state: Option<windows_os_info::WindowsOsState>,
 }
 impl WindowsOsInfo {

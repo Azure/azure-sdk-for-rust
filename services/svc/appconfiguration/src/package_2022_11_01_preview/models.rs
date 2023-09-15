@@ -225,7 +225,6 @@ pub struct OperationDetails {
     #[doc = "The unique id of the operation."]
     pub id: String,
     #[doc = "The current status of the operation"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: operation_details::Status,
     #[doc = "The details of an error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -254,12 +253,12 @@ pub struct Snapshot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The current status of the snapshot."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<snapshot::Status>,
     #[doc = "A list of filters used to filter the key-values included in the snapshot."]
     pub filters: Vec<KeyValueFilter>,
     #[doc = "The composition type describes how the key-values within the snapshot are composed. The 'key' composition type ensures there are no two key-values containing the same key. The 'key_label' composition type ensures there are no two key-values containing the same key and label."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub composition_type: Option<snapshot::CompositionType>,
     #[doc = "The time that the snapshot was created."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -416,7 +415,7 @@ impl SnapshotListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdateParameters {
     #[doc = "The desired status of the snapshot."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<snapshot_update_parameters::Status>,
 }
 impl SnapshotUpdateParameters {

@@ -477,7 +477,7 @@ impl Job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBatch {
     #[doc = "Whether batching is done on a specified number of devices or a percentage of the total devices."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: job_batch::Type,
     #[doc = "The number or percentage of devices on which batching is done."]
     pub value: f64,
@@ -501,7 +501,7 @@ pub mod job_batch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCancellationThreshold {
     #[doc = "Whether the cancellation threshold is per a specified number of devices or a percentage of the total devices."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: job_cancellation_threshold::Type,
     #[doc = "The number or percentage of devices on which the cancellation threshold is applied."]
     pub value: f64,

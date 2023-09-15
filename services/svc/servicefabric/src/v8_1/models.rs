@@ -669,31 +669,16 @@ pub struct ApplicationInfo {
     #[serde(rename = "TypeVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_version: Option<ApplicationTypeVersion>,
     #[doc = "The status of the application."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ApplicationStatus>,
     #[doc = "List of application parameters with overridden values from their default values specified in the application manifest."]
     #[serde(rename = "Parameters", default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ApplicationParameterList>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "The mechanism used to define a Service Fabric application."]
-    #[serde(
-        rename = "ApplicationDefinitionKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ApplicationDefinitionKind", default, skip_serializing_if = "Option::is_none")]
     pub application_definition_kind: Option<ApplicationDefinitionKind>,
     #[doc = "Managed application identity description."]
     #[serde(rename = "ManagedApplicationIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1008,18 +993,13 @@ pub struct ApplicationProperties {
     )]
     pub service_names: Vec<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the application."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "When the application's health state is not 'Ok', this additional details from service fabric Health Manager for the user to know why the application is marked unhealthy."]
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
@@ -1064,12 +1044,7 @@ pub struct ApplicationResourceUpgradeProgressInfo {
     #[serde(rename = "StartTimestampUtc", default, skip_serializing_if = "Option::is_none")]
     pub start_timestamp_utc: Option<String>,
     #[doc = "The state of the application resource upgrade."]
-    #[serde(
-        rename = "UpgradeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeState", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_state: Option<ApplicationResourceUpgradeState>,
     #[doc = "The estimated percent of replicas are completed in the upgrade."]
     #[serde(rename = "PercentCompleted", default, skip_serializing_if = "Option::is_none")]
@@ -1078,12 +1053,7 @@ pub struct ApplicationResourceUpgradeProgressInfo {
     #[serde(rename = "ServiceUpgradeProgress", default, skip_serializing_if = "Option::is_none")]
     pub service_upgrade_progress: Option<ServiceUpgradeProgressList>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<RollingUpgradeMode>,
     #[doc = "The estimated amount of time that the overall upgrade elapsed. It is first interpreted as a string representing an ISO 8601 duration. If that fails, then it is interpreted as a number representing the total number of milliseconds."]
     #[serde(rename = "UpgradeDuration", default, skip_serializing_if = "Option::is_none")]
@@ -1185,7 +1155,6 @@ impl ApplicationScopedVolume {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParameters {
     #[doc = "Specifies the application-scoped volume kind."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: ApplicationScopedVolumeKind,
     #[doc = "User readable description of the volume."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1202,7 +1171,7 @@ pub struct ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
     #[serde(flatten)]
     pub application_scoped_volume_creation_parameters: ApplicationScopedVolumeCreationParameters,
     #[doc = "Volume size"]
-    #[serde(rename = "sizeDisk", with = "azure_core::xml::text_content")]
+    #[serde(rename = "sizeDisk")]
     pub size_disk: application_scoped_volume_creation_parameters_service_fabric_volume_disk::SizeDisk,
 }
 impl ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
@@ -1453,23 +1422,13 @@ pub struct ApplicationTypeInfo {
     #[serde(rename = "DefaultParameterList", default, skip_serializing_if = "Option::is_none")]
     pub default_parameter_list: Option<ApplicationTypeParameterList>,
     #[doc = "The status of the application type."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ApplicationTypeStatus>,
     #[doc = "Additional detailed information about the status of the application type."]
     #[serde(rename = "StatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "The mechanism used to define a Service Fabric application type."]
-    #[serde(
-        rename = "ApplicationTypeDefinitionKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ApplicationTypeDefinitionKind", default, skip_serializing_if = "Option::is_none")]
     pub application_type_definition_kind: Option<ApplicationTypeDefinitionKind>,
 }
 impl ApplicationTypeInfo {
@@ -1603,15 +1562,10 @@ pub struct ApplicationUpgradeDescription {
     #[serde(rename = "Parameters", default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ApplicationParameterList>,
     #[doc = "The kind of upgrade out of the following possible values."]
-    #[serde(rename = "UpgradeKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "UpgradeKind")]
     pub upgrade_kind: UpgradeKind,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "The maximum amount of time to block processing of an upgrade domain and prevent loss of availability when there are unexpected issues. When this timeout expires, processing of the upgrade domain will proceed regardless of availability loss issues. The timeout is reset at the start of each upgrade domain. Valid values are between 0 and 42949672925 inclusive. (unsigned 32-bit integer)."]
     #[serde(
@@ -1624,12 +1578,7 @@ pub struct ApplicationUpgradeDescription {
     #[serde(rename = "ForceRestart", default, skip_serializing_if = "Option::is_none")]
     pub force_restart: Option<ForceRestart>,
     #[doc = "Defines the order in which an upgrade proceeds through the cluster."]
-    #[serde(
-        rename = "SortOrder",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "SortOrder", default, skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<UpgradeSortOrder>,
     #[doc = "Describes the parameters for monitoring an upgrade in Monitored mode."]
     #[serde(rename = "MonitoringPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -1727,23 +1676,13 @@ pub struct ApplicationUpgradeProgressInfo {
     #[serde(rename = "UpgradeDomains", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_domains: Option<UpgradeDomainInfoList>,
     #[doc = "The state of the upgrade domain."]
-    #[serde(
-        rename = "UpgradeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeState", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_state: Option<UpgradeState>,
     #[doc = "The name of the next upgrade domain to be processed."]
     #[serde(rename = "NextUpgradeDomain", default, skip_serializing_if = "Option::is_none")]
     pub next_upgrade_domain: Option<NextUpgradeDomain>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "Describes the parameters for an application upgrade. Note that upgrade description replaces the existing application description. This means that if the parameters are not specified, the existing parameters on the applications will be overwritten with the empty parameters list. This would result in the application using the default value of the parameters from the application manifest. If you do not want to change any existing parameter values, please get the application parameters first using the GetApplicationInfo query and then supply those values as Parameters in this ApplicationUpgradeDescription."]
     #[serde(rename = "UpgradeDescription", default, skip_serializing_if = "Option::is_none")]
@@ -1767,12 +1706,7 @@ pub struct ApplicationUpgradeProgressInfo {
     #[serde(rename = "FailureTimestampUtc", default, skip_serializing_if = "Option::is_none")]
     pub failure_timestamp_utc: Option<String>,
     #[doc = "The cause of an upgrade failure that resulted in FailureAction being executed."]
-    #[serde(
-        rename = "FailureReason",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "FailureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<FailureReason>,
     #[doc = "Information about the upgrade domain progress at the time of upgrade failure."]
     #[serde(rename = "UpgradeDomainProgressAtFailure", default, skip_serializing_if = "Option::is_none")]
@@ -1913,7 +1847,7 @@ pub struct ApplicationUpgradeUpdateDescription {
     #[serde(rename = "Name")]
     pub name: ApplicationName,
     #[doc = "The kind of upgrade out of the following possible values."]
-    #[serde(rename = "UpgradeKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "UpgradeKind")]
     pub upgrade_kind: UpgradeKind,
     #[doc = "Defines a health policy used to evaluate the health of an application or one of its children entities."]
     #[serde(rename = "ApplicationHealthPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -1961,7 +1895,6 @@ impl ApplicationsHealthEvaluation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingMechanism {
     #[doc = "Enumerates the mechanisms for auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AutoScalingMechanismKind,
 }
 impl AutoScalingMechanism {
@@ -2008,7 +1941,6 @@ impl Serialize for AutoScalingMechanismKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingMetric {
     #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AutoScalingMetricKind,
 }
 impl AutoScalingMetric {
@@ -2072,7 +2004,6 @@ pub struct AutoScalingResourceMetric {
     #[serde(flatten)]
     pub auto_scaling_metric: AutoScalingMetric,
     #[doc = "Enumerates the resources that are used for triggering auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: AutoScalingResourceMetricName,
 }
 impl AutoScalingResourceMetric {
@@ -2123,7 +2054,6 @@ impl Serialize for AutoScalingResourceMetricName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingTrigger {
     #[doc = "Enumerates the triggers for auto scaling."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AutoScalingTriggerKind,
 }
 impl AutoScalingTrigger {
@@ -2333,18 +2263,13 @@ impl AzureInternalMonitoringPipelineSinkDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupConfigurationInfo {
     #[doc = "The entity type of a Service Fabric entity such as Application, Service or a Partition where periodic backups can be enabled."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: BackupEntityKind,
     #[doc = "The name of the backup policy which is applicable to this Service Fabric application or service or partition."]
     #[serde(rename = "PolicyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
     #[doc = "Specifies the scope at which the backup policy is applied."]
-    #[serde(
-        rename = "PolicyInheritedFrom",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "PolicyInheritedFrom", default, skip_serializing_if = "Option::is_none")]
     pub policy_inherited_from: Option<BackupPolicyScope>,
     #[doc = "Describes the backup suspension details."]
     #[serde(rename = "SuspensionInfo", default, skip_serializing_if = "Option::is_none")]
@@ -2364,7 +2289,7 @@ impl BackupConfigurationInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupEntity {
     #[doc = "The entity type of a Service Fabric entity such as Application, Service or a Partition where periodic backups can be enabled."]
-    #[serde(rename = "EntityKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "EntityKind")]
     pub entity_kind: BackupEntityKind,
 }
 impl BackupEntity {
@@ -2435,12 +2360,7 @@ pub struct BackupInfo {
     #[serde(rename = "BackupLocation", default, skip_serializing_if = "Option::is_none")]
     pub backup_location: Option<String>,
     #[doc = "Describes the type of backup, whether its full or incremental."]
-    #[serde(
-        rename = "BackupType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "BackupType", default, skip_serializing_if = "Option::is_none")]
     pub backup_type: Option<BackupType>,
     #[doc = "An Epoch is a configuration number for the partition as a whole. When the configuration of the replica set changes, for example when the Primary replica changes, the operations that are replicated from the new Primary replica are said to be a new Epoch from the ones which were sent by the old Primary replica."]
     #[serde(rename = "EpochOfLastBackupRecord", default, skip_serializing_if = "Option::is_none")]
@@ -2560,12 +2480,7 @@ impl Serialize for BackupPolicyScope {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupProgressInfo {
     #[doc = "Represents the current state of the partition backup operation."]
-    #[serde(
-        rename = "BackupState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "BackupState", default, skip_serializing_if = "Option::is_none")]
     pub backup_state: Option<BackupState>,
     #[doc = "TimeStamp in UTC when operation succeeded or failed."]
     #[serde(rename = "TimeStampUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -2595,7 +2510,7 @@ impl BackupProgressInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupScheduleDescription {
     #[doc = "The kind of backup schedule, time based or frequency based."]
-    #[serde(rename = "ScheduleKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ScheduleKind")]
     pub schedule_kind: BackupScheduleKind,
 }
 impl BackupScheduleDescription {
@@ -2730,7 +2645,7 @@ impl Serialize for BackupState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupStorageDescription {
     #[doc = "The kind of backup storage, where backups are saved."]
-    #[serde(rename = "StorageKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "StorageKind")]
     pub storage_kind: BackupStorageKind,
     #[doc = "Friendly name for this backup storage."]
     #[serde(rename = "FriendlyName", default, skip_serializing_if = "Option::is_none")]
@@ -2796,12 +2711,7 @@ pub struct BackupSuspensionInfo {
     #[serde(rename = "IsSuspended", default, skip_serializing_if = "Option::is_none")]
     pub is_suspended: Option<bool>,
     #[doc = "Specifies the scope at which the backup suspension was applied."]
-    #[serde(
-        rename = "SuspensionInheritedFrom",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "SuspensionInheritedFrom", default, skip_serializing_if = "Option::is_none")]
     pub suspension_inherited_from: Option<BackupSuspensionScope>,
 }
 impl BackupSuspensionInfo {
@@ -2932,20 +2842,10 @@ pub struct Chaos {
     #[serde(rename = "ChaosParameters", default, skip_serializing_if = "Option::is_none")]
     pub chaos_parameters: Option<ChaosParameters>,
     #[doc = "Current status of the Chaos run."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ChaosStatus>,
     #[doc = "Current status of the schedule."]
-    #[serde(
-        rename = "ScheduleStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ScheduleStatus", default, skip_serializing_if = "Option::is_none")]
     pub schedule_status: Option<ChaosScheduleStatus>,
 }
 impl Chaos {
@@ -3022,7 +2922,7 @@ impl ChaosContextMap {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosEvent {
     #[doc = "The kind of Chaos event."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ChaosEventKind,
     #[doc = "The UTC timestamp when this Chaos event was generated."]
     #[serde(rename = "TimeStampUtc", with = "azure_core::date::rfc3339")]
@@ -3733,12 +3633,7 @@ impl ClusterConfigurationUpgradeDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterConfigurationUpgradeStatusInfo {
     #[doc = "The state of the upgrade domain."]
-    #[serde(
-        rename = "UpgradeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeState", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_state: Option<UpgradeState>,
     #[doc = "The cluster manifest version."]
     #[serde(rename = "ProgressStatus", default, skip_serializing_if = "Option::is_none")]
@@ -3800,12 +3695,7 @@ impl ClusterHealth {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterHealthChunk {
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "The list of node health state chunks in the cluster that respect the input filters in the chunk query. Returned by get cluster health state chunks query."]
     #[serde(rename = "NodeHealthStateChunks", default, skip_serializing_if = "Option::is_none")]
@@ -4065,20 +3955,10 @@ pub struct ClusterUpgradeDescriptionObject {
     #[serde(rename = "CodeVersion", default, skip_serializing_if = "Option::is_none")]
     pub code_version: Option<ClusterFabricCodeVersionString>,
     #[doc = "The kind of upgrade out of the following possible values."]
-    #[serde(
-        rename = "UpgradeKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeKind", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_kind: Option<UpgradeKind>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "The maximum amount of time to block processing of an upgrade domain and prevent loss of availability when there are unexpected issues. When this timeout expires, processing of the upgrade domain will proceed regardless of availability loss issues. The timeout is reset at the start of each upgrade domain. Valid values are between 0 and 42949672925 inclusive. (unsigned 32-bit integer)."]
     #[serde(
@@ -4091,12 +3971,7 @@ pub struct ClusterUpgradeDescriptionObject {
     #[serde(rename = "ForceRestart", default, skip_serializing_if = "Option::is_none")]
     pub force_restart: Option<ForceRestart>,
     #[doc = "Defines the order in which an upgrade proceeds through the cluster."]
-    #[serde(
-        rename = "SortOrder",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "SortOrder", default, skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<UpgradeSortOrder>,
     #[doc = "When true, enables delta health evaluation rather than absolute health evaluation after completion of each upgrade domain."]
     #[serde(rename = "EnableDeltaHealthEvaluation", default, skip_serializing_if = "Option::is_none")]
@@ -4186,23 +4061,13 @@ pub struct ClusterUpgradeProgressObject {
     #[serde(rename = "UpgradeDomains", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_domains: Option<UpgradeDomainInfoList>,
     #[doc = "The state of the upgrade domain."]
-    #[serde(
-        rename = "UpgradeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeState", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_state: Option<UpgradeState>,
     #[doc = "The name of the next upgrade domain to be processed."]
     #[serde(rename = "NextUpgradeDomain", default, skip_serializing_if = "Option::is_none")]
     pub next_upgrade_domain: Option<NextUpgradeDomain>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "Represents a ServiceFabric cluster upgrade"]
     #[serde(rename = "UpgradeDescription", default, skip_serializing_if = "Option::is_none")]
@@ -4226,12 +4091,7 @@ pub struct ClusterUpgradeProgressObject {
     #[serde(rename = "FailureTimestampUtc", default, skip_serializing_if = "Option::is_none")]
     pub failure_timestamp_utc: Option<UpgradeFailureTimeUtcString>,
     #[doc = "The cause of an upgrade failure that resulted in FailureAction being executed."]
-    #[serde(
-        rename = "FailureReason",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "FailureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<FailureReason>,
     #[doc = "The detailed upgrade progress for nodes in the current upgrade domain at the point of failure."]
     #[serde(rename = "UpgradeDomainProgressAtFailure", default, skip_serializing_if = "Option::is_none")]
@@ -4370,12 +4230,7 @@ pub struct CodePackageEntryPoint {
     #[serde(rename = "CodePackageEntryPointStatistics", default, skip_serializing_if = "Option::is_none")]
     pub code_package_entry_point_statistics: Option<CodePackageEntryPointStatistics>,
     #[doc = "Specifies the status of the code package entry point deployed on a Service Fabric node."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntryPointStatus>,
     #[doc = "The time (in UTC) when the entry point executable will be run next."]
     #[serde(rename = "NextActivationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4492,12 +4347,7 @@ pub struct ComposeDeploymentStatusInfo {
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<ApplicationName>,
     #[doc = "The status of the compose deployment."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ComposeDeploymentStatus>,
     #[doc = "The status details of compose deployment including failure message."]
     #[serde(rename = "StatusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -4521,15 +4371,10 @@ pub struct ComposeDeploymentUpgradeDescription {
     #[serde(rename = "RegistryCredential", default, skip_serializing_if = "Option::is_none")]
     pub registry_credential: Option<RegistryCredential>,
     #[doc = "The kind of upgrade out of the following possible values."]
-    #[serde(rename = "UpgradeKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "UpgradeKind")]
     pub upgrade_kind: UpgradeKind,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "The maximum amount of time to block processing of an upgrade domain and prevent loss of availability when there are unexpected issues. When this timeout expires, processing of the upgrade domain will proceed regardless of availability loss issues. The timeout is reset at the start of each upgrade domain. Valid values are between 0 and 42949672925 inclusive. (unsigned 32-bit integer)."]
     #[serde(
@@ -4573,31 +4418,16 @@ pub struct ComposeDeploymentUpgradeProgressInfo {
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<TargetApplicationName>,
     #[doc = "The state of the compose deployment upgrade."]
-    #[serde(
-        rename = "UpgradeState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeState", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_state: Option<ComposeDeploymentUpgradeState>,
     #[doc = "Additional detailed information about the status of the pending upgrade."]
     #[serde(rename = "UpgradeStatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_status_details: Option<String>,
     #[doc = "The kind of upgrade out of the following possible values."]
-    #[serde(
-        rename = "UpgradeKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeKind", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_kind: Option<UpgradeKind>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "If true, then processes are forcefully restarted during upgrade even when the code version has not changed (the upgrade only changes configuration or data)."]
     #[serde(rename = "ForceRestart", default, skip_serializing_if = "Option::is_none")]
@@ -4637,12 +4467,7 @@ pub struct ComposeDeploymentUpgradeProgressInfo {
     #[serde(rename = "FailureTimestampUtc", default, skip_serializing_if = "Option::is_none")]
     pub failure_timestamp_utc: Option<String>,
     #[doc = "The cause of an upgrade failure that resulted in FailureAction being executed."]
-    #[serde(
-        rename = "FailureReason",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "FailureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<FailureReason>,
     #[doc = "Information about the upgrade domain progress at the time of upgrade failure."]
     #[serde(rename = "UpgradeDomainProgressAtFailure", default, skip_serializing_if = "Option::is_none")]
@@ -5139,12 +4964,7 @@ pub type DayOfWeekList = Vec<DayOfWeek>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeactivationIntentDescription {
     #[doc = "Describes the intent or reason for deactivating the node. The possible values are following."]
-    #[serde(
-        rename = "DeactivationIntent",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "DeactivationIntent", default, skip_serializing_if = "Option::is_none")]
     pub deactivation_intent: Option<deactivation_intent_description::DeactivationIntent>,
 }
 impl DeactivationIntentDescription {
@@ -5486,12 +5306,7 @@ pub struct DeployedApplicationInfo {
     #[serde(rename = "TypeName", default, skip_serializing_if = "Option::is_none")]
     pub type_name: Option<ApplicationTypeName>,
     #[doc = "The status of the application deployed on the node. Following are the possible values."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<DeployedApplicationStatus>,
     #[doc = "The work directory of the application on the node. The work directory can be used to store application data."]
     #[serde(rename = "WorkDirectory", default, skip_serializing_if = "Option::is_none")]
@@ -5503,12 +5318,7 @@ pub struct DeployedApplicationInfo {
     #[serde(rename = "TempDirectory", default, skip_serializing_if = "Option::is_none")]
     pub temp_directory: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
 }
 impl DeployedApplicationInfo {
@@ -5672,28 +5482,13 @@ pub struct DeployedCodePackageInfo {
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_id: Option<ServicePackageActivationId>,
     #[doc = "Specifies the type of host for main entry point of a code package as specified in service manifest."]
-    #[serde(
-        rename = "HostType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HostType", default, skip_serializing_if = "Option::is_none")]
     pub host_type: Option<HostType>,
     #[doc = "Specifies the isolation mode of main entry point of a code package when it's host type is ContainerHost. This is specified as part of container host policies in application manifest while importing service manifest."]
-    #[serde(
-        rename = "HostIsolationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HostIsolationMode", default, skip_serializing_if = "Option::is_none")]
     pub host_isolation_mode: Option<HostIsolationMode>,
     #[doc = "Specifies the status of a deployed application or service package on a Service Fabric node."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<DeploymentStatus>,
     #[doc = "The interval at which code package is run. This is used for periodic code package."]
     #[serde(rename = "RunFrequencyInterval", default, skip_serializing_if = "Option::is_none")]
@@ -5921,12 +5716,7 @@ pub struct DeployedServicePackageInfo {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Specifies the status of a deployed application or service package on a Service Fabric node."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<DeploymentStatus>,
     #[doc = "The ActivationId of a deployed service package. If ServicePackageActivationMode specified at the time of creating the service\nis 'SharedProcess' (or if it is not specified, in which case it defaults to 'SharedProcess'), then value of ServicePackageActivationId\nis always an empty string."]
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
@@ -6038,7 +5828,7 @@ impl DeployedServicePackagesHealthEvaluation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServiceReplicaDetailInfo {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "The full name of the service with 'fabric:' URI scheme."]
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
@@ -6047,12 +5837,7 @@ pub struct DeployedServiceReplicaDetailInfo {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
     #[doc = "Specifies the current active life-cycle operation on a stateful service replica or stateless service instance."]
-    #[serde(
-        rename = "CurrentServiceOperation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "CurrentServiceOperation", default, skip_serializing_if = "Option::is_none")]
     pub current_service_operation: Option<ServiceOperationName>,
     #[doc = "The start time of the current service operation in UTC format."]
     #[serde(
@@ -6081,7 +5866,7 @@ impl DeployedServiceReplicaDetailInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServiceReplicaInfo {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "The full name of the service with 'fabric:' URI scheme."]
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
@@ -6099,12 +5884,7 @@ pub struct DeployedServiceReplicaInfo {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
     #[doc = "The status of a replica of a service."]
-    #[serde(
-        rename = "ReplicaStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReplicaStatus", default, skip_serializing_if = "Option::is_none")]
     pub replica_status: Option<ReplicaStatus>,
     #[doc = "The last address returned by the replica in Open or ChangeRole."]
     #[serde(rename = "Address", default, skip_serializing_if = "Option::is_none")]
@@ -6146,12 +5926,7 @@ pub struct DeployedServiceTypeInfo {
     #[serde(rename = "CodePackageName", default, skip_serializing_if = "Option::is_none")]
     pub code_package_name: Option<CodePackageName>,
     #[doc = "The status of the service type registration on the node."]
-    #[serde(
-        rename = "Status",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ServiceTypeRegistrationStatus>,
     #[doc = "The ActivationId of a deployed service package. If ServicePackageActivationMode specified at the time of creating the service\nis 'SharedProcess' (or if it is not specified, in which case it defaults to 'SharedProcess'), then value of ServicePackageActivationId\nis always an empty string."]
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
@@ -6172,28 +5947,13 @@ pub struct DeployedStatefulServiceReplicaDetailInfo {
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
     #[doc = "Specifies the operation currently being executed by the Replicator."]
-    #[serde(
-        rename = "CurrentReplicatorOperation",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "CurrentReplicatorOperation", default, skip_serializing_if = "Option::is_none")]
     pub current_replicator_operation: Option<ReplicatorOperationName>,
     #[doc = "Specifies the access status of the partition."]
-    #[serde(
-        rename = "ReadStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReadStatus", default, skip_serializing_if = "Option::is_none")]
     pub read_status: Option<PartitionAccessStatus>,
     #[doc = "Specifies the access status of the partition."]
-    #[serde(
-        rename = "WriteStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "WriteStatus", default, skip_serializing_if = "Option::is_none")]
     pub write_status: Option<PartitionAccessStatus>,
     #[doc = "Represents a base class for primary or secondary replicator status.\nContains information about the service fabric replicator like the replication/copy queue utilization, last acknowledgement received timestamp, etc."]
     #[serde(rename = "ReplicatorStatus", default, skip_serializing_if = "Option::is_none")]
@@ -6228,12 +5988,7 @@ pub struct DeployedStatefulServiceReplicaInfo {
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
     #[doc = "The role of a replica of a stateful service."]
-    #[serde(
-        rename = "ReplicaRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReplicaRole", default, skip_serializing_if = "Option::is_none")]
     pub replica_role: Option<ReplicaRole>,
     #[doc = "Information about current reconfiguration like phase, type, previous configuration role of replica and reconfiguration start date time."]
     #[serde(rename = "ReconfigurationInformation", default, skip_serializing_if = "Option::is_none")]
@@ -6427,7 +6182,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
     #[doc = "The kind of DiagnosticsSink."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6575,12 +6329,7 @@ impl EnsurePartitionQuorumSafetyCheck {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealth {
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "AggregatedHealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "AggregatedHealthState", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_health_state: Option<HealthState>,
     #[doc = "The list of health events reported on the entity."]
     #[serde(
@@ -6606,12 +6355,7 @@ impl EntityHealth {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealthState {
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "AggregatedHealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "AggregatedHealthState", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_health_state: Option<HealthState>,
 }
 impl EntityHealthState {
@@ -6623,12 +6367,7 @@ impl EntityHealthState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealthStateChunk {
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
 }
 impl EntityHealthStateChunk {
@@ -6703,12 +6442,7 @@ impl Serialize for EntityKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityKindHealthStateCount {
     #[doc = "The entity type of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "EntityKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "EntityKind", default, skip_serializing_if = "Option::is_none")]
     pub entity_kind: Option<EntityKind>,
     #[doc = "Represents information about how many health entities are in Ok, Warning and Error health state."]
     #[serde(rename = "HealthStateCount", default, skip_serializing_if = "Option::is_none")]
@@ -6768,12 +6502,7 @@ impl Serialize for EntryPointStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentVariable {
     #[doc = "The type of the environment variable being given in value"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<EnvironmentVariableType>,
     #[doc = "The name of the environment variable."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6894,7 +6623,7 @@ impl ExecutingFaultsChaosEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExecutionPolicy {
     #[doc = "Enumerates the execution policy types for services."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: ExecutionPolicyType,
 }
 impl ExecutionPolicy {
@@ -7399,7 +7128,7 @@ impl Serialize for FabricErrorCodes {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricErrorError {
     #[doc = "Defines the fabric error codes that be returned as part of the error object in response to Service Fabric API operations that are not successful. Following are the error code values that can be returned for a specific HTTP status code.\n\n  - Possible values of the error code for HTTP status code 400 (Bad Request)\n    - \"FABRIC_E_INVALID_PARTITION_KEY\"\n    - \"FABRIC_E_IMAGEBUILDER_VALIDATION_ERROR\"\n    - \"FABRIC_E_INVALID_ADDRESS\"\n    - \"FABRIC_E_APPLICATION_NOT_UPGRADING\"\n    - \"FABRIC_E_APPLICATION_UPGRADE_VALIDATION_ERROR\"\n    - \"FABRIC_E_FABRIC_NOT_UPGRADING\"\n    - \"FABRIC_E_FABRIC_UPGRADE_VALIDATION_ERROR\"\n    - \"FABRIC_E_INVALID_CONFIGURATION\"\n    - \"FABRIC_E_INVALID_NAME_URI\"\n    - \"FABRIC_E_PATH_TOO_LONG\"\n    - \"FABRIC_E_KEY_TOO_LARGE\"\n    - \"FABRIC_E_SERVICE_AFFINITY_CHAIN_NOT_SUPPORTED\"\n    - \"FABRIC_E_INVALID_ATOMIC_GROUP\"\n    - \"FABRIC_E_VALUE_EMPTY\"\n    - \"FABRIC_E_BACKUP_IS_ENABLED\"\n    - \"FABRIC_E_RESTORE_SOURCE_TARGET_PARTITION_MISMATCH\"\n    - \"FABRIC_E_INVALID_FOR_STATELESS_SERVICES\"\n    - \"FABRIC_E_INVALID_SERVICE_SCALING_POLICY\"\n    - \"E_INVALIDARG\"\n\n  - Possible values of the error code for HTTP status code 404 (Not Found)\n    - \"FABRIC_E_NODE_NOT_FOUND\"\n    - \"FABRIC_E_APPLICATION_TYPE_NOT_FOUND\"\n    - \"FABRIC_E_APPLICATION_NOT_FOUND\"\n    - \"FABRIC_E_SERVICE_TYPE_NOT_FOUND\"\n    - \"FABRIC_E_SERVICE_DOES_NOT_EXIST\"\n    - \"FABRIC_E_SERVICE_TYPE_TEMPLATE_NOT_FOUND\"\n    - \"FABRIC_E_CONFIGURATION_SECTION_NOT_FOUND\"\n    - \"FABRIC_E_PARTITION_NOT_FOUND\"\n    - \"FABRIC_E_REPLICA_DOES_NOT_EXIST\"\n    - \"FABRIC_E_SERVICE_GROUP_DOES_NOT_EXIST\"\n    - \"FABRIC_E_CONFIGURATION_PARAMETER_NOT_FOUND\"\n    - \"FABRIC_E_DIRECTORY_NOT_FOUND\"\n    - \"FABRIC_E_FABRIC_VERSION_NOT_FOUND\"\n    - \"FABRIC_E_FILE_NOT_FOUND\"\n    - \"FABRIC_E_NAME_DOES_NOT_EXIST\"\n    - \"FABRIC_E_PROPERTY_DOES_NOT_EXIST\"\n    - \"FABRIC_E_ENUMERATION_COMPLETED\"\n    - \"FABRIC_E_SERVICE_MANIFEST_NOT_FOUND\"\n    - \"FABRIC_E_KEY_NOT_FOUND\"\n    - \"FABRIC_E_HEALTH_ENTITY_NOT_FOUND\"\n    - \"FABRIC_E_BACKUP_NOT_ENABLED\"\n    - \"FABRIC_E_BACKUP_POLICY_NOT_EXISTING\"\n    - \"FABRIC_E_FAULT_ANALYSIS_SERVICE_NOT_EXISTING\"\n    - \"FABRIC_E_IMAGEBUILDER_RESERVED_DIRECTORY_ERROR\"\n\n  - Possible values of the error code for HTTP status code 409 (Conflict)\n    - \"FABRIC_E_APPLICATION_TYPE_ALREADY_EXISTS\"\n    - \"FABRIC_E_APPLICATION_ALREADY_EXISTS\"\n    - \"FABRIC_E_APPLICATION_ALREADY_IN_TARGET_VERSION\"\n    - \"FABRIC_E_APPLICATION_TYPE_PROVISION_IN_PROGRESS\"\n    - \"FABRIC_E_APPLICATION_UPGRADE_IN_PROGRESS\"\n    - \"FABRIC_E_SERVICE_ALREADY_EXISTS\"\n    - \"FABRIC_E_SERVICE_GROUP_ALREADY_EXISTS\"\n    - \"FABRIC_E_APPLICATION_TYPE_IN_USE\"\n    - \"FABRIC_E_FABRIC_ALREADY_IN_TARGET_VERSION\"\n    - \"FABRIC_E_FABRIC_VERSION_ALREADY_EXISTS\"\n    - \"FABRIC_E_FABRIC_VERSION_IN_USE\"\n    - \"FABRIC_E_FABRIC_UPGRADE_IN_PROGRESS\"\n    - \"FABRIC_E_NAME_ALREADY_EXISTS\"\n    - \"FABRIC_E_NAME_NOT_EMPTY\"\n    - \"FABRIC_E_PROPERTY_CHECK_FAILED\"\n    - \"FABRIC_E_SERVICE_METADATA_MISMATCH\"\n    - \"FABRIC_E_SERVICE_TYPE_MISMATCH\"\n    - \"FABRIC_E_HEALTH_STALE_REPORT\"\n    - \"FABRIC_E_SEQUENCE_NUMBER_CHECK_FAILED\"\n    - \"FABRIC_E_NODE_HAS_NOT_STOPPED_YET\"\n    - \"FABRIC_E_INSTANCE_ID_MISMATCH\"\n    - \"FABRIC_E_BACKUP_IN_PROGRESS\"\n    - \"FABRIC_E_RESTORE_IN_PROGRESS\"\n    - \"FABRIC_E_BACKUP_POLICY_ALREADY_EXISTING\"\n\n  - Possible values of the error code for HTTP status code 413 (Request Entity Too Large)\n    - \"FABRIC_E_VALUE_TOO_LARGE\"\n\n  - Possible values of the error code for HTTP status code 500 (Internal Server Error)\n    - \"FABRIC_E_NODE_IS_UP\"\n    - \"E_FAIL\"\n    - \"FABRIC_E_SINGLE_INSTANCE_APPLICATION_ALREADY_EXISTS\"\n    - \"FABRIC_E_SINGLE_INSTANCE_APPLICATION_NOT_FOUND\"\n    - \"FABRIC_E_VOLUME_ALREADY_EXISTS\"\n    - \"FABRIC_E_VOLUME_NOT_FOUND\"\n    - \"SerializationError\"\n\n  - Possible values of the error code for HTTP status code 503 (Service Unavailable)\n    - \"FABRIC_E_NO_WRITE_QUORUM\"\n    - \"FABRIC_E_NOT_PRIMARY\"\n    - \"FABRIC_E_NOT_READY\"\n    - \"FABRIC_E_RECONFIGURATION_PENDING\"\n    - \"FABRIC_E_SERVICE_OFFLINE\"\n    - \"E_ABORT\"\n    - \"FABRIC_E_VALUE_TOO_LARGE\"\n\n  - Possible values of the error code for HTTP status code 504 (Gateway Timeout)\n    - \"FABRIC_E_COMMUNICATION_ERROR\"\n    - \"FABRIC_E_OPERATION_NOT_COMPLETE\"\n    - \"FABRIC_E_TIMEOUT\""]
-    #[serde(rename = "Code", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Code")]
     pub code: FabricErrorCodes,
     #[doc = "Error message."]
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
@@ -7414,7 +7143,7 @@ impl FabricErrorError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricEvent {
     #[doc = "The kind of FabricEvent."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: FabricEventKind,
     #[doc = "The identifier for the FabricEvent instance."]
     #[serde(rename = "EventInstanceId")]
@@ -7985,7 +7714,7 @@ pub struct GatewayProperties {
     )]
     pub http: Vec<HttpConfig>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the gateway."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -8090,15 +7819,10 @@ pub type HealthCheckWaitDuration = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthEvaluation {
     #[doc = "The health manager in the cluster performs health evaluations in determining the aggregated health state of an entity. This enumeration provides information on the kind of evaluation that was performed. Following are the possible values."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: HealthEvaluationKind,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "AggregatedHealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "AggregatedHealthState", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_health_state: Option<HealthState>,
     #[doc = "Description of the health evaluation, which represents a summary of the evaluation process."]
     #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
@@ -8257,7 +7981,7 @@ pub struct HealthInformation {
     #[serde(rename = "Property")]
     pub property: String,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(rename = "HealthState", with = "azure_core::xml::text_content")]
+    #[serde(rename = "HealthState")]
     pub health_state: HealthState,
     #[doc = "The duration for which this health report is valid. This field uses ISO8601 format for specifying the duration.\nWhen clients report periodically, they should send reports with higher frequency than time to live.\nIf clients report on transition, they can set the time to live to infinite.\nWhen time to live expires, the health event that contains the health information\nis either removed from health store, if RemoveWhenExpired is true, or evaluated at error, if RemoveWhenExpired false.\n\nIf not specified, time to live defaults to infinite value."]
     #[serde(rename = "TimeToLiveInMilliSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -8498,12 +8222,7 @@ pub struct HttpRouteMatchHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "how to match header value"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_route_match_header::Type>,
 }
 impl HttpRouteMatchHeader {
@@ -8563,7 +8282,7 @@ pub struct HttpRouteMatchPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rewrite: Option<String>,
     #[doc = "how to match value in the Uri"]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: http_route_match_path::Type,
 }
 impl HttpRouteMatchPath {
@@ -8685,12 +8404,7 @@ pub struct ImageRegistryCredential {
     #[doc = "The username for the private registry."]
     pub username: String,
     #[doc = "The type of the image registry password being given in password"]
-    #[serde(
-        rename = "passwordType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "passwordType", default, skip_serializing_if = "Option::is_none")]
     pub password_type: Option<ImageRegistryPasswordType>,
     #[doc = "The password for the private registry. The password is required for create or update operations, however it is not returned in the get or list operations. Will be processed based on the type provided."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9094,12 +8808,7 @@ pub struct LoadedPartitionInformationQueryDescription {
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
     #[doc = "Defines the order."]
-    #[serde(
-        rename = "Ordering",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Ordering", default, skip_serializing_if = "Option::is_none")]
     pub ordering: Option<Ordering>,
     #[doc = "The maximum number of results to be returned as part of the paged queries. This parameter defines the upper bound on the number of results returned. The results returned can be less than the specified maximum results if they do not fit in the message as per the max message size restrictions defined in the configuration. If this parameter is zero or not specified, the paged query includes as many results as possible that fit in the return message."]
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
@@ -9213,7 +8922,7 @@ pub struct ManagedIdentityAzureBlobBackupStorageDescription {
     #[serde(flatten)]
     pub backup_storage_description: BackupStorageDescription,
     #[doc = "The type of managed identity to be used to connect to Azure Blob Store via Managed Identity."]
-    #[serde(rename = "ManagedIdentityType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ManagedIdentityType")]
     pub managed_identity_type: ManagedIdentityType,
     #[doc = "The Blob Service Uri to connect to the Azure blob store.."]
     #[serde(rename = "BlobServiceUri")]
@@ -9301,12 +9010,7 @@ pub type MinInstancePercentage = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringPolicyDescription {
     #[doc = "The compensating action to perform when a Monitored upgrade encounters monitoring policy or health policy violations.\nInvalid indicates the failure action is invalid. Rollback specifies that the upgrade will start rolling back automatically.\nManual indicates that the upgrade will switch to UnmonitoredManual upgrade mode."]
-    #[serde(
-        rename = "FailureAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "FailureAction", default, skip_serializing_if = "Option::is_none")]
     pub failure_action: Option<FailureAction>,
     #[doc = "The amount of time to wait after completing an upgrade domain before applying health policies. It is first interpreted as a string representing an ISO 8601 duration. If that fails, then it is interpreted as a number representing the total number of milliseconds."]
     #[serde(rename = "HealthCheckWaitDurationInMilliseconds", default, skip_serializing_if = "Option::is_none")]
@@ -9505,7 +9209,7 @@ pub struct NetworkResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the network."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -9525,7 +9229,6 @@ impl NetworkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkResourcePropertiesBase {
     #[doc = "The type of a Service Fabric container network."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: NetworkKind,
 }
 impl NetworkResourcePropertiesBase {
@@ -9723,20 +9426,10 @@ impl NodeDeactivateStartedEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeDeactivationInfo {
     #[doc = "The intent or the reason for deactivating the node. Following are the possible values for it."]
-    #[serde(
-        rename = "NodeDeactivationIntent",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "NodeDeactivationIntent", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_intent: Option<NodeDeactivationIntent>,
     #[doc = "The status of node deactivation operation. Following are the possible values."]
-    #[serde(
-        rename = "NodeDeactivationStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "NodeDeactivationStatus", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_status: Option<NodeDeactivationStatus>,
     #[doc = "List of tasks representing the deactivation operation on the node."]
     #[serde(rename = "NodeDeactivationTask", default, skip_serializing_if = "Option::is_none")]
@@ -9841,12 +9534,7 @@ pub struct NodeDeactivationTask {
     #[serde(rename = "NodeDeactivationTaskId", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_task_id: Option<NodeDeactivationTaskId>,
     #[doc = "The intent or the reason for deactivating the node. Following are the possible values for it."]
-    #[serde(
-        rename = "NodeDeactivationIntent",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "NodeDeactivationIntent", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_intent: Option<NodeDeactivationIntent>,
 }
 impl NodeDeactivationTask {
@@ -9861,12 +9549,7 @@ pub struct NodeDeactivationTaskId {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The type of the task that performed the node deactivation. Following are the possible values."]
-    #[serde(
-        rename = "NodeDeactivationTaskType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "NodeDeactivationTaskType", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_task_type: Option<NodeDeactivationTaskType>,
 }
 impl NodeDeactivationTaskId {
@@ -10132,12 +9815,7 @@ pub struct NodeImpact {
     #[serde(rename = "NodeName")]
     pub node_name: String,
     #[doc = "The level of impact expected."]
-    #[serde(
-        rename = "ImpactLevel",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ImpactLevel", default, skip_serializing_if = "Option::is_none")]
     pub impact_level: Option<node_impact::ImpactLevel>,
 }
 impl NodeImpact {
@@ -10213,23 +9891,13 @@ pub struct NodeInfo {
     #[serde(rename = "ConfigVersion", default, skip_serializing_if = "Option::is_none")]
     pub config_version: Option<String>,
     #[doc = "The status of the node."]
-    #[serde(
-        rename = "NodeStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "NodeStatus", default, skip_serializing_if = "Option::is_none")]
     pub node_status: Option<NodeStatus>,
     #[doc = "Time in seconds since the node has been in NodeStatus Up. Value zero indicates that the node is not Up."]
     #[serde(rename = "NodeUpTimeInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub node_up_time_in_seconds: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "Indicates if the node is a seed node or not. Returns true if the node is a seed node, otherwise false. A quorum of seed nodes are required for proper operation of Service Fabric cluster."]
     #[serde(rename = "IsSeedNode", default, skip_serializing_if = "Option::is_none")]
@@ -10681,12 +10349,7 @@ pub type NodeTagsList = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeTransitionProgress {
     #[doc = "The state of the operation."]
-    #[serde(
-        rename = "State",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<OperationState>,
     #[doc = "Represents information about an operation in a terminal state (Completed or Faulted)."]
     #[serde(rename = "NodeTransitionResult", default, skip_serializing_if = "Option::is_none")]
@@ -10828,12 +10491,7 @@ pub struct NodeUpgradeProgressInfo {
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<NodeName>,
     #[doc = "The state of the upgrading node."]
-    #[serde(
-        rename = "UpgradePhase",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradePhase", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_phase: Option<NodeUpgradePhase>,
     #[doc = "List of pending safety checks"]
     #[serde(rename = "PendingSafetyChecks", default, skip_serializing_if = "Option::is_none")]
@@ -10962,20 +10620,10 @@ pub struct OperationStatus {
     #[serde(rename = "OperationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<OperationId>,
     #[doc = "The state of the operation."]
-    #[serde(
-        rename = "State",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<OperationState>,
     #[doc = "The type of the operation."]
-    #[serde(
-        rename = "Type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<OperationType>,
 }
 impl OperationStatus {
@@ -11076,12 +10724,7 @@ pub struct PackageSharingPolicyInfo {
     #[serde(rename = "SharedPackageName", default, skip_serializing_if = "Option::is_none")]
     pub shared_package_name: Option<String>,
     #[doc = "Represents the scope for PackageSharingPolicy. This is specified during DeployServicePackageToNode operation."]
-    #[serde(
-        rename = "PackageSharingScope",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "PackageSharingScope", default, skip_serializing_if = "Option::is_none")]
     pub package_sharing_scope: Option<PackageSharingPolicyScope>,
 }
 impl PackageSharingPolicyInfo {
@@ -11702,12 +11345,7 @@ impl PartitionBackupEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionDataLossProgress {
     #[doc = "The state of the operation."]
-    #[serde(
-        rename = "State",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<OperationState>,
     #[doc = "Represents information about an operation in a terminal state (Completed or Faulted)."]
     #[serde(rename = "InvokeDataLossResult", default, skip_serializing_if = "Option::is_none")]
@@ -11910,7 +11548,7 @@ pub type PartitionId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionInformation {
     #[doc = "The kind of partitioning scheme used to partition the service."]
-    #[serde(rename = "ServicePartitionKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServicePartitionKind")]
     pub service_partition_kind: ServicePartitionKind,
     #[doc = "An internal ID used by Service Fabric to uniquely identify a partition. This is a randomly generated GUID when the service was created. The partition ID is unique and does not change for the lifetime of the service. If the same service was deleted and recreated the IDs of its partitions would be different."]
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
@@ -12142,12 +11780,7 @@ impl PartitionPrimaryMoveAnalysisEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionQuorumLossProgress {
     #[doc = "The state of the operation."]
-    #[serde(
-        rename = "State",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<OperationState>,
     #[doc = "Represents information about an operation in a terminal state (Completed or Faulted)."]
     #[serde(rename = "InvokeQuorumLossResult", default, skip_serializing_if = "Option::is_none")]
@@ -12242,12 +11875,7 @@ impl PartitionReconfiguredEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionRestartProgress {
     #[doc = "The state of the operation."]
-    #[serde(
-        rename = "State",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<OperationState>,
     #[doc = "Represents information about an operation in a terminal state (Completed or Faulted)."]
     #[serde(rename = "RestartPartitionResult", default, skip_serializing_if = "Option::is_none")]
@@ -12320,7 +11948,7 @@ impl Serialize for PartitionScheme {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionSchemeDescription {
     #[doc = "Enumerates the ways that a service can be partitioned."]
-    #[serde(rename = "PartitionScheme", with = "azure_core::xml::text_content")]
+    #[serde(rename = "PartitionScheme")]
     pub partition_scheme: PartitionScheme,
 }
 impl PartitionSchemeDescription {
@@ -12442,7 +12070,7 @@ pub struct ProbeHttpGet {
     )]
     pub http_headers: Vec<ProbeHttpGetHeaders>,
     #[doc = "Scheme for the http probe. Can be Http or Https."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scheme: Option<probe_http_get::Scheme>,
 }
 impl ProbeHttpGet {
@@ -12543,7 +12171,7 @@ impl PropertyBatchDescriptionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyBatchInfo {
     #[doc = "The kind of property batch info, determined by the results of a property batch. The following are the possible values."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: PropertyBatchInfoKind,
 }
 impl PropertyBatchInfo {
@@ -12594,7 +12222,7 @@ impl Serialize for PropertyBatchInfoKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyBatchOperation {
     #[doc = "The kind of property batch operation, determined by the operation to be performed. The following are the possible values."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: PropertyBatchOperationKind,
     #[doc = "The name of the Service Fabric property."]
     #[serde(rename = "PropertyName")]
@@ -12701,12 +12329,7 @@ impl PropertyInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropertyMetadata {
     #[doc = "The kind of property, determined by the type of data. Following are the possible values."]
-    #[serde(
-        rename = "TypeId",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "TypeId", default, skip_serializing_if = "Option::is_none")]
     pub type_id: Option<PropertyValueKind>,
     #[doc = "The property's custom type ID. Using this property, the user is able to tag the type of the value of the property."]
     #[serde(rename = "CustomTypeId", default, skip_serializing_if = "Option::is_none")]
@@ -12734,7 +12357,7 @@ pub type PropertyName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyValue {
     #[doc = "The kind of property, determined by the type of data. Following are the possible values."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: PropertyValueKind,
 }
 impl PropertyValue {
@@ -12796,12 +12419,7 @@ pub struct ProvisionApplicationTypeDescription {
     #[serde(rename = "ApplicationTypeBuildPath")]
     pub application_type_build_path: String,
     #[doc = "The kind of action that needs to be taken for cleaning up the application package after successful provision."]
-    #[serde(
-        rename = "ApplicationPackageCleanupPolicy",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ApplicationPackageCleanupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub application_package_cleanup_policy: Option<ApplicationPackageCleanupPolicy>,
 }
 impl ProvisionApplicationTypeDescription {
@@ -12820,7 +12438,7 @@ impl ProvisionApplicationTypeDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProvisionApplicationTypeDescriptionBase {
     #[doc = "The kind of application type registration or provision requested. The application package can be registered or provisioned either from the image store or from an external store. Following are the kinds of the application type provision."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ProvisionApplicationTypeKind,
     #[doc = "Indicates whether or not provisioning should occur asynchronously. When set to true, the provision operation returns when the request is accepted by the system, and the provision operation continues without any timeout limit. The default value is false. For large application packages, we recommend setting the value to true."]
     #[serde(rename = "Async")]
@@ -12910,28 +12528,13 @@ impl PutPropertyBatchOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReconfigurationInformation {
     #[doc = "The role of a replica of a stateful service."]
-    #[serde(
-        rename = "PreviousConfigurationRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "PreviousConfigurationRole", default, skip_serializing_if = "Option::is_none")]
     pub previous_configuration_role: Option<ReplicaRole>,
     #[doc = "The reconfiguration phase of a replica of a stateful service."]
-    #[serde(
-        rename = "ReconfigurationPhase",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReconfigurationPhase", default, skip_serializing_if = "Option::is_none")]
     pub reconfiguration_phase: Option<ReconfigurationPhase>,
     #[doc = "The type of reconfiguration for replica of a stateful service."]
-    #[serde(
-        rename = "ReconfigurationType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReconfigurationType", default, skip_serializing_if = "Option::is_none")]
     pub reconfiguration_type: Option<ReconfigurationType>,
     #[doc = "Start time (in UTC) of the ongoing reconfiguration. If no reconfiguration is taking place then this value will be zero date-time."]
     #[serde(rename = "ReconfigurationStartTimeUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -13149,7 +12752,7 @@ pub type RemoteReplicatorStatusList = Vec<RemoteReplicatorStatus>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairImpactDescriptionBase {
     #[doc = "Specifies the kind of the impact. This type supports the Service Fabric platform; it is not meant to be used directly from your code.'"]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: RepairImpactKind,
 }
 impl RepairImpactDescriptionBase {
@@ -13198,7 +12801,7 @@ impl Serialize for RepairImpactKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairTargetDescriptionBase {
     #[doc = "Specifies the kind of the repair target. This type supports the Service Fabric platform; it is not meant to be used directly from your code.'"]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: RepairTargetKind,
 }
 impl RepairTargetDescriptionBase {
@@ -13256,7 +12859,7 @@ pub struct RepairTask {
     #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The workflow state of the repair task. Valid initial states are Created, Claimed, and Preparing."]
-    #[serde(rename = "State", with = "azure_core::xml::text_content")]
+    #[serde(rename = "State")]
     pub state: repair_task::State,
     #[doc = "A bitwise-OR of the following values, which gives additional details about the status of the repair task.\n- 1 - Cancellation of the repair has been requested\n- 2 - Abort of the repair has been requested\n- 4 - Approval of the repair was forced via client request"]
     #[serde(rename = "Flags", default, skip_serializing_if = "Option::is_none")]
@@ -13277,12 +12880,7 @@ pub struct RepairTask {
     #[serde(rename = "Impact", default, skip_serializing_if = "Option::is_none")]
     pub impact: Option<RepairImpactDescriptionBase>,
     #[doc = "A value describing the overall result of the repair task execution. Must be specified in the Restoring and later states, and is immutable once set."]
-    #[serde(
-        rename = "ResultStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ResultStatus", default, skip_serializing_if = "Option::is_none")]
     pub result_status: Option<repair_task::ResultStatus>,
     #[doc = "A numeric value providing additional details about the result of the repair task execution.\nMay be specified in the Restoring and later states, and is immutable once set."]
     #[serde(rename = "ResultCode", default, skip_serializing_if = "Option::is_none")]
@@ -13294,20 +12892,10 @@ pub struct RepairTask {
     #[serde(rename = "History", default, skip_serializing_if = "Option::is_none")]
     pub history: Option<RepairTaskHistory>,
     #[doc = "Specifies the workflow state of a repair task's health check. This type supports the Service Fabric platform; it is not meant to be used directly from your code."]
-    #[serde(
-        rename = "PreparingHealthCheckState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "PreparingHealthCheckState", default, skip_serializing_if = "Option::is_none")]
     pub preparing_health_check_state: Option<RepairTaskHealthCheckState>,
     #[doc = "Specifies the workflow state of a repair task's health check. This type supports the Service Fabric platform; it is not meant to be used directly from your code."]
-    #[serde(
-        rename = "RestoringHealthCheckState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RestoringHealthCheckState", default, skip_serializing_if = "Option::is_none")]
     pub restoring_health_check_state: Option<RepairTaskHealthCheckState>,
     #[doc = "A value to determine if health checks will be performed when the repair task enters the Preparing state."]
     #[serde(rename = "PerformPreparingHealthCheck", default, skip_serializing_if = "Option::is_none")]
@@ -13657,7 +13245,7 @@ pub struct ReplicaHealth {
     #[serde(flatten)]
     pub entity_health: EntityHealth,
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "An internal ID used by Service Fabric to uniquely identify a partition. This is a randomly generated GUID when the service was created. The partition ID is unique and does not change for the lifetime of the service. If the same service was deleted and recreated the IDs of its partitions would be different."]
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
@@ -13703,7 +13291,7 @@ pub struct ReplicaHealthState {
     #[serde(flatten)]
     pub entity_health_state: EntityHealthState,
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "An internal ID used by Service Fabric to uniquely identify a partition. This is a randomly generated GUID when the service was created. The partition ID is unique and does not change for the lifetime of the service. If the same service was deleted and recreated the IDs of its partitions would be different."]
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
@@ -13770,23 +13358,13 @@ pub type ReplicaIdInteger = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaInfo {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "The status of a replica of a service."]
-    #[serde(
-        rename = "ReplicaStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReplicaStatus", default, skip_serializing_if = "Option::is_none")]
     pub replica_status: Option<ReplicaStatus>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "The name of a Service Fabric node."]
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
@@ -13985,7 +13563,7 @@ impl Serialize for ReplicaStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaStatusBase {
     #[doc = "The role of a replica of a stateful service."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ReplicaKind,
 }
 impl ReplicaStatusBase {
@@ -14106,7 +13684,7 @@ impl ReplicatorQueueStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicatorStatus {
     #[doc = "The role of a replica of a stateful service."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ReplicaRole,
 }
 impl ReplicatorStatus {
@@ -14118,12 +13696,7 @@ impl ReplicatorStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResolvedServiceEndpoint {
     #[doc = "The role of the replica where the endpoint is reported."]
-    #[serde(
-        rename = "Kind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Kind", default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<ServiceEndpointRole>,
     #[doc = "The address of the endpoint. If the endpoint has multiple listeners the address is a JSON object with one property per listener with the value as the address of that listener."]
     #[serde(rename = "Address", default, skip_serializing_if = "Option::is_none")]
@@ -14291,12 +13864,7 @@ pub struct RestartNodeDescription {
     #[serde(rename = "NodeInstanceId")]
     pub node_instance_id: String,
     #[doc = "Specify True to create a dump of the fabric node process. This is case-sensitive."]
-    #[serde(
-        rename = "CreateFabricDump",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "CreateFabricDump", default, skip_serializing_if = "Option::is_none")]
     pub create_fabric_dump: Option<restart_node_description::CreateFabricDump>,
 }
 impl RestartNodeDescription {
@@ -14430,12 +13998,7 @@ impl RestorePartitionDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreProgressInfo {
     #[doc = "Represents the current state of the partition restore operation."]
-    #[serde(
-        rename = "RestoreState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RestoreState", default, skip_serializing_if = "Option::is_none")]
     pub restore_state: Option<RestoreState>,
     #[doc = "Timestamp when operation succeeded or failed."]
     #[serde(rename = "TimeStampUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -14528,7 +14091,7 @@ impl ResumeClusterUpgradeDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicyDescription {
     #[doc = "The type of retention policy. Currently only \"Basic\" retention policy is supported."]
-    #[serde(rename = "RetentionPolicyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "RetentionPolicyType")]
     pub retention_policy_type: RetentionPolicyType,
 }
 impl RetentionPolicyDescription {
@@ -14623,7 +14186,7 @@ impl Default for RollingUpgradeMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RollingUpgradeUpdateDescription {
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(rename = "RollingUpgradeMode", with = "azure_core::xml::text_content")]
+    #[serde(rename = "RollingUpgradeMode")]
     pub rolling_upgrade_mode: UpgradeMode,
     #[doc = "If true, then processes are forcefully restarted during upgrade even when the code version has not changed (the upgrade only changes configuration or data)."]
     #[serde(rename = "ForceRestart", default, skip_serializing_if = "Option::is_none")]
@@ -14632,12 +14195,7 @@ pub struct RollingUpgradeUpdateDescription {
     #[serde(rename = "ReplicaSetCheckTimeoutInMilliseconds", default, skip_serializing_if = "Option::is_none")]
     pub replica_set_check_timeout_in_milliseconds: Option<UpgradeReplicaSetCheckTimeout>,
     #[doc = "The compensating action to perform when a Monitored upgrade encounters monitoring policy or health policy violations.\nInvalid indicates the failure action is invalid. Rollback specifies that the upgrade will start rolling back automatically.\nManual indicates that the upgrade will switch to UnmonitoredManual upgrade mode."]
-    #[serde(
-        rename = "FailureAction",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "FailureAction", default, skip_serializing_if = "Option::is_none")]
     pub failure_action: Option<FailureAction>,
     #[doc = "The amount of time to wait after completing an upgrade domain before applying health policies. It is first interpreted as a string representing an ISO 8601 duration. If that fails, then it is interpreted as a number representing the total number of milliseconds."]
     #[serde(rename = "HealthCheckWaitDurationInMilliseconds", default, skip_serializing_if = "Option::is_none")]
@@ -14684,7 +14242,6 @@ pub struct RunToCompletionExecutionPolicy {
     #[serde(flatten)]
     pub execution_policy: ExecutionPolicy,
     #[doc = "Enumerates the restart policy for RunToCompletionExecutionPolicy"]
-    #[serde(with = "azure_core::xml::text_content")]
     pub restart: RestartPolicy,
 }
 impl RunToCompletionExecutionPolicy {
@@ -14696,7 +14253,7 @@ impl RunToCompletionExecutionPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SafetyCheck {
     #[doc = "The kind of safety check performed by service fabric before continuing with the operations. These checks ensure the availability of the service and the reliability of the state. Following are the kinds of safety checks."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: SafetyCheckKind,
 }
 impl SafetyCheck {
@@ -14770,7 +14327,7 @@ impl SafetyCheckWrapper {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingMechanismDescription {
     #[doc = "Enumerates the ways that a service can be scaled."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ScalingMechanismKind,
 }
 impl ScalingMechanismDescription {
@@ -14842,7 +14399,7 @@ pub type ScalingPolicyDescriptionList = Vec<ScalingPolicyDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingTriggerDescription {
     #[doc = "Enumerates the ways that a service can be scaled."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ScalingTriggerKind,
 }
 impl ScalingTriggerDescription {
@@ -15018,7 +14575,7 @@ pub struct SecretResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the secret."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -15042,7 +14599,6 @@ impl SecretResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretResourcePropertiesBase {
     #[doc = "Describes the kind of secret."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub kind: SecretKind,
 }
 impl SecretResourcePropertiesBase {
@@ -15162,7 +14718,7 @@ impl ServiceBackupEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceCorrelationDescription {
     #[doc = "The service correlation scheme."]
-    #[serde(rename = "Scheme", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Scheme")]
     pub scheme: ServiceCorrelationScheme,
     #[doc = "The full name of the service with 'fabric:' URI scheme."]
     #[serde(rename = "ServiceName")]
@@ -15343,7 +14899,7 @@ impl ServiceDeletedEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceDescription {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "The name of the application, including the 'fabric:' URI scheme."]
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
@@ -15373,23 +14929,13 @@ pub struct ServiceDescription {
     #[serde(rename = "ServicePlacementPolicies", default, skip_serializing_if = "Option::is_none")]
     pub service_placement_policies: Option<ServicePlacementPoliciesList>,
     #[doc = "Specifies the move cost for the service."]
-    #[serde(
-        rename = "DefaultMoveCost",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "DefaultMoveCost", default, skip_serializing_if = "Option::is_none")]
     pub default_move_cost: Option<MoveCost>,
     #[doc = "Indicates if the DefaultMoveCost property is specified."]
     #[serde(rename = "IsDefaultMoveCostSpecified", default, skip_serializing_if = "Option::is_none")]
     pub is_default_move_cost_specified: Option<bool>,
     #[doc = "The activation mode of service package to be used for a Service Fabric service. This is specified at the time of creating the Service."]
-    #[serde(
-        rename = "ServicePackageActivationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ServicePackageActivationMode", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_mode: Option<ServicePackageActivationMode>,
     #[doc = "The DNS name of the service. It requires the DNS system service to be enabled in Service Fabric cluster."]
     #[serde(rename = "ServiceDnsName", default, skip_serializing_if = "Option::is_none")]
@@ -15504,12 +15050,7 @@ pub struct ServiceFromTemplateDescription {
     #[serde(rename = "InitializationData", default, skip_serializing_if = "Option::is_none")]
     pub initialization_data: Option<ByteArray>,
     #[doc = "The activation mode of service package to be used for a Service Fabric service. This is specified at the time of creating the Service."]
-    #[serde(
-        rename = "ServicePackageActivationMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ServicePackageActivationMode", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_mode: Option<ServicePackageActivationMode>,
     #[doc = "The DNS name of the service. It requires the DNS system service to be enabled in Service Fabric cluster."]
     #[serde(rename = "ServiceDnsName", default, skip_serializing_if = "Option::is_none")]
@@ -15724,7 +15265,7 @@ pub struct ServiceInfo {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<ServiceId>,
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "The full name of the service with 'fabric:' URI scheme."]
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
@@ -15736,20 +15277,10 @@ pub struct ServiceInfo {
     #[serde(rename = "ManifestVersion", default, skip_serializing_if = "Option::is_none")]
     pub manifest_version: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "The status of the application."]
-    #[serde(
-        rename = "ServiceStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ServiceStatus", default, skip_serializing_if = "Option::is_none")]
     pub service_status: Option<ServiceStatus>,
     #[doc = "Whether the service is in a service group."]
     #[serde(rename = "IsServiceGroup", default, skip_serializing_if = "Option::is_none")]
@@ -15815,12 +15346,7 @@ pub struct ServiceLoadMetricDescription {
     #[serde(rename = "Name")]
     pub name: String,
     #[doc = "Determines the metric weight relative to the other metrics that are configured for this service. During runtime, if two metrics end up in conflict, the Cluster Resource Manager prefers the metric with the higher weight."]
-    #[serde(
-        rename = "Weight",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "Weight", default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<ServiceLoadMetricWeight>,
     #[doc = "Used only for Stateful services. The default amount of load, as a number, that this service creates for this metric when it is a Primary replica."]
     #[serde(rename = "PrimaryDefaultLoad", default, skip_serializing_if = "Option::is_none")]
@@ -16053,23 +15579,13 @@ impl Serialize for ServicePackageActivationMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePartitionInfo {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "HealthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "The status of the service fabric service partition."]
-    #[serde(
-        rename = "PartitionStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "PartitionStatus", default, skip_serializing_if = "Option::is_none")]
     pub partition_status: Option<ServicePartitionStatus>,
     #[doc = "Information about the partition identity, partitioning scheme and keys supported by it."]
     #[serde(rename = "PartitionInformation", default, skip_serializing_if = "Option::is_none")]
@@ -16223,7 +15739,7 @@ pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementPolicyDescription {
     #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
-    #[serde(rename = "Type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Type")]
     pub type_: ServicePlacementPolicyType,
 }
 impl ServicePlacementPolicyDescription {
@@ -16357,18 +15873,13 @@ pub struct ServiceProperties {
     )]
     pub auto_scaling_policies: Vec<AutoScalingPolicy>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the service."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "The health state of a Service Fabric entity such as Cluster, Node, Application, Service, Partition, Replica etc."]
-    #[serde(
-        rename = "healthState",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
     #[doc = "When the service's health state is not 'Ok', this additional details from service fabric Health Manager for the user to know why the service is marked unhealthy."]
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
@@ -16411,7 +15922,7 @@ impl ServiceReplicaDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceReplicaProperties {
     #[doc = "The operation system required by the code in service."]
-    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "osType")]
     pub os_type: OperatingSystemType,
     #[doc = "Describes the set of code packages that forms the service. A code package describes the container and the properties for running it. All the code packages are started together on the same host and share the same context (network, process etc.)."]
     #[serde(rename = "codePackages")]
@@ -16517,7 +16028,7 @@ impl Serialize for ServiceStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceTypeDescription {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "Kind")]
     pub kind: ServiceKind,
     #[doc = "Indicates whether the service type is a stateful service type or a stateless service type. This property is true if the service type is a stateful service type, false otherwise."]
     #[serde(rename = "IsStateful", default, skip_serializing_if = "Option::is_none")]
@@ -16689,7 +16200,7 @@ impl Serialize for ServiceTypeRegistrationStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceUpdateDescription {
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "ServiceKind", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ServiceKind")]
     pub service_kind: ServiceKind,
     #[doc = "Flags indicating whether other properties are set. Each of the associated properties corresponds to a flag, specified below, which, if set, indicate that the property is specified.\nThis property can be a combination of those flags obtained using bitwise 'OR' operator.\nFor example, if the provided value is 6 then the flags for ReplicaRestartWaitDuration (2) and QuorumLossWaitDuration (4) are set.\n\n- None - Does not indicate any other properties are set. The value is zero.\n- TargetReplicaSetSize/InstanceCount - Indicates whether the TargetReplicaSetSize property (for Stateful services) or the InstanceCount property (for Stateless services) is set. The value is 1.\n- ReplicaRestartWaitDuration - Indicates the ReplicaRestartWaitDuration property is set. The value is  2.\n- QuorumLossWaitDuration - Indicates the QuorumLossWaitDuration property is set. The value is 4.\n- StandByReplicaKeepDuration - Indicates the StandByReplicaKeepDuration property is set. The value is 8.\n- MinReplicaSetSize - Indicates the MinReplicaSetSize property is set. The value is 16.\n- PlacementConstraints - Indicates the PlacementConstraints property is set. The value is 32.\n- PlacementPolicyList - Indicates the ServicePlacementPolicies property is set. The value is 64.\n- Correlation - Indicates the CorrelationScheme property is set. The value is 128.\n- Metrics - Indicates the ServiceLoadMetrics property is set. The value is 256.\n- DefaultMoveCost - Indicates the DefaultMoveCost property is set. The value is 512.\n- ScalingPolicy - Indicates the ScalingPolicies property is set. The value is 1024.\n- ServicePlacementTimeLimit - Indicates the ServicePlacementTimeLimit property is set. The value is 2048.\n- MinInstanceCount - Indicates the MinInstanceCount property is set. The value is 4096.\n- MinInstancePercentage - Indicates the MinInstancePercentage property is set. The value is 8192.\n- InstanceCloseDelayDuration - Indicates the InstanceCloseDelayDuration property is set. The value is 16384.\n- InstanceRestartWaitDuration - Indicates the InstanceCloseDelayDuration property is set. The value is 32768.\n- DropSourceReplicaOnMove - Indicates the DropSourceReplicaOnMove property is set. The value is 65536.\n- ServiceDnsName - Indicates the ServiceDnsName property is set. The value is 131072.\n- TagsForPlacement - Indicates the TagsForPlacement property is set. The value is 1048576.\n- TagsForRunning - Indicates the TagsForRunning property is set. The value is 2097152."]
     #[serde(rename = "Flags", default, skip_serializing_if = "Option::is_none")]
@@ -16707,12 +16218,7 @@ pub struct ServiceUpdateDescription {
     #[serde(rename = "ServicePlacementPolicies", default, skip_serializing_if = "Option::is_none")]
     pub service_placement_policies: Option<ServicePlacementPoliciesList>,
     #[doc = "Specifies the move cost for the service."]
-    #[serde(
-        rename = "DefaultMoveCost",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "DefaultMoveCost", default, skip_serializing_if = "Option::is_none")]
     pub default_move_cost: Option<MoveCost>,
     #[doc = "A list that describes the scaling policies."]
     #[serde(rename = "ScalingPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -16796,12 +16302,7 @@ impl ServicesHealthEvaluation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Setting {
     #[doc = "The type of the setting being given in value"]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<SettingType>,
     #[doc = "The name of the setting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16893,20 +16394,10 @@ pub struct StartClusterUpgradeDescription {
     #[serde(rename = "ConfigVersion", default, skip_serializing_if = "Option::is_none")]
     pub config_version: Option<String>,
     #[doc = "The kind of upgrade out of the following possible values."]
-    #[serde(
-        rename = "UpgradeKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeKind", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_kind: Option<UpgradeKind>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are UnmonitoredAuto, UnmonitoredManual, and Monitored."]
-    #[serde(
-        rename = "RollingUpgradeMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "RollingUpgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub rolling_upgrade_mode: Option<UpgradeMode>,
     #[doc = "The maximum amount of time to block processing of an upgrade domain and prevent loss of availability when there are unexpected issues. When this timeout expires, processing of the upgrade domain will proceed regardless of availability loss issues. The timeout is reset at the start of each upgrade domain. Valid values are between 0 and 42949672925 inclusive. (unsigned 32-bit integer)."]
     #[serde(
@@ -16919,12 +16410,7 @@ pub struct StartClusterUpgradeDescription {
     #[serde(rename = "ForceRestart", default, skip_serializing_if = "Option::is_none")]
     pub force_restart: Option<ForceRestart>,
     #[doc = "Defines the order in which an upgrade proceeds through the cluster."]
-    #[serde(
-        rename = "SortOrder",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "SortOrder", default, skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<UpgradeSortOrder>,
     #[doc = "Describes the parameters for monitoring an upgrade in Monitored mode."]
     #[serde(rename = "MonitoringPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -17239,12 +16725,7 @@ pub struct StatefulServiceReplicaInfo {
     #[serde(flatten)]
     pub replica_info: ReplicaInfo,
     #[doc = "The role of a replica of a stateful service."]
-    #[serde(
-        rename = "ReplicaRole",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "ReplicaRole", default, skip_serializing_if = "Option::is_none")]
     pub replica_role: Option<ReplicaRole>,
     #[doc = "Id of a stateful service replica. ReplicaId is used by Service Fabric to uniquely identify a replica of a partition. It is unique within a partition and does not change for the lifetime of the replica. If a replica gets dropped and another replica gets created on the same node for the same partition, it will get a different value for the id. Sometimes the id of a stateless service instance is also referred as a replica id."]
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
@@ -17717,7 +17198,7 @@ pub struct TimeBasedBackupScheduleDescription {
     #[serde(flatten)]
     pub backup_schedule_description: BackupScheduleDescription,
     #[doc = "Describes the frequency with which to run the time based backup schedule."]
-    #[serde(rename = "ScheduleFrequencyType", with = "azure_core::xml::text_content")]
+    #[serde(rename = "ScheduleFrequencyType")]
     pub schedule_frequency_type: BackupScheduleFrequencyType,
     #[doc = "List of days of a week when to trigger the periodic backup. This is valid only when the backup schedule frequency type is weekly."]
     #[serde(rename = "RunDays", default, skip_serializing_if = "Option::is_none")]
@@ -17857,12 +17338,7 @@ impl UnprovisionFabricDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateClusterUpgradeDescription {
     #[doc = "The type of upgrade out of the following possible values."]
-    #[serde(
-        rename = "UpgradeKind",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "UpgradeKind", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_kind: Option<UpgradeType>,
     #[doc = "Describes the parameters for updating a rolling upgrade of application or cluster."]
     #[serde(rename = "UpdateDescription", default, skip_serializing_if = "Option::is_none")]
@@ -17978,12 +17454,7 @@ pub struct UpgradeDomainInfo {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UpgradeDomainName>,
     #[doc = "The state of the upgrade domain."]
-    #[serde(
-        rename = "State",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<UpgradeDomainState>,
 }
 impl UpgradeDomainInfo {
@@ -18441,13 +17912,12 @@ pub struct VolumeProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ResourceStatus>,
     #[doc = "Gives additional information about the current status of the volume."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
     #[doc = "Describes the provider of the volume resource."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub provider: VolumeProvider,
     #[doc = "This type describes a volume provided by an Azure Files file share."]
     #[serde(rename = "azureFileParameters", default, skip_serializing_if = "Option::is_none")]

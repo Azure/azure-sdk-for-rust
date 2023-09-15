@@ -38,12 +38,7 @@ pub struct ActiveDirectoryConnectorDomainDetails {
     #[serde(rename = "netbiosDomainName", default, skip_serializing_if = "Option::is_none")]
     pub netbios_domain_name: Option<String>,
     #[doc = "The service account provisioning mode for this Active Directory connector."]
-    #[serde(
-        rename = "serviceAccountProvisioning",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "serviceAccountProvisioning", default, skip_serializing_if = "Option::is_none")]
     pub service_account_provisioning: Option<active_directory_connector_domain_details::ServiceAccountProvisioning>,
     #[doc = "The distinguished name of the Active Directory Organizational Unit."]
     #[serde(rename = "ouDistinguishedName", default, skip_serializing_if = "Option::is_none")]
@@ -320,7 +315,7 @@ impl CommonSku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataControllerProperties {
     #[doc = "The infrastructure the data controller is running on."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub infrastructure: Option<data_controller_properties::Infrastructure>,
     #[doc = "Properties from the Kubernetes data controller"]
     #[serde(rename = "onPremiseProperty", default, skip_serializing_if = "Option::is_none")]
@@ -473,12 +468,7 @@ pub struct ExtendedLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of extendedLocation."]
-    #[serde(
-        rename = "type",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ExtendedLocationType>,
 }
 impl ExtendedLocation {
@@ -616,7 +606,7 @@ pub struct Operation {
     #[doc = "Display metadata associated with the operation."]
     pub display: OperationDisplay,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
     #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction")]
@@ -832,7 +822,7 @@ pub struct PostgresInstanceSku {
     #[serde(flatten)]
     pub common_sku: CommonSku,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<postgres_instance_sku::Tier>,
 }
 impl PostgresInstanceSku {
@@ -1007,12 +997,7 @@ pub struct SqlManagedInstanceProperties {
     #[serde(rename = "activeDirectoryInformation", default, skip_serializing_if = "Option::is_none")]
     pub active_directory_information: Option<ActiveDirectoryInformation>,
     #[doc = "The license type to apply for this managed instance."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<sql_managed_instance_properties::LicenseType>,
     #[doc = "If a CustomLocation is provided, this contains the ARM id of the connected cluster the custom location belongs to."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
@@ -1077,10 +1062,9 @@ pub mod sql_managed_instance_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlManagedInstanceSku {
     #[doc = "The name of the SKU."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub name: sql_managed_instance_sku::Name,
     #[doc = "The pricing tier for the instance."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sql_managed_instance_sku::Tier>,
     #[doc = "Whether dev/test is enabled. When the dev field is set to true, the resource is used for dev/test purpose. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1174,18 +1158,13 @@ pub struct SqlServerDatabaseResourceProperties {
     #[serde(rename = "spaceAvailableMB", default, skip_serializing_if = "Option::is_none")]
     pub space_available_mb: Option<f32>,
     #[doc = "State of the database."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<sql_server_database_resource_properties::State>,
     #[doc = "Whether the database is read only or not."]
     #[serde(rename = "isReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub is_read_only: Option<bool>,
     #[doc = "Status of the database."]
-    #[serde(
-        rename = "recoveryMode",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "recoveryMode", default, skip_serializing_if = "Option::is_none")]
     pub recovery_mode: Option<sql_server_database_resource_properties::RecoveryMode>,
     #[doc = "List of features that are enabled for the database"]
     #[serde(rename = "databaseOptions", default, skip_serializing_if = "Option::is_none")]
@@ -1395,10 +1374,10 @@ impl SqlServerInstanceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerInstanceProperties {
     #[doc = "SQL Server version."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<sql_server_instance_properties::Version>,
     #[doc = "SQL Server edition."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<sql_server_instance_properties::Edition>,
     #[doc = "ARM Resource id of the container resource (Azure Arc for Servers)."]
     #[serde(rename = "containerResourceId")]
@@ -1413,7 +1392,6 @@ pub struct SqlServerInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cores: Option<String>,
     #[doc = "The cloud connectivity status."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub status: sql_server_instance_properties::Status,
     #[doc = "SQL Server update level."]
     #[serde(rename = "patchLevel", default, skip_serializing_if = "Option::is_none")]
@@ -1437,34 +1415,19 @@ pub struct SqlServerInstanceProperties {
     #[serde(rename = "productId", default, skip_serializing_if = "Option::is_none")]
     pub product_id: Option<String>,
     #[doc = "SQL Server license type."]
-    #[serde(
-        rename = "licenseType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<sql_server_instance_properties::LicenseType>,
     #[doc = "Timestamp of last Azure Defender status update."]
     #[serde(rename = "azureDefenderStatusLastUpdated", default, with = "azure_core::date::rfc3339::option")]
     pub azure_defender_status_last_updated: Option<time::OffsetDateTime>,
     #[doc = "Status of Azure Defender."]
-    #[serde(
-        rename = "azureDefenderStatus",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "azureDefenderStatus", default, skip_serializing_if = "Option::is_none")]
     pub azure_defender_status: Option<sql_server_instance_properties::AzureDefenderStatus>,
     #[doc = "The provisioning state of the Arc-enabled SQL Server resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "Type of host for Azure Arc SQL Server"]
-    #[serde(
-        rename = "hostType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "hostType", default, skip_serializing_if = "Option::is_none")]
     pub host_type: Option<sql_server_instance_properties::HostType>,
 }
 impl SqlServerInstanceProperties {
@@ -1871,12 +1834,7 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(
-        rename = "createdByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1885,12 +1843,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(
-        rename = "lastModifiedByType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

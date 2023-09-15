@@ -151,7 +151,6 @@ pub struct GrpcExtensionDataTransfer {
     #[serde(rename = "sharedMemorySizeMiB", default, skip_serializing_if = "Option::is_none")]
     pub shared_memory_size_mi_b: Option<String>,
     #[doc = "Data transfer mode: embedded or sharedMemory."]
-    #[serde(with = "azure_core::xml::text_content")]
     pub mode: grpc_extension_data_transfer::Mode,
 }
 impl GrpcExtensionDataTransfer {
@@ -293,7 +292,7 @@ pub struct ImageFormatRaw {
     #[serde(flatten)]
     pub image_format_properties: ImageFormatProperties,
     #[doc = "Pixel format to be applied to the raw image."]
-    #[serde(rename = "pixelFormat", with = "azure_core::xml::text_content")]
+    #[serde(rename = "pixelFormat")]
     pub pixel_format: image_format_raw::PixelFormat,
 }
 impl ImageFormatRaw {
@@ -392,7 +391,7 @@ impl ImageProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageScale {
     #[doc = "Describes the image scaling mode to be applied. Default mode is 'pad'."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<image_scale::Mode>,
     #[doc = "The desired output image width."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -621,7 +620,7 @@ pub struct LivePipelineProperties {
     )]
     pub parameters: Vec<ParameterDefinition>,
     #[doc = "Current pipeline state (read-only)."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<live_pipeline_properties::State>,
 }
 impl LivePipelineProperties {
@@ -717,12 +716,7 @@ pub struct MethodRequest {
     #[serde(rename = "methodName")]
     pub method_name: String,
     #[doc = "Video Analyzer API version."]
-    #[serde(
-        rename = "@apiVersion",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "@apiVersion", default, skip_serializing_if = "Option::is_none")]
     pub api_version: Option<method_request::ApiVersion>,
 }
 impl MethodRequest {
@@ -760,7 +754,7 @@ pub struct MotionDetectionProcessor {
     #[serde(flatten)]
     pub processor_node_base: ProcessorNodeBase,
     #[doc = "Motion detection sensitivity: low, medium, high."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sensitivity: Option<motion_detection_processor::Sensitivity>,
     #[doc = "Indicates whether the processor should detect and output the regions within the video frame where motion was detected. Default is true."]
     #[serde(rename = "outputMotionRegion", default, skip_serializing_if = "Option::is_none")]
@@ -910,7 +904,7 @@ pub struct ObjectTrackingProcessor {
     #[serde(flatten)]
     pub processor_node_base: ProcessorNodeBase,
     #[doc = "Object tracker accuracy: low, medium, high. Higher accuracy leads to higher CPU consumption in average."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accuracy: Option<object_tracking_processor::Accuracy>,
 }
 impl ObjectTrackingProcessor {
@@ -970,10 +964,10 @@ pub mod object_tracking_processor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputSelector {
     #[doc = "The property of the data stream to be used as the selection criteria."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub property: Option<output_selector::Property>,
     #[doc = "The operator to compare properties by."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<output_selector::Operator>,
     #[doc = "Value to compare against."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1068,7 +1062,7 @@ pub struct ParameterDeclaration {
     #[doc = "Name of the parameter."]
     pub name: String,
     #[doc = "Type of the parameter."]
-    #[serde(rename = "type", with = "azure_core::xml::text_content")]
+    #[serde(rename = "type")]
     pub type_: parameter_declaration::Type,
     #[doc = "Description of the parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1340,7 +1334,7 @@ pub struct RtspSource {
     #[serde(flatten)]
     pub source_node_base: SourceNodeBase,
     #[doc = "Network transport utilized by the RTSP and RTP exchange: TCP or HTTP. When using TCP, the RTP packets are interleaved on the TCP RTSP connection. When using HTTP, the RTSP messages are exchanged through long lived HTTP connections, and the RTP packages are interleaved in the HTTP connections alongside the RTSP messages."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transport: Option<rtsp_source::Transport>,
     #[doc = "Base class for endpoints."]
     pub endpoint: EndpointBase,
@@ -1506,7 +1500,7 @@ pub struct SpatialAnalysisOperationEventBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<String>,
     #[doc = "The operation focus type."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub focus: Option<spatial_analysis_operation_event_base::Focus>,
 }
 impl SpatialAnalysisOperationEventBase {
@@ -1565,7 +1559,7 @@ pub struct SpatialAnalysisPersonCountEvent {
     #[serde(flatten)]
     pub spatial_analysis_operation_event_base: SpatialAnalysisOperationEventBase,
     #[doc = "The event trigger type."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<spatial_analysis_person_count_event::Trigger>,
     #[doc = "The event or interval output frequency."]
     #[serde(rename = "outputFrequency", default, skip_serializing_if = "Option::is_none")]
@@ -1660,7 +1654,7 @@ pub struct SpatialAnalysisPersonDistanceEvent {
     #[serde(flatten)]
     pub spatial_analysis_operation_event_base: SpatialAnalysisOperationEventBase,
     #[doc = "The event trigger type."]
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<spatial_analysis_person_distance_event::Trigger>,
     #[doc = "The event or interval output frequency."]
     #[serde(rename = "outputFrequency", default, skip_serializing_if = "Option::is_none")]
@@ -1808,12 +1802,7 @@ pub struct SpatialAnalysisPersonZoneCrossingEvent {
     #[serde(flatten)]
     pub spatial_analysis_operation_event_base: SpatialAnalysisOperationEventBase,
     #[doc = "The event type."]
-    #[serde(
-        rename = "eventType",
-        default,
-        skip_serializing_if = "Option::is_none",
-        with = "azure_core::xml::text_content"
-    )]
+    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<spatial_analysis_person_zone_crossing_event::EventType>,
 }
 impl SpatialAnalysisPersonZoneCrossingEvent {
