@@ -1,36 +1,3 @@
-[properties]
-boxed = [
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "DateFormat", "dateInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "DateFormat", "dateTimeInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "DateFormat", "instance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "DateFormat", "timeInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "NumberFormat", "currencyInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "NumberFormat", "instance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "NumberFormat", "integerInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "NumberFormat", "numberInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "NumberFormat", "percentInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2021-05-01-preview/purviewcatalog.json", "TimeZone", "default"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "dateInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "dateTimeInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "instance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "DateFormat", "timeInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "currencyInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "instance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "integerInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "numberInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "NumberFormat", "percentInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-03-01-preview/purviewcatalog.json", "TimeZone", "default"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "DateFormat", "timeInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "TimeZone", "default"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "DateFormat", "dateInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "DateFormat", "dateTimeInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "DateFormat", "instance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "NumberFormat", "currencyInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "NumberFormat", "instance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "NumberFormat", "integerInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "NumberFormat", "numberInstance"],
-    ["../../../azure-rest-api-specs/specification/purview/data-plane/Azure.Analytics.Purview.Catalog/preview/2022-08-01-preview/purviewcatalog.json", "NumberFormat", "percentInstance"],
-]
 [tags]
 deny = [
    # https://github.com/Azure/azure-sdk-for-rust/issues/1179

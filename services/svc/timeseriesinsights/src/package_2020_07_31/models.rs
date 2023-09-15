@@ -1393,7 +1393,7 @@ pub struct TsiErrorBody {
     pub target: Option<String>,
     #[doc = "A particular API error with an error code and a message."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<TsiErrorBody>>,
+    pub inner_error: Option<Box<TsiErrorBody>>,
     #[doc = "Contains additional error information. May be null."]
     #[serde(
         default,

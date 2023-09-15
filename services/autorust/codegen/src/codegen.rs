@@ -212,6 +212,9 @@ impl TypeNameCode {
         if self.force_value {
             tp = Type::from(tp_json_value())
         }
+        if self.boxed {
+            tp = generic_type(tp_box(), tp);
+        }
         if self.optional {
             tp = generic_type(tp_option(), tp);
         }
@@ -232,9 +235,6 @@ impl TypeNameCode {
                     impl_token: Impl::default(),
                 });
             }
-        }
-        if self.boxed {
-            tp = generic_type(tp_box(), tp);
         }
         tp
     }

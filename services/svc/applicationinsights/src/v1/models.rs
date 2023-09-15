@@ -67,7 +67,7 @@ pub struct ErrorInfo {
     )]
     pub details: Vec<ErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<ErrorInfo>>,
+    pub innererror: Option<Box<ErrorInfo>>,
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
@@ -77,7 +77,7 @@ impl ErrorInfo {
             code,
             message,
             details: Vec::new(),
-            innererror: Box::new(None),
+            innererror: None,
             additional_properties: None,
         }
     }

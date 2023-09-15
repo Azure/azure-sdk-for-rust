@@ -7212,7 +7212,7 @@ pub struct CustomIpPrefix {
     pub extended_location: Option<ExtendedLocation>,
     #[doc = "Custom IP prefix properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Box<Option<CustomIpPrefixPropertiesFormat>>,
+    pub properties: Option<Box<CustomIpPrefixPropertiesFormat>>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -18417,7 +18417,7 @@ pub struct PublicIpAddress {
     pub sku: Option<PublicIpAddressSku>,
     #[doc = "Public IP address properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Box<Option<PublicIpAddressPropertiesFormat>>,
+    pub properties: Option<Box<PublicIpAddressPropertiesFormat>>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,

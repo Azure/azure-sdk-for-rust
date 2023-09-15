@@ -12613,7 +12613,7 @@ pub struct IpConfiguration {
     pub sub_resource: SubResource,
     #[doc = "Properties of IP configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Box<Option<IpConfigurationPropertiesFormat>>,
+    pub properties: Option<Box<IpConfigurationPropertiesFormat>>,
     #[doc = "The name of the resource that is unique within a resource group. This name can be used to access the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -12714,7 +12714,7 @@ pub struct IpConfigurationPropertiesFormat {
     pub subnet: Option<Subnet>,
     #[doc = "Public IP address resource."]
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address: Box<Option<PublicIpAddress>>,
+    pub public_ip_address: Option<Box<PublicIpAddress>>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -18996,7 +18996,7 @@ pub struct PublicIpAddress {
     pub sku: Option<PublicIpAddressSku>,
     #[doc = "Public IP address properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Box<Option<PublicIpAddressPropertiesFormat>>,
+    pub properties: Option<Box<PublicIpAddressPropertiesFormat>>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -19067,7 +19067,7 @@ pub struct PublicIpAddressPropertiesFormat {
     pub public_ip_address_version: Option<IpVersion>,
     #[doc = "IP configuration."]
     #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub ip_configuration: Box<Option<IpConfiguration>>,
+    pub ip_configuration: Option<Box<IpConfiguration>>,
     #[doc = "Contains FQDN of the DNS record associated with the public IP address."]
     #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
     pub dns_settings: Option<PublicIpAddressDnsSettings>,

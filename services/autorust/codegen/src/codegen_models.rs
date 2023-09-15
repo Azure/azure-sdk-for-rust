@@ -633,6 +633,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let required = schema.required();
 
     // println!("struct: {} {:?}", struct_name_code, pageable);
+    let mut needs_boxing = HashSet::new();
+    needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
     for schema in schema.all_of() {
         let schema_name = schema.name()?;
@@ -675,6 +677,11 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
+
+        let mut boxed = false;
+        if needs_boxing.contains(&type_name.to_string().to_camel_case_ident()?.to_string()) {
+            boxed = true;
+        }
 
         if cg.should_force_obj(prop_nm) {
             type_name = type_name.force_value(true);
@@ -722,7 +729,9 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         };
 
         // see if a field should be wrapped in a Box
-        let boxed = cg.should_box_property(prop_nm);
+        if cg.should_box_property(prop_nm) {
+            boxed = true;
+        }
         type_name = type_name.boxed(boxed);
 
         let doc_comment = match &property.schema.schema.common.description {
@@ -747,11 +756,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             }
         } else {
             #[allow(clippy::collapsible_else_if)]
-            if boxed {
-                new_fn_body.extend(quote! { #field_name: Box::new(None), });
-            } else {
-                new_fn_body.extend(quote! { #field_name: None, });
-            }
+            new_fn_body.extend(quote! { #field_name: None, });
         }
     }
 
