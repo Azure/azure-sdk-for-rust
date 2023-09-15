@@ -428,7 +428,13 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
             file.extend(quote! { pub type #id = #value;});
         } else {
             let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
-            file.extend(create_struct(cg, schema, schema_name, pageable_response_names.get(&pageable_name))?);
+            file.extend(create_struct(
+                cg,
+                schema,
+                schema_name,
+                pageable_response_names.get(&pageable_name),
+                HashSet::new(),
+            )?);
         }
     }
     Ok(file)
@@ -622,7 +628,13 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: Option<&MsPageable>) -> Result<TokenStream> {
+fn create_struct(
+    cg: &CodeGen,
+    schema: &SchemaGen,
+    struct_name: &str,
+    pageable: Option<&MsPageable>,
+    mut needs_boxing: HashSet<String>,
+) -> Result<TokenStream> {
     let mut code = TokenStream::new();
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
@@ -633,7 +645,6 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let required = schema.required();
 
     // println!("struct: {} {:?}", struct_name_code, pageable);
-    let mut needs_boxing = HashSet::new();
     needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
     for schema in schema.all_of() {
@@ -672,7 +683,14 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         let StructFieldCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(cg, &ns.clone(), &property.schema, property_name, lowercase_workaround)?;
+        } = create_struct_field_code(
+            cg,
+            &ns.clone(),
+            &property.schema,
+            property_name,
+            lowercase_workaround,
+            needs_boxing.clone(),
+        )?;
         mod_code.extend(field_code.into_token_stream());
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
@@ -931,6 +949,7 @@ fn create_struct_field_code(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
+    needs_boxing: HashSet<String>,
 ) -> Result<StructFieldCode> {
     match &property.ref_key {
         Some(ref_key) => {
@@ -946,7 +965,7 @@ fn create_struct_field_code(
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident()?;
                 let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
-                let code = create_struct(cg, property, property_name, None)?;
+                let code = create_struct(cg, property, property_name, None, needs_boxing)?;
                 Ok(StructFieldCode {
                     type_name,
                     code: Some(TypeCode::Struct(code)),
