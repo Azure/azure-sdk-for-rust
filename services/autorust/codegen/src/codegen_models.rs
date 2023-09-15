@@ -723,7 +723,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         if property.schema.is_local_enum() {
             if lowercase_workaround {
                 serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
-            } else {
+            } else if cg.has_xml() {
                 serde_attrs.push(quote! { with = "azure_core::xml::text_content"});
             }
         }
