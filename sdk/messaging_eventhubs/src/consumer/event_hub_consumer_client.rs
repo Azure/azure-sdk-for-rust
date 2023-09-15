@@ -9,7 +9,7 @@ use crate::{
     EventHubConnection, EventHubsRetryOptions,
 };
 
-use super::{EventHubConsumerClientOptions, EventPosition, ReadEventOptions, SingleConsumerEventStream, MultiConsumerEventStream};
+use super::{EventHubConsumerClientOptions, EventPosition, ReadEventOptions};
 
 /// A client responsible for reading [`crate::EventData`] from a specific Event Hub
 /// as a member of a specific consumer group.
@@ -429,7 +429,7 @@ where
         partition_id: &str,
         starting_position: EventPosition,
         read_event_options: ReadEventOptions,
-    ) -> Result<SingleConsumerEventStream<'_, RP>, azure_core::Error> {
+    ) -> Result<EventStream<'_, RP>, azure_core::Error> {
         let consumer = self
             .connection
             .create_transport_consumer(
@@ -457,7 +457,7 @@ where
         &mut self,
         start_reading_at_earliest_event: bool,
         read_event_options: ReadEventOptions,
-    ) -> Result<MultiConsumerEventStream<'_, RP>, azure_core::Error>
+    ) -> Result<EventStream<'_, RP>, azure_core::Error>
     where
         RP: 'static,
     {

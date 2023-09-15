@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, marker::PhantomData, time::Duration as StdDuration};
 
 use crate::{
-    amqp::amqp_consumer::{receive_event_batch, AmqpConsumer},
+    amqp::amqp_consumer::{single::receive_event_batch, AmqpConsumer},
     authorization::event_hub_token_credential::EventHubTokenCredential,
     consumer::EventPosition,
     core::BasicRetryPolicy,
