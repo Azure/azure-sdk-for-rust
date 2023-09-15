@@ -1,8 +1,3 @@
-use std::time::Duration;
-
-/// The default number of events that will be read from the Event Hubs service and held in a local memory
-pub const DEFAULT_CACHE_EVENT_COUNT: u32 = 100;
-
 /// The default number of events that will be eagerly requested from the Event Hubs service when reading is active and
 pub const DEFAULT_PREFETCH_COUNT: u32 = 300;
 
@@ -10,31 +5,6 @@ pub const DEFAULT_PREFETCH_COUNT: u32 = 300;
 /// `EventHubConsumerClient`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ReadEventOptions {
-    /// The maximum amount of time to wait to for an event to be available when reading before
-    /// reading an empty event.
-    ///
-    /// If specified, should there be no events available before this waiting period expires, an
-    /// empty event will be returned, allowing control to return to the reader that was waiting.
-    ///
-    /// If `None`, the reader will wait forever for items to be available unless reading is
-    /// canceled. Empty items will not be returned.
-    #[deprecated(
-        since = "0.14.4",
-        note = "This option is no longer used and will be removed in 0.15.0"
-    )]
-    pub maximum_wait_time: Option<Duration>,
-
-    /// The maximum number of events that will be read from the Event Hubs service and held in a
-    /// local memory cache when reading is active and events are being emitted to an enumerator for
-    /// processing.
-    ///
-    /// Default to [`Some(DEFAULT_CACHE_EVENT_COUNT)`]
-    #[deprecated(
-        since = "0.14.4",
-        note = "This option is no longer used and will be removed in 0.15.0"
-    )]
-    pub cache_event_count: u32,
-
     /// The number of events that will be eagerly requested from the Event Hubs service and queued
     /// locally without regard to whether a read operation is currently active, intended to help
     /// maximize throughput by allowing events to be read from from a local cache rather than
@@ -68,8 +38,6 @@ pub struct ReadEventOptions {
 impl Default for ReadEventOptions {
     fn default() -> Self {
         Self {
-            maximum_wait_time: None,
-            cache_event_count: DEFAULT_CACHE_EVENT_COUNT,
             prefetch_count: DEFAULT_PREFETCH_COUNT,
             owner_level: None,
             track_last_enqueued_event_properties: true,
@@ -81,27 +49,6 @@ impl ReadEventOptions {
     /// Creates a new instance with default values.
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Sets the maximum amount of time to wait to for an event to be available when reading before
-    /// reading an empty event.
-    #[deprecated(
-        since = "0.14.4",
-        note = "This option is no longer used and will be removed in 0.15.0"
-    )]
-    pub fn with_maximum_wait_time(mut self, maximum_wait_time: Duration) -> Self {
-        self.maximum_wait_time = Some(maximum_wait_time);
-        self
-    }
-
-    /// Sets the cache event count.
-    #[deprecated(
-        since = "0.14.4",
-        note = "This option is no longer used and will be removed in 0.15.0"
-    )]
-    pub fn with_cache_event_count(mut self, cache_event_count: u32) -> Self {
-        self.cache_event_count = cache_event_count;
-        self
     }
 
     /// Sets the prefetch count.
