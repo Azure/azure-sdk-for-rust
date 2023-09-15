@@ -13,7 +13,7 @@ use super::shared_access_credential::SharedAccessCredential;
 ///
 /// ```rust,no_run
 /// use azure_identity::DefaultAzureCredential;
-/// use azure_messaging_servicebus::authorization::ServiceBusTokenCredential;
+/// use azservicebus::authorization::ServiceBusTokenCredential;
 ///
 /// let credential = ServiceBusTokenCredential::from(DefaultAzureCredential::default());
 /// ```
@@ -78,7 +78,9 @@ impl ServiceBusTokenCredential {
         }
     }
 
-    pub(crate) async fn get_token_using_default_resource(&self) -> azure_core::Result<TokenResponse> {
+    pub(crate) async fn get_token_using_default_resource(
+        &self,
+    ) -> azure_core::Result<TokenResponse> {
         self.get_token(DEFAULT_RESOURCE).await
     }
 }

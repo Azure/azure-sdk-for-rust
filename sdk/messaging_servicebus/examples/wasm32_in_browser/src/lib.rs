@@ -19,7 +19,7 @@ pub fn run() {
 }
 
 async fn local_set_main() -> Result<(), Box<dyn std::error::Error>> {
-    use azure_messaging_servicebus::prelude::*;
+    use azservicebus::prelude::*;
     use web_sys::console;
 
     console::log_1(&"Hello, world!".into());

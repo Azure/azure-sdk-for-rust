@@ -11,7 +11,8 @@ async fn main() -> Result<(), anyhow::Error> {
     let topic_name = std::env::var("SERVICE_BUS_TOPIC")?;
     let subscription_name = std::env::var("SERVICE_BUS_SUBSCRIPTION")?;
 
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, Default::default()).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, Default::default()).await?;
     let mut rule_manager = client
         .create_rule_manager(topic_name, subscription_name)
         .await?;

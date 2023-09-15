@@ -33,7 +33,8 @@ pub async fn create_client_and_send_messages_separately_to_queue_or_topic(
     sender_options: ServiceBusSenderOptions,
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>>,
 ) -> Result<(), anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut sender = client
         .create_sender(queue_or_topic_name, sender_options)
         .await?;
@@ -65,7 +66,8 @@ pub async fn create_client_and_receive_messages_from_queue(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_queue(queue_name, receiver_options)
         .await?;
@@ -93,7 +95,8 @@ pub async fn create_client_and_receive_sessionful_messages_from_queue(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = match session_id {
         Some(session_id) => {
             client
@@ -130,7 +133,8 @@ pub async fn create_client_and_receive_messages_from_subscription(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_subscription(topic_name, subscription_name, receiver_options)
         .await?;
@@ -159,7 +163,8 @@ pub async fn create_client_and_receive_sessionful_messages_from_subscription(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .accept_session_for_subscription(
             topic_name,
@@ -191,7 +196,8 @@ pub async fn create_client_and_abandon_messages_from_queue(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_queue(queue_name, receiver_options)
         .await?;
@@ -218,7 +224,8 @@ pub async fn create_client_and_deadletter_messages_from_queue(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_queue(queue_name, receiver_options)
         .await?;
@@ -247,7 +254,8 @@ pub async fn create_client_and_schedule_messages(
     messages: impl Iterator<Item = impl Into<ServiceBusMessage>> + ExactSizeIterator + Send,
     enqueue_time: OffsetDateTime,
 ) -> Result<Vec<i64>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut sender = client.create_sender(queue_name, sender_options).await?;
 
     let sequence_numbers = sender.schedule_messages(messages, enqueue_time).await?;
@@ -265,7 +273,8 @@ pub async fn create_client_and_peek_messages(
     receiver_options: ServiceBusReceiverOptions,
     max_messages: u32,
 ) -> Result<Vec<ServiceBusPeekedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_queue(queue_name, receiver_options)
         .await?;
@@ -286,7 +295,8 @@ pub async fn create_client_and_defer_messages(
     max_messages: u32,
     max_wait_time: Option<StdDuration>,
 ) -> Result<Vec<i64>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_queue(queue_name, receiver_options)
         .await?;
@@ -312,7 +322,8 @@ pub async fn create_client_and_receive_deferred_messages(
     receiver_options: ServiceBusReceiverOptions,
     sequence_numbers: Vec<i64>,
 ) -> Result<Vec<ServiceBusReceivedMessage>, anyhow::Error> {
-    let mut client = ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
+    let mut client =
+        ServiceBusClient::new_from_connection_string(connection_string, client_options).await?;
     let mut receiver = client
         .create_receiver_for_queue(queue_name, receiver_options)
         .await?;

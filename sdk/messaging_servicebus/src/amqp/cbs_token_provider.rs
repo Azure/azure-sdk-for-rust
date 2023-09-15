@@ -1,7 +1,7 @@
 use azure_core::auth::TokenResponse;
 use fe2o3_amqp_cbs::{token::CbsToken, AsyncCbsTokenProvider};
 use fe2o3_amqp_types::primitives::Timestamp;
-use std::{future::Future, sync::Arc, pin::Pin};
+use std::{future::Future, pin::Pin, sync::Arc};
 use time::Duration as TimeSpan;
 
 use crate::authorization::service_bus_token_credential::ServiceBusTokenCredential;
@@ -45,7 +45,8 @@ fn is_nearing_expiration(token: &TokenResponse, token_expiration_buffer: TimeSpa
 }
 
 impl AsyncCbsTokenProvider for CbsTokenProvider {
-    type Fut<'a> = Pin<Box<dyn Future<Output = Result<CbsToken<'a>, azure_core::error::Error>> + Send + 'a>>;
+    type Fut<'a> =
+        Pin<Box<dyn Future<Output = Result<CbsToken<'a>, azure_core::error::Error>> + Send + 'a>>;
     type Error = azure_core::error::Error;
 
     fn get_token_async(
@@ -63,29 +64,32 @@ impl AsyncCbsTokenProvider for CbsTokenProvider {
                 TokenType::SharedAccessToken { credential } => {
                     let token = credential.get_token_using_default_resource().await?;
                     Ok(token)
-                },
-                TokenType::JsonWebToken { credential, cached_token } => {
-                    match cached_token {
-                        Some(cached) => {
-                            if is_nearing_expiration(cached, expiration_buffer) {
-                                let token = credential.get_token_using_default_resource().await?;
-                                *cached = token.clone();
-                            }
-                            Ok(cached.clone())
-                        },
-                        None => {
-                            let token = credential.get_token_using_default_resource().await?;
-                            *cached_token = Some(token.clone());
-                            Ok(token)
-                        }
-                    }
                 }
+                TokenType::JsonWebToken {
+                    credential,
+                    cached_token,
+                } => match cached_token {
+                    Some(cached) => {
+                        if is_nearing_expiration(cached, expiration_buffer) {
+                            let token = credential.get_token_using_default_resource().await?;
+                            *cached = token.clone();
+                        }
+                        Ok(cached.clone())
+                    }
+                    None => {
+                        let token = credential.get_token_using_default_resource().await?;
+                        *cached_token = Some(token.clone());
+                        Ok(token)
+                    }
+                },
             };
-            result.map(|token| CbsToken::new(
-                token.token.secret().to_owned(),
-                entity_type,
-                Some(Timestamp::from(token.expires_on)),
-            ))
+            result.map(|token| {
+                CbsToken::new(
+                    token.token.secret().to_owned(),
+                    entity_type,
+                    Some(Timestamp::from(token.expires_on)),
+                )
+            })
         })
     }
 }

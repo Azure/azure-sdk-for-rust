@@ -9,8 +9,8 @@ pub(crate) mod shared_access_signature;
 
 pub use azure_named_key_credential::AzureNamedKeyCredential;
 pub use azure_sas_credential::AzureSasCredential;
-pub use shared_access_credential::SharedAccessCredential;
 pub use service_bus_token_credential::ServiceBusTokenCredential;
+pub use shared_access_credential::SharedAccessCredential;
 
 cfg_not_wasm32! {
     #[cfg(test)]

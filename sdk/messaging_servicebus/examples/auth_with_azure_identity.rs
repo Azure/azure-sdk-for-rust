@@ -1,7 +1,4 @@
-use azservicebus::{
-    ServiceBusClient, ServiceBusClientOptions,
-    ServiceBusSenderOptions,
-};
+use azservicebus::{ServiceBusClient, ServiceBusClientOptions, ServiceBusSenderOptions};
 use azure_identity::DefaultAzureCredential;
 
 #[tokio::main]
